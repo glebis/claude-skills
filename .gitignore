@@ -1,0 +1,26 @@
+# Environment files
+.env
+**/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Research outputs (optional - uncomment if you don't want to track)
+# research_report_*.md
+# research_prompt_*.txt
