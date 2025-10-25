@@ -46,6 +46,16 @@ cp .env.example .env
 - OpenAI API key with access to Deep Research API
 - Internet connection
 
+**⚠️ Important:** OpenAI requires **organization verification** to access certain models via API, including `o4-mini-deep-research`.
+
+To verify your organization:
+1. Go to https://platform.openai.com/settings/organization/general
+2. Click "Verify Organization"
+3. Complete the automatic ID verification process
+4. Wait up to 15 minutes for access to propagate
+
+Without verification, you'll receive a `model_not_found` error when trying to use the Deep Research API.
+
 ## 💡 Usage
 
 Skills are automatically triggered by Claude Code based on your requests. For example:
