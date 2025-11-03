@@ -4,6 +4,39 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
+### [LLM CLI](./llm-cli/) ⭐ NEW
+Unified interface for processing text with multiple LLM providers from a single CLI.
+
+**Features:**
+- 🎯 Support for 6 LLM providers (OpenAI, Anthropic, Google, Groq, OpenRouter, Ollama)
+- 🚀 40+ configured models with intelligent selection and aliasing
+- 📁 Process files, stdin, or inline text (25+ file types supported)
+- 💬 Both non-interactive and interactive (REPL) execution modes
+- 🔄 Persistent configuration that remembers your last used model
+- 🆓 Free fast inference options (Groq, OpenRouter, Ollama)
+
+**Quick Start:**
+```bash
+# Install llm CLI
+pip install llm
+
+# Set Groq API key (free, no credit card)
+export GROQ_API_KEY='gsk_...'
+
+# Use it
+llm -m groq-llama-3.3-70b "Your prompt"
+```
+
+**Documentation:**
+- [START_HERE.md](./llm-cli/START_HERE.md) - 5-minute quick start
+- [QUICK_REFERENCE.md](./llm-cli/QUICK_REFERENCE.md) - Command cheat sheet
+- [GROQ_INTEGRATION.md](./llm-cli/GROQ_INTEGRATION.md) - Free fast inference setup
+- [OPENROUTER_INTEGRATION.md](./llm-cli/OPENROUTER_INTEGRATION.md) - 200+ model access
+
+**Use when:** You want to process text with LLMs, compare models, or build AI-powered workflows.
+
+---
+
 ### [Deep Research](./deep-research/)
 Comprehensive research automation using OpenAI's Deep Research API (o4-mini-deep-research model).
 
@@ -30,16 +63,31 @@ Comprehensive research automation using OpenAI's Deep Research API (o4-mini-deep
 # Clone the repository
 git clone https://github.com/glebis/claude-skills.git
 
-# Copy skill to Claude Code skills directory
+# Copy desired skill to Claude Code skills directory
+cp -r claude-skills/llm-cli ~/.claude/skills/
+# or
 cp -r claude-skills/deep-research ~/.claude/skills/
 
-# Set up environment (for deep-research skill)
+# For llm-cli: Install Python dependencies
+cd ~/.claude/skills/llm-cli
+pip install -r requirements.txt
+
+# For deep-research: Set up environment
 cd ~/.claude/skills/deep-research
 cp .env.example .env
 # Edit .env and add your OPENAI_API_KEY
 ```
 
 ## 📋 Requirements
+
+### LLM CLI Skill
+- Python 3.8+
+- `llm` CLI tool: `pip install llm`
+- At least one API key (free options available):
+  - **Groq**: https://console.groq.com/keys (free, no credit card)
+  - **OpenRouter**: https://openrouter.ai/keys (free account)
+  - **Ollama**: https://ollama.ai (free, local)
+  - Or paid APIs: OpenAI, Anthropic, Google
 
 ### Deep Research Skill
 - Python 3.7+
