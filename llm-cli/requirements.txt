@@ -1,0 +1,10 @@
+# LLM CLI Skill Requirements
+
+# Core dependency
+llm>=0.14.0
+
+# Optional: PDF support
+PyPDF2>=3.0.0
+
+# Optional: Better CLI output
+rich>=13.0.0
