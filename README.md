@@ -76,6 +76,28 @@ Query Chrome browsing history with natural language search and filtering.
 
 **Use when:** You need to find and recall websites you've visited, search by topic or date.
 
+---
+
+### [ElevenLabs Text-to-Speech](./elevenlabs-tts/)
+Convert text to high-quality audio files using ElevenLabs API with customizable voice parameters.
+
+**Features:**
+- 🎙️ 7 pre-configured voice presets (rachel, adam, bella, elli, josh, arnold, ava)
+- 🎚️ Voice parameter customization (stability, similarity boost)
+- 📝 Support for any text length
+- 🔧 Both CLI and Python module interfaces
+- 🎵 MP3 audio output with automatic directory creation
+
+**Quick Start:**
+```bash
+cd ~/.claude/skills/elevenlabs-tts
+pip install -r requirements.txt
+# Add your API key to .env
+python scripts/elevenlabs_tts.py "Welcome to Claude Code"
+```
+
+**Use when:** You need text-to-speech generation, audio narration, voice synthesis, or want to speak generated content aloud.
+
 ## 🚀 Installation
 
 ### Using Claude Code
