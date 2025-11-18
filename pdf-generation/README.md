@@ -154,8 +154,13 @@ Usage: fix_markdown.py <input.md> [output.md]
 
 Fixes:
 - Adds blank lines before lists
+- Handles lists after colons (Claude Code format)
 - Handles nested list formatting
 - Ensures proper spacing after headings
+
+Example - Claude Code pattern:
+"text with colon:"
+"- list item"  → Auto-adds blank line
 ```
 
 ## Troubleshooting

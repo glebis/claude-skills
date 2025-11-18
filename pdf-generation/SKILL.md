@@ -54,12 +54,31 @@ For optimal PDF rendering, ensure:
 2. **Blank lines after headings** - Improves spacing
 3. **Nested list indentation** - Use 3 spaces for sub-items
 
-Common issue: Lists without preceding blank line render as inline text.
+### Common Claude Code Pattern
 
-Fix with preprocessing script:
+Lists after colons need blank lines:
+
+```markdown
+Your data spans 9 years with complete tracking:
+
+- Item 1
+- Item 2
+```
+
+Without blank line after colon, renders as inline text.
+
+### Automatic Fix
+
+Use preprocessing script:
+
 ```bash
 scripts/fix_markdown.py input.md output.md
 ```
+
+Automatically detects and fixes:
+- Lists after colons (Claude Code format)
+- Lists after headings
+- Nested list spacing
 
 ## Generation Workflows
 
