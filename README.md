@@ -49,6 +49,33 @@ Comprehensive research automation using OpenAI's Deep Research API (o4-mini-deep
 
 **Use when:** You need in-depth research with web sources, analysis, or topic exploration.
 
+---
+
+### [PDF Generation](./pdf-generation/)
+Professional PDF generation from markdown with Eisvogel template and EB Garamond fonts.
+
+**Features:**
+- 📄 Convert markdown to professional PDFs
+- 🎨 Support for English and Russian documents
+- 🖼️ Color-coded themes for different document types
+- ✍️ Professional typography with EB Garamond fonts
+- 📋 White papers, research documents, marketing materials
+
+**Use when:** You need to create professional PDF documents from markdown with publication-quality formatting.
+
+---
+
+### [Chrome History](./chrome-history/)
+Query Chrome browsing history with natural language search and filtering.
+
+**Features:**
+- 🔍 Natural language search of browsing history
+- 📅 Filter by date range, article type, keywords
+- 🌐 Search specific websites
+- ⚡ Fast historical data retrieval
+
+**Use when:** You need to find and recall websites you've visited, search by topic or date.
+
 ## 🚀 Installation
 
 ### Using Claude Code
