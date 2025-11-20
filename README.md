@@ -65,6 +65,26 @@ Professional PDF generation from markdown with Eisvogel template and EB Garamond
 
 ---
 
+### [YouTube Transcript](./youtube-transcript/)
+Extract YouTube video transcripts with metadata and save as Markdown to Obsidian vault.
+
+**Features:**
+- 📝 Download transcripts without downloading video/audio files
+- 🌐 Auto language detection (English first, Russian fallback)
+- 📊 YAML frontmatter with complete metadata (title, channel, date, stats, tags)
+- 📑 Chapter-based organization with timestamps
+- 🔄 Automatic deduplication of subtitle artifacts
+- 💾 Direct save to Obsidian vault
+
+**Quick Start:**
+```bash
+python scripts/extract_transcript.py <youtube_url>
+```
+
+**Use when:** You need to extract YouTube video transcripts, convert videos to text, or save video content to your knowledge base.
+
+---
+
 ### [Chrome History](./chrome-history/)
 Query Chrome browsing history with natural language search and filtering.
 
@@ -116,6 +136,8 @@ git clone https://github.com/glebis/claude-skills.git
 cp -r claude-skills/llm-cli ~/.claude/skills/
 # or
 cp -r claude-skills/deep-research ~/.claude/skills/
+# or
+cp -r claude-skills/youtube-transcript ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
@@ -125,6 +147,9 @@ pip install -r requirements.txt
 cd ~/.claude/skills/deep-research
 cp .env.example .env
 # Edit .env and add your OPENAI_API_KEY
+
+# For youtube-transcript: Install yt-dlp
+pip install yt-dlp
 ```
 
 ## 📋 Requirements
@@ -152,6 +177,11 @@ To verify your organization:
 4. Wait up to 15 minutes for access to propagate
 
 Without verification, you'll receive a `model_not_found` error when trying to use the Deep Research API.
+
+### YouTube Transcript Skill
+- Python 3.7+
+- `yt-dlp`: `pip install yt-dlp`
+- Internet connection
 
 ## 💡 Usage
 
