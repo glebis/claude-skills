@@ -197,30 +197,21 @@ async def search_messages(client: TelegramClient, query: str,
     return messages
 
 
-async def send_message(client: TelegramClient, chat_name: str, text: str,
-                       reply_to: Optional[int] = None) -> Dict:
-    """Send a message to a chat, optionally as a reply.
-
-    Supports:
-    - Chat names (fuzzy match in existing dialogs)
-    - Usernames (@username or just username)
-    - Phone numbers
-    - Chat IDs (numeric)
-    """
+async def resolve_entity(client: TelegramClient, chat_name: str) -> tuple:
+    """Resolve chat name/username/ID to entity and display name."""
     entity = None
     resolved_name = chat_name
 
     # Try username resolution first if it looks like a username
     if chat_name.startswith('@') or (not chat_name.replace('-', '').replace('_', '').isalnum() == False and not chat_name.lstrip('-').isdigit()):
         try:
-            # Handle @username format
             username = chat_name if chat_name.startswith('@') else f"@{chat_name}"
             entity = await client.get_entity(username)
             resolved_name = getattr(entity, 'first_name', '') or getattr(entity, 'title', '') or chat_name
             if hasattr(entity, 'last_name') and entity.last_name:
                 resolved_name += f" {entity.last_name}"
         except Exception:
-            pass  # Fall through to dialog search
+            pass
 
     # Try numeric chat ID
     if entity is None and chat_name.lstrip('-').isdigit():
@@ -239,21 +230,66 @@ async def send_message(client: TelegramClient, chat_name: str, text: str,
                 resolved_name = d.name
                 break
 
+    return entity, resolved_name
+
+
+async def send_message(client: TelegramClient, chat_name: str, text: str,
+                       reply_to: Optional[int] = None,
+                       file_path: Optional[str] = None) -> Dict:
+    """Send a message or file to a chat, optionally as a reply.
+
+    Supports:
+    - Chat names (fuzzy match in existing dialogs)
+    - Usernames (@username or just username)
+    - Phone numbers
+    - Chat IDs (numeric)
+    - File attachments (images, documents, videos)
+    """
+    entity, resolved_name = await resolve_entity(client, chat_name)
+
     if entity is None:
         return {"sent": False, "error": f"Chat '{chat_name}' not found"}
 
     try:
-        msg = await client.send_message(
-            entity,
-            text,
-            reply_to=reply_to
-        )
-        return {
-            "sent": True,
-            "chat": resolved_name,
-            "message_id": msg.id,
-            "reply_to": reply_to
-        }
+        # Send file if provided
+        if file_path:
+            import os
+            if not os.path.exists(file_path):
+                return {"sent": False, "error": f"File not found: {file_path}"}
+
+            file_size = os.path.getsize(file_path)
+            file_name = os.path.basename(file_path)
+
+            msg = await client.send_file(
+                entity,
+                file_path,
+                caption=text if text else None,
+                reply_to=reply_to
+            )
+            return {
+                "sent": True,
+                "chat": resolved_name,
+                "message_id": msg.id,
+                "reply_to": reply_to,
+                "file": {
+                    "name": file_name,
+                    "size": file_size,
+                    "path": file_path
+                }
+            }
+        else:
+            # Send text message
+            msg = await client.send_message(
+                entity,
+                text,
+                reply_to=reply_to
+            )
+            return {
+                "sent": True,
+                "chat": resolved_name,
+                "message_id": msg.id,
+                "reply_to": reply_to
+            }
     except Exception as e:
         return {"sent": False, "error": str(e)}
 
@@ -379,9 +415,10 @@ async def main():
     unread_parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     # Send message
-    send_parser = subparsers.add_parser("send", help="Send a message")
-    send_parser.add_argument("--chat", required=True, help="Chat name to send to")
-    send_parser.add_argument("--text", required=True, help="Message text to send")
+    send_parser = subparsers.add_parser("send", help="Send a message or file")
+    send_parser.add_argument("--chat", required=True, help="Chat name, @username, or ID")
+    send_parser.add_argument("--text", help="Message text (or caption for files)")
+    send_parser.add_argument("--file", help="File path to send (image, document, video)")
     send_parser.add_argument("--reply-to", type=int, help="Message ID to reply to")
 
     args = parser.parse_args()
@@ -441,13 +478,17 @@ async def main():
                 print(output)
 
         elif args.command == "send":
-            result = await send_message(
-                client,
-                chat_name=args.chat,
-                text=args.text,
-                reply_to=args.reply_to
-            )
-            print(json.dumps(result, indent=2))
+            if not args.text and not args.file:
+                print(json.dumps({"sent": False, "error": "Must provide --text or --file"}))
+            else:
+                result = await send_message(
+                    client,
+                    chat_name=args.chat,
+                    text=args.text or "",
+                    reply_to=args.reply_to,
+                    file_path=args.file
+                )
+                print(json.dumps(result, indent=2))
 
     finally:
         await client.disconnect()

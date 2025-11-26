@@ -99,12 +99,27 @@ python3 scripts/telegram_fetch.py send --chat "@username" --text "Hello!"
 python3 scripts/telegram_fetch.py send --chat "AI Mindset" --text "Thanks!" --reply-to 12345
 ```
 
+### Send Files
+
+To send images, documents, or videos:
+
+```bash
+# Send an image
+python3 scripts/telegram_fetch.py send --chat "John Doe" --file "/path/to/image.jpg"
+
+# Send document with caption
+python3 scripts/telegram_fetch.py send --chat "@username" --file "report.pdf" --text "Here's the report"
+
+# Reply with media
+python3 scripts/telegram_fetch.py send --chat "Group" --file "screenshot.png" --reply-to 12345
+```
+
 **Chat resolution order:**
 1. `@username` - Resolves Telegram username directly
 2. Numeric ID - Resolves chat by Telegram ID
 3. Name match - Fuzzy search in existing dialogs
 
-Returns JSON with send status, resolved chat name, and message ID.
+Returns JSON with send status, resolved chat name, message ID, and file info (for media).
 
 ## Output Options
 
@@ -154,6 +169,8 @@ When user asks:
 - "Send hello to John on Telegram" -> `send --chat "John" --text "Hello!"`
 - "Message @username on Telegram" -> `send --chat "@username" --text "..."`
 - "Reply to that message with thanks" -> `send --chat "..." --text "Thanks!" --reply-to <id>`
+- "Send this image to John" -> `send --chat "John" --file "/path/to/image.jpg"`
+- "Send report.pdf with caption" -> `send --chat "..." --file "report.pdf" --text "Here's the report"`
 
 ## Rate Limiting
 
