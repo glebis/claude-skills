@@ -121,6 +121,28 @@ python3 scripts/telegram_fetch.py send --chat "Group" --file "screenshot.png" --
 
 Returns JSON with send status, resolved chat name, message ID, and file info (for media).
 
+### Download Attachments
+
+To download media files from a chat:
+
+```bash
+# Download last 5 attachments from a chat (default)
+python3 scripts/telegram_fetch.py download --chat "AI Mindset"
+
+# Download last 10 attachments
+python3 scripts/telegram_fetch.py download --chat "Project Group" --limit 10
+
+# Download to custom directory
+python3 scripts/telegram_fetch.py download --chat "@username" --output "/path/to/folder"
+
+# Download from specific message
+python3 scripts/telegram_fetch.py download --chat "John Doe" --message-id 12345
+```
+
+**Default output:** `~/Downloads/telegram_attachments/`
+
+Returns JSON with download results (file names, paths, sizes).
+
 ## Output Options
 
 ### Default (Markdown to stdout)
@@ -171,6 +193,8 @@ When user asks:
 - "Reply to that message with thanks" -> `send --chat "..." --text "Thanks!" --reply-to <id>`
 - "Send this image to John" -> `send --chat "John" --file "/path/to/image.jpg"`
 - "Send report.pdf with caption" -> `send --chat "..." --file "report.pdf" --text "Here's the report"`
+- "Download attachments from AI Mindset" -> `download --chat "AI Mindset"`
+- "Download last 10 files from Project Group" -> `download --chat "Project Group" --limit 10`
 
 ## Rate Limiting
 

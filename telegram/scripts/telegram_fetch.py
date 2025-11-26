@@ -294,6 +294,81 @@ async def send_message(client: TelegramClient, chat_name: str, text: str,
         return {"sent": False, "error": str(e)}
 
 
+DEFAULT_ATTACHMENTS_DIR = Path.home() / 'Downloads' / 'telegram_attachments'
+
+
+async def download_media(client: TelegramClient, chat_name: str,
+                         limit: int = 5, output_dir: Optional[str] = None,
+                         message_id: Optional[int] = None) -> List[Dict]:
+    """Download media attachments from a chat.
+
+    Args:
+        chat_name: Chat name, @username, or ID
+        limit: Max number of attachments to download (default 5)
+        output_dir: Output directory (default ~/Downloads/telegram_attachments)
+        message_id: Specific message ID to download from (optional)
+    """
+    import os
+
+    # Set output directory
+    if output_dir:
+        out_path = Path(output_dir)
+    else:
+        out_path = DEFAULT_ATTACHMENTS_DIR
+
+    out_path.mkdir(parents=True, exist_ok=True)
+
+    entity, resolved_name = await resolve_entity(client, chat_name)
+    if entity is None:
+        return [{"error": f"Chat '{chat_name}' not found"}]
+
+    downloaded = []
+
+    if message_id:
+        # Download from specific message
+        msg = await client.get_messages(entity, ids=message_id)
+        if msg and msg.media:
+            try:
+                file_path = await client.download_media(msg, str(out_path))
+                if file_path:
+                    downloaded.append({
+                        "message_id": msg.id,
+                        "chat": resolved_name,
+                        "file": os.path.basename(file_path),
+                        "path": file_path,
+                        "size": os.path.getsize(file_path),
+                        "date": msg.date.isoformat() if msg.date else None
+                    })
+            except Exception as e:
+                downloaded.append({"message_id": message_id, "error": str(e)})
+        else:
+            downloaded.append({"message_id": message_id, "error": "No media in message"})
+    else:
+        # Download recent media
+        count = 0
+        async for msg in client.iter_messages(entity, limit=100):
+            if msg.media and hasattr(msg.media, 'document') or hasattr(msg, 'photo') and msg.photo:
+                try:
+                    file_path = await client.download_media(msg, str(out_path))
+                    if file_path:
+                        downloaded.append({
+                            "message_id": msg.id,
+                            "chat": resolved_name,
+                            "file": os.path.basename(file_path),
+                            "path": file_path,
+                            "size": os.path.getsize(file_path),
+                            "date": msg.date.isoformat() if msg.date else None
+                        })
+                        count += 1
+                        if count >= limit:
+                            break
+                except Exception as e:
+                    downloaded.append({"message_id": msg.id, "error": str(e)})
+            await asyncio.sleep(0.2)  # Rate limiting
+
+    return downloaded
+
+
 async def fetch_unread(client: TelegramClient, chat_id: Optional[int] = None) -> List[Dict]:
     """Fetch unread messages."""
     messages = []
@@ -421,6 +496,13 @@ async def main():
     send_parser.add_argument("--file", help="File path to send (image, document, video)")
     send_parser.add_argument("--reply-to", type=int, help="Message ID to reply to")
 
+    # Download media
+    download_parser = subparsers.add_parser("download", help="Download media attachments")
+    download_parser.add_argument("--chat", required=True, help="Chat name, @username, or ID")
+    download_parser.add_argument("--limit", type=int, default=5, help="Max attachments to download (default 5)")
+    download_parser.add_argument("--output", help="Output directory (default ~/Downloads/telegram_attachments)")
+    download_parser.add_argument("--message-id", type=int, help="Download from specific message ID")
+
     args = parser.parse_args()
 
     client = await get_client()
@@ -489,6 +571,16 @@ async def main():
                     file_path=args.file
                 )
                 print(json.dumps(result, indent=2))
+
+        elif args.command == "download":
+            results = await download_media(
+                client,
+                chat_name=args.chat,
+                limit=args.limit,
+                output_dir=args.output,
+                message_id=args.message_id
+            )
+            print(json.dumps(results, indent=2))
 
     finally:
         await client.disconnect()
