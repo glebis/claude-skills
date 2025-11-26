@@ -40,10 +40,90 @@ def is_configured() -> bool:
     return all(key in config for key in ['api_id', 'api_hash'])
 
 
+def get_setup_instructions() -> Dict:
+    """Return setup instructions for unconfigured Telegram."""
+    return {
+        "configured": False,
+        "message": "Telegram is not configured. Follow these steps to set up:",
+        "steps": [
+            {
+                "step": 1,
+                "title": "Get Telegram API credentials",
+                "instructions": [
+                    "Go to https://my.telegram.org/auth",
+                    "Log in with your phone number",
+                    "Click 'API development tools'",
+                    "Create a new application (any name/description)",
+                    "Note your api_id and api_hash"
+                ],
+                "url": "https://my.telegram.org/auth"
+            },
+            {
+                "step": 2,
+                "title": "Run the authentication script",
+                "instructions": [
+                    "Clone or download telegram_dl: https://github.com/glebis/telegram_dl",
+                    "Run: python telegram_dl.py",
+                    "Enter your api_id and api_hash when prompted",
+                    "Enter your phone number (with country code)",
+                    "Enter the SMS code Telegram sends you",
+                    "If you have 2FA, enter your password"
+                ],
+                "url": "https://github.com/glebis/telegram_dl"
+            },
+            {
+                "step": 3,
+                "title": "Verify configuration",
+                "instructions": [
+                    "Run: python telegram_fetch.py setup --status",
+                    "Should show 'configured: true'"
+                ]
+            }
+        ],
+        "config_location": str(CONFIG_DIR),
+        "session_file": str(SESSION_FILE)
+    }
+
+
+def get_status() -> Dict:
+    """Get current configuration status."""
+    config = load_config()
+    configured = is_configured()
+    session_exists = SESSION_FILE.exists()
+
+    if configured and session_exists:
+        return {
+            "configured": True,
+            "status": "ready",
+            "config_location": str(CONFIG_DIR),
+            "session_file": str(SESSION_FILE),
+            "has_api_id": "api_id" in config,
+            "has_api_hash": "api_hash" in config
+        }
+    elif configured and not session_exists:
+        return {
+            "configured": False,
+            "status": "credentials_only",
+            "message": "API credentials found but no session. Run telegram_dl.py to authenticate.",
+            "config_location": str(CONFIG_DIR)
+        }
+    else:
+        return get_setup_instructions()
+
+
 async def get_client() -> TelegramClient:
     """Get authenticated Telegram client."""
     if not is_configured():
-        print("ERROR: Telegram not configured. Run telegram_dl.py first to authenticate.", file=sys.stderr)
+        # Print setup instructions as JSON and exit
+        print(json.dumps(get_setup_instructions(), indent=2))
+        sys.exit(1)
+
+    if not SESSION_FILE.exists():
+        print(json.dumps({
+            "error": "Session file not found",
+            "message": "API credentials exist but no session. Run telegram_dl.py to authenticate.",
+            "config_location": str(CONFIG_DIR)
+        }, indent=2))
         sys.exit(1)
 
     config = load_config()
@@ -503,7 +583,17 @@ async def main():
     download_parser.add_argument("--output", help="Output directory (default ~/Downloads/telegram_attachments)")
     download_parser.add_argument("--message-id", type=int, help="Download from specific message ID")
 
+    # Setup/status
+    setup_parser = subparsers.add_parser("setup", help="Check status or get setup instructions")
+    setup_parser.add_argument("--status", action="store_true", help="Check configuration status")
+
     args = parser.parse_args()
+
+    # Handle setup command before requiring authentication
+    if args.command == "setup":
+        result = get_status()
+        print(json.dumps(result, indent=2))
+        return
 
     client = await get_client()
 
