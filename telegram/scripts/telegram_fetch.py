@@ -534,6 +534,73 @@ def append_to_person(content: str, person_name: str):
     print(f"Appended to {person_path}", file=sys.stderr)
 
 
+async def save_to_file(client: TelegramClient, messages: List[Dict], output_path: str,
+                       with_media: bool = False, output_format: str = "markdown") -> Dict:
+    """Save messages to file, optionally downloading media.
+
+    Args:
+        client: Telegram client for media downloads
+        messages: List of message dicts
+        output_path: Path to output file
+        with_media: Whether to download media files
+        output_format: 'markdown' or 'json'
+
+    Returns:
+        Dict with save status and media download results
+    """
+    import os
+
+    output_file = Path(output_path)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Format content
+    if output_format == "json":
+        content = json.dumps(messages, indent=2, ensure_ascii=False)
+    else:
+        content = format_output(messages, "markdown")
+
+    # Write to file
+    output_file.write_text(content, encoding='utf-8')
+
+    result = {
+        "saved": True,
+        "file": str(output_file),
+        "message_count": len(messages)
+    }
+
+    # Download media if requested
+    if with_media and messages:
+        media_dir = output_file.parent / "media"
+        media_dir.mkdir(exist_ok=True)
+
+        downloaded = []
+        for msg in messages:
+            if msg.get("has_media") and msg.get("chat_id") and msg.get("message_id"):
+                try:
+                    # Get the entity from chat_id
+                    entity = await client.get_entity(msg["chat_id"])
+                    tg_msg = await client.get_messages(entity, ids=msg["message_id"])
+                    if tg_msg and tg_msg.media:
+                        file_path = await client.download_media(tg_msg, str(media_dir))
+                        if file_path:
+                            downloaded.append({
+                                "message_id": msg["message_id"],
+                                "file": os.path.basename(file_path),
+                                "path": file_path
+                            })
+                except Exception as e:
+                    downloaded.append({
+                        "message_id": msg.get("message_id"),
+                        "error": str(e)
+                    })
+                await asyncio.sleep(0.2)  # Rate limiting
+
+        result["media"] = downloaded
+        result["media_dir"] = str(media_dir)
+
+    return result
+
+
 async def main():
     parser = argparse.ArgumentParser(description="Fetch Telegram messages")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -552,6 +619,8 @@ async def main():
     recent_parser.add_argument("--to-daily", action="store_true", help="Append to daily note")
     recent_parser.add_argument("--to-person", help="Append to person's note")
     recent_parser.add_argument("--json", action="store_true", help="Output as JSON")
+    recent_parser.add_argument("--output", "-o", help="Save to file (markdown) instead of stdout")
+    recent_parser.add_argument("--with-media", action="store_true", help="Download media to same folder as output file")
 
     # Search messages
     search_parser = subparsers.add_parser("search", help="Search messages")
@@ -561,6 +630,8 @@ async def main():
     search_parser.add_argument("--to-daily", action="store_true", help="Append to daily note")
     search_parser.add_argument("--to-person", help="Append to person's note")
     search_parser.add_argument("--json", action="store_true", help="Output as JSON")
+    search_parser.add_argument("--output", "-o", help="Save to file (markdown) instead of stdout")
+    search_parser.add_argument("--with-media", action="store_true", help="Download media to same folder as output file")
 
     # Unread messages
     unread_parser = subparsers.add_parser("unread", help="Fetch unread messages")
@@ -568,6 +639,8 @@ async def main():
     unread_parser.add_argument("--to-daily", action="store_true", help="Append to daily note")
     unread_parser.add_argument("--to-person", help="Append to person's note")
     unread_parser.add_argument("--json", action="store_true", help="Output as JSON")
+    unread_parser.add_argument("--output", "-o", help="Save to file (markdown) instead of stdout")
+    unread_parser.add_argument("--with-media", action="store_true", help="Download media to same folder as output file")
 
     # Send message
     send_parser = subparsers.add_parser("send", help="Send a message or file")
@@ -612,13 +685,23 @@ async def main():
                 days=args.days
             )
             output_fmt = "json" if args.json else "markdown"
-            output = format_output(messages, output_fmt)
 
-            if args.to_daily:
+            if args.output:
+                # Save to file instead of stdout
+                result = await save_to_file(
+                    client, messages, args.output,
+                    with_media=args.with_media,
+                    output_format=output_fmt
+                )
+                print(json.dumps(result, indent=2))
+            elif args.to_daily:
+                output = format_output(messages, output_fmt)
                 append_to_daily(output)
             elif args.to_person:
+                output = format_output(messages, output_fmt)
                 append_to_person(output, args.to_person)
             else:
+                output = format_output(messages, output_fmt)
                 print(output)
 
         elif args.command == "search":
@@ -629,25 +712,43 @@ async def main():
                 limit=args.limit
             )
             output_fmt = "json" if args.json else "markdown"
-            output = format_output(messages, output_fmt)
 
-            if args.to_daily:
+            if args.output:
+                result = await save_to_file(
+                    client, messages, args.output,
+                    with_media=args.with_media,
+                    output_format=output_fmt
+                )
+                print(json.dumps(result, indent=2))
+            elif args.to_daily:
+                output = format_output(messages, output_fmt)
                 append_to_daily(output)
             elif args.to_person:
+                output = format_output(messages, output_fmt)
                 append_to_person(output, args.to_person)
             else:
+                output = format_output(messages, output_fmt)
                 print(output)
 
         elif args.command == "unread":
             messages = await fetch_unread(client, chat_id=args.chat_id)
             output_fmt = "json" if args.json else "markdown"
-            output = format_output(messages, output_fmt)
 
-            if args.to_daily:
+            if args.output:
+                result = await save_to_file(
+                    client, messages, args.output,
+                    with_media=args.with_media,
+                    output_format=output_fmt
+                )
+                print(json.dumps(result, indent=2))
+            elif args.to_daily:
+                output = format_output(messages, output_fmt)
                 append_to_daily(output)
             elif args.to_person:
+                output = format_output(messages, output_fmt)
                 append_to_person(output, args.to_person)
             else:
+                output = format_output(messages, output_fmt)
                 print(output)
 
         elif args.command == "send":

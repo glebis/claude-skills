@@ -15,6 +15,7 @@ Fetch, search, download, and send Telegram messages with flexible filtering and 
 - ↩️ Reply to specific messages
 - 💬 Send to forum topics (groups with topics)
 - 📎 Send and download media files
+- 💾 Save to file (token-efficient archiving with --with-media)
 - 📝 Output to Obsidian daily/person notes
 
 **Quick Start:**

@@ -191,6 +191,23 @@ python3 scripts/telegram_fetch.py recent --chat "John Doe" --to-person "John Doe
 
 Creates or appends to `~/Brains/brain/{PersonName}.md`
 
+### Save to File (Token-Efficient)
+
+Save messages directly to file without consuming context tokens:
+
+```bash
+# Save 100 messages to markdown file
+python3 scripts/telegram_fetch.py recent --chat "AGENCY: Community" --limit 100 -o ~/chat_archive.md
+
+# Save with media files downloaded to same folder
+python3 scripts/telegram_fetch.py recent --chat "Project Group" --limit 50 -o ~/project/archive.md --with-media
+
+# Save search results to file
+python3 scripts/telegram_fetch.py search "meeting" -o ~/meetings.md
+```
+
+Returns JSON with save status (file path, message count, media download results) - minimal token usage.
+
 ## Example User Requests
 
 When user asks:
@@ -209,6 +226,8 @@ When user asks:
 - "Send to topic 12 in Group" -> `send --chat "Group" --text "..." --topic 12`
 - "Download attachments from Tool Building Ape" -> `download --chat "Tool Building Ape"`
 - "Download last 10 files from Project Group" -> `download --chat "Project Group" --limit 10`
+- "Save last 100 messages from AGENCY to file" -> `recent --chat "AGENCY: Community" --limit 100 -o ~/agency.md`
+- "Archive chat with media" -> `recent --chat "Group" -o ~/archive.md --with-media`
 - "Is Telegram configured?" -> `setup`
 - "How do I set up Telegram?" -> `setup` (returns instructions if not configured)
 
