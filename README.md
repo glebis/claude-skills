@@ -4,7 +4,37 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
-### [LLM CLI](./llm-cli/) ⭐ NEW
+### [Telegram](./telegram/) ⭐ NEW
+Fetch, search, download, and send Telegram messages with flexible filtering and output options.
+
+**Features:**
+- 📬 List chats with unread counts
+- 📥 Fetch recent messages (all chats or specific)
+- 🔍 Search messages by content
+- 📨 Send messages to chats or @usernames
+- ↩️ Reply to specific messages
+- 📝 Output to Obsidian daily/person notes
+
+**Quick Start:**
+```bash
+# Install dependency
+pip install telethon
+
+# List chats
+python scripts/telegram_fetch.py list
+
+# Get recent messages
+python scripts/telegram_fetch.py recent --limit 20
+
+# Send message
+python scripts/telegram_fetch.py send --chat "@username" --text "Hello!"
+```
+
+**Use when:** You need to read, search, or send Telegram messages from Claude Code.
+
+---
+
+### [LLM CLI](./llm-cli/)
 Unified interface for processing text with multiple LLM providers from a single CLI.
 
 **Features:**
@@ -138,6 +168,8 @@ cp -r claude-skills/llm-cli ~/.claude/skills/
 cp -r claude-skills/deep-research ~/.claude/skills/
 # or
 cp -r claude-skills/youtube-transcript ~/.claude/skills/
+# or
+cp -r claude-skills/telegram ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
@@ -182,6 +214,12 @@ Without verification, you'll receive a `model_not_found` error when trying to us
 - Python 3.7+
 - `yt-dlp`: `pip install yt-dlp`
 - Internet connection
+
+### Telegram Skill
+- Python 3.8+
+- `telethon`: `pip install telethon`
+- Telegram API credentials (api_id, api_hash from https://my.telegram.org)
+- Pre-configured session in `~/.telegram_dl/` (run telegram_dl.py to authenticate)
 
 ## 💡 Usage
 
