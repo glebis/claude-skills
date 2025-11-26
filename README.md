@@ -13,6 +13,8 @@ Fetch, search, download, and send Telegram messages with flexible filtering and 
 - 🔍 Search messages by content
 - 📨 Send messages to chats or @usernames
 - ↩️ Reply to specific messages
+- 💬 Send to forum topics (groups with topics)
+- 📎 Send and download media files
 - 📝 Output to Obsidian daily/person notes
 
 **Quick Start:**

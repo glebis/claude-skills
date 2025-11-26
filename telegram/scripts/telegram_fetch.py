@@ -575,6 +575,7 @@ async def main():
     send_parser.add_argument("--text", help="Message text (or caption for files)")
     send_parser.add_argument("--file", help="File path to send (image, document, video)")
     send_parser.add_argument("--reply-to", type=int, help="Message ID to reply to")
+    send_parser.add_argument("--topic", type=int, help="Forum topic ID to send to (for groups with topics)")
 
     # Download media
     download_parser = subparsers.add_parser("download", help="Download media attachments")
@@ -653,11 +654,13 @@ async def main():
             if not args.text and not args.file:
                 print(json.dumps({"sent": False, "error": "Must provide --text or --file"}))
             else:
+                # --topic is an alias for --reply-to (forum topics use reply_to internally)
+                reply_to = args.topic if args.topic else args.reply_to
                 result = await send_message(
                     client,
                     chat_name=args.chat,
                     text=args.text or "",
-                    reply_to=args.reply_to,
+                    reply_to=reply_to,
                     file_path=args.file
                 )
                 print(json.dumps(result, indent=2))

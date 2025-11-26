@@ -107,6 +107,9 @@ python3 scripts/telegram_fetch.py send --chat "@username" --text "Hello!"
 
 # Reply to a specific message (use message ID from recent/search output)
 python3 scripts/telegram_fetch.py send --chat "Tool Building Ape" --text "Thanks!" --reply-to 12345
+
+# Send to a forum topic (for groups with topics enabled)
+python3 scripts/telegram_fetch.py send --chat "Group Name" --text "Hello topic!" --topic 12
 ```
 
 ### Send Files
@@ -203,6 +206,7 @@ When user asks:
 - "Reply to that message with thanks" -> `send --chat "..." --text "Thanks!" --reply-to <id>`
 - "Send this image to John" -> `send --chat "John" --file "/path/to/image.jpg"`
 - "Send report.pdf with caption" -> `send --chat "..." --file "report.pdf" --text "Here's the report"`
+- "Send to topic 12 in Group" -> `send --chat "Group" --text "..." --topic 12`
 - "Download attachments from Tool Building Ape" -> `download --chat "Tool Building Ape"`
 - "Download last 10 files from Project Group" -> `download --chat "Project Group" --limit 10`
 - "Is Telegram configured?" -> `setup`
