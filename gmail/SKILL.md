@@ -37,10 +37,23 @@ python3 scripts/gmail_search.py setup
    - App name: Gmail Agent Skill
    - User support email: your email
    - Developer email: your email
-4. Add yourself as a test user
-5. Complete all steps
+4. Click "Save and Continue", skip Scopes
+5. On "Test users" page, add your Gmail address
+6. Complete all steps
 
-#### 4. Create OAuth Credentials
+#### 4. Publish the Test App
+
+**Important:** Without this step, you'll get "Error 403: access_denied".
+
+1. Go back to "OAuth consent screen"
+2. Under "Publishing status", click "Publish App"
+3. Confirm the dialog
+
+This keeps the app in test mode (not production) but allows your test users to authenticate. You'll see an "unverified app" warning during login - click "Advanced" -> "Go to Gmail Agent Skill (unsafe)" to proceed.
+
+**Note:** Test tokens expire after 7 days. Production requires Google verification.
+
+#### 5. Create OAuth Credentials
 
 1. Go to "Credentials" (left sidebar)
 2. Click "Create Credentials" -> "OAuth client ID"
@@ -48,12 +61,12 @@ python3 scripts/gmail_search.py setup
 4. Name it (e.g., "Gmail Agent Client")
 5. Click "Create"
 
-#### 5. Get Your Credentials
+#### 6. Get Your Credentials
 
 1. Client ID will be displayed - copy it
 2. Client Secret: Click the download icon or view details to get the secret
 
-#### 6. Save Credentials
+#### 7. Save Credentials
 
 Create `~/.gmail_credentials/credentials.json`:
 
@@ -69,13 +82,13 @@ Create `~/.gmail_credentials/credentials.json`:
 }
 ```
 
-#### 7. Authenticate
+#### 8. Authenticate
 
 ```bash
 python3 scripts/gmail_search.py auth
 ```
 
-This opens a browser for OAuth consent. After approval, you're ready to use the skill.
+This opens a browser. Click through the "unverified app" warning ("Advanced" -> "Go to Gmail Agent Skill"), approve access, and you're ready.
 
 ## Quick Start
 
