@@ -47,7 +47,20 @@ pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 7. Add your Gmail address as a test user
 8. Click "Save and Continue" -> "Back to Dashboard"
 
-### 4. Create OAuth Credentials
+### 4. Publish the Test App
+
+**Important:** Without this step, you'll get "Error 403: access_denied".
+
+1. Go back to "OAuth consent screen"
+2. Under "Publishing status", you'll see "Testing"
+3. Click "Publish App"
+4. Confirm by clicking "Confirm"
+
+This publishes your app in **test mode** (not production). It allows the test users you added to authenticate. The app remains unverified, which is fine for personal use - you'll just see a warning screen during authentication that you can click through.
+
+**Note:** Test mode tokens expire after 7 days, requiring re-authentication. For personal use, this is a minor inconvenience. Production publishing requires Google verification review.
+
+### 5. Create OAuth Credentials
 
 1. Go to "APIs & Services" -> "Credentials"
 2. Click "Create Credentials" -> "OAuth client ID"
@@ -55,7 +68,7 @@ pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 4. Name: "Gmail Agent Client"
 5. Click "Create"
 
-### 5. Download and Save Credentials
+### 6. Download and Save Credentials
 
 After creation, you'll see Client ID and Client Secret.
 
@@ -79,13 +92,13 @@ Create `~/.gmail_credentials/credentials.json`:
 }
 ```
 
-### 6. Authenticate
+### 7. Authenticate
 
 ```bash
 python3 scripts/gmail_search.py auth
 ```
 
-This opens a browser. Sign in with Google, approve access, and you're ready.
+This opens a browser. Sign in with Google, click through the "unverified app" warning (click "Advanced" -> "Go to Gmail Agent Skill (unsafe)"), approve access, and you're ready.
 
 ## Usage
 
