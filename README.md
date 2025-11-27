@@ -4,7 +4,35 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
-### [Telegram](./telegram/) ⭐ NEW
+### [Gmail](./gmail/) ⭐ NEW
+Search and fetch emails via Gmail API with flexible query options and output formats.
+
+**Features:**
+- 🔍 Free-text search with Gmail query syntax
+- 📧 Filter by sender, recipient, subject, label, date
+- 📋 List labels
+- 📎 Download attachments
+- 🔐 Configurable OAuth scopes (readonly/modify/full)
+- 📄 Markdown or JSON output
+
+**Quick Start:**
+```bash
+# Install dependencies
+pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+# Authenticate (opens browser)
+python scripts/gmail_search.py auth
+
+# Search emails
+python scripts/gmail_search.py search "meeting notes"
+python scripts/gmail_search.py search --from "boss@company.com" --unread
+```
+
+**Use when:** You need to search, read, or download emails from Gmail.
+
+---
+
+### [Telegram](./telegram/)
 Fetch, search, download, and send Telegram messages with flexible filtering and output options.
 
 **Features:**
@@ -173,6 +201,8 @@ cp -r claude-skills/deep-research ~/.claude/skills/
 cp -r claude-skills/youtube-transcript ~/.claude/skills/
 # or
 cp -r claude-skills/telegram ~/.claude/skills/
+# or
+cp -r claude-skills/gmail ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
@@ -223,6 +253,12 @@ Without verification, you'll receive a `model_not_found` error when trying to us
 - `telethon`: `pip install telethon`
 - Telegram API credentials (api_id, api_hash from https://my.telegram.org)
 - Pre-configured session in `~/.telegram_dl/` (run telegram_dl.py to authenticate)
+
+### Gmail Skill
+- Python 3.8+
+- Google API libraries: `pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib`
+- OAuth credentials from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+- Gmail API enabled in your Google Cloud project
 
 ## 💡 Usage
 
