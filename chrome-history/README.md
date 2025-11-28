@@ -1,16 +1,16 @@
 # Chrome History Query Skill
 
-Query your Chrome browsing history using natural language. Perfect for remembering what you read, researched, or visited during specific time periods.
+Query your Chrome browsing history using natural language. Searches **both desktop history AND synced mobile/tablet history**.
 
 ## Features
 
-- **Natural Language Queries**: Ask questions like "articles I read yesterday" or "scientific papers from last week"
-- **Smart Filtering**: Automatically excludes noise (social media, email, redirects)
+- **Desktop + Mobile History**: Queries SQLite (desktop) and LevelDB (synced devices)
+- **Natural Language Queries**: "articles I read yesterday" or "scientific papers from last week"
+- **Title Search**: Direct title/URL search for queries >10 chars without time keywords
+- **Smart Filtering**: Excludes noise (social media, email, redirects)
 - **Content Clustering**: Results grouped by type (reading, research, tools, events)
 - **Date Range Support**: Yesterday, today, last week, last month, last 2 weeks
-- **Keyword Search**: Filter by topic (e.g., "about AI", "climate change")
-- **Site-Specific Queries**: Focus on specific platforms (reddit, medium, github, etc.)
-- **Bilingual**: Works with English and Russian content
+- **Source Tags**: Results show `[desktop]` or `[synced]` origin
 
 ## Installation
 
@@ -20,14 +20,27 @@ Copy to your Claude Code skills folder:
 cp -r chrome-history ~/.claude/skills/
 ```
 
+Install dependency for synced history (LevelDB parsing):
+
+```bash
+pip install git+https://github.com/cclgroupltd/ccl_chromium_reader.git
+```
+
+Without this dependency, synced mobile history won't be available (desktop history still works).
+
 ## Usage
 
 ### Basic Queries
 
 ```bash
+# Time-based queries (desktop history)
 python3 ~/.claude/skills/chrome-history/chrome_history_query.py "articles I read yesterday"
 python3 ~/.claude/skills/chrome-history/chrome_history_query.py "research this week"
 python3 ~/.claude/skills/chrome-history/chrome_history_query.py "last month"
+
+# Title search (desktop + synced history)
+python3 ~/.claude/skills/chrome-history/chrome_history_query.py "Introducing Cosmos"
+python3 ~/.claude/skills/chrome-history/chrome_history_query.py "how-to-build-a-rag"
 ```
 
 ### Query Patterns
@@ -135,34 +148,34 @@ Results are displayed as:
 
 ## How It Works
 
-1. **Database Access**: Reads Chrome's SQLite history database
-2. **Timestamp Conversion**: Converts Chrome's epoch timestamp (microseconds since 1601) to readable time
-3. **Smart Filtering**: Excludes blocked domains and noise
-4. **Clustering**: Categorizes by domain type
-5. **Deduplication**: Shows each URL once (no revisits)
-6. **Formatting**: Groups by cluster and displays in markdown
+1. **Dual Database Access**:
+   - **Desktop**: SQLite database (`~/Library/.../Chrome/Default/History`)
+   - **Synced**: LevelDB database (`~/Library/.../Chrome/Default/Sync Data/LevelDB/`)
+2. **Query Detection**: Queries >10 chars without time keywords trigger title search across both sources
+3. **Lock Avoidance**: Copies databases to `/tmp/` to avoid conflicts with running Chrome
+4. **Smart Filtering**: Excludes blocked domains and noise
+5. **Clustering**: Categorizes by domain type
+6. **Deduplication**: Shows each URL once with source tag
 
 ## Configuration
 
-- **Chrome History DB**: `~/Library/Application Support/Google/Chrome/Default/History`
-- **Temp Copy**: `/tmp/chrome_history_temp` (for safe read access)
-- **Vault Path**: `/Users/glebkalinin/Brains/brain` (configurable in code)
+- **Desktop History DB**: `~/Library/Application Support/Google/Chrome/Default/History`
+- **Synced History DB**: `~/Library/Application Support/Google/Chrome/Default/Sync Data/LevelDB/`
+- **Temp Copies**: `/tmp/chrome_history_temp`, `/tmp/chrome_sync_leveldb_copy`
 
 ## Requirements
 
 - Python 3.7+
 - SQLite3 (built-in)
 - macOS with Google Chrome installed
+- `ccl_chromium_reader` (optional, for synced history)
 
 ## Limitations
 
+- **Synced History**: No timestamps available (LevelDB doesn't store visit times reliably)
 - **Keyword Matching**: Only matches keywords in URL and page title, not full page content
-  - Works well: "reddit threads", "on medium", "code repos"
-  - Limited: "about AI" (only if title mentions AI)
-
 - **Platform Specific**: macOS only (Chrome history location varies by OS)
-
-- **Active Chrome**: Most accurate when Chrome is not running (otherwise history may be locked)
+- **Title Search**: Queries with time keywords use desktop history only
 
 ## Future Improvements
 

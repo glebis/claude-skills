@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 Chrome history query with natural language parsing.
+Queries BOTH desktop history (SQLite) and synced mobile history (LevelDB).
+
 Supports queries like:
 - "articles I read yesterday"
 - "articles about AI I read yesterday"
@@ -23,7 +25,7 @@ BLOCKLIST = {
     'linkedin.com', 'threads.net', 'mastodon.social',
     'gmail.com', 'outlook.com', 'mail.google.com',
     'freefeed.net',
-    'google.com/url',
+    'google.com/url', 'google.com/search', 'google.com/images',
 }
 
 # Domain clusters for grouping
@@ -33,7 +35,7 @@ DOMAIN_CLUSTERS = {
     'reading': {'medium.com', 'substack.com', 'economist.com', 'nytimes.com', 'sciencedaily.com',
                 'fastcompany.com', 'livescience.com', 'thenewstack.io', 'towardsdatascience.com',
                 'cbsnews.com', 'designboom.com', 'meduza.io', 'euractiv.com', 'psychologytoday.com',
-                'hackaday.com', 'lesswrong.com', 'yahoonews.com'},
+                'hackaday.com', 'lesswrong.com', 'yahoonews.com', 'johnathanbi.com', 'productcompass.pm'},
     'tools': {'openai.com', 'claude-code.glebkalinin.com', 'tbank.ru', 'tinkoff.ru', 'passwords.google.com'},
     'events': {'eventbrite.de', 'co-berlin.org', 'mubi.com'},
 }
@@ -47,6 +49,7 @@ SPECIAL_SITES = {
     'youtube': 'youtube.com',
 }
 
+
 def parse_query(query_text):
     """
     Parse natural language query into date_range and filters.
@@ -59,7 +62,18 @@ def parse_query(query_text):
         'keywords': [],
         'clusters': [],
         'domain': None,
+        'title_search': None,  # New: direct title search
     }
+
+    # Check if this is a direct title search (not a time-based query)
+    time_keywords = ['yesterday', 'last week', 'past week', 'this week', 'last month',
+                     'past month', 'this month', 'last 2 weeks', 'today', 'this morning']
+    has_time_keyword = any(kw in query for kw in time_keywords)
+
+    # If no time keywords and query looks like a title, do title search
+    if not has_time_keyword and len(query) > 10:
+        result['title_search'] = query_text
+        return result
 
     # Parse time range
     today = datetime.date.today()
@@ -110,6 +124,94 @@ def parse_query(query_text):
         result['keywords'] = [kw for kw in keywords if len(kw) > 2]
 
     return result
+
+
+def get_synced_history(search_term=None):
+    """
+    Query Chrome synced history from LevelDB (mobile/other devices).
+    Returns list of {'url': str, 'title': str, 'source': 'synced'}
+    """
+    try:
+        from ccl_chromium_reader.ccl_chromium_indexeddb import ccl_leveldb
+    except ImportError:
+        return []
+
+    leveldb_path = Path.home() / "Library/Application Support/Google/Chrome/Default/Sync Data/LevelDB"
+
+    if not leveldb_path.exists():
+        return []
+
+    # Copy to temp to avoid lock issues
+    temp_path = Path("/tmp/chrome_sync_leveldb_copy")
+    try:
+        if temp_path.exists():
+            shutil.rmtree(temp_path)
+        shutil.copytree(leveldb_path, temp_path)
+    except Exception:
+        return []
+
+    results = []
+    seen_urls = set()
+
+    try:
+        db = ccl_leveldb.RawLevelDb(temp_path)
+
+        for record in db.iterate_records_raw():
+            try:
+                value = record.value
+                if not value:
+                    continue
+
+                value_str = value.decode('utf-8', errors='replace')
+
+                # Find URLs
+                url_matches = list(re.finditer(r'https?://[^\x00-\x1f\x7f\s"<>]{10,200}', value_str))
+
+                for match in url_matches:
+                    url = match.group(0).rstrip('"\',.')
+
+                    # Skip unwanted URLs
+                    if any(skip in url for skip in ['google.com/search', 'google.com/images', '.png', '.jpg', '.ico', '.svg']):
+                        continue
+
+                    if url in seen_urls:
+                        continue
+
+                    # Apply search filter if provided
+                    if search_term:
+                        search_lower = search_term.lower()
+                        # Search in URL and surrounding context
+                        context_start = max(0, match.start() - 100)
+                        context = value_str[context_start:match.end() + 50].lower()
+                        if search_lower not in url.lower() and search_lower not in context:
+                            continue
+
+                    # Try to extract title from context
+                    context_start = max(0, match.start() - 150)
+                    context = value_str[context_start:match.start()]
+                    title = ""
+
+                    # Look for readable title text
+                    title_match = re.search(r'([A-Za-z][A-Za-z0-9\s\-:,\.\'\"]{5,80})\s*$', context)
+                    if title_match:
+                        title = title_match.group(1).strip()
+
+                    results.append({
+                        'url': url,
+                        'title': title or url,
+                        'domain': urlparse(url).netloc,
+                        'source': 'synced',
+                        'cluster': get_domain_cluster(url),
+                    })
+                    seen_urls.add(url)
+
+            except Exception:
+                continue
+
+    except Exception as e:
+        pass
+
+    return results
 
 
 def get_chrome_history(date_range, filters):
@@ -194,10 +296,73 @@ def get_chrome_history(date_range, filters):
             'title': title or url,
             'domain': urlparse(url).netloc,
             'cluster': get_domain_cluster(url),
+            'source': 'desktop',
         })
         seen_urls.add(url)
 
     return visits
+
+
+def search_all_history(search_term):
+    """
+    Search both desktop and synced history by title/URL.
+    """
+    results = []
+    seen_urls = set()
+    search_lower = search_term.lower()
+
+    # Search desktop history (SQLite)
+    chrome_history_path = Path.home() / "Library/Application Support/Google/Chrome/Default/History"
+    temp_copy = Path("/tmp/chrome_history_temp")
+
+    if chrome_history_path.exists():
+        try:
+            shutil.copy2(chrome_history_path, temp_copy)
+            conn = sqlite3.connect(temp_copy)
+            cursor = conn.cursor()
+
+            # Search by title
+            cursor.execute("""
+                SELECT url, title, last_visit_time
+                FROM urls
+                WHERE lower(title) LIKE ? OR lower(url) LIKE ?
+                ORDER BY last_visit_time DESC
+                LIMIT 50
+            """, (f'%{search_lower}%', f'%{search_lower}%'))
+
+            epoch = datetime.datetime(1601, 1, 1)
+
+            for url, title, chrome_time in cursor.fetchall():
+                if url in seen_urls:
+                    continue
+                if not should_include(url):
+                    continue
+
+                dt = epoch + datetime.timedelta(microseconds=chrome_time)
+                local_time = dt.replace(tzinfo=datetime.timezone.utc).astimezone().replace(tzinfo=None)
+
+                results.append({
+                    'time': local_time,
+                    'url': url,
+                    'title': title or url,
+                    'domain': urlparse(url).netloc,
+                    'cluster': get_domain_cluster(url),
+                    'source': 'desktop',
+                })
+                seen_urls.add(url)
+
+            conn.close()
+        except Exception:
+            pass
+
+    # Search synced history (LevelDB)
+    synced = get_synced_history(search_term)
+    for item in synced:
+        if item['url'] not in seen_urls:
+            results.append(item)
+            seen_urls.add(item['url'])
+
+    return results
 
 
 def should_include(url):
@@ -225,14 +390,28 @@ def get_domain_cluster(url):
     return 'other'
 
 
-def format_results(visits, query_text):
+def format_results(visits, query_text, is_title_search=False):
     """Format results for markdown"""
     if not visits:
         return f"No browsing history found for: {query_text}"
 
     lines = [f"## Chrome History: {query_text}", ""]
 
-    # Group by cluster
+    if is_title_search:
+        # For title search, show flat list
+        lines.insert(1, f"*Found {len(visits)} matches*\n")
+
+        for visit in visits[:30]:
+            time_str = visit.get('time', '').strftime('%Y-%m-%d %H:%M') if visit.get('time') else ''
+            source = f"[{visit.get('source', 'unknown')}]"
+            title = visit['title'].strip()[:70]
+
+            lines.append(f"- {time_str} {source} {title}")
+            lines.append(f"  {visit['url']}")
+
+        return "\n".join(lines)
+
+    # Group by cluster for time-based queries
     clusters = {}
     for visit in visits:
         cluster = visit['cluster']
@@ -252,7 +431,7 @@ def format_results(visits, query_text):
         lines.append(f"### {cluster_name.capitalize()} ({len(visits_in_cluster)})")
 
         for visit in visits_in_cluster:
-            time_str = visit['time'].strftime('%H:%M')
+            time_str = visit['time'].strftime('%H:%M') if visit.get('time') else ''
             title = visit['title'].strip()
             if len(title) > 75:
                 title = title[:72] + "..."
@@ -275,6 +454,7 @@ if __name__ == '__main__':
         print("  'articles I read yesterday'")
         print("  'scientific articles for the last week'")
         print("  'reddit threads last month'")
+        print("  'Introducing Cosmos'  (title search)")
         sys.exit(1)
 
     query_text = ' '.join(sys.argv[1:])
@@ -282,20 +462,24 @@ if __name__ == '__main__':
     # Parse query
     parsed = parse_query(query_text)
 
-    # Get history
-    date_range = {
-        'start': parsed['start_date'],
-        'end': parsed['end_date'],
-    }
+    # Check if this is a title search
+    if parsed.get('title_search'):
+        visits = search_all_history(parsed['title_search'])
+        result = format_results(visits, query_text, is_title_search=True)
+    else:
+        # Time-based query
+        date_range = {
+            'start': parsed['start_date'],
+            'end': parsed['end_date'],
+        }
 
-    filters = {
-        'keywords': parsed['keywords'],
-        'clusters': parsed['clusters'],
-        'domain': parsed['domain'],
-    }
+        filters = {
+            'keywords': parsed['keywords'],
+            'clusters': parsed['clusters'],
+            'domain': parsed['domain'],
+        }
 
-    visits = get_chrome_history(date_range, filters)
+        visits = get_chrome_history(date_range, filters)
+        result = format_results(visits, query_text)
 
-    # Format and print
-    result = format_results(visits, query_text)
     print(result)
