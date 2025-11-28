@@ -10,7 +10,7 @@ Query your Chrome browsing history using natural language. Searches **both deskt
 - **Smart Filtering**: Excludes noise (social media, email, redirects)
 - **Content Clustering**: Results grouped by type (reading, research, tools, events)
 - **Date Range Support**: Yesterday, today, last week, last month, last 2 weeks
-- **Source Tags**: Results show `[desktop]` or `[synced]` origin
+- **Device Detection**: Results show `[desktop]`, `[iPhone]`, `[iPad]`, `[Android]`, `[Mac]`, `[Windows]` etc.
 
 ## Installation
 
@@ -151,11 +151,12 @@ Results are displayed as:
 1. **Dual Database Access**:
    - **Desktop**: SQLite database (`~/Library/.../Chrome/Default/History`)
    - **Synced**: LevelDB database (`~/Library/.../Chrome/Default/Sync Data/LevelDB/`)
-2. **Query Detection**: Queries >10 chars without time keywords trigger title search across both sources
-3. **Lock Avoidance**: Copies databases to `/tmp/` to avoid conflicts with running Chrome
-4. **Smart Filtering**: Excludes blocked domains and noise
-5. **Clustering**: Categorizes by domain type
-6. **Deduplication**: Shows each URL once with source tag
+2. **Device Detection**: Parses `device_info` records to map session keys to device types (iPhone, iPad, Android, Mac, Windows, etc.)
+3. **Query Detection**: Queries >10 chars without time keywords trigger title search across both sources
+4. **Lock Avoidance**: Copies databases to `/tmp/` to avoid conflicts with running Chrome
+5. **Smart Filtering**: Excludes blocked domains and noise
+6. **Clustering**: Categorizes by domain type
+7. **Deduplication**: Shows each URL once with device tag
 
 ## Configuration
 

@@ -126,10 +126,55 @@ def parse_query(query_text):
     return result
 
 
+def get_device_map(db):
+    """
+    Parse device_info records to build device ID -> device type mapping.
+    Returns dict like {'H1hP7whLDFxssWDmKOKXew==': 'iPhone', ...}
+    """
+    devices = {}
+
+    for record in db.iterate_records_raw():
+        try:
+            key = record.key.decode('utf-8', errors='replace') if record.key else ""
+            value = record.value.decode('utf-8', errors='replace') if record.value else ""
+
+            if 'device_info' not in key:
+                continue
+
+            # Extract device ID - it's a base64 string ending with ==
+            # Pattern: device_info-dt-<base64>== or device_info-md-<base64>==
+            match = re.search(r'device_info-[dm][td]-([A-Za-z0-9+/]{20,}==)', key)
+            if not match:
+                continue
+            device_id = match.group(1)
+
+            # Detect device type from value
+            if 'IOS-PHONE' in value:
+                devices[device_id] = 'iPhone'
+            elif 'ANDROID-PHONE' in value:
+                devices[device_id] = 'Android'
+            elif 'IOS-TABLET' in value:
+                devices[device_id] = 'iPad'
+            elif 'ANDROID-TABLET' in value:
+                devices[device_id] = 'Tablet'
+            elif 'MAC' in value or 'OSX' in value:
+                devices[device_id] = 'Mac'
+            elif 'WINDOWS' in value:
+                devices[device_id] = 'Windows'
+            elif 'LINUX' in value:
+                devices[device_id] = 'Linux'
+            elif 'CHROMEOS' in value:
+                devices[device_id] = 'ChromeOS'
+        except Exception:
+            continue
+
+    return devices
+
+
 def get_synced_history(search_term=None):
     """
     Query Chrome synced history from LevelDB (mobile/other devices).
-    Returns list of {'url': str, 'title': str, 'source': 'synced'}
+    Returns list of {'url': str, 'title': str, 'source': 'iPhone'|'Mac'|etc}
     """
     try:
         from ccl_chromium_reader.ccl_chromium_indexeddb import ccl_leveldb
@@ -156,13 +201,28 @@ def get_synced_history(search_term=None):
     try:
         db = ccl_leveldb.RawLevelDb(temp_path)
 
+        # First pass: build device map
+        devices = get_device_map(db)
+
+        # Second pass: extract URLs with device info
+        db = ccl_leveldb.RawLevelDb(temp_path)  # Re-open for fresh iteration
+
         for record in db.iterate_records_raw():
             try:
+                key = record.key.decode('utf-8', errors='replace') if record.key else ""
                 value = record.value
                 if not value:
                     continue
 
                 value_str = value.decode('utf-8', errors='replace')
+
+                # Determine device from session key
+                device_type = 'synced'  # Default fallback
+                if 'sessions' in key:
+                    for dev_id, dev_type in devices.items():
+                        if dev_id in key:
+                            device_type = dev_type
+                            break
 
                 # Find URLs
                 url_matches = list(re.finditer(r'https?://[^\x00-\x1f\x7f\s"<>]{10,200}', value_str))
@@ -200,7 +260,7 @@ def get_synced_history(search_term=None):
                         'url': url,
                         'title': title or url,
                         'domain': urlparse(url).netloc,
-                        'source': 'synced',
+                        'source': device_type,
                         'cluster': get_domain_cluster(url),
                     })
                     seen_urls.add(url)
