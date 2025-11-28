@@ -146,8 +146,37 @@ python scripts/extract_transcript.py <youtube_url>
 
 ---
 
+### [Browsing History](./browsing-history/) ⭐ NEW
+Query browsing history from **all synced Chrome devices** (iPhone, iPad, Mac, desktop) with natural language.
+
+**Features:**
+- 📱 Multi-device support (iPhone, iPad, Mac, desktop, Android)
+- 🔍 Natural language queries ("yesterday", "last week", "articles about AI")
+- 🤖 LLM-powered smart categorization
+- 📊 Group by domain, category, or date
+- 💾 Export to Markdown or JSON
+- 📝 Save directly to Obsidian vault
+
+**Quick Start:**
+```bash
+# Initialize database
+python3 scripts/init_db.py
+
+# Sync local Chrome history
+python3 scripts/sync_chrome_history.py
+
+# Query history
+python3 browsing_query.py "yesterday" --device iPhone
+python3 browsing_query.py "AI articles" --days 7 --categorize
+python3 browsing_query.py "last week" --output ~/vault/history.md
+```
+
+**Use when:** You need to search browsing history across all your devices, find articles by topic, or export history to your notes.
+
+---
+
 ### [Chrome History](./chrome-history/)
-Query Chrome browsing history with natural language search and filtering.
+Query **local** Chrome browsing history with natural language search and filtering.
 
 **Features:**
 - 🔍 Natural language search of browsing history
@@ -155,7 +184,7 @@ Query Chrome browsing history with natural language search and filtering.
 - 🌐 Search specific websites
 - ⚡ Fast historical data retrieval
 
-**Use when:** You need to find and recall websites you've visited, search by topic or date.
+**Use when:** You need quick access to local desktop Chrome history only.
 
 ---
 
