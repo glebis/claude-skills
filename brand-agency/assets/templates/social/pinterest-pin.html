@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1000px;
+  height: 1500px;
+  background: #ffd60a;
+  font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+  color: #000000;
+  display: flex;
+  flex-direction: column;
+  padding: 60px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-icon {
+  background: #e85d04;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.save-btn {
+  background: #d62828;
+  color: #ffffff;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.main-image {
+  background: #000000;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40px;
+  box-shadow: 8px 8px 0 #e85d04;
+}
+
+.pin-icon {
+  font-size: 200px;
+  color: #e85d04;
+  margin-bottom: 30px;
+}
+
+.pin-title {
+  font-size: 56px;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  line-height: 1.1;
+  padding: 0 40px;
+}
+
+.pin-subtitle {
+  font-size: 28px;
+  color: #ffffff;
+  opacity: 0.7;
+  margin-top: 20px;
+}
+
+.description {
+  background: #ffffff;
+  padding: 35px;
+  box-shadow: 6px 6px 0 #000;
+}
+
+.desc-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.desc-text {
+  font-size: 22px;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.tag {
+  background: #3a86ff;
+  color: #ffffff;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 3px 3px 0 #000;
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">◆</div>
+    <div class="logo-text">claudecodelab</div>
+  </div>
+  <div class="save-btn">SAVE</div>
+</div>
+
+<div class="main-image">
+  <div class="pin-icon">⚙</div>
+  <div class="pin-title">10 AI CODING<br>TIPS</div>
+  <div class="pin-subtitle">For beginners</div>
+</div>
+
+<div class="description">
+  <div class="desc-title">Quick Guide</div>
+  <div class="desc-text">
+    Learn how to boost your productivity with AI-powered development tools and techniques.
+  </div>
+  <div class="tags">
+    <span class="tag">#coding</span>
+    <span class="tag">#ai</span>
+    <span class="tag">#tutorial</span>
+    <span class="tag">#tips</span>
+  </div>
+</div>
+</body>
+</html>

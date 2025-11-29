@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1920px;
+  background: #000000;
+  font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px;
+}
+
+.safe-zone {
+  height: 250px;
+  width: 100%;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 50px;
+}
+
+.glitch-text {
+  font-size: 100px;
+  font-weight: 700;
+  position: relative;
+  text-shadow:
+    4px 0 #00f5d4,
+    -4px 0 #fe6d73;
+}
+
+.main-box {
+  background: linear-gradient(135deg, #fe6d73 0%, #00f5d4 100%);
+  padding: 60px 80px;
+  box-shadow: 10px 10px 0 #ffffff;
+}
+
+.main-text {
+  font-size: 64px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.1;
+  color: #000000;
+}
+
+.hashtags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  max-width: 800px;
+}
+
+.hashtag {
+  background: #ffd60a;
+  color: #000000;
+  padding: 15px 25px;
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: 4px 4px 0 #ffffff;
+}
+
+.username {
+  font-size: 32px;
+  color: #3a86ff;
+  letter-spacing: 0.1em;
+}
+
+.decorations {
+  display: flex;
+  gap: 40px;
+  font-size: 48px;
+}
+
+.deco-left {
+  color: #00f5d4;
+}
+
+.deco-right {
+  color: #fe6d73;
+}
+</style>
+</head>
+<body>
+<div class="safe-zone"></div>
+
+<div class="content">
+  <div class="glitch-text">⚡</div>
+
+  <div class="main-box">
+    <div class="main-text">CODE<br>FASTER<br>WITH AI</div>
+  </div>
+
+  <div class="hashtags">
+    <span class="hashtag">#coding</span>
+    <span class="hashtag">#ai</span>
+    <span class="hashtag">#tech</span>
+    <span class="hashtag">#dev</span>
+  </div>
+
+  <div class="username">@claudecodelab</div>
+
+  <div class="decorations">
+    <span class="deco-left">◀◀◀</span>
+    <span class="deco-right">▶▶▶</span>
+  </div>
+</div>
+
+<div class="safe-zone"></div>
+</body>
+</html>

@@ -4,7 +4,37 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
-### [Gmail](./gmail/) ⭐ NEW
+### [Brand Agency](./brand-agency/) ⭐ NEW
+Neobrutalism brand styling with social media template rendering.
+
+**Features:**
+- 🎨 Complete brand color palette (orange, yellow, blue, green, red)
+- 📝 Typography: Geist (headings), EB Garamond (body), Geist Mono (code)
+- 🖼️ 11 social media templates (Instagram, YouTube, Twitter, TikTok, Pinterest)
+- 🎯 Neobrutalism style: hard shadows, 3px borders, zero radius
+- ⚡ Playwright-based PNG rendering
+- 📐 ASCII box-drawing decorations
+
+**Quick Start:**
+```bash
+# Install Playwright
+npm install playwright
+
+# Render all templates
+node scripts/render-templates.js
+
+# Render specific template
+node scripts/render-templates.js -t instagram/story-announcement
+
+# List templates
+node scripts/render-templates.js --list
+```
+
+**Use when:** You need branded graphics, social media images, presentations with consistent neobrutalism styling.
+
+---
+
+### [Gmail](./gmail/)
 Search and fetch emails via Gmail API with flexible query options and output formats.
 
 **Features:**
@@ -232,6 +262,8 @@ cp -r claude-skills/youtube-transcript ~/.claude/skills/
 cp -r claude-skills/telegram ~/.claude/skills/
 # or
 cp -r claude-skills/gmail ~/.claude/skills/
+# or
+cp -r claude-skills/brand-agency ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
@@ -288,6 +320,11 @@ Without verification, you'll receive a `model_not_found` error when trying to us
 - Google API libraries: `pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib`
 - OAuth credentials from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 - Gmail API enabled in your Google Cloud project
+
+### Brand Agency Skill
+- Node.js 18+
+- Playwright: `npm install playwright`
+- Google Fonts (loaded automatically via CSS)
 
 ## 💡 Usage
 

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1920px;
+  background: #e85d04;
+  font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+
+.safe-zone {
+  height: 310px;
+  width: 100%;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 40px;
+}
+
+.badge {
+  background: #000000;
+  color: #ffd60a;
+  padding: 16px 32px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  box-shadow: 6px 6px 0 #000;
+}
+
+.headline-box {
+  background: #ffffff;
+  color: #000000;
+  padding: 50px 60px;
+  box-shadow: 8px 8px 0 #000;
+  text-align: center;
+  max-width: 900px;
+}
+
+.headline {
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 20px;
+}
+
+.ascii-border {
+  font-size: 24px;
+  color: #000;
+  opacity: 0.3;
+  letter-spacing: 0.2em;
+}
+
+.subheadline {
+  font-size: 32px;
+  font-weight: 400;
+  opacity: 0.9;
+  margin-top: 30px;
+  text-align: center;
+}
+
+.cta-btn {
+  background: #000000;
+  color: #ffffff;
+  padding: 24px 48px;
+  font-size: 28px;
+  font-weight: 700;
+  border: none;
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.3);
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+
+.decorations {
+  display: flex;
+  gap: 40px;
+  font-size: 48px;
+  margin-top: 40px;
+}
+
+.decoration {
+  opacity: 0.6;
+}
+</style>
+</head>
+<body>
+<div class="safe-zone"></div>
+
+<div class="content">
+  <div class="badge">★ NEW RELEASE ★</div>
+
+  <div class="headline-box">
+    <div class="ascii-border">╔══════════════════════════╗</div>
+    <div class="headline">CLAUDE<br>CODE LAB</div>
+    <div class="ascii-border">╚══════════════════════════╝</div>
+  </div>
+
+  <div class="subheadline">━━━ Learn AI-Powered Development ━━━</div>
+
+  <div class="cta-btn">→ SWIPE UP ←</div>
+
+  <div class="decorations">
+    <span class="decoration">▲</span>
+    <span class="decoration">●</span>
+    <span class="decoration">■</span>
+  </div>
+</div>
+
+<div class="safe-zone"></div>
+</body>
+</html>
