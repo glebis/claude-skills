@@ -4,7 +4,33 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
-### [Brand Agency](./brand-agency/) ⭐ NEW
+### [Presentation Generator](./presentation-generator/) ⭐ NEW
+Interactive HTML presentations with neobrutalism style and Anime.js animations.
+
+**Features:**
+- 🎬 HTML presentations with scroll-snap navigation
+- 🎭 Anime.js animations (fade, slide, scale, stagger)
+- 📸 Export to PNG, PDF, or video via Playwright
+- 📊 11 slide types: title, content, two-col, code, stats, grid, ascii, terminal, image, quote, comparison
+- 🎨 Neobrutalism style with brand-agency colors
+- ⌨️ Keyboard navigation (arrows, space, R to replay)
+
+**Quick Start:**
+```bash
+# Generate HTML from JSON
+node scripts/generate-presentation.js --input slides.json --output presentation.html
+
+# Export to PNG/PDF/video
+node scripts/export-slides.js presentation.html --format png
+node scripts/export-slides.js presentation.html --format pdf
+node scripts/export-slides.js presentation.html --format video --duration 5
+```
+
+**Use when:** You need animated presentations, video slide decks, or interactive HTML slideshows.
+
+---
+
+### [Brand Agency](./brand-agency/)
 Neobrutalism brand styling with social media template rendering.
 
 **Features:**

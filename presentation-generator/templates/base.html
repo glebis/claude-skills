@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Geist:wght@400;800&family=Geist+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+  <style>
+    {{styles}}
+
+    /* Animation initial states */
+    .slide .anim-fade {
+      opacity: 0;
+    }
+    .slide .anim-slide-up {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    .slide .anim-slide-left {
+      opacity: 0;
+      transform: translateX(-40px);
+    }
+    .slide .anim-slide-right {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+    .slide .anim-scale {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    .slide .anim-bounce {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+
+    /* Stats counter animation */
+    .stat-value[data-value] {
+      opacity: 0;
+    }
+
+    /* Stagger children animation helper */
+    .anim-stagger > * {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    /* Hide all animatable elements by default - they will be revealed by JS */
+    .slide .label, .slide .badge, .slide h1, .slide h2, .slide h3,
+    .slide .subtitle, .slide p:not(.stat-label), .slide .task-card, .slide .card, .slide .box,
+    .slide .stat, .slide .stat-value, .slide pre, .slide .terminal,
+    .slide .ascii-box, .slide .ascii-border, .slide ul li, .slide ol li,
+    .slide .tag, .slide .btn, .slide .footer, .slide .slide-number,
+    .slide .two-col > div, .slide .color-swatch, .slide .svg-demo svg {
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    {{navigation}}
+  </nav>
+
+  <!-- Slides -->
+  {{slides}}
+
+  <script>
+    // Animation configurations for different element types
+    const animationConfigs = {
+      // Labels and badges - quick fade
+      label: {
+        selector: '.label, .badge',
+        animation: {
+          opacity: [0, 1],
+          translateY: [-10, 0],
+          duration: 400,
+          easing: 'easeOutQuad'
+        },
+        delay: 100
+      },
+      // Main headings - slide up with bounce
+      h1: {
+        selector: 'h1',
+        animation: {
+          opacity: [0, 1],
+          translateY: [60, 0],
+          duration: 800,
+          easing: 'easeOutExpo'
+        },
+        delay: 200
+      },
+      // Secondary headings
+      h2: {
+        selector: 'h2',
+        animation: {
+          opacity: [0, 1],
+          translateY: [40, 0],
+          duration: 700,
+          easing: 'easeOutExpo'
+        },
+        delay: 300
+      },
+      // Subtitles and body text
+      subtitle: {
+        selector: '.subtitle, p:not(.task-desc):not(.stat-label)',
+        animation: {
+          opacity: [0, 1],
+          translateY: [30, 0],
+          duration: 600,
+          easing: 'easeOutQuad'
+        },
+        delay: 500
+      },
+      // Cards - staggered scale up
+      cards: {
+        selector: '.task-card, .card, .box',
+        animation: {
+          opacity: [0, 1],
+          scale: [0.9, 1],
+          translateY: [20, 0],
+          duration: 500,
+          easing: 'easeOutBack'
+        },
+        delay: 600,
+        stagger: 100
+      },
+      // Stats - counter effect
+      stats: {
+        selector: '.stat',
+        animation: {
+          opacity: [0, 1],
+          scale: [0.5, 1],
+          duration: 600,
+          easing: 'easeOutBack'
+        },
+        delay: 400,
+        stagger: 150
+      },
+      // Code blocks - slide in
+      code: {
+        selector: 'pre, .terminal',
+        animation: {
+          opacity: [0, 1],
+          translateX: [-30, 0],
+          duration: 600,
+          easing: 'easeOutQuad'
+        },
+        delay: 700
+      },
+      // ASCII boxes
+      ascii: {
+        selector: '.ascii-box, .ascii-border',
+        animation: {
+          opacity: [0, 1],
+          duration: 800,
+          easing: 'easeInOutQuad'
+        },
+        delay: 500
+      },
+      // Lists - staggered items
+      listItems: {
+        selector: 'ul li, ol li',
+        animation: {
+          opacity: [0, 1],
+          translateX: [-20, 0],
+          duration: 400,
+          easing: 'easeOutQuad'
+        },
+        delay: 700,
+        stagger: 80
+      },
+      // Tags
+      tags: {
+        selector: '.tag',
+        animation: {
+          opacity: [0, 1],
+          scale: [0.8, 1],
+          duration: 300,
+          easing: 'easeOutQuad'
+        },
+        delay: 900,
+        stagger: 50
+      },
+      // Buttons
+      buttons: {
+        selector: '.btn',
+        animation: {
+          opacity: [0, 1],
+          translateY: [20, 0],
+          duration: 500,
+          easing: 'easeOutBack'
+        },
+        delay: 1000
+      },
+      // Footer
+      footer: {
+        selector: '.footer, .slide-number',
+        animation: {
+          opacity: [0, 0.7],
+          duration: 600,
+          easing: 'easeOutQuad'
+        },
+        delay: 1200
+      },
+      // Two-col children
+      columns: {
+        selector: '.two-col > div',
+        animation: {
+          opacity: [0, 1],
+          translateX: (el, i) => [i === 0 ? -30 : 30, 0],
+          duration: 600,
+          easing: 'easeOutQuad'
+        },
+        delay: 500,
+        stagger: 200
+      },
+      // Color swatches
+      swatches: {
+        selector: '.color-swatch',
+        animation: {
+          opacity: [0, 1],
+          scale: [0.8, 1],
+          duration: 400,
+          easing: 'easeOutBack'
+        },
+        delay: 800,
+        stagger: 80
+      },
+      // SVG demos
+      svgs: {
+        selector: '.svg-demo svg',
+        animation: {
+          opacity: [0, 1],
+          rotate: [-10, 0],
+          scale: [0.9, 1],
+          duration: 500,
+          easing: 'easeOutBack'
+        },
+        delay: 700,
+        stagger: 100
+      }
+    };
+
+    // Animate a slide when it becomes visible
+    function animateSlide(slide) {
+      // Skip if already animated
+      if (slide.dataset.animated === 'true') return;
+      slide.dataset.animated = 'true';
+
+      // Run animations for each element type
+      Object.values(animationConfigs).forEach(config => {
+        const elements = slide.querySelectorAll(config.selector);
+        if (elements.length === 0) return;
+
+        anime({
+          targets: elements,
+          ...config.animation,
+          delay: config.stagger
+            ? anime.stagger(config.stagger, { start: config.delay })
+            : config.delay
+        });
+      });
+
+      // Special: animate stat counters
+      const statValues = slide.querySelectorAll('.stat-value');
+      statValues.forEach((el, i) => {
+        const finalValue = el.textContent;
+        const isNumber = /^\d+$/.test(finalValue);
+
+        if (isNumber) {
+          el.textContent = '0';
+          anime({
+            targets: el,
+            innerHTML: [0, parseInt(finalValue)],
+            round: 1,
+            duration: 1500,
+            delay: 400 + (i * 150),
+            easing: 'easeOutExpo'
+          });
+        }
+
+        anime({
+          targets: el,
+          opacity: [0, 1],
+          scale: [0.5, 1],
+          duration: 600,
+          delay: 400 + (i * 150),
+          easing: 'easeOutBack'
+        });
+      });
+    }
+
+    // Reset slide animations (for re-triggering)
+    function resetSlideAnimations(slide) {
+      slide.dataset.animated = 'false';
+
+      // Reset all animatable elements
+      Object.values(animationConfigs).forEach(config => {
+        const elements = slide.querySelectorAll(config.selector);
+        elements.forEach(el => {
+          el.style.opacity = '0';
+          el.style.transform = '';
+        });
+      });
+    }
+
+    // Navigation highlighting and animation triggering
+    const dots = document.querySelectorAll('.nav-dot');
+    const slides = document.querySelectorAll('.slide');
+
+    // Only use IntersectionObserver for interactive mode (not video recording)
+    if (!window.videoRecordingMode) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            dots.forEach(dot => {
+              dot.classList.toggle('active', dot.getAttribute('href') === '#' + id);
+            });
+
+            // Trigger animations when slide becomes visible
+            animateSlide(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      slides.forEach(slide => observer.observe(slide));
+
+      // Animate first slide immediately
+      setTimeout(() => {
+        if (slides[0]) animateSlide(slides[0]);
+      }, 300);
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      const currentSlide = [...slides].findIndex(s => {
+        const rect = s.getBoundingClientRect();
+        return rect.top >= -100 && rect.top <= 100;
+      });
+
+      if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault();
+        if (currentSlide < slides.length - 1) {
+          slides[currentSlide + 1].scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+
+      if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        if (currentSlide > 0) {
+          slides[currentSlide - 1].scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+
+      if (e.key === 'Home') {
+        e.preventDefault();
+        slides[0].scrollIntoView({ behavior: 'smooth' });
+      }
+
+      if (e.key === 'End') {
+        e.preventDefault();
+        slides[slides.length - 1].scrollIntoView({ behavior: 'smooth' });
+      }
+
+      // 'R' to replay current slide animations
+      if (e.key === 'r' || e.key === 'R') {
+        if (currentSlide >= 0) {
+          resetSlideAnimations(slides[currentSlide]);
+          setTimeout(() => animateSlide(slides[currentSlide]), 100);
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>
