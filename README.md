@@ -244,6 +244,39 @@ Query **local** Chrome browsing history with natural language search and filteri
 
 ---
 
+### [Health Data](./health-data/) ⭐ NEW
+Query and analyze Apple Health data from SQLite database with multiple output formats.
+
+**Features:**
+- 📊 Query 6.3M+ health records across 43 metric types
+- 💓 Daily summaries, weekly trends, sleep analysis, vitals, activity rings, workouts
+- 📄 Output formats: Markdown, JSON, FHIR R4, ASCII charts
+- 🏥 FHIR R4 with LOINC codes for healthcare interoperability
+- 📈 Pre-built queries + raw SQL templates for ad-hoc analysis
+- 🎯 ASCII visualization with Unicode bar charts
+
+**Quick Start:**
+```bash
+# Daily summary
+python scripts/health_query.py daily --date 2025-11-29
+
+# Weekly trends in JSON
+python scripts/health_query.py --format json weekly --weeks 4
+
+# Sleep analysis in FHIR format
+python scripts/health_query.py --format fhir sleep --days 7
+
+# ASCII charts
+python scripts/health_query.py --format ascii activity --days 30
+
+# Custom SQL
+python scripts/health_query.py query "SELECT * FROM workouts LIMIT 5"
+```
+
+**Use when:** You need to analyze Apple Health metrics, generate health reports, export data in FHIR format, or visualize fitness/sleep patterns.
+
+---
+
 ### [ElevenLabs Text-to-Speech](./elevenlabs-tts/)
 Convert text to high-quality audio files using ElevenLabs API with customizable voice parameters.
 
@@ -290,6 +323,8 @@ cp -r claude-skills/telegram ~/.claude/skills/
 cp -r claude-skills/gmail ~/.claude/skills/
 # or
 cp -r claude-skills/brand-agency ~/.claude/skills/
+# or
+cp -r claude-skills/health-data ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
@@ -351,6 +386,11 @@ Without verification, you'll receive a `model_not_found` error when trying to us
 - Node.js 18+
 - Playwright: `npm install playwright`
 - Google Fonts (loaded automatically via CSS)
+
+### Health Data Skill
+- Python 3.8+
+- SQLite database at `~/data/health.db` (imported from Apple Health export)
+- To import: Use the [apple_health_export](https://github.com/glebis/apple_health_export) project
 
 ## 💡 Usage
 
