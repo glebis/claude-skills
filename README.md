@@ -297,6 +297,72 @@ python scripts/elevenlabs_tts.py "Welcome to Claude Code"
 
 **Use when:** You need text-to-speech generation, audio narration, voice synthesis, or want to speak generated content aloud.
 
+---
+
+### [FireCrawl Research](./firecrawl-research/) ⭐ NEW
+Research automation using FireCrawl API with academic writing templates and bibliography generation.
+
+**Features:**
+- 🔍 Extract research topics from markdown headers and `[research]` tags
+- 🌐 Search and scrape web sources automatically
+- 📚 Generate BibTeX bibliographies from research results
+- 📝 Pandoc and MyST templates for academic papers
+- ⚡ Built-in rate limiting for free tier (5 req/min)
+- 📄 Export to PDF/DOCX with citations
+
+**Quick Start:**
+```bash
+# Install dependencies
+pip install python-dotenv requests
+
+# Add API key to .env
+echo "FIRECRAWL_API_KEY=fc-your-key" > ~/.claude/skills/firecrawl-research/.env
+
+# Research topics from markdown
+python scripts/firecrawl_research.py topics.md ./output 5
+
+# Generate bibliography
+python scripts/generate_bibliography.py output/*.md -o refs.bib
+
+# Convert to PDF with citations
+python scripts/convert_academic.py paper.md pdf
+```
+
+**Use when:** You need to research topics from the web, write academic papers with citations, or build bibliographies from scraped sources.
+
+---
+
+### [Transcript Analyzer](./transcript-analyzer/) ⭐ NEW
+Analyze meeting transcripts using Cerebras AI to extract decisions, action items, and terminology.
+
+**Features:**
+- 📋 Extract decisions, action items, opinions, questions
+- 📖 Build domain-specific glossaries from discussions
+- 🎯 Confidence scores for each extraction
+- ⚡ Fast inference via Cerebras (llama-3.3-70b)
+- 📊 YAML frontmatter with processing metadata
+- 🔄 Chunked processing for long transcripts
+
+**Quick Start:**
+```bash
+# Install dependencies
+cd ~/.claude/skills/transcript-analyzer/scripts && npm install
+
+# Add API key
+echo "CEREBRAS_API_KEY=your-key" > scripts/.env
+
+# Analyze transcript
+npm run cli -- /path/to/meeting.md -o analysis.md
+
+# Include original transcript
+npm run cli -- meeting.md -o analysis.md --include-transcript
+
+# Skip glossary
+npm run cli -- meeting.md -o analysis.md --no-glossary
+```
+
+**Use when:** You need to extract action items from meetings, find decisions in conversations, or build glossaries from recorded discussions.
+
 ## 🚀 Installation
 
 ### Using Claude Code
@@ -325,6 +391,10 @@ cp -r claude-skills/gmail ~/.claude/skills/
 cp -r claude-skills/brand-agency ~/.claude/skills/
 # or
 cp -r claude-skills/health-data ~/.claude/skills/
+# or
+cp -r claude-skills/firecrawl-research ~/.claude/skills/
+# or
+cp -r claude-skills/transcript-analyzer ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
@@ -391,6 +461,15 @@ Without verification, you'll receive a `model_not_found` error when trying to us
 - Python 3.8+
 - SQLite database at `~/data/health.db` (imported from Apple Health export)
 - To import: Use the [apple_health_export](https://github.com/glebis/apple_health_export) project
+
+### FireCrawl Research Skill
+- Python 3.8+
+- `python-dotenv`, `requests`: `pip install python-dotenv requests`
+- FireCrawl API key from https://firecrawl.dev
+
+### Transcript Analyzer Skill
+- Node.js 18+
+- Cerebras API key from https://cloud.cerebras.ai
 
 ## 💡 Usage
 
