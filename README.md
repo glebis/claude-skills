@@ -169,16 +169,30 @@ Comprehensive research automation using OpenAI's Deep Research API (o4-mini-deep
 ---
 
 ### [PDF Generation](./pdf-generation/)
-Professional PDF generation from markdown with Eisvogel template and EB Garamond fonts.
+Professional PDF generation from markdown with mobile-optimized and desktop layouts.
 
 **Features:**
 - 📄 Convert markdown to professional PDFs
+- 📱 Mobile-friendly layout (6x9in) optimized for phones/tablets
+- 🖨️ Desktop/print layout (A4) for documents and archival
 - 🎨 Support for English and Russian documents
 - 🖼️ Color-coded themes for different document types
 - ✍️ Professional typography with EB Garamond fonts
 - 📋 White papers, research documents, marketing materials
 
-**Use when:** You need to create professional PDF documents from markdown with publication-quality formatting.
+**Quick Start:**
+```bash
+# Mobile-optimized PDF (default for Telegram)
+python scripts/generate_pdf.py doc.md --mobile
+
+# Desktop/print PDF
+python scripts/generate_pdf.py doc.md -t research
+
+# Russian document
+python scripts/generate_pdf.py doc.md --russian --mobile
+```
+
+**Use when:** You need to create professional PDF documents from markdown - mobile layout for sharing via messaging apps, desktop for printing and archival.
 
 ---
 
