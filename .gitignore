@@ -24,3 +24,4 @@ Thumbs.db
 # Research outputs (optional - uncomment if you don't want to track)
 # research_report_*.md
 # research_prompt_*.txt
+.env

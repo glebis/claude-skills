@@ -4,7 +4,34 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
-### [Presentation Generator](./presentation-generator/) ⭐ NEW
+### [Google Image Search](./google-image-search/) ⭐ NEW
+Search and download images via Google Custom Search API with LLM-powered selection and Obsidian integration.
+
+**Features:**
+- 🔍 Simple query mode or batch processing from JSON config
+- 🤖 LLM-powered image selection (picks best from candidates)
+- 📝 Auto-generate search configs from plain text terms
+- 📓 Obsidian note enrichment (extract terms, find images, insert below headings)
+- 📊 Keyword-based scoring (required/optional/exclude terms, preferred hosts)
+- 🖼️ Magic byte detection for proper file extensions
+
+**Quick Start:**
+```bash
+# Simple query
+python3 scripts/google_image_search.py --query "neural interface demo" --output-dir ./images
+
+# Enrich Obsidian note with images
+python3 scripts/google_image_search.py --enrich-note ~/vault/research.md
+
+# Generate config from terms
+python3 scripts/google_image_search.py --generate-config --terms "AI therapy" "VR mental health"
+```
+
+**Use when:** Finding images for articles, presentations, research docs, or enriching Obsidian notes with visuals.
+
+---
+
+### [Presentation Generator](./presentation-generator/)
 Interactive HTML presentations with neobrutalism style and Anime.js animations.
 
 **Features:**
