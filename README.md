@@ -31,6 +31,34 @@ python3 scripts/google_image_search.py --generate-config --terms "AI therapy" "V
 
 ---
 
+### [Zoom](./zoom/) ⭐ NEW
+Create and manage Zoom meetings and access cloud recordings via the Zoom API.
+
+**Features:**
+- 📅 List, create, update, delete scheduled meetings
+- 🎥 Access cloud recordings with transcripts and summaries
+- 📥 Get download links for MP4, audio, transcripts, chat logs
+- 🔐 Dual auth: Server-to-Server OAuth (meetings) + User OAuth (recordings)
+
+**Quick Start:**
+```bash
+# Check setup status
+python3 scripts/zoom_meetings.py setup
+
+# List upcoming meetings
+python3 scripts/zoom_meetings.py list
+
+# Create a meeting
+python3 scripts/zoom_meetings.py create "Team Standup" --start "2025-01-15T10:00:00" --duration 30
+
+# List recordings (last 30 days)
+python3 scripts/zoom_meetings.py recordings --show-downloads
+```
+
+**Use when:** You need to create Zoom meetings, list scheduled calls, or access cloud recordings with transcripts.
+
+---
+
 ### [Presentation Generator](./presentation-generator/)
 Interactive HTML presentations with neobrutalism style and Anime.js animations.
 
