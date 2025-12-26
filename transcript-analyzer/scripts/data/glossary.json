@@ -1,0 +1,277 @@
+[
+  {
+    "id": "term-1764268209078",
+    "term": "Oldowan tradition",
+    "definition": "The earliest known stone tool technology, dating from 2.6+ million years ago, characterized by simple stone tools that required planning and foresight to manufacture",
+    "aliases": [
+      "Oldowan tools"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268210888",
+    "term": "Acheulean tradition",
+    "definition": "A stone tool technology spanning 1.7-0.1 million years ago, characterized by symmetrical hand axes that demanded greater motor control and cognitive sophistication than earlier tools",
+    "aliases": [
+      "Acheulean hand axes"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268212895",
+    "term": "embodied cognition",
+    "definition": "The concept that thinking occurs through physical interaction with the world, particularly relevant to tool-making where cognitive development happens through hands-on manipulation and creation",
+    "aliases": [
+      "embodied knowledge"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268214559",
+    "term": "manual dexterity",
+    "definition": "Fine motor control and hand-brain coordination that was both required for and developed by tool-making, creating evolutionary pressure for increasingly sophisticated motor capabilities",
+    "aliases": [
+      "fine motor control"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268218126",
+    "term": "executive function",
+    "definition": "Higher-level cognitive processes including planning, foresight, and problem-solving that were enhanced through tool-making activities and drove brain development",
+    "aliases": [],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268256469",
+    "term": "Homo faber",
+    "definition": "Hannah Arendt's philosophical concept defining humans by their fundamental ability to shape their environment and fate through making tools and objects, positioning tool-making as core human identity rather than mere capability",
+    "aliases": [],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268257592",
+    "term": "cognitive-physical feedback loop",
+    "definition": "The evolutionary cycle where tool-making drove brain development through enhanced executive function and motor skills, which in turn enabled more sophisticated tool creation, creating selective pressure for larger brains",
+    "aliases": [],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268683191",
+    "term": "MCP",
+    "definition": "Model Context Protocol - a standard for connecting AI models to external data sources and services, allowing models to access content from various applications and databases",
+    "aliases": [
+      "MCP-серверы",
+      "MCP-сервер",
+      "MCP-шки"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268684581",
+    "term": "скиллы",
+    "definition": "Модульные возможности, расширяющие функциональность Claude - папки с файлами, содержащие промпты и код для выполнения специфических задач",
+    "aliases": [
+      "agent skills",
+      "Claude skills",
+      "скилл"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268685606",
+    "term": "Клод",
+    "definition": "AI-ассистент от Anthropic, используемый для программирования и других задач",
+    "aliases": [
+      "Claude",
+      "Клод Код",
+      "Claude Code"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268686333",
+    "term": "контекст",
+    "definition": "Общая память сессии с моделью, в которую попадает история взаимодействий и которая влияет на производительность",
+    "aliases": [
+      "общий контекст"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268687364",
+    "term": "скилл",
+    "definition": "A self-contained package containing all actions and materials needed to teach Claude to perform a specific task, similar to a skill for a person. Can include text files, scripts, templates, and other resources.",
+    "aliases": [
+      "skill"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268689054",
+    "term": "software 3.0",
+    "definition": "AI-driven programming approach where interactions are managed through prompts and AI agents rather than traditional code",
+    "aliases": [],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268690067",
+    "term": "Obsidian",
+    "definition": "A note-taking application that stores files locally, which can be integrated with AI assistants through MCP",
+    "aliases": [],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268690993",
+    "term": "Firecrawl",
+    "definition": "A tool or service used for web scraping and content extraction, mentioned in context of a skill that can generate scientific templates",
+    "aliases": [],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268692040",
+    "term": "LLM",
+    "definition": "Large Language Model - AI systems that can process and generate text, mentioned as an alternative to Claude for certain tasks",
+    "aliases": [],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268695398",
+    "term": "Claude",
+    "definition": "An AI assistant that can write code and scripts, as referenced in the context of writing programming scripts",
+    "aliases": [
+      "him"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268697671",
+    "term": "skill (скилл)",
+    "definition": "A coding automation feature in Claude that can execute complex multi-step tasks, often converting from software 1.0 utilities and scripts to software 3.0 AI-driven tools",
+    "aliases": [
+      "skills",
+      "скиллы"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764268705680",
+    "term": "Claude Code",
+    "definition": "A command-line interface tool for interacting with Claude AI, distinct from Claude Desktop which is a GUI application",
+    "aliases": [
+      "клод-код",
+      "CloudCode",
+      "Клод Код"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764269937176",
+    "term": "стартап",
+    "definition": "A startup company or early-stage business venture, often technology-focused",
+    "aliases": [
+      "стратап"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764269939004",
+    "term": "предпринимательство",
+    "definition": "Entrepreneurship - the activity of starting and running business ventures",
+    "aliases": [],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764269940881",
+    "term": "ценности ориентированных предпринимателей",
+    "definition": "Values-oriented entrepreneurs who focus on meaningful impact rather than just profit",
+    "aliases": [
+      "про человека и сценностные истории"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764269944073",
+    "term": "стартап",
+    "definition": "A new business venture or entrepreneurial project that requires focus on money and revenue generation to succeed",
+    "aliases": [
+      "startup"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764269945756",
+    "term": "self-concordance",
+    "definition": "A psychological term referring to the degree of alignment between one's actions and personal values",
+    "aliases": [],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764269948304",
+    "term": "self-perception",
+    "definition": "One's own perception or understanding of themselves and their characteristics",
+    "aliases": [],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  },
+  {
+    "id": "term-1764269950037",
+    "term": "целеполагание",
+    "definition": "A field of study in psychology focused on goal-setting, with several major schools of thought including one from Edwin Locke",
+    "aliases": [
+      "goal-setting"
+    ],
+    "firstMentioned": "",
+    "frequency": 1,
+    "approved": true
+  }
+]

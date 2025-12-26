@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="4" dy="4" stdDeviation="0" flood-color="#000000" flood-opacity="1"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="#ffffff"/>
+
+  <!-- Terminal window frame -->
+  <rect
+    x="40"
+    y="60"
+    width="320"
+    height="280"
+    fill="#000000"
+    stroke="#000000"
+    stroke-width="3"
+    filter="url(#shadow)"
+  />
+
+  <!-- Terminal title bar -->
+  <rect x="40" y="60" width="320" height="35" fill="#e5e5e5" stroke="#000000" stroke-width="3"/>
+
+  <!-- Window buttons -->
+  <circle cx="65" cy="77" r="8" fill="#d62828" stroke="#000000" stroke-width="2"/>
+  <circle cx="90" cy="77" r="8" fill="#ffd60a" stroke="#000000" stroke-width="2"/>
+  <circle cx="115" cy="77" r="8" fill="#38b000" stroke="#000000" stroke-width="2"/>
+
+  <!-- Terminal content -->
+  <text x="60" y="130" font-family="Space Mono, monospace" font-size="16" fill="#38b000">$ claude-code</text>
+  <text x="60" y="160" font-family="Space Mono, monospace" font-size="16" fill="#ffffff">Loading shapes...</text>
+
+  <!-- Animated shapes in terminal -->
+  <circle cx="100" cy="220" r="30" fill="#e85d04" stroke="#ffffff" stroke-width="2"/>
+  <rect x="160" y="190" width="60" height="60" fill="#ffd60a" stroke="#ffffff" stroke-width="2"/>
+  <polygon points="280,190 310,250 250,250" fill="#3a86ff" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+
+  <!-- Cursor line -->
+  <text x="60" y="300" font-family="Space Mono, monospace" font-size="16" fill="#38b000">$ _</text>
+
+  <!-- Decorative corner shapes -->
+  <rect x="10" y="10" width="30" height="30" fill="#e85d04" stroke="#000000" stroke-width="2" filter="url(#shadow)"/>
+  <circle cx="385" cy="25" r="15" fill="#3a86ff" stroke="#000000" stroke-width="2" filter="url(#shadow)"/>
+  <polygon points="25,385 40,355 10,355" fill="#ffd60a" stroke="#000000" stroke-width="2" stroke-linejoin="round" filter="url(#shadow)"/>
+  <rect x="355" y="355" width="30" height="30" fill="#38b000" stroke="#000000" stroke-width="2" filter="url(#shadow)"/>
+
+</svg>

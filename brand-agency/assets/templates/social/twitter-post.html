@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1200px;
+  height: 675px;
+  background: #e85d04;
+  font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+
+.card {
+  background: #ffffff;
+  color: #000000;
+  padding: 50px 60px;
+  box-shadow: 10px 10px 0 #000;
+  max-width: 1000px;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.handle {
+  font-size: 22px;
+  color: #3a86ff;
+  font-weight: 500;
+}
+
+.timestamp {
+  font-size: 18px;
+  opacity: 0.5;
+}
+
+.tweet-text {
+  font-size: 36px;
+  line-height: 1.4;
+  margin-bottom: 30px;
+}
+
+.highlight {
+  background: #ffd60a;
+  padding: 2px 8px;
+}
+
+.ascii-divider {
+  font-size: 18px;
+  opacity: 0.3;
+  letter-spacing: 0.2em;
+  margin-bottom: 25px;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metrics {
+  display: flex;
+  gap: 40px;
+  font-size: 20px;
+  opacity: 0.6;
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cta {
+  background: #000000;
+  color: #ffffff;
+  padding: 15px 30px;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 4px 4px 0 #e85d04;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="handle">@claudecodelab</div>
+    <div class="timestamp">2h ago</div>
+  </div>
+
+  <div class="tweet-text">
+    Just shipped a new feature using <span class="highlight">Claude Agent SDK</span> in 30 minutes.
+
+    The future of development is here. ◆
+  </div>
+
+  <div class="ascii-divider">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+
+  <div class="footer">
+    <div class="metrics">
+      <span class="metric">◇ 1.2K</span>
+      <span class="metric">↻ 342</span>
+      <span class="metric">♡ 4.5K</span>
+    </div>
+    <div class="cta">FOLLOW →</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  background: #38b000;
+  font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px;
+  gap: 40px;
+}
+
+.date-badge {
+  background: #000000;
+  padding: 30px 50px;
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+.date-month {
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: #ffd60a;
+}
+
+.date-day {
+  font-size: 100px;
+  font-weight: 700;
+  line-height: 1;
+  margin: 10px 0;
+}
+
+.date-year {
+  font-size: 24px;
+  opacity: 0.7;
+}
+
+.event-card {
+  background: #ffffff;
+  color: #000000;
+  padding: 60px;
+  box-shadow: 10px 10px 0 #000;
+  text-align: center;
+  max-width: 900px;
+  width: 100%;
+}
+
+.event-type {
+  font-size: 22px;
+  letter-spacing: 0.3em;
+  opacity: 0.5;
+  margin-bottom: 20px;
+}
+
+.event-name {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 30px;
+}
+
+.event-divider {
+  font-size: 20px;
+  opacity: 0.3;
+  margin: 20px 0;
+}
+
+.event-details {
+  font-size: 26px;
+  line-height: 1.6;
+}
+
+.event-details span {
+  display: block;
+}
+
+.register-btn {
+  background: #e85d04;
+  color: #ffffff;
+  padding: 25px 50px;
+  font-size: 26px;
+  font-weight: 700;
+  border: none;
+  box-shadow: 6px 6px 0 #000;
+  letter-spacing: 0.1em;
+}
+
+.decorations {
+  display: flex;
+  gap: 40px;
+  font-size: 36px;
+  opacity: 0.6;
+}
+</style>
+</head>
+<body>
+<div class="date-badge">
+  <div class="date-month">DECEMBER</div>
+  <div class="date-day">15</div>
+  <div class="date-year">2024</div>
+</div>
+
+<div class="event-card">
+  <div class="event-type">WORKSHOP</div>
+  <div class="event-name">Claude Code Lab</div>
+  <div class="event-divider">╔════════════════════╗</div>
+  <div class="event-details">
+    <span>◆ 18:00 - 20:00 CET</span>
+    <span>◆ Online via Zoom</span>
+    <span>◆ Free Registration</span>
+  </div>
+</div>
+
+<div class="register-btn">→ REGISTER NOW ←</div>
+
+<div class="decorations">
+  <span>░░░</span>
+  <span>▓▓▓</span>
+  <span>███</span>
+</div>
+</body>
+</html>

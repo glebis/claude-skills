@@ -1,0 +1,17 @@
+# FireCrawl Research Skill Dependencies
+
+# Core dependencies for FireCrawl research
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Optional: For bibliography management and academic workflows
+# bibtexparser>=1.4.0  # Uncomment if you need to parse/validate BibTeX files
+
+# Note: External tools required for academic document conversion:
+# - Pandoc (https://pandoc.org/installing.html)
+#   For converting markdown to PDF/DOCX/HTML
+# - MyST CLI (npm install -g myst-cli)
+#   For MyST markdown to academic formats
+# - LaTeX distribution (optional, for PDF generation)
+#   - TeX Live (Linux/Mac): https://www.tug.org/texlive/
+#   - MiKTeX (Windows): https://miktex.org/

@@ -1,0 +1,649 @@
+/* Presentation Generator - Neobrutalism Styles */
+/* References brand-agency skill for colors and typography */
+
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Geist:wght@400;800&family=Geist+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* Colors from brand-agency */
+  --color-background: #ffffff;
+  --color-foreground: #000000;
+  --color-primary: #e85d04;
+  --color-secondary: #ffd60a;
+  --color-accent: #3a86ff;
+  --color-success: #38b000;
+  --color-error: #d62828;
+  --color-muted: #e5e5e5;
+
+  /* Typography */
+  --font-body: 'EB Garamond', Georgia, serif;
+  --font-heading: 'Geist', Arial, sans-serif;
+  --font-mono: 'Geist Mono', 'Courier New', monospace;
+
+  /* Shadows */
+  --shadow: 4px 4px 0px 0px #000000;
+  --shadow-sm: 2px 2px 0px 0px #000000;
+  --shadow-lg: 8px 8px 0px 0px #000000;
+
+  /* Slide dimensions */
+  --slide-width: 100vw;
+  --slide-height: 100vh;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-size: 18px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ============================================
+   SLIDE BASE
+   ============================================ */
+
+.slide {
+  min-height: var(--slide-height);
+  width: var(--slide-width);
+  padding: 60px 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-bottom: 3px solid var(--color-foreground);
+  scroll-snap-align: start;
+  position: relative;
+}
+
+/* Slide backgrounds */
+.slide--light {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.slide--dark {
+  background: var(--color-foreground);
+  color: var(--color-background);
+}
+
+.slide--primary {
+  background: var(--color-primary);
+  color: var(--color-background);
+}
+
+.slide--secondary {
+  background: var(--color-secondary);
+  color: var(--color-foreground);
+}
+
+.slide--accent {
+  background: var(--color-accent);
+  color: var(--color-background);
+}
+
+.slide--success {
+  background: var(--color-success);
+  color: var(--color-background);
+}
+
+.slide--error {
+  background: var(--color-error);
+  color: var(--color-background);
+}
+
+.slide--muted {
+  background: var(--color-muted);
+  color: var(--color-foreground);
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: 4.5rem;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+}
+
+h2 {
+  font-size: 3rem;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+}
+
+h3 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  font-size: 1.8rem;
+  opacity: 0.9;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.highlight {
+  background: var(--color-secondary);
+  padding: 0 0.3rem;
+  color: var(--color-foreground);
+}
+
+/* ============================================
+   CARDS & BOXES
+   ============================================ */
+
+.card {
+  background: var(--color-background);
+  border: 3px solid var(--color-foreground);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.card--primary {
+  border-color: var(--color-primary);
+}
+
+.card--no-shadow {
+  box-shadow: none;
+}
+
+.box {
+  border: 3px solid var(--color-foreground);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+}
+
+/* ============================================
+   CODE BLOCKS
+   ============================================ */
+
+code {
+  font-family: var(--font-mono);
+  background: var(--color-foreground);
+  color: var(--color-secondary);
+  padding: 0.2rem 0.4rem;
+  border: 2px solid var(--color-foreground);
+}
+
+pre {
+  font-family: var(--font-mono);
+  background: var(--color-foreground);
+  color: var(--color-background);
+  padding: 1.5rem;
+  border: 3px solid var(--color-foreground);
+  overflow-x: auto;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  box-shadow: var(--shadow);
+}
+
+pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Syntax highlighting */
+.code-comment { color: #888; }
+.code-string { color: var(--color-secondary); }
+.code-keyword { color: var(--color-accent); }
+.code-function { color: var(--color-success); }
+.code-number { color: var(--color-error); }
+
+/* ============================================
+   LISTS
+   ============================================ */
+
+ul, ol {
+  margin-left: 1.5rem;
+  margin-top: 1rem;
+}
+
+li {
+  margin-bottom: 0.75rem;
+}
+
+li::marker {
+  color: var(--color-primary);
+}
+
+/* ============================================
+   TAGS / BADGES
+   ============================================ */
+
+.tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border: 2px solid var(--color-foreground);
+  margin-right: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.tag--primary { background: var(--color-primary); color: white; }
+.tag--secondary { background: var(--color-secondary); color: black; }
+.tag--accent { background: var(--color-accent); color: white; }
+.tag--success { background: var(--color-success); color: white; }
+.tag--error { background: var(--color-error); color: white; }
+
+.badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-foreground);
+  color: var(--color-secondary);
+  letter-spacing: 0.1em;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.btn {
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 1rem 2rem;
+  background: var(--color-primary);
+  color: white;
+  border: 3px solid var(--color-foreground);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px #000000;
+}
+
+.btn--secondary {
+  background: var(--color-secondary);
+  color: var(--color-foreground);
+}
+
+.btn--dark {
+  background: var(--color-foreground);
+  color: var(--color-background);
+}
+
+/* ============================================
+   LAYOUTS
+   ============================================ */
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.three-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.four-col {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.centered {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ============================================
+   TASK CARDS
+   ============================================ */
+
+.task-card {
+  background: var(--color-background);
+  border: 3px solid var(--color-foreground);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  transition: transform 0.1s;
+}
+
+.task-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px #000000;
+}
+
+.task-number {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 3rem;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.task-title {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.3rem;
+  margin: 0.5rem 0;
+}
+
+.task-desc {
+  font-size: 1rem;
+  color: #444;
+}
+
+/* ============================================
+   STATS
+   ============================================ */
+
+.stats-row {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+  align-items: baseline;
+  margin: 2rem 0;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-value {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 5rem;
+  line-height: 1;
+  color: inherit;
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  opacity: 0.8;
+  margin-top: 0.5rem;
+}
+
+/* ============================================
+   ASCII ART
+   ============================================ */
+
+.ascii-box {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.4;
+  white-space: pre;
+  background: var(--color-muted);
+  padding: 1.5rem;
+  border: 3px solid var(--color-foreground);
+  box-shadow: var(--shadow);
+}
+
+.ascii-border {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  color: inherit;
+  opacity: 0.5;
+  letter-spacing: 0.2em;
+}
+
+.ascii-decoration {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  opacity: 0.6;
+}
+
+/* ============================================
+   COLOR SWATCHES
+   ============================================ */
+
+.color-row {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.color-swatch {
+  width: 80px;
+  height: 80px;
+  border: 3px solid var(--color-foreground);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: flex-end;
+  padding: 0.25rem;
+}
+
+.color-swatch span {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  background: white;
+  padding: 0.1rem 0.2rem;
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
+.nav {
+  position: fixed;
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 100;
+}
+
+.nav-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--color-muted);
+  border: 2px solid var(--color-foreground);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.nav-dot:hover,
+.nav-dot.active {
+  background: var(--color-primary);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.footer {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  margin-top: auto;
+  padding-top: 2rem;
+  opacity: 0.7;
+}
+
+.slide-number {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  opacity: 0.5;
+}
+
+/* ============================================
+   SVG & IMAGES
+   ============================================ */
+
+.svg-demo {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.svg-demo svg {
+  filter: drop-shadow(4px 4px 0px #000000);
+}
+
+.image-container {
+  border: 3px solid var(--color-foreground);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.image-container img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ============================================
+   TERMINAL STYLE
+   ============================================ */
+
+.terminal {
+  background: var(--color-foreground);
+  border: 3px solid var(--color-foreground);
+  box-shadow: var(--shadow);
+  font-family: var(--font-mono);
+  color: var(--color-background);
+}
+
+.terminal-header {
+  background: var(--color-muted);
+  padding: 0.5rem 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.terminal-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.terminal-btn--close { background: var(--color-error); }
+.terminal-btn--minimize { background: var(--color-secondary); }
+.terminal-btn--maximize { background: var(--color-success); }
+
+.terminal-content {
+  padding: 1.5rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.terminal-prompt {
+  color: var(--color-success);
+}
+
+.terminal-output {
+  color: var(--color-muted);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1200px) {
+  .slide {
+    padding: 40px 60px;
+  }
+
+  h1 {
+    font-size: 3.5rem;
+  }
+
+  h2 {
+    font-size: 2.5rem;
+  }
+
+  .two-col {
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .slide {
+    padding: 30px 40px;
+  }
+
+  .two-col,
+  .task-grid {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+  }
+
+  .stat-value {
+    font-size: 3rem;
+  }
+
+  .nav {
+    display: none;
+  }
+}
+
+/* ============================================
+   PRINT / PDF EXPORT
+   ============================================ */
+
+@media print {
+  .slide {
+    page-break-after: always;
+    min-height: 100vh;
+    border-bottom: none;
+  }
+
+  .nav {
+    display: none;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

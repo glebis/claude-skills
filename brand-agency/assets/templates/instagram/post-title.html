@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  background: #3a86ff;
+  font-family: 'Geist Mono', 'JetBrains Mono', monospace;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px;
+}
+
+.frame {
+  border: 4px solid #000000;
+  background: #ffffff;
+  color: #000000;
+  padding: 80px 60px;
+  box-shadow: 12px 12px 0 #000;
+  width: 100%;
+  max-width: 900px;
+  text-align: center;
+}
+
+.ascii-top {
+  font-size: 20px;
+  color: #000;
+  opacity: 0.4;
+  margin-bottom: 30px;
+  letter-spacing: 0.1em;
+}
+
+.tag {
+  display: inline-block;
+  background: #e85d04;
+  color: #ffffff;
+  padding: 12px 24px;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.title {
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 30px;
+}
+
+.subtitle {
+  font-size: 28px;
+  font-weight: 400;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.ascii-bottom {
+  font-size: 20px;
+  color: #000;
+  opacity: 0.4;
+  margin-top: 40px;
+  letter-spacing: 0.1em;
+}
+
+.shapes {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 50px;
+  font-size: 48px;
+}
+
+.shape {
+  color: #ffd60a;
+  text-shadow: 3px 3px 0 #000;
+}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="ascii-top">┌──────────────────────────────┐</div>
+
+  <div class="tag">TUTORIAL</div>
+
+  <div class="title">Building AI Agents</div>
+
+  <div class="subtitle">From concept to production in 30 minutes</div>
+
+  <div class="ascii-bottom">└──────────────────────────────┘</div>
+</div>
+
+<div class="shapes">
+  <span class="shape">▲</span>
+  <span class="shape">●</span>
+  <span class="shape">■</span>
+</div>
+</body>
+</html>
