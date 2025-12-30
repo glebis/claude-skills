@@ -1,15 +1,11 @@
 ---
 name: telegram
-description: This skill should be used when fetching, searching, downloading, or sending messages on Telegram. Use for queries like "show my Telegram messages", "search Telegram for...", "get unread messages", "send a message to...", "notify me via Telegram", or "add Telegram messages to my notes".
+description: This skill should be used when fetching, searching, downloading, sending, or editing messages on Telegram. Use for queries like "show my Telegram messages", "search Telegram for...", "get unread messages", "send a message to...", "edit that message", or "add Telegram messages to my notes".
 ---
 
 # Telegram Message Skill
 
 Fetch, search, download, and send Telegram messages with flexible filtering and output options.
-
-**Two sending methods available:**
-- `telegram_fetch.py send` - Uses your personal Telegram account (telethon)
-- `bot_send.py` - Uses the Telegram Bot API (for notifications/alerts)
 
 ## Prerequisites
 
@@ -138,46 +134,21 @@ python3 scripts/telegram_fetch.py send --chat "Group" --file "screenshot.png" --
 
 Returns JSON with send status, resolved chat name, message ID, and file info (for media).
 
-### Send via Bot (Notifications)
+### Edit Messages
 
-To send messages via the Telegram Bot API (for notifications/alerts from Claude):
+To edit an existing message:
 
 ```bash
-# Send to default admin contact (Gleb) - HTML auto-detected
-python3 scripts/bot_send.py --text "Hello from Claude!"
+# Edit a message by ID
+python3 scripts/telegram_fetch.py edit --chat "@mentalhealthtech" --message-id 76 --text "Updated text"
 
-# With HTML formatting (auto-detected when tags present)
-python3 scripts/bot_send.py --text "<b>Important:</b> Check this <i>now</i>"
-python3 scripts/bot_send.py --text "Run: <code>npm install</code>"
-
-# Send to specific chat_id
-python3 scripts/bot_send.py --text "Alert!" --chat-id 161427550
-
-# Send to contact by name (fuzzy match)
-python3 scripts/bot_send.py --text "Message" --name "Gleb"
-
-# Send to contact by role
-python3 scripts/bot_send.py --text "DevOps alert" --role "owner"
-
-# Send as raw plain text (no HTML parsing)
-python3 scripts/bot_send.py --text "Literal <tags> preserved" --raw
-
-# List available admin contacts
-python3 scripts/bot_send.py list
+# Edit in a group/channel
+python3 scripts/telegram_fetch.py edit --chat "Mental health tech" --message-id 123 --text "Corrected content"
 ```
 
-**Supported HTML tags:**
-- `<b>bold</b>`, `<i>italic</i>`, `<u>underline</u>`, `<s>strikethrough</s>`
-- `<code>inline code</code>`, `<pre>code block</pre>`
-- `<a href="URL">link</a>`, `<tg-spoiler>spoiler</tg-spoiler>`
+**Note:** You can only edit your own messages. Telegram formatting (**bold**, etc.) is preserved.
 
-Plain text without HTML tags is auto-escaped for safety.
-
-**Prerequisites for bot_send:**
-- `TELEGRAM_BOT_TOKEN` environment variable (from ~/.env or telegram_agent/.env.local)
-- Admin contacts stored in telegram_agent database
-
-**Note:** Bot can only message users who have started the bot (@toolbuildingape_bot).
+Returns JSON with edit status and message ID.
 
 ### Download Attachments
 
@@ -200,6 +171,35 @@ python3 scripts/telegram_fetch.py download --chat "John Doe" --message-id 12345
 **Default output:** `~/Downloads/telegram_attachments/`
 
 Returns JSON with download results (file names, paths, sizes).
+
+### Fetch Forum Thread Messages
+
+To get messages from a specific forum thread (topics in groups):
+
+```bash
+# Fetch from thread 174 in Claude Code Lab
+python3 scripts/telegram_fetch.py thread --chat-id -1003237581133 --thread-id 174
+
+# Fetch with custom limit
+python3 scripts/telegram_fetch.py thread --chat-id -1003237581133 --thread-id 174 --limit 50
+
+# Save to file
+python3 scripts/telegram_fetch.py thread --chat-id -1003237581133 --thread-id 174 -o ~/thread.md
+
+# Append to daily note
+python3 scripts/telegram_fetch.py thread --chat-id -1003237581133 --thread-id 174 --to-daily
+
+# JSON output
+python3 scripts/telegram_fetch.py thread --chat-id -1003237581133 --thread-id 174 --json
+```
+
+**Messages are sorted newest first** (reverse chronological order).
+
+**How to find thread ID:**
+- Forum topic IDs appear in the thread URL: `https://t.me/c/CHAT_ID/THREAD_ID`
+- Use `recent` command on the chat to see message IDs in threads
+
+Returns markdown or JSON with all messages from the specified thread.
 
 ## Output Options
 
@@ -273,11 +273,10 @@ When user asks:
 - "Download last 10 files from Project Group" -> `download --chat "Project Group" --limit 10`
 - "Save last 100 messages from AGENCY to file" -> `recent --chat "AGENCY: Community" --limit 100 -o ~/agency.md`
 - "Archive chat with media" -> `recent --chat "Group" -o ~/archive.md --with-media`
+- "Edit that message" -> `edit --chat "..." --message-id <id> --text "new text"`
+- "Fix the typo in message 123" -> `edit --chat "..." --message-id 123 --text "corrected text"`
 - "Is Telegram configured?" -> `setup`
 - "How do I set up Telegram?" -> `setup` (returns instructions if not configured)
-- "Notify me on Telegram" -> `bot_send.py --text "..."`
-- "Send me a Telegram alert" -> `bot_send.py --text "..."`
-- "Message me via bot" -> `bot_send.py --text "..."`
 
 ## Rate Limiting
 

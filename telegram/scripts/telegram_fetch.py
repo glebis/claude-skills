@@ -154,7 +154,26 @@ def format_message(msg, chat_name: str, chat_type: str) -> Dict:
         elif hasattr(msg.sender, 'title'):
             sender_name = msg.sender.title
 
-    return {
+    # Extract reactions if present
+    reactions = []
+    if hasattr(msg, 'reactions') and msg.reactions and hasattr(msg.reactions, 'results'):
+        for reaction in msg.reactions.results:
+            # Handle both emoji and custom reactions
+            if hasattr(reaction, 'reaction'):
+                if hasattr(reaction.reaction, 'emoticon'):
+                    # Emoji reaction
+                    reactions.append({
+                        "emoji": reaction.reaction.emoticon,
+                        "count": reaction.count
+                    })
+                elif hasattr(reaction.reaction, 'document_id'):
+                    # Custom reaction
+                    reactions.append({
+                        "custom_id": str(reaction.reaction.document_id),
+                        "count": reaction.count
+                    })
+
+    result = {
         "id": msg.id,
         "chat": chat_name,
         "chat_type": chat_type,
@@ -163,6 +182,11 @@ def format_message(msg, chat_name: str, chat_type: str) -> Dict:
         "date": msg.date.isoformat() if msg.date else None,
         "has_media": msg.media is not None
     }
+
+    if reactions:
+        result["reactions"] = reactions
+
+    return result
 
 
 async def list_chats(client: TelegramClient, limit: int = 30, search: Optional[str] = None) -> List[Dict]:
@@ -313,6 +337,34 @@ async def resolve_entity(client: TelegramClient, chat_name: str) -> tuple:
     return entity, resolved_name
 
 
+async def edit_message(client: TelegramClient, chat_name: str, message_id: int,
+                       text: str) -> Dict:
+    """Edit an existing message.
+
+    Args:
+        chat_name: Chat name, @username, or ID
+        message_id: ID of the message to edit
+        text: New text content
+
+    Returns:
+        Dict with edit status
+    """
+    entity, resolved_name = await resolve_entity(client, chat_name)
+
+    if entity is None:
+        return {"edited": False, "error": f"Chat '{chat_name}' not found"}
+
+    try:
+        await client.edit_message(entity, message_id, text)
+        return {
+            "edited": True,
+            "chat": resolved_name,
+            "message_id": message_id
+        }
+    except Exception as e:
+        return {"edited": False, "error": str(e), "message_id": message_id}
+
+
 async def send_message(client: TelegramClient, chat_name: str, text: str,
                        reply_to: Optional[int] = None,
                        file_path: Optional[str] = None) -> Dict:
@@ -324,11 +376,30 @@ async def send_message(client: TelegramClient, chat_name: str, text: str,
     - Phone numbers
     - Chat IDs (numeric)
     - File attachments (images, documents, videos)
+
+    Safety: Groups/channels require explicit whitelist in config.json
     """
     entity, resolved_name = await resolve_entity(client, chat_name)
 
     if entity is None:
         return {"sent": False, "error": f"Chat '{chat_name}' not found"}
+
+    # Safety check: block group/channel sends unless whitelisted
+    chat_type = get_chat_type(entity)
+    if chat_type in ["group", "channel"]:
+        config = load_config()
+        allowed_groups = config.get("allowed_send_groups", [])
+
+        # Check if chat is whitelisted (by name or ID)
+        entity_id = getattr(entity, 'id', None)
+        if resolved_name not in allowed_groups and str(entity_id) not in allowed_groups:
+            return {
+                "sent": False,
+                "error": f"Sending to groups/channels requires whitelist. Add '{resolved_name}' or '{entity_id}' to allowed_send_groups in {CONFIG_FILE}",
+                "chat_type": chat_type,
+                "chat_name": resolved_name,
+                "chat_id": entity_id
+            }
 
     try:
         # Send file if provided
@@ -498,7 +569,18 @@ def format_output(messages: List[Dict], output_format: str = "markdown") -> str:
 
         if text:
             lines.append(f"**{date_str}** - {sender}:")
-            lines.append(f"> {text}\n")
+            lines.append(f"> {text}")
+
+            # Add reactions if present
+            if "reactions" in msg and msg["reactions"]:
+                reaction_str = " ".join([
+                    f"{r['emoji']} {r['count']}" if 'emoji' in r
+                    else f"[custom] {r['count']}"
+                    for r in msg["reactions"]
+                ])
+                lines.append(f"> **Reactions:** {reaction_str}")
+
+            lines.append("")  # Empty line
 
     return "\n".join(lines)
 
@@ -601,6 +683,21 @@ async def save_to_file(client: TelegramClient, messages: List[Dict], output_path
     return result
 
 
+async def fetch_thread_messages(client: TelegramClient, chat_id: int,
+                                thread_id: int, limit: int = 100) -> List[Dict]:
+    """Fetch messages from a specific forum thread."""
+    entity = await client.get_entity(chat_id)
+    chat_type = get_chat_type(entity)
+    name = getattr(entity, 'title', None) or getattr(entity, 'first_name', '') or "Unknown"
+
+    messages = []
+    async for msg in client.iter_messages(entity, reply_to=thread_id, limit=limit):
+        messages.append(format_message(msg, name, chat_type))
+        await asyncio.sleep(0.1)  # Rate limiting
+
+    return messages
+
+
 async def main():
     parser = argparse.ArgumentParser(description="Fetch Telegram messages")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -657,9 +754,25 @@ async def main():
     download_parser.add_argument("--output", help="Output directory (default ~/Downloads/telegram_attachments)")
     download_parser.add_argument("--message-id", type=int, help="Download from specific message ID")
 
+    # Edit message
+    edit_parser = subparsers.add_parser("edit", help="Edit an existing message")
+    edit_parser.add_argument("--chat", required=True, help="Chat name, @username, or ID")
+    edit_parser.add_argument("--message-id", type=int, required=True, help="Message ID to edit")
+    edit_parser.add_argument("--text", required=True, help="New message text")
+
     # Setup/status
     setup_parser = subparsers.add_parser("setup", help="Check status or get setup instructions")
     setup_parser.add_argument("--status", action="store_true", help="Check configuration status")
+
+    # Thread messages
+    thread_parser = subparsers.add_parser("thread", help="Fetch messages from a forum thread")
+    thread_parser.add_argument("--chat-id", type=int, required=True, help="Chat ID")
+    thread_parser.add_argument("--thread-id", type=int, required=True, help="Thread/topic ID")
+    thread_parser.add_argument("--limit", type=int, default=100, help="Max messages (default 100)")
+    thread_parser.add_argument("--to-daily", action="store_true", help="Append to daily note")
+    thread_parser.add_argument("--to-person", help="Append to person's note")
+    thread_parser.add_argument("--json", action="store_true", help="Output as JSON")
+    thread_parser.add_argument("--output", "-o", help="Save to file (markdown) instead of stdout")
 
     args = parser.parse_args()
 
@@ -775,6 +888,41 @@ async def main():
                 message_id=args.message_id
             )
             print(json.dumps(results, indent=2))
+
+        elif args.command == "edit":
+            result = await edit_message(
+                client,
+                chat_name=args.chat,
+                message_id=args.message_id,
+                text=args.text
+            )
+            print(json.dumps(result, indent=2))
+
+        elif args.command == "thread":
+            messages = await fetch_thread_messages(
+                client,
+                chat_id=args.chat_id,
+                thread_id=args.thread_id,
+                limit=args.limit
+            )
+            output_fmt = "json" if args.json else "markdown"
+
+            if args.output:
+                result = await save_to_file(
+                    client, messages, args.output,
+                    with_media=False,
+                    output_format=output_fmt
+                )
+                print(json.dumps(result, indent=2))
+            elif args.to_daily:
+                output = format_output(messages, output_fmt)
+                append_to_daily(output)
+            elif args.to_person:
+                output = format_output(messages, output_fmt)
+                append_to_person(output, args.to_person)
+            else:
+                output = format_output(messages, output_fmt)
+                print(output)
 
     finally:
         await client.disconnect()
