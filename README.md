@@ -4,7 +4,30 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
-### [Google Image Search](./google-image-search/) ⭐ NEW
+### [Retrospective](./retrospective/) ⭐ NEW
+Session retrospective for continual learning. Reviews conversations, extracts learnings, updates skills.
+
+**Features:**
+- 🔄 Analyze session for successes, failures, and discoveries
+- 📝 Update skill files with dated learnings
+- ⚠️ Document failures explicitly (prevents repeating mistakes)
+- 📊 Surface patterns for skill improvement
+- 🎯 Compound knowledge over sessions
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r retrospective ~/.claude/skills/
+
+# Invoke at end of session
+/retrospective
+```
+
+**Use when:** End of coding sessions to capture learnings before context is lost. Based on [Continual Learning in Claude Code](https://www.youtube.com/watch?v=sWbsD-cP4rI) concepts.
+
+---
+
+### [Google Image Search](./google-image-search/)
 Search and download images via Google Custom Search API with LLM-powered selection and Obsidian integration.
 
 **Features:**
@@ -464,6 +487,8 @@ cp -r claude-skills/health-data ~/.claude/skills/
 cp -r claude-skills/firecrawl-research ~/.claude/skills/
 # or
 cp -r claude-skills/transcript-analyzer ~/.claude/skills/
+# or
+cp -r claude-skills/retrospective ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
