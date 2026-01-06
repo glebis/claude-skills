@@ -27,6 +27,45 @@ cp -r retrospective ~/.claude/skills/
 
 ---
 
+### [GitHub Gist](./github-gist/) ⭐ NEW
+Publish files and notes as GitHub Gists for easy sharing.
+
+**Features:**
+- 🔗 Publish any file as a shareable gist URL
+- 🔒 Secret (unlisted) by default for safety
+- 🌐 Optional public gists (visible on profile)
+- 📥 Support stdin for quick snippets
+- 🖥️ Uses `gh` CLI (recommended) or falls back to API
+
+**Quick Start:**
+```bash
+# Publish file as secret gist
+python3 scripts/publish_gist.py ~/notes/idea.md
+
+# Public gist with description
+python3 scripts/publish_gist.py code.py --public -d "My utility script"
+
+# Quick snippet from stdin
+echo "Hello world" | python3 scripts/publish_gist.py - -f "hello.txt"
+
+# Publish and open in browser
+python3 scripts/publish_gist.py doc.md --open
+```
+
+**Setup:**
+```bash
+# Option 1: gh CLI (recommended)
+gh auth login
+
+# Option 2: Environment variable
+# Get token at https://github.com/settings/tokens (select 'gist' scope)
+export GITHUB_GIST_TOKEN="ghp_your_token_here"
+```
+
+**Use when:** You want to share code snippets, notes, or files via a quick shareable URL.
+
+---
+
 ### [Google Image Search](./google-image-search/)
 Search and download images via Google Custom Search API with LLM-powered selection and Obsidian integration.
 
@@ -489,6 +528,8 @@ cp -r claude-skills/firecrawl-research ~/.claude/skills/
 cp -r claude-skills/transcript-analyzer ~/.claude/skills/
 # or
 cp -r claude-skills/retrospective ~/.claude/skills/
+# or
+cp -r claude-skills/github-gist ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
@@ -564,6 +605,11 @@ Without verification, you'll receive a `model_not_found` error when trying to us
 ### Transcript Analyzer Skill
 - Node.js 18+
 - Cerebras API key from https://cloud.cerebras.ai
+
+### GitHub Gist Skill
+- Python 3.8+
+- **Option 1 (Recommended):** GitHub CLI (`gh`) - install from https://cli.github.com, then run `gh auth login`
+- **Option 2:** Personal Access Token with `gist` scope from https://github.com/settings/tokens
 
 ## 💡 Usage
 
