@@ -4,6 +4,40 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
+### [Fathom](./fathom/) ⭐ NEW
+Fetch meetings, transcripts, summaries, and action items from Fathom API.
+
+**Features:**
+- 📋 List recent meetings with recording IDs
+- 📝 Fetch full transcripts with speaker attribution
+- 🤖 AI-generated meeting summaries from Fathom
+- ✅ Action items with assignees and completion status
+- 👥 Participant info from calendar invites
+- 🔗 Links to Fathom recordings and share URLs
+- 🔬 Optional integration with transcript-analyzer skill
+
+**Quick Start:**
+```bash
+# Install dependencies
+pip install requests python-dotenv
+
+# Add API key
+echo "FATHOM_API_KEY=your-key" > ~/.claude/skills/fathom/scripts/.env
+
+# List recent meetings
+python3 scripts/fetch.py --list
+
+# Fetch today's meetings
+python3 scripts/fetch.py --today
+
+# Fetch and analyze
+python3 scripts/fetch.py --today --analyze
+```
+
+**Use when:** You need to fetch Fathom meeting recordings, sync transcripts to your vault, or extract meeting data via API.
+
+---
+
 ### [Retrospective](./retrospective/) ⭐ NEW
 Session retrospective for continual learning. Reviews conversations, extracts learnings, updates skills.
 
