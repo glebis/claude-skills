@@ -64,3 +64,7 @@ python3 scripts/publish_gist.py /path/to/file.md --open
   "filename": "file.md"
 }
 ```
+
+## Example
+
+Session log published with this skill: https://gist.github.com/glebis/3faaae6b907123929220e81add51a567
