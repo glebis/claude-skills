@@ -130,25 +130,3 @@ Can be combined with:
 
 ## Learnings
 
-### 2025-01-02
-**Context**: First retrospective run after creating the skill
-
-**What Worked**:
-- Reading skill files before updating ensures you don't duplicate sections
-- Dated entries with context make learnings scannable
-
-**Pattern Discovered**:
-- Workflow: list what happened → identify skills used → read each skill → add learnings section if missing → append dated entry
-- Keep learnings specific to the skill's domain, not general session notes
-
-### 2025-01-05
-**Context**: Complex session with transcript analysis, visualization, and multi-framework note generation
-
-**Session Patterns Worth Capturing**:
-- Parallel Task agents work well for independent analytical workstreams
-- ASCII art → PNG via Playwright (reusable pattern, documented in webapp-testing)
-- Transcript analysis output serves as excellent input for deeper framework analysis
-
-**What to Document**:
-- Cross-skill workflows: transcript-analyzer → manual visualization → webapp-testing for export
-- New patterns combining skills in novel ways (not just single-skill improvements)
