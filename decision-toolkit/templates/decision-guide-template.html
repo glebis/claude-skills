@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Guide: {{DECISION_TITLE}}</title>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Geist:wght@400;600;800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --fg: #000000;
+            --muted: #e5e5e5;
+            --primary: #e85d04;
+            --secondary: #ffd60a;
+            --accent: #3a86ff;
+            --success: #38b000;
+            --error: #d62828;
+            --shadow: 4px 4px 0px 0px #000000;
+            --shadow-sm: 2px 2px 0px 0px #000000;
+            --font-body: 'EB Garamond', Georgia, serif;
+            --font-heading: 'Geist', Arial, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.7;
+            font-size: 19px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Accessibility: Focus styles */
+        :focus {
+            outline: 3px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* Accessibility: Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        /* Screen reader only text */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg);
+            border-bottom: 3px solid var(--fg);
+            z-index: 100;
+            padding: 1rem 2rem;
+        }
+
+        .progress-bar {
+            display: flex;
+            gap: 4px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .progress-step {
+            flex: 1;
+            height: 8px;
+            background: var(--muted);
+            border: 2px solid var(--fg);
+            transition: background 0.3s;
+        }
+
+        .progress-step.completed { background: var(--success); }
+        .progress-step.current { background: var(--primary); }
+
+        .progress-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 0.5rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 7rem 2rem 6rem;
+            flex: 1;
+        }
+
+        /* Step */
+        .step {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .step.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-number {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--fg);
+            opacity: 0.5;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-title {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 2rem;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .step-question {
+            font-size: 1.4rem;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
+        .step-context {
+            background: var(--muted);
+            border: 2px solid var(--fg);
+            padding: 1.25rem;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .step-context strong {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        /* Options (Radio-like selection) */
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .option {
+            padding: 1.25rem;
+            border: 3px solid var(--fg);
+            background: var(--bg);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .option:hover {
+            background: var(--secondary);
+            box-shadow: var(--shadow-sm);
+            transform: translate(-2px, -2px);
+        }
+
+        .option.selected {
+            background: var(--primary);
+            color: var(--bg);
+            box-shadow: var(--shadow);
+            transform: translate(-4px, -4px);
+        }
+
+        .option-marker {
+            width: 24px;
+            height: 24px;
+            border: 3px solid currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-weight: bold;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .option.selected .option-marker::after { content: "✓"; }
+
+        .option-text { flex: 1; }
+
+        .option-label {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 1rem;
+        }
+
+        .option-desc {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            opacity: 0.8;
+        }
+
+        /* Sliders */
+        .slider-container { margin-bottom: 2rem; }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-family: var(--font-heading);
+            font-weight: 600;
+        }
+
+        .slider-value {
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 12px;
+            -webkit-appearance: none;
+            background: var(--muted);
+            border: 2px solid var(--fg);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            background: var(--primary);
+            border: 3px solid var(--fg);
+            cursor: pointer;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            font-family: var(--font-mono);
+        }
+
+        /* Checklist */
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .check-item {
+            padding: 1rem;
+            border: 2px solid var(--fg);
+            background: var(--bg);
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: all 0.15s;
+        }
+
+        .check-item:hover { background: var(--muted); }
+        .check-item.checked { background: var(--secondary); }
+
+        .check-box {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--fg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        .check-item.checked .check-box::after { content: "✓"; }
+
+        .check-content { flex: 1; }
+
+        .check-title {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .check-desc {
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .check-counter {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: var(--bg);
+            border: 2px solid var(--fg);
+            display: none;
+        }
+
+        .check-item.checked .check-counter { display: block; }
+
+        /* Calculator */
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--muted);
+            border: 2px solid var(--fg);
+        }
+
+        .calc-row label { flex: 1; }
+
+        .calc-row input {
+            width: 100px;
+            padding: 0.75rem;
+            border: 2px solid var(--fg);
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .calc-result {
+            background: var(--secondary);
+            border: 3px solid var(--fg);
+            padding: 1.5rem;
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .calc-result-number {
+            font-family: var(--font-heading);
+            font-size: 3rem;
+            font-weight: 800;
+        }
+
+        .calc-result-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        /* Insight Box */
+        .insight {
+            background: var(--fg);
+            color: var(--bg);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            font-size: 1.1rem;
+        }
+
+        .insight-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Summary Section */
+        .summary-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 2px solid var(--fg);
+        }
+
+        .summary-section h3 {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--fg);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--muted);
+        }
+
+        .summary-row:last-child { border-bottom: none; }
+        .summary-label { opacity: 0.7; }
+
+        .summary-value {
+            font-family: var(--font-mono);
+            font-weight: bold;
+        }
+
+        .summary-value.positive { color: var(--success); }
+        .summary-value.negative { color: var(--error); }
+        .summary-value.neutral { color: var(--primary); }
+
+        /* Final Decision */
+        .final-decision {
+            text-align: center;
+            padding: 2rem;
+            border: 3px solid var(--fg);
+            margin: 2rem 0;
+        }
+
+        .final-decision-label {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        .final-decision-text {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 2rem;
+            text-transform: uppercase;
+            margin: 0.5rem 0;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg);
+            border-top: 3px solid var(--fg);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            padding: 1rem 2rem;
+            border: 3px solid var(--fg);
+            background: var(--bg);
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 1rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .nav-btn:hover {
+            background: var(--muted);
+            box-shadow: var(--shadow-sm);
+            transform: translate(-2px, -2px);
+        }
+
+        .nav-btn.primary {
+            background: var(--primary);
+            color: var(--bg);
+        }
+
+        .nav-btn.primary:hover {
+            background: var(--primary);
+            box-shadow: var(--shadow);
+            transform: translate(-4px, -4px);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Scenario cards */
+        .scenario-card {
+            padding: 1.25rem;
+            border: 2px solid var(--fg);
+            margin-bottom: 1rem;
+        }
+
+        .scenario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .scenario-title { font-family: var(--font-heading); font-weight: 600; }
+
+        .scenario-prob {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .scenario-bar {
+            height: 16px;
+            background: var(--muted);
+            border: 2px solid var(--fg);
+            margin-bottom: 0.75rem;
+        }
+
+        .scenario-fill { height: 100%; }
+
+        .scenario-outcome {
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        /* Print Styles */
+        @media print {
+            .progress-container, .nav { display: none; }
+            .container { padding: 1rem; }
+            .step { display: block !important; page-break-after: always; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Screen reader announcer -->
+    <div role="status" aria-live="polite" id="announcer" class="sr-only"></div>
+
+    <nav class="progress-container" aria-label="Decision progress">
+        <div class="progress-bar" role="progressbar" aria-valuenow="1" aria-valuemin="1" aria-valuemax="9">
+            <div class="progress-step" data-step="1"></div>
+            <div class="progress-step" data-step="2"></div>
+            <div class="progress-step" data-step="3"></div>
+            <div class="progress-step" data-step="4"></div>
+            <div class="progress-step" data-step="5"></div>
+            <div class="progress-step" data-step="6"></div>
+            <div class="progress-step" data-step="7"></div>
+            <div class="progress-step" data-step="8"></div>
+            <div class="progress-step" data-step="9"></div>
+        </div>
+        <div class="progress-label" id="progressLabel">Step 1 of 9</div>
+    </nav>
+
+    <main class="container" role="main" aria-label="Decision Guide">
+        <!-- Step 1: Context -->
+        <section class="step active" data-step="1" aria-labelledby="step1-title">
+            <div class="step-number">Step 1 of 9</div>
+            <h1 class="step-title" id="step1-title">The Decision</h1>
+            <p class="step-question">{{DECISION_QUESTION}}</p>
+            <div class="step-context">
+                <strong>Context</strong><br>
+                {{CONTEXT}}
+            </div>
+            <div class="insight">
+                <div class="insight-label">Key Tension</div>
+                {{KEY_TENSION}}
+            </div>
+            <p>Before deciding, let's examine this systematically. Each step focuses on one critical factor.</p>
+        </section>
+
+        <!-- Step 2: First Principles -->
+        <section class="step" data-step="2" aria-labelledby="step2-title">
+            <div class="step-number">Step 2 of 9</div>
+            <h1 class="step-title" id="step2-title">First Principles</h1>
+            <p class="step-question">Does this solve a problem you cannot solve yourself?</p>
+            <div class="step-context">
+                <strong>Your Current Capabilities</strong><br>
+                {{CURRENT_CAPABILITIES}}
+            </div>
+            <div class="options" role="radiogroup" aria-label="Problem assessment">
+                <div class="option" role="radio" aria-checked="false" tabindex="0" onclick="selectOption(this, 2)" onkeypress="handleKeySelect(event, this, 2)" data-value="no">
+                    <div class="option-marker" aria-hidden="true"></div>
+                    <div class="option-text">
+                        <div class="option-label">No — I can do this myself</div>
+                        <div class="option-desc">My existing tools/skills cover this.</div>
+                    </div>
+                </div>
+                <div class="option" role="radio" aria-checked="false" tabindex="0" onclick="selectOption(this, 2)" onkeypress="handleKeySelect(event, this, 2)" data-value="partial">
+                    <div class="option-marker" aria-hidden="true"></div>
+                    <div class="option-text">
+                        <div class="option-label">Partially — some unique value</div>
+                        <div class="option-desc">Some aspects add value I don't have.</div>
+                    </div>
+                </div>
+                <div class="option" role="radio" aria-checked="false" tabindex="0" onclick="selectOption(this, 2)" onkeypress="handleKeySelect(event, this, 2)" data-value="yes">
+                    <div class="option-marker" aria-hidden="true"></div>
+                    <div class="option-text">
+                        <div class="option-label">Yes — solves what I can't</div>
+                        <div class="option-desc">Critical capability I don't have.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="insight">
+                <div class="insight-label">First Principles Test</div>
+                If you can solve it yourself, external dependency adds risk without proportional value.
+            </div>
+        </section>
+
+        <!-- Step 3: Timing -->
+        <section class="step" data-step="3" aria-labelledby="step3-title">
+            <div class="step-number">Step 3 of 9</div>
+            <h1 class="step-title" id="step3-title">Timing</h1>
+            <p class="step-question">Is now the right time for this commitment?</p>
+            <div class="slider-container">
+                <div class="slider-label">
+                    <label for="weeksSlider">Weeks until key milestone</label>
+                    <span class="slider-value" id="weeksValue">6</span>
+                </div>
+                <input type="range" min="1" max="12" value="6" id="weeksSlider" oninput="updateWeeks()" aria-describedby="weeksDesc">
+                <div class="slider-labels" id="weeksDesc">
+                    <span>1 week</span>
+                    <span>12 weeks</span>
+                </div>
+            </div>
+            <div class="slider-container">
+                <div class="slider-label">
+                    <label for="hoursSlider">Hours/week you could commit</label>
+                    <span class="slider-value" id="hoursValue">3</span>
+                </div>
+                <input type="range" min="1" max="20" value="3" id="hoursSlider" oninput="updateHours()">
+                <div class="slider-labels">
+                    <span>1h</span>
+                    <span>20h</span>
+                </div>
+            </div>
+            <div class="calc-result" aria-live="polite">
+                <div class="calc-result-number" id="totalHoursResult">18h</div>
+                <div class="calc-result-label">Total hours before milestone</div>
+            </div>
+        </section>
+
+        <!-- Step 4: Stakeholder Assessment -->
+        <section class="step" data-step="4" aria-labelledby="step4-title">
+            <div class="step-number">Step 4 of 9</div>
+            <h1 class="step-title" id="step4-title">Stakeholders</h1>
+            <p class="step-question">Are the people/team involved stable and reliable?</p>
+            <div class="step-context">
+                <strong>What You Know</strong><br>
+                {{STAKEHOLDER_INFO}}
+            </div>
+            <div class="slider-container">
+                <div class="slider-label">
+                    <label for="teamSlider">Stakeholder stability confidence</label>
+                    <span class="slider-value" id="teamValue">5</span>
+                </div>
+                <input type="range" min="1" max="10" value="5" id="teamSlider" oninput="updateTeam()">
+                <div class="slider-labels">
+                    <span>1 = Very unstable</span>
+                    <span>10 = Rock solid</span>
+                </div>
+            </div>
+            <div class="insight" id="teamInsight">
+                <div class="insight-label">Stakeholder Signal</div>
+                Consider past patterns of commitment and follow-through.
+            </div>
+        </section>
+
+        <!-- Step 5: Bias Check -->
+        <section class="step" data-step="5" aria-labelledby="step5-title">
+            <div class="step-number">Step 5 of 9</div>
+            <h1 class="step-title" id="step5-title">Bias Check</h1>
+            <p class="step-question">What might be clouding your judgment?</p>
+            <p style="margin-bottom: 1.5rem;">Check any biases you recognize in yourself. Be honest.</p>
+            <div class="checklist" role="group" aria-label="Bias checklist">
+                <div class="check-item" role="checkbox" aria-checked="false" tabindex="0" onclick="toggleCheck(this)" onkeypress="handleKeyCheck(event, this)">
+                    <div class="check-box" aria-hidden="true"></div>
+                    <div class="check-content">
+                        <div class="check-title">FOMO</div>
+                        <div class="check-desc">Fear of missing a rare opportunity</div>
+                        <div class="check-counter">Counter: What evidence suggests this is truly unique?</div>
+                    </div>
+                </div>
+                <div class="check-item" role="checkbox" aria-checked="false" tabindex="0" onclick="toggleCheck(this)" onkeypress="handleKeyCheck(event, this)">
+                    <div class="check-box" aria-hidden="true"></div>
+                    <div class="check-content">
+                        <div class="check-title">Sunk Cost</div>
+                        <div class="check-desc">Factoring in past investment of time/money</div>
+                        <div class="check-counter">Counter: Past investment is gone. This decision is purely forward-looking.</div>
+                    </div>
+                </div>
+                <div class="check-item" role="checkbox" aria-checked="false" tabindex="0" onclick="toggleCheck(this)" onkeypress="handleKeyCheck(event, this)">
+                    <div class="check-box" aria-hidden="true"></div>
+                    <div class="check-content">
+                        <div class="check-title">Authority Bias</div>
+                        <div class="check-desc">Influenced by credentials or status</div>
+                        <div class="check-counter">Counter: Authority does not equal correctness or fit for you.</div>
+                    </div>
+                </div>
+                <div class="check-item" role="checkbox" aria-checked="false" tabindex="0" onclick="toggleCheck(this)" onkeypress="handleKeyCheck(event, this)">
+                    <div class="check-box" aria-hidden="true"></div>
+                    <div class="check-content">
+                        <div class="check-title">Commitment Consistency</div>
+                        <div class="check-desc">Feeling obligated by past statements</div>
+                        <div class="check-counter">Counter: New information fully justifies reassessment.</div>
+                    </div>
+                </div>
+                <div class="check-item" role="checkbox" aria-checked="false" tabindex="0" onclick="toggleCheck(this)" onkeypress="handleKeyCheck(event, this)">
+                    <div class="check-box" aria-hidden="true"></div>
+                    <div class="check-content">
+                        <div class="check-title">Optimism Bias</div>
+                        <div class="check-desc">Assuming problems will resolve</div>
+                        <div class="check-counter">Counter: Look at patterns, not hopes.</div>
+                    </div>
+                </div>
+                <div class="check-item" role="checkbox" aria-checked="false" tabindex="0" onclick="toggleCheck(this)" onkeypress="handleKeyCheck(event, this)">
+                    <div class="check-box" aria-hidden="true"></div>
+                    <div class="check-content">
+                        <div class="check-title">Shiny Object</div>
+                        <div class="check-desc">Attracted by novelty</div>
+                        <div class="check-counter">Counter: Is this genuinely better, or just new?</div>
+                    </div>
+                </div>
+            </div>
+            <div class="insight" aria-live="polite">
+                <div class="insight-label">Bias Count</div>
+                <span id="biasCount">0</span> potential biases identified.
+            </div>
+        </section>
+
+        <!-- Step 6: Opportunity Cost -->
+        <section class="step" data-step="6" aria-labelledby="step6-title">
+            <div class="step-number">Step 6 of 9</div>
+            <h1 class="step-title" id="step6-title">Opportunity Cost</h1>
+            <p class="step-question">What are you giving up?</p>
+            <div class="calc-row">
+                <label for="rateInput">Your hourly value/rate</label>
+                <input type="number" id="rateInput" value="100" onchange="calculateCost()" aria-label="Hourly rate">
+            </div>
+            <div class="calc-result" style="background: var(--muted);" aria-live="polite">
+                <div class="calc-result-number" id="costResult">$1,800</div>
+                <div class="calc-result-label">Opportunity cost</div>
+            </div>
+            <div style="margin-top: 1.5rem;">
+                <p><strong>That time could instead produce:</strong></p>
+                <ul style="margin: 1rem 0 0 1.5rem;">
+                    <li id="alt1">{{ALTERNATIVE_1}}</li>
+                    <li id="alt2">{{ALTERNATIVE_2}}</li>
+                    <li id="alt3">{{ALTERNATIVE_3}}</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Step 7: Scenarios -->
+        <section class="step" data-step="7" aria-labelledby="step7-title">
+            <div class="step-number">Step 7 of 9</div>
+            <h1 class="step-title" id="step7-title">Scenarios</h1>
+            <p class="step-question">What could happen?</p>
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    <span class="scenario-title">Worst case</span>
+                    <span class="scenario-prob" style="color: var(--error);">{{WORST_PROB}}%</span>
+                </div>
+                <div class="scenario-bar">
+                    <div class="scenario-fill" style="width: {{WORST_PROB}}%; background: var(--error);"></div>
+                </div>
+                <div class="scenario-outcome">{{WORST_OUTCOME}}</div>
+            </div>
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    <span class="scenario-title">Neutral case</span>
+                    <span class="scenario-prob" style="color: var(--primary);">{{NEUTRAL_PROB}}%</span>
+                </div>
+                <div class="scenario-bar">
+                    <div class="scenario-fill" style="width: {{NEUTRAL_PROB}}%; background: var(--primary);"></div>
+                </div>
+                <div class="scenario-outcome">{{NEUTRAL_OUTCOME}}</div>
+            </div>
+            <div class="scenario-card">
+                <div class="scenario-header">
+                    <span class="scenario-title">Best case</span>
+                    <span class="scenario-prob" style="color: var(--success);">{{BEST_PROB}}%</span>
+                </div>
+                <div class="scenario-bar">
+                    <div class="scenario-fill" style="width: {{BEST_PROB}}%; background: var(--success);"></div>
+                </div>
+                <div class="scenario-outcome">{{BEST_OUTCOME}}</div>
+            </div>
+        </section>
+
+        <!-- Step 8: Questions -->
+        <section class="step" data-step="8" aria-labelledby="step8-title">
+            <div class="step-number">Step 8 of 9</div>
+            <h1 class="step-title" id="step8-title">Questions to Answer</h1>
+            <p class="step-question">What do you still need to learn?</p>
+            <p style="margin-bottom: 1.5rem;">Click questions to mark as answered.</p>
+            <div class="questions-list" role="group" aria-label="Questions checklist">
+                <!-- Questions will be populated dynamically or via template -->
+                {{QUESTIONS_LIST}}
+            </div>
+        </section>
+
+        <!-- Step 9: Summary & Decision -->
+        <section class="step" data-step="9" aria-labelledby="step9-title">
+            <div class="step-number">Step 9 of 9</div>
+            <h1 class="step-title" id="step9-title">Your Decision</h1>
+            <div class="summary-section">
+                <h3>Analysis Summary</h3>
+                <div class="summary-row">
+                    <span class="summary-label">Solves unique problem?</span>
+                    <span class="summary-value" id="sumProblem">—</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Hours available</span>
+                    <span class="summary-value" id="sumHours">—</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Stakeholder stability</span>
+                    <span class="summary-value" id="sumTeam">—</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Biases identified</span>
+                    <span class="summary-value" id="sumBiases">—</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Opportunity cost</span>
+                    <span class="summary-value" id="sumCost">—</span>
+                </div>
+            </div>
+            <p class="step-question">Based on your analysis, what's your decision?</p>
+            <div class="options" role="radiogroup" aria-label="Final decision">
+                {{DECISION_OPTIONS}}
+            </div>
+            <div class="final-decision" id="finalDecision" aria-live="polite">
+                <div class="final-decision-label">Your Decision</div>
+                <div class="final-decision-text" id="finalDecisionText">—</div>
+                <div id="finalDecisionDesc"></div>
+            </div>
+        </section>
+    </main>
+
+    <nav class="nav" aria-label="Step navigation">
+        <button class="nav-btn" id="prevBtn" onclick="prevStep()" disabled aria-label="Previous step">← Back</button>
+        <button class="nav-btn primary" id="nextBtn" onclick="nextStep()" aria-label="Next step">Continue →</button>
+    </nav>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 9;
+
+        const state = {
+            problem: null,
+            weeks: 6,
+            hours: 3,
+            team: 5,
+            biases: 0,
+            rate: 100,
+            decision: null
+        };
+
+        function announce(text) {
+            document.getElementById('announcer').textContent = text;
+        }
+
+        function updateProgress() {
+            document.querySelectorAll('.progress-step').forEach((el, i) => {
+                el.classList.remove('current', 'completed');
+                if (i + 1 < currentStep) el.classList.add('completed');
+                if (i + 1 === currentStep) el.classList.add('current');
+            });
+            document.getElementById('progressLabel').textContent = `Step ${currentStep} of ${totalSteps}`;
+            document.querySelector('.progress-bar').setAttribute('aria-valuenow', currentStep);
+        }
+
+        function showStep(step) {
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.step[data-step="${step}"]`).classList.add('active');
+            document.getElementById('prevBtn').disabled = step === 1;
+            document.getElementById('nextBtn').textContent = step === totalSteps ? 'Finish' : 'Continue →';
+            updateProgress();
+            if (step === 9) updateSummary();
+            window.scrollTo(0, 0);
+            announce(`Step ${step} of ${totalSteps}`);
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        }
+
+        function selectOption(el, step) {
+            const container = el.closest('.options');
+            container.querySelectorAll('.option').forEach(o => {
+                o.classList.remove('selected');
+                o.setAttribute('aria-checked', 'false');
+            });
+            el.classList.add('selected');
+            el.setAttribute('aria-checked', 'true');
+            if (step === 2) state.problem = el.dataset.value;
+        }
+
+        function handleKeySelect(e, el, step) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectOption(el, step);
+            }
+        }
+
+        function toggleCheck(el) {
+            const isChecked = el.classList.toggle('checked');
+            el.setAttribute('aria-checked', isChecked);
+            state.biases = document.querySelectorAll('.check-item.checked').length;
+            document.getElementById('biasCount').textContent = state.biases;
+        }
+
+        function handleKeyCheck(e, el) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleCheck(el);
+            }
+        }
+
+        function updateWeeks() {
+            state.weeks = parseInt(document.getElementById('weeksSlider').value);
+            document.getElementById('weeksValue').textContent = state.weeks;
+            updateTiming();
+        }
+
+        function updateHours() {
+            state.hours = parseInt(document.getElementById('hoursSlider').value);
+            document.getElementById('hoursValue').textContent = state.hours;
+            updateTiming();
+        }
+
+        function updateTiming() {
+            const total = state.weeks * state.hours;
+            document.getElementById('totalHoursResult').textContent = total + 'h';
+            calculateCost();
+        }
+
+        function updateTeam() {
+            state.team = parseInt(document.getElementById('teamSlider').value);
+            document.getElementById('teamValue').textContent = state.team;
+            const insight = document.getElementById('teamInsight');
+            if (state.team <= 3) {
+                insight.innerHTML = `<div class="insight-label">Stakeholder Signal</div>Low confidence suggests high risk. Proceed with caution.`;
+            } else if (state.team <= 6) {
+                insight.innerHTML = `<div class="insight-label">Stakeholder Signal</div>Moderate confidence. Monitor for changes.`;
+            } else {
+                insight.innerHTML = `<div class="insight-label">Stakeholder Signal</div>High confidence. Verify this is based on evidence.`;
+            }
+        }
+
+        function calculateCost() {
+            state.rate = parseInt(document.getElementById('rateInput').value) || 100;
+            const total = state.weeks * state.hours;
+            const cost = total * state.rate;
+            document.getElementById('costResult').textContent = '$' + cost.toLocaleString();
+        }
+
+        function selectFinal(el) {
+            const container = el.closest('.options');
+            container.querySelectorAll('.option').forEach(o => {
+                o.classList.remove('selected');
+                o.setAttribute('aria-checked', 'false');
+            });
+            el.classList.add('selected');
+            el.setAttribute('aria-checked', 'true');
+            state.decision = el.dataset.value;
+            document.getElementById('finalDecisionText').textContent = el.querySelector('.option-label').textContent;
+            document.getElementById('finalDecisionDesc').textContent = el.querySelector('.option-desc').textContent;
+        }
+
+        function updateSummary() {
+            const problemText = state.problem === 'yes' ? 'Yes' : state.problem === 'partial' ? 'Partial' : 'No';
+            const problemClass = state.problem === 'yes' ? 'positive' : state.problem === 'partial' ? 'neutral' : 'negative';
+            document.getElementById('sumProblem').textContent = problemText;
+            document.getElementById('sumProblem').className = 'summary-value ' + problemClass;
+            document.getElementById('sumHours').textContent = (state.weeks * state.hours) + 'h total';
+            const teamClass = state.team <= 3 ? 'negative' : state.team <= 6 ? 'neutral' : 'positive';
+            document.getElementById('sumTeam').textContent = state.team + '/10';
+            document.getElementById('sumTeam').className = 'summary-value ' + teamClass;
+            document.getElementById('sumBiases').textContent = state.biases;
+            document.getElementById('sumBiases').className = 'summary-value ' + (state.biases > 2 ? 'negative' : 'neutral');
+            const cost = state.weeks * state.hours * state.rate;
+            document.getElementById('sumCost').textContent = '$' + cost.toLocaleString();
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' && e.altKey) nextStep();
+            if (e.key === 'ArrowLeft' && e.altKey) prevStep();
+        });
+
+        showStep(1);
+        calculateCost();
+    </script>
+</body>
+</html>

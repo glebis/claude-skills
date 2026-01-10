@@ -4,6 +4,39 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
+### [Decision Toolkit](./decision-toolkit/) ⭐ NEW
+Generate structured decision-making tools — step-by-step guides, bias checkers, scenario matrices, and interactive dashboards.
+
+**Features:**
+- 🎯 7 decision frameworks (First Principles, 10-10-10, Pre-Mortem, Regret Minimization, etc.)
+- 🧠 Comprehensive bias encyclopedia (20+ cognitive biases with counter-questions)
+- 📊 Interactive HTML wizards with Agency neobrutalism styling
+- 📝 Markdown export with decision records
+- 🎙️ Voice summary templates for Orpheus TTS
+- ⚖️ Opportunity cost calculators and scenario matrices
+
+**Frameworks Included:**
+- First Principles Thinking (5 core questions)
+- Opportunity Cost Calculator
+- Scenario Matrix with probability calibration
+- Pre-Mortem Analysis
+- 10-10-10 Framework (Suzy Welch)
+- Regret Minimization (Jeff Bezos method)
+- Weighted Decision Matrix
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r decision-toolkit ~/.claude/skills/
+
+# Invoke for a decision
+/decision-toolkit "Should I switch to a new tech stack?"
+```
+
+**Use when:** Facing significant choices requiring systematic analysis — career moves, technology decisions, major purchases, strategic pivots.
+
+---
+
 ### [Fathom](./fathom/) ⭐ NEW
 Fetch meetings, transcripts, summaries, and action items from Fathom API.
 
@@ -564,6 +597,8 @@ cp -r claude-skills/transcript-analyzer ~/.claude/skills/
 cp -r claude-skills/retrospective ~/.claude/skills/
 # or
 cp -r claude-skills/github-gist ~/.claude/skills/
+# or
+cp -r claude-skills/decision-toolkit ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
