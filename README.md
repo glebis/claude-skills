@@ -305,6 +305,50 @@ python scripts/telegram_fetch.py send --chat "@username" --text "Hello!"
 
 ---
 
+### [Telegram Telethon](./telegram-telethon/) ⭐ NEW
+Full Telethon API wrapper with daemon mode and Claude Code integration. Monitor chats, auto-respond with Claude, and manage sessions.
+
+**Features:**
+- 🔄 Daemon mode with configurable triggers (regex patterns)
+- 🤖 Auto-spawn Claude Code sessions per chat
+- 💾 Session persistence across restarts
+- 📬 All basic operations: list, recent, search, send, edit, delete, forward
+- 🎤 Voice message transcription (Telegram API, Groq, or local Whisper)
+- 📎 Media download with type filtering
+- 📓 Obsidian integration (daily notes, person notes)
+- 🧵 Forum/topic support
+
+**Quick Start:**
+```bash
+# Install dependencies
+pip install telethon rich questionary
+
+# Interactive setup
+python3 scripts/tg.py setup
+
+# Check status
+python3 scripts/tg.py status
+
+# List chats
+python3 scripts/tg.py list
+
+# Start daemon (monitors for triggers)
+python3 scripts/tgd.py start --foreground
+```
+
+**Daemon Configuration** (`~/.config/telegram-telethon/daemon.yaml`):
+```yaml
+triggers:
+  - chat: "@yourusername"
+    pattern: "^/claude (.+)$"
+    action: claude
+    reply_mode: inline
+```
+
+**Use when:** You need advanced Telegram automation, background monitoring, or Claude-powered chat responses.
+
+---
+
 ### [LLM CLI](./llm-cli/)
 Unified interface for processing text with multiple LLM providers from a single CLI.
 
@@ -649,6 +693,13 @@ Without verification, you'll receive a `model_not_found` error when trying to us
 - `telethon`: `pip install telethon`
 - Telegram API credentials (api_id, api_hash from https://my.telegram.org)
 - Pre-configured session in `~/.telegram_dl/` (run telegram_dl.py to authenticate)
+
+### Telegram Telethon Skill
+- Python 3.8+
+- `telethon`, `rich`, `questionary`: `pip install telethon rich questionary`
+- Telegram API credentials (api_id, api_hash from https://my.telegram.org)
+- For voice transcription: `GROQ_API_KEY` env var or `pip install openai-whisper`
+- Config stored in `~/.config/telegram-telethon/`
 
 ### Gmail Skill
 - Python 3.8+
