@@ -10,6 +10,7 @@ dependencies = [
     "questionary>=2.0",      # Interactive prompts
     "aiofiles>=23.0",        # Async file I/O
     "httpx>=0.27.0",         # Groq API for transcription
+    "qrcode>=7.0",          # QR code login display
 ]
 
 [project.optional-dependencies]
