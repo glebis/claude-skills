@@ -1,9 +1,12 @@
 """Authentication module for Telegram API.
 
 Provides interactive setup wizard and connection verification.
+Supports both phone code and QR code authentication methods.
 """
 from __future__ import annotations
 
+import asyncio
+import base64
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -11,6 +14,8 @@ from typing import Optional, Any
 
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
+from telethon.tl.functions.auth import ExportLoginTokenRequest, ImportLoginTokenRequest
+from telethon.tl.types import auth
 
 from .config import Config, DEFAULT_CONFIG_DIR
 
@@ -188,6 +193,93 @@ class AuthWizard:
         if self._client:
             await self._client.disconnect()
             self._client = None
+
+    # QR Code Authentication Methods
+
+    async def start_qr_login(self) -> tuple[str, int]:
+        """Start QR code login flow.
+
+        Returns:
+            Tuple of (qr_url, expires_in_seconds)
+            qr_url is in format tg://login?token=...
+        """
+        if not self.config.api_id or not self.config.api_hash:
+            raise AuthError("API credentials not set")
+
+        self.config_dir.mkdir(parents=True, exist_ok=True)
+        session_path = self.config_dir / "session"
+
+        self._client = TelegramClient(
+            str(session_path),
+            self.config.api_id,
+            self.config.api_hash,
+        )
+
+        await self._client.connect()
+
+        result = await self._client(ExportLoginTokenRequest(
+            api_id=self.config.api_id,
+            api_hash=self.config.api_hash,
+            except_ids=[],
+        ))
+
+        if isinstance(result, auth.LoginToken):
+            # Encode token as URL-safe base64
+            token_b64 = base64.urlsafe_b64encode(result.token).decode('utf-8').rstrip('=')
+            qr_url = f"tg://login?token={token_b64}"
+            expires_in = result.expires.timestamp() - asyncio.get_event_loop().time()
+            return qr_url, int(max(expires_in, 0))
+        else:
+            raise AuthError(f"Unexpected response: {type(result)}")
+
+    async def wait_for_qr_login(self, timeout: int = 60, poll_interval: float = 2.0) -> Any:
+        """Wait for QR code to be scanned.
+
+        Args:
+            timeout: Maximum seconds to wait
+            poll_interval: Seconds between polls
+
+        Returns:
+            User object on success
+
+        Raises:
+            AuthError: If timeout or login fails
+        """
+        if not self._client:
+            raise AuthError("Must call start_qr_login first")
+
+        import time
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            try:
+                result = await self._client(ExportLoginTokenRequest(
+                    api_id=self.config.api_id,
+                    api_hash=self.config.api_hash,
+                    except_ids=[],
+                ))
+
+                if isinstance(result, auth.LoginTokenSuccess):
+                    # QR was scanned successfully
+                    user = result.authorization.user
+                    # Save config on success
+                    self.config.save()
+                    return user
+                elif isinstance(result, auth.LoginTokenMigrateTo):
+                    # Need to reconnect to different DC
+                    raise AuthError(f"DC migration required to DC{result.dc_id}")
+                elif isinstance(result, auth.LoginToken):
+                    # Still waiting for scan
+                    await asyncio.sleep(poll_interval)
+                else:
+                    raise AuthError(f"Unexpected response: {type(result)}")
+
+            except Exception as e:
+                if "AUTH_TOKEN_EXPIRED" in str(e):
+                    raise AuthError("QR code expired. Please try again.")
+                raise
+
+        raise AuthError(f"Timeout waiting for QR scan after {timeout}s")
 
 
 async def verify_connection(config_dir: Path = DEFAULT_CONFIG_DIR) -> dict:
