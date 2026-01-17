@@ -16,6 +16,7 @@ from utils import FathomClient, format_meeting_markdown, meeting_filename
 # Default output directory (Obsidian vault)
 DEFAULT_OUTPUT = Path.home() / 'Brains' / 'brain'
 TRANSCRIPT_ANALYZER = Path.home() / '.claude' / 'skills' / 'transcript-analyzer' / 'scripts'
+VIDEO_DOWNLOADER = Path(__file__).parent / 'download_video.py'
 
 
 def list_meetings(client: FathomClient, limit: int = 10):
@@ -36,7 +37,7 @@ def list_meetings(client: FathomClient, limit: int = 10):
         print(f"{mid:<40} {created:<12} {title}")
 
 
-def fetch_meeting(client: FathomClient, recording_id: str, output_dir: Path, analyze: bool = False):
+def fetch_meeting(client: FathomClient, recording_id: str, output_dir: Path, analyze: bool = False, download_vid: bool = False):
     """Fetch a specific meeting and save to file."""
     print(f"Fetching meeting {recording_id}...")
 
@@ -66,6 +67,14 @@ def fetch_meeting(client: FathomClient, recording_id: str, output_dir: Path, ana
     output_path.write_text(markdown)
     print(f"Saved: {output_path}")
 
+    # Optionally download video
+    if download_vid:
+        share_url = meeting.get('share_url', '')
+        if share_url:
+            download_video(share_url, output_path)
+        else:
+            print("No share_url found for video download")
+
     # Optionally run transcript analyzer
     if analyze:
         run_analyzer(output_path, output_dir)
@@ -73,7 +82,7 @@ def fetch_meeting(client: FathomClient, recording_id: str, output_dir: Path, ana
     return output_path
 
 
-def fetch_today(client: FathomClient, output_dir: Path, analyze: bool = False):
+def fetch_today(client: FathomClient, output_dir: Path, analyze: bool = False, download_vid: bool = False):
     """Fetch all meetings from today."""
     today = date.today().isoformat()
     print(f"Fetching meetings from {today}...")
@@ -94,13 +103,18 @@ def fetch_today(client: FathomClient, output_dir: Path, analyze: bool = False):
         print(f"Saved: {output_path}")
         saved.append(output_path)
 
+        if download_vid:
+            share_url = meeting.get('share_url', '')
+            if share_url:
+                download_video(share_url, output_path)
+
         if analyze:
             run_analyzer(output_path, output_dir)
 
     return saved
 
 
-def fetch_since(client: FathomClient, since_date: str, output_dir: Path, analyze: bool = False):
+def fetch_since(client: FathomClient, since_date: str, output_dir: Path, analyze: bool = False, download_vid: bool = False):
     """Fetch all meetings since a date."""
     print(f"Fetching meetings since {since_date}...")
 
@@ -119,6 +133,11 @@ def fetch_since(client: FathomClient, since_date: str, output_dir: Path, analyze
         output_path.write_text(markdown)
         print(f"Saved: {output_path}")
         saved.append(output_path)
+
+        if download_vid:
+            share_url = meeting.get('share_url', '')
+            if share_url:
+                download_video(share_url, output_path)
 
         if analyze:
             run_analyzer(output_path, output_dir)
@@ -150,6 +169,62 @@ def run_analyzer(transcript_path: Path, output_dir: Path):
         print("npm not found, skipping analysis")
 
 
+def verify_video(video_path: Path) -> bool:
+    """Verify video file is valid using ffprobe."""
+    try:
+        result = subprocess.run(
+            ['ffprobe', '-v', 'error', '-show_format', '-show_streams', str(video_path)],
+            capture_output=True,
+            timeout=10
+        )
+        return result.returncode == 0
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        return False
+
+
+def download_video(share_url: str, output_path: Path, max_retries: int = 3):
+    """Download video using fathom video downloader with validation and retry."""
+    if not VIDEO_DOWNLOADER.exists():
+        print("Video downloader not found, skipping video download")
+        return
+
+    # Generate output filename based on meeting markdown filename
+    video_filename = output_path.stem + '.mp4'
+    video_path = output_path.parent / video_filename
+
+    for attempt in range(1, max_retries + 1):
+        print(f"Downloading video from {share_url}... (attempt {attempt}/{max_retries})")
+
+        # Remove corrupted file if exists
+        if video_path.exists():
+            video_path.unlink()
+
+        try:
+            subprocess.run(
+                ['python3', str(VIDEO_DOWNLOADER), share_url, '--output-name', str(video_path.stem)],
+                cwd=str(output_path.parent),
+                check=True,
+                timeout=1800  # 30 minute timeout
+            )
+
+            # Verify the downloaded video
+            if video_path.exists() and verify_video(video_path):
+                print(f"Video saved and verified: {video_path}")
+                return
+            else:
+                print(f"Video verification failed (attempt {attempt}/{max_retries})")
+
+        except subprocess.CalledProcessError as e:
+            print(f"Video download failed: {e}")
+        except subprocess.TimeoutExpired:
+            print(f"Video download timed out (attempt {attempt}/{max_retries})")
+        except FileNotFoundError:
+            print("python3 not found, skipping video download")
+            return
+
+    print(f"Failed to download valid video after {max_retries} attempts")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Fetch meetings from Fathom API',
@@ -161,6 +236,7 @@ Examples:
   python fetch.py --today                   # Fetch all today's meetings
   python fetch.py --since 2025-01-01        # Fetch since date
   python fetch.py --today --analyze         # Fetch and analyze
+  python fetch.py --id abc123 --download-video  # Fetch meeting and download video
         """
     )
 
@@ -169,6 +245,7 @@ Examples:
     parser.add_argument('--today', action='store_true', help='Fetch all meetings from today')
     parser.add_argument('--since', type=str, help='Fetch meetings since date (YYYY-MM-DD)')
     parser.add_argument('--analyze', action='store_true', help='Run transcript-analyzer on fetched meetings')
+    parser.add_argument('--download-video', action='store_true', help='Download video recording (requires ffmpeg)')
     parser.add_argument('--output', '-o', type=str, default=str(DEFAULT_OUTPUT),
                         help=f'Output directory (default: {DEFAULT_OUTPUT})')
     parser.add_argument('--limit', type=int, default=10, help='Max meetings to list (default: 10)')
@@ -189,11 +266,11 @@ Examples:
     if args.list:
         list_meetings(client, limit=args.limit)
     elif args.id:
-        fetch_meeting(client, args.id, output_dir, analyze=args.analyze)
+        fetch_meeting(client, args.id, output_dir, analyze=args.analyze, download_vid=args.download_video)
     elif args.today:
-        fetch_today(client, output_dir, analyze=args.analyze)
+        fetch_today(client, output_dir, analyze=args.analyze, download_vid=args.download_video)
     elif args.since:
-        fetch_since(client, args.since, output_dir, analyze=args.analyze)
+        fetch_since(client, args.since, output_dir, analyze=args.analyze, download_vid=args.download_video)
     else:
         # Default: list meetings
         list_meetings(client, limit=args.limit)

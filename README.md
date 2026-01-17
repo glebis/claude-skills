@@ -38,7 +38,7 @@ cp -r decision-toolkit ~/.claude/skills/
 ---
 
 ### [Fathom](./fathom/) ⭐ NEW
-Fetch meetings, transcripts, summaries, and action items from Fathom API.
+Fetch meetings, transcripts, summaries, action items, and download video recordings from Fathom API.
 
 **Features:**
 - 📋 List recent meetings with recording IDs
@@ -47,12 +47,18 @@ Fetch meetings, transcripts, summaries, and action items from Fathom API.
 - ✅ Action items with assignees and completion status
 - 👥 Participant info from calendar invites
 - 🔗 Links to Fathom recordings and share URLs
+- 🎥 Download video recordings via M3U8 streaming
+- ✓ Automatic video validation with retry mechanism
 - 🔬 Optional integration with transcript-analyzer skill
 
 **Quick Start:**
 ```bash
 # Install dependencies
 pip install requests python-dotenv
+
+# Requires ffmpeg for video downloads
+brew install ffmpeg  # macOS
+# or: apt-get install ffmpeg  # Linux
 
 # Add API key
 echo "FATHOM_API_KEY=your-key" > ~/.claude/skills/fathom/scripts/.env
@@ -63,11 +69,14 @@ python3 scripts/fetch.py --list
 # Fetch today's meetings
 python3 scripts/fetch.py --today
 
+# Download video recording
+python3 scripts/fetch.py --id abc123 --download-video
+
 # Fetch and analyze
 python3 scripts/fetch.py --today --analyze
 ```
 
-**Use when:** You need to fetch Fathom meeting recordings, sync transcripts to your vault, or extract meeting data via API.
+**Use when:** You need to fetch Fathom meeting recordings, download video files, sync transcripts to your vault, or extract meeting data via API.
 
 ---
 

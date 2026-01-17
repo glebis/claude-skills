@@ -27,6 +27,7 @@ python3 ~/.claude/skills/fathom/scripts/fetch.py [options]
 | Option | Description |
 |--------|-------------|
 | `--analyze` | Run transcript-analyzer on fetched meetings |
+| `--download-video` | Download video recording (requires ffmpeg) |
 | `--output <path>` | Output directory (default: ~/Brains/brain) |
 | `--limit <n>` | Max meetings to list (default: 10) |
 
@@ -55,6 +56,11 @@ python3 ~/.claude/skills/fathom/scripts/fetch.py --since 2025-01-01
 ### Fetch specific meeting
 ```bash
 python3 ~/.claude/skills/fathom/scripts/fetch.py --id abc123def456
+```
+
+### Download video with meeting
+```bash
+python3 ~/.claude/skills/fathom/scripts/fetch.py --id abc123def456 --download-video
 ```
 
 ## Output Format
@@ -98,6 +104,13 @@ Install dependencies (first time):
 pip install requests python-dotenv
 ```
 
+For video download (optional):
+```bash
+# ffmpeg required for video downloads
+brew install ffmpeg  # macOS
+# or apt install ffmpeg (Linux)
+```
+
 ## Configuration
 
 API key stored in `~/.claude/skills/fathom/scripts/.env`:
@@ -108,4 +121,8 @@ FATHOM_API_KEY=your-api-key
 ## Integration
 
 - **transcript-analyzer**: Use `--analyze` flag to automatically process transcripts
+- **video-downloader**: Use `--download-video` flag to download meeting recordings
+  - Validates downloaded videos using ffprobe
+  - Automatically retries up to 3 times if download fails
+  - Videos saved as .mp4 next to meeting markdown files
 - Replaces Dropbox sync workflow (direct API access)
