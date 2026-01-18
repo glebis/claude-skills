@@ -475,7 +475,8 @@ async def save_draft(
     chat_name: str,
     text: str,
     reply_to: Optional[int] = None,
-    no_webpage: bool = False
+    no_webpage: bool = False,
+    overwrite: bool = False
 ) -> Dict:
     """Save a draft message to a chat.
 
@@ -485,60 +486,80 @@ async def save_draft(
         text: Draft text (empty string clears draft)
         reply_to: Optional message ID to reply to
         no_webpage: Disable link preview
+        overwrite: If True, replace existing draft. If False (default), append to it.
 
     Returns:
         Dict with status and draft info
     """
-    # Input validation
+    entity, resolved_name = await resolve_entity(client, chat_name)
+    if entity is None:
+        return {"saved": False, "error": f"Chat '{chat_name}' not found"}
+
+    # By default, append to existing draft (unless overwrite=True or clearing)
+    if not overwrite and text:
+        async for draft in client.iter_drafts([entity]):
+            if not draft.is_empty:
+                text = draft.raw_text + "\n" + text
+            break
+
+    # Input validation (after append to check combined length)
     if len(text) > MAX_DRAFT_LENGTH:
         return {
             "saved": False,
             "error": f"Draft text exceeds {MAX_DRAFT_LENGTH} characters ({len(text)} provided)"
         }
 
-    entity, resolved_name = await resolve_entity(client, chat_name)
-    if not entity:
-        return {"saved": False, "error": f"Chat '{chat_name}' not found"}
-
     reply_obj = None
     if reply_to:
         reply_obj = types.InputReplyToMessage(reply_to_msg_id=reply_to)
 
-    await client(functions.messages.SaveDraftRequest(
-        peer=entity,
-        message=text,
-        no_webpage=no_webpage,
-        reply_to=reply_obj
-    ))
+    try:
+        await client(functions.messages.SaveDraftRequest(
+            peer=entity,
+            message=text,
+            no_webpage=no_webpage,
+            reply_to=reply_obj
+        ))
+        return {
+            "saved": True,
+            "chat": resolved_name,
+            "text_preview": text[:50] + "..." if len(text) > 50 else text,
+            "cleared": text == ""
+        }
+    except Exception as e:
+        return {"saved": False, "error": str(e)}
 
-    return {
-        "saved": True,
-        "chat": resolved_name,
-        "text_preview": text[:50] + "..." if len(text) > 50 else text,
-        "cleared": text == ""
-    }
 
-
-async def get_all_drafts(client: TelegramClient) -> List[Dict]:
+async def get_all_drafts(client: TelegramClient, limit: Optional[int] = None) -> List[Dict]:
     """Get all drafts across all chats.
+
+    Args:
+        client: Authenticated TelegramClient
+        limit: Optional maximum number of drafts to return
 
     Returns:
         List of draft dicts with chat info and text
     """
     drafts = []
-    async for draft in client.iter_drafts():
-        if draft.is_empty:
-            continue
-        entity = await draft.get_entity()
-        name = getattr(entity, 'title', None) or \
-               getattr(entity, 'first_name', 'Unknown')
-        drafts.append({
-            "chat": name,
-            "chat_id": entity.id,
-            "text": draft.raw_text,
-            "text_preview": draft.raw_text[:50] + "..." if len(draft.raw_text) > 50 else draft.raw_text,
-            "date": draft.date.isoformat() if hasattr(draft, 'date') and draft.date else None
-        })
+    try:
+        async for draft in client.iter_drafts():
+            if draft.is_empty:
+                continue
+            # Use cached entity (avoids N+1 API calls)
+            entity = draft.entity
+            name = getattr(entity, 'title', None) or \
+                   getattr(entity, 'first_name', 'Unknown')
+            drafts.append({
+                "chat": name,
+                "chat_id": entity.id,
+                "text": draft.raw_text,
+                "text_preview": draft.raw_text[:50] + "..." if len(draft.raw_text) > 50 else draft.raw_text,
+                "date": draft.date.isoformat() if hasattr(draft, 'date') and draft.date else None
+            })
+            if limit and len(drafts) >= limit:
+                break
+    except Exception as e:
+        return [{"error": str(e)}]
     return drafts
 
 
@@ -548,8 +569,11 @@ async def clear_all_drafts(client: TelegramClient) -> Dict:
     Returns:
         Dict with status
     """
-    await client(functions.messages.ClearAllDraftsRequest())
-    return {"cleared": True, "all": True}
+    try:
+        await client(functions.messages.ClearAllDraftsRequest())
+        return {"cleared": True, "all": True}
+    except Exception as e:
+        return {"cleared": False, "error": str(e)}
 
 
 async def send_draft(
@@ -568,18 +592,21 @@ async def send_draft(
         Dict with status and message info
     """
     entity, resolved_name = await resolve_entity(client, chat_name)
-    if not entity:
+    if entity is None:
         return {"sent": False, "error": f"Chat '{chat_name}' not found"}
 
     # Security: Authorization check for groups/channels (same as send_message)
     chat_type = get_chat_type(entity)
+    entity_id = getattr(entity, 'id', None)
     if chat_type in ["group", "channel"]:
         allowed = allowed_groups or []
-        entity_id = getattr(entity, 'id', None)
         if resolved_name not in allowed and str(entity_id) not in allowed:
             return {
                 "sent": False,
                 "error": f"Sending to groups/channels requires whitelist. Add '{resolved_name}' to allowed_send_groups.",
+                "chat_type": chat_type,
+                "chat_name": resolved_name,
+                "chat_id": entity_id
             }
 
     # Get draft for this chat
@@ -588,22 +615,25 @@ async def send_draft(
         draft = d
         break
 
-    if not draft or draft.is_empty:
+    if draft is None or draft.is_empty:
         return {"sent": False, "error": f"No draft found for '{resolved_name}'"}
 
     # Send the draft text as a message
     text_preview = draft.raw_text[:50] + "..." if len(draft.raw_text) > 50 else draft.raw_text
     draft_text = draft.raw_text
 
-    # Use client.send_message directly (more reliable than draft.send())
-    msg = await client.send_message(entity, draft_text)
+    try:
+        # Use client.send_message directly (more reliable than draft.send())
+        msg = await client.send_message(entity, draft_text)
 
-    # Clear the draft after sending
-    await draft.delete()
+        # Clear the draft after sending
+        await draft.delete()
 
-    return {
-        "sent": True,
-        "chat": resolved_name,
-        "message_id": msg.id,
-        "text_preview": text_preview
-    }
+        return {
+            "sent": True,
+            "chat": resolved_name,
+            "message_id": msg.id,
+            "text_preview": text_preview
+        }
+    except Exception as e:
+        return {"sent": False, "error": str(e)}

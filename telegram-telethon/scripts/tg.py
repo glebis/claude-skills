@@ -504,7 +504,8 @@ async def cmd_draft(args):
                 args.chat,
                 args.text,
                 reply_to=args.reply_to,
-                no_webpage=args.no_preview
+                no_webpage=args.no_preview,
+                overwrite=args.overwrite
             )
         else:
             result = {"error": "Specify --chat and --text, or use --clear-all"}
@@ -519,9 +520,8 @@ async def cmd_drafts(args):
 
     client = await get_client()
     try:
-        drafts = await get_all_drafts(client)
-        if args.limit:
-            drafts = drafts[:args.limit]
+        # Pass limit to function for early termination (avoids unnecessary iteration)
+        drafts = await get_all_drafts(client, limit=args.limit)
         print(json.dumps(drafts, indent=2))
     finally:
         await client.disconnect()
@@ -651,6 +651,7 @@ def main():
     draft_p.add_argument("--text", help="Draft text (empty string clears draft)")
     draft_p.add_argument("--reply-to", type=int, help="Message ID to reply to")
     draft_p.add_argument("--no-preview", action="store_true", help="Disable link preview")
+    draft_p.add_argument("--overwrite", action="store_true", help="Replace existing draft instead of appending")
     draft_p.add_argument("--clear-all", action="store_true", help="Clear all drafts")
 
     # Drafts - list all drafts

@@ -9,6 +9,13 @@ class TestSaveDraft:
         client = AsyncMock()
         entity = MagicMock()
 
+        # Mock iter_drafts to return empty (no existing draft)
+        async def mock_iter_drafts(entities):
+            return
+            yield  # Make it an async generator
+
+        client.iter_drafts = mock_iter_drafts
+
         with patch('telegram_telethon.modules.messages.resolve_entity',
                    return_value=(entity, "Test Chat")):
             from telegram_telethon.modules.messages import save_draft
@@ -20,13 +27,23 @@ class TestSaveDraft:
     @pytest.mark.asyncio
     async def test_save_draft_exceeds_length(self):
         client = AsyncMock()
+        entity = MagicMock()
 
-        from telegram_telethon.modules.messages import save_draft
-        long_text = "x" * 5000
-        result = await save_draft(client, "Test Chat", long_text)
+        # Mock iter_drafts to return empty (no existing draft)
+        async def mock_iter_drafts(entities):
+            return
+            yield  # Make it an async generator
 
-        assert result["saved"] is False
-        assert "exceeds" in result["error"]
+        client.iter_drafts = mock_iter_drafts
+
+        with patch('telegram_telethon.modules.messages.resolve_entity',
+                   return_value=(entity, "Test Chat")):
+            from telegram_telethon.modules.messages import save_draft
+            long_text = "x" * 5000
+            result = await save_draft(client, "Test Chat", long_text)
+
+            assert result["saved"] is False
+            assert "exceeds" in result["error"]
 
     @pytest.mark.asyncio
     async def test_save_empty_clears_draft(self):
