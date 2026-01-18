@@ -104,6 +104,27 @@ python3 scripts/tg.py forward --from "Source" --to "Dest" --message-ids 123 456
 python3 scripts/tg.py mark-read --chat "Chat Name" [--max-id MSG_ID]
 ```
 
+### Draft Operations
+
+```bash
+# Save/update a draft message
+python3 scripts/tg.py draft --chat "Chat Name" --text "Draft text" [--reply-to MSG_ID] [--no-preview]
+
+# Clear a draft (save empty text)
+python3 scripts/tg.py draft --chat "Chat Name" --text ""
+
+# Clear all drafts
+python3 scripts/tg.py draft --clear-all
+
+# List all drafts
+python3 scripts/tg.py drafts [--limit 50]
+
+# Send a draft as a message (clears the draft)
+python3 scripts/tg.py draft-send --chat "Chat Name"
+```
+
+**Note:** Use `"me"` as the chat name to target Saved Messages (your own chat). The literal name "Saved Messages" doesn't work as it's localized differently per user.
+
 ### Media Operations
 
 ```bash
