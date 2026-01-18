@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 
-from telethon import TelegramClient
+from telethon import TelegramClient, functions, types
 from telethon.tl.types import User, Chat, Channel
 from telethon.errors import FloodWaitError
 
@@ -465,3 +465,175 @@ async def mark_read(
         }
     except Exception as e:
         return {"marked": False, "error": str(e)}
+
+
+MAX_DRAFT_LENGTH = 4096
+
+
+async def save_draft(
+    client: TelegramClient,
+    chat_name: str,
+    text: str,
+    reply_to: Optional[int] = None,
+    no_webpage: bool = False,
+    overwrite: bool = False
+) -> Dict:
+    """Save a draft message to a chat.
+
+    Args:
+        client: Authenticated TelegramClient
+        chat_name: Chat name, @username, or ID
+        text: Draft text (empty string clears draft)
+        reply_to: Optional message ID to reply to
+        no_webpage: Disable link preview
+        overwrite: If True, replace existing draft. If False (default), append to it.
+
+    Returns:
+        Dict with status and draft info
+    """
+    entity, resolved_name = await resolve_entity(client, chat_name)
+    if entity is None:
+        return {"saved": False, "error": f"Chat '{chat_name}' not found"}
+
+    # By default, append to existing draft (unless overwrite=True or clearing)
+    if not overwrite and text:
+        async for draft in client.iter_drafts([entity]):
+            if not draft.is_empty:
+                text = draft.raw_text + "\n" + text
+            break
+
+    # Input validation (after append to check combined length)
+    if len(text) > MAX_DRAFT_LENGTH:
+        return {
+            "saved": False,
+            "error": f"Draft text exceeds {MAX_DRAFT_LENGTH} characters ({len(text)} provided)"
+        }
+
+    reply_obj = None
+    if reply_to:
+        reply_obj = types.InputReplyToMessage(reply_to_msg_id=reply_to)
+
+    try:
+        await client(functions.messages.SaveDraftRequest(
+            peer=entity,
+            message=text,
+            no_webpage=no_webpage,
+            reply_to=reply_obj
+        ))
+        return {
+            "saved": True,
+            "chat": resolved_name,
+            "text_preview": text[:50] + "..." if len(text) > 50 else text,
+            "cleared": text == ""
+        }
+    except Exception as e:
+        return {"saved": False, "error": str(e)}
+
+
+async def get_all_drafts(client: TelegramClient, limit: Optional[int] = None) -> List[Dict]:
+    """Get all drafts across all chats.
+
+    Args:
+        client: Authenticated TelegramClient
+        limit: Optional maximum number of drafts to return
+
+    Returns:
+        List of draft dicts with chat info and text
+    """
+    drafts = []
+    try:
+        async for draft in client.iter_drafts():
+            if draft.is_empty:
+                continue
+            # Use cached entity (avoids N+1 API calls)
+            entity = draft.entity
+            name = getattr(entity, 'title', None) or \
+                   getattr(entity, 'first_name', 'Unknown')
+            drafts.append({
+                "chat": name,
+                "chat_id": entity.id,
+                "text": draft.raw_text,
+                "text_preview": draft.raw_text[:50] + "..." if len(draft.raw_text) > 50 else draft.raw_text,
+                "date": draft.date.isoformat() if hasattr(draft, 'date') and draft.date else None
+            })
+            if limit and len(drafts) >= limit:
+                break
+    except Exception as e:
+        return [{"error": str(e)}]
+    return drafts
+
+
+async def clear_all_drafts(client: TelegramClient) -> Dict:
+    """Clear all drafts.
+
+    Returns:
+        Dict with status
+    """
+    try:
+        await client(functions.messages.ClearAllDraftsRequest())
+        return {"cleared": True, "all": True}
+    except Exception as e:
+        return {"cleared": False, "error": str(e)}
+
+
+async def send_draft(
+    client: TelegramClient,
+    chat_name: str,
+    allowed_groups: Optional[List[str]] = None,
+) -> Dict:
+    """Send draft as message and clear it.
+
+    Args:
+        client: Authenticated TelegramClient
+        chat_name: Chat to send draft from
+        allowed_groups: Whitelist for groups/channels (security check)
+
+    Returns:
+        Dict with status and message info
+    """
+    entity, resolved_name = await resolve_entity(client, chat_name)
+    if entity is None:
+        return {"sent": False, "error": f"Chat '{chat_name}' not found"}
+
+    # Security: Authorization check for groups/channels (same as send_message)
+    chat_type = get_chat_type(entity)
+    entity_id = getattr(entity, 'id', None)
+    if chat_type in ["group", "channel"]:
+        allowed = allowed_groups or []
+        if resolved_name not in allowed and str(entity_id) not in allowed:
+            return {
+                "sent": False,
+                "error": f"Sending to groups/channels requires whitelist. Add '{resolved_name}' to allowed_send_groups.",
+                "chat_type": chat_type,
+                "chat_name": resolved_name,
+                "chat_id": entity_id
+            }
+
+    # Get draft for this chat
+    draft = None
+    async for d in client.iter_drafts([entity]):
+        draft = d
+        break
+
+    if draft is None or draft.is_empty:
+        return {"sent": False, "error": f"No draft found for '{resolved_name}'"}
+
+    # Send the draft text as a message
+    text_preview = draft.raw_text[:50] + "..." if len(draft.raw_text) > 50 else draft.raw_text
+    draft_text = draft.raw_text
+
+    try:
+        # Use client.send_message directly (more reliable than draft.send())
+        msg = await client.send_message(entity, draft_text)
+
+        # Clear the draft after sending
+        await draft.delete()
+
+        return {
+            "sent": True,
+            "chat": resolved_name,
+            "message_id": msg.id,
+            "text_preview": text_preview
+        }
+    except Exception as e:
+        return {"sent": False, "error": str(e)}
