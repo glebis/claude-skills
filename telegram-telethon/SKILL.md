@@ -1,7 +1,34 @@
 ---
 name: telegram-telethon
-description: This skill should be used for comprehensive Telegram automation via Telethon API. Use for sending/receiving messages, monitoring chats, running a background daemon that triggers Claude Code sessions, managing channels/groups, and downloading media. Triggers on "telegram daemon", "monitor telegram", "telegram bot", "spawn Claude from telegram", or any Telethon-related request.
+description: This skill should be used for comprehensive Telegram automation via Telethon API. Use for sending/receiving messages, monitoring chats, running a background daemon that triggers Claude Code sessions, managing channels/groups, and downloading media. Triggers on "telegram daemon", "monitor telegram", "telegram bot", "spawn Claude from telegram", or any Telethon-related request. IMPORTANT: Use `draft` command for "драфт/draft", use `send` for "отправь/send"; if ambiguous, ASK before sending.
 ---
+
+## Claude Behavior Guidelines
+
+### Draft vs Send: Follow User's Intent
+
+| User says | Claude does | Clarify? |
+|-----------|-------------|----------|
+| "драфт", "draft", "сделай драфт" | `draft` | No |
+| "отправь", "пошли", "send" | `send` | No |
+| "напиши сообщение" (ambiguous) | Ask what user wants | Yes |
+
+### Key Rules
+
+1. **Explicit draft → draft**: "драфт", "draft" → use `draft` command immediately
+2. **Explicit send → send**: "отправь", "пошли", "send" → use `send` command immediately
+3. **Ambiguous → clarify**: If neither "draft" nor "send" verb present, ask: "Создать драфт или сразу отправить?"
+
+### Examples
+
+**User:** "сделай драфт для lv: привет"
+**Claude:** Uses `draft --chat "lv" --text "привет"` immediately
+
+**User:** "отправь сообщение Маше: встретимся в 5?"
+**Claude:** Uses `send --chat "Маша" --text "встретимся в 5?"` immediately
+
+**User:** "напиши сообщение для Маши: встретимся в 5?"
+**Claude:** Asks "Создать драфт или сразу отправить?"
 
 # Telegram Telethon Skill
 
