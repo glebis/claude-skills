@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="118" height="20">
+  <linearGradient id="smooth" x2="0" y2="100%">
+    <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+    <stop offset="1" stop-opacity=".1"/>
+  </linearGradient>
+  <clipPath id="round">
+    <rect width="118" height="20" rx="3" fill="#fff"/>
+  </clipPath>
+  <g clip-path="url(#round)">
+    <rect width="80" height="20" fill="#555"/>
+    <rect x="80" width="38" height="20" fill="#ffd700"/>
+    <rect width="118" height="20" fill="url(#smooth)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
+    <text x="40" y="15" fill="#010101" fill-opacity=".3">skillcheck</text>
+    <text x="40" y="14">skillcheck</text>
+    <text x="99" y="15" fill="#010101" fill-opacity=".3">gold</text>
+    <text x="99" y="14">gold</text>
+  </g>
+</svg>
