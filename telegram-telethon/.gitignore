@@ -1,0 +1,19 @@
+# Build artifacts
+*.egg-info/
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+build/
+
+# Local development
+todos/
+plans/
+*.session
+*.session-journal
+
+# IDE
+.idea/
+.vscode/
+*.swp

@@ -631,6 +631,58 @@ async def cmd_transcribe(args):
         await client.disconnect()
 
 
+async def cmd_draft(args):
+    """Handle draft command - save, clear single, or clear all."""
+    from telegram_telethon.modules.messages import save_draft, clear_all_drafts
+
+    client = await get_client()
+    try:
+        if args.clear_all:
+            result = await clear_all_drafts(client)
+        elif args.chat and args.text is not None:
+            result = await save_draft(
+                client,
+                args.chat,
+                args.text,
+                reply_to=args.reply_to,
+                no_webpage=args.no_preview,
+                overwrite=args.overwrite
+            )
+        else:
+            result = {"error": "Specify --chat and --text, or use --clear-all"}
+        print(json.dumps(result, indent=2))
+    finally:
+        await client.disconnect()
+
+
+async def cmd_drafts(args):
+    """Handle drafts command - list all drafts."""
+    from telegram_telethon.modules.messages import get_all_drafts
+
+    client = await get_client()
+    try:
+        # Pass limit to function for early termination (avoids unnecessary iteration)
+        drafts = await get_all_drafts(client, limit=args.limit)
+        print(json.dumps(drafts, indent=2))
+    finally:
+        await client.disconnect()
+
+
+async def cmd_draft_send(args):
+    """Handle draft-send command."""
+    from telegram_telethon.modules.messages import send_draft
+
+    client = await get_client()
+    try:
+        config = Config.load(DEFAULT_CONFIG_DIR / "config.yaml")
+        allowed_groups = config.allowed_send_groups
+
+        result = await send_draft(client, args.chat, allowed_groups=allowed_groups)
+        print(json.dumps(result, indent=2))
+    finally:
+        await client.disconnect()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Telegram Telethon CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -735,6 +787,23 @@ def main():
     tr_p.add_argument("--fallback", choices=["groq", "whisper", "none"], default="groq", help="Fallback method")
     tr_p.add_argument("--groq-key", help="Groq API key (or set GROQ_API_KEY)")
 
+    # Draft - save/update/clear draft
+    draft_p = subparsers.add_parser("draft", help="Manage draft messages")
+    draft_p.add_argument("--chat", help="Chat name/username/ID")
+    draft_p.add_argument("--text", help="Draft text (empty string clears draft)")
+    draft_p.add_argument("--reply-to", type=int, help="Message ID to reply to")
+    draft_p.add_argument("--no-preview", action="store_true", help="Disable link preview")
+    draft_p.add_argument("--overwrite", action="store_true", help="Replace existing draft instead of appending")
+    draft_p.add_argument("--clear-all", action="store_true", help="Clear all drafts")
+
+    # Drafts - list all drafts
+    drafts_p = subparsers.add_parser("drafts", help="List all drafts")
+    drafts_p.add_argument("--limit", type=int, default=50, help="Max drafts to show")
+
+    # Draft-send - send draft as message
+    draft_send_p = subparsers.add_parser("draft-send", help="Send draft as message")
+    draft_send_p.add_argument("--chat", required=True, help="Chat to send draft from")
+
     args = parser.parse_args()
 
     if args.command == "setup":
@@ -774,6 +843,12 @@ def main():
         asyncio.run(cmd_download(args))
     elif args.command == "transcribe":
         asyncio.run(cmd_transcribe(args))
+    elif args.command == "draft":
+        asyncio.run(cmd_draft(args))
+    elif args.command == "drafts":
+        asyncio.run(cmd_drafts(args))
+    elif args.command == "draft-send":
+        asyncio.run(cmd_draft_send(args))
 
 
 if __name__ == "__main__":
