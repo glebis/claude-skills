@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import argparse
 
 from telegram_telethon.core.config import Config, DaemonConfig, TriggerConfig, ClaudeConfig, DEFAULT_CONFIG_DIR
-from telegram_telethon.core.auth import AuthWizard, AuthStatus, verify_connection
+from telegram_telethon.core.auth import AuthWizard, AuthStatus, verify_connection, AuthError
 
 
 async def get_client():
@@ -38,12 +38,153 @@ def is_interactive():
     return sys.stdin.isatty() and sys.stdout.isatty()
 
 
-def setup_wizard(api_id=None, api_hash=None, phone=None, code=None, password=None):
+def print_qr_terminal(url: str) -> None:
+    """Print QR code to terminal using qrcode library."""
+    try:
+        import qrcode
+    except ImportError:
+        print(f"\nQR code URL: {url}")
+        print("Install qrcode for visual display: pip install qrcode")
+        return
+
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=1,
+        border=1,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+
+    # Print using unicode blocks for compact terminal display
+    qr.print_ascii(invert=True)
+
+
+def setup_qr(api_id=None, api_hash=None):
+    """QR code authentication setup.
+
+    Useful when verification codes don't arrive via phone.
+    """
+    try:
+        from rich.console import Console
+        from rich.panel import Panel
+        from rich.prompt import Prompt
+    except ImportError:
+        print("Install dependencies: pip install rich")
+        sys.exit(1)
+
+    console = Console()
+    interactive = is_interactive()
+    wizard = AuthWizard()
+
+    # Step 1: Get API credentials
+    if interactive:
+        console.print(Panel.fit(
+            "[bold]Telegram QR Code Login[/bold]",
+            border_style="green",
+        ))
+
+        console.print("\n[bold]Step 1/2: API Credentials[/bold]")
+        console.print("─" * 40)
+
+        if not api_id:
+            while True:
+                api_id = Prompt.ask("Enter your api_id")
+                if wizard.validate_api_id(api_id):
+                    break
+                console.print("[red]Invalid API ID - must be numeric[/red]")
+
+        if not api_hash:
+            while True:
+                api_hash = Prompt.ask("Enter your api_hash")
+                if wizard.validate_api_hash(api_hash):
+                    break
+                console.print("[red]Invalid API hash - must be 32 hex characters[/red]")
+    else:
+        if not api_id or not api_hash:
+            print(json.dumps({
+                "error": "Non-interactive QR login requires --api-id and --api-hash",
+            }))
+            sys.exit(1)
+
+        if not wizard.validate_api_id(str(api_id)):
+            print(json.dumps({"error": "Invalid API ID - must be numeric"}))
+            sys.exit(1)
+
+        if not wizard.validate_api_hash(api_hash):
+            print(json.dumps({"error": "Invalid API hash - must be 32 hex characters"}))
+            sys.exit(1)
+
+    wizard.set_credentials(str(api_id), api_hash)
+
+    async def do_qr_auth():
+        try:
+            if interactive:
+                console.print("\n[bold]Step 2/2: Scan QR Code[/bold]")
+                console.print("─" * 40)
+                console.print("1. Open Telegram on your phone")
+                console.print("2. Go to Settings → Devices → Link Desktop Device")
+                console.print("3. Scan the QR code below\n")
+
+            qr_url, expires_in = await wizard.start_qr_login()
+
+            if interactive:
+                print_qr_terminal(qr_url)
+                console.print(f"\n[dim]Expires in {expires_in}s. Waiting for scan...[/dim]")
+            else:
+                print(json.dumps({
+                    "status": "qr_ready",
+                    "qr_url": qr_url,
+                    "expires_in": expires_in,
+                    "instructions": "Scan with Telegram: Settings → Devices → Link Desktop Device"
+                }))
+
+            user = await wizard.wait_for_qr_login(timeout=120)
+            return user
+
+        except AuthError as e:
+            raise e
+        finally:
+            await wizard.disconnect()
+
+    try:
+        user = asyncio.run(do_qr_auth())
+    except Exception as e:
+        if interactive:
+            console.print(f"[red]QR Authentication failed: {e}[/red]")
+        else:
+            print(json.dumps({"error": f"QR authentication failed: {e}"}))
+        sys.exit(1)
+
+    if interactive:
+        console.print(f"\n[green]✓[/green] Connected as: {user.first_name} (@{getattr(user, 'username', 'N/A')})")
+        console.print(f"[green]✓[/green] Config saved to: {DEFAULT_CONFIG_DIR}")
+        console.print("\n[bold green]Ready![/bold green] Try: tg.py list")
+    else:
+        print(json.dumps({
+            "status": "success",
+            "connected_as": {
+                "first_name": user.first_name,
+                "username": getattr(user, 'username', None),
+            },
+            "config_dir": str(DEFAULT_CONFIG_DIR)
+        }))
+
+
+def setup_wizard(api_id=None, api_hash=None, phone=None, code=None, password=None, use_qr=False):
     """Setup wizard with TTY detection and non-interactive support.
 
     In interactive mode: prompts for all values
     In non-interactive mode: requires --api-id, --api-hash, --phone flags
+
+    Args:
+        use_qr: If True, skip phone verification and use QR code login instead
     """
+    # Redirect to QR login if requested
+    if use_qr:
+        setup_qr(api_id=api_id, api_hash=api_hash)
+        return
+
     try:
         from rich.console import Console
         from rich.panel import Panel
@@ -501,6 +642,7 @@ def main():
     setup_p.add_argument("--phone", help="Phone number with country code (for non-interactive)")
     setup_p.add_argument("--code", help="Verification code from Telegram")
     setup_p.add_argument("--password", help="2FA password if enabled")
+    setup_p.add_argument("--qr", action="store_true", help="Use QR code login instead of phone verification")
 
     subparsers.add_parser("status", help="Show connection status")
     subparsers.add_parser("daemon-config", help="Configure daemon triggers")
@@ -602,6 +744,7 @@ def main():
             phone=args.phone,
             code=args.code,
             password=args.password,
+            use_qr=args.qr,
         )
     elif args.command == "status":
         show_status()
