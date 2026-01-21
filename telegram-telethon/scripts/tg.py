@@ -437,7 +437,7 @@ async def cmd_recent(args):
 
         if args.output:
             result = save_to_file(messages, args.output, output_fmt)
-            print(json.dumps(result, indent=2))
+            print(json.dumps(result, indent=2, ensure_ascii=False))
         elif args.to_daily:
             path = append_to_daily(format_output(messages, output_fmt))
             print(f"Appended to {path}")
@@ -465,7 +465,7 @@ async def cmd_search(args):
 
         if args.output:
             result = save_to_file(messages, args.output, output_fmt)
-            print(json.dumps(result, indent=2))
+            print(json.dumps(result, indent=2, ensure_ascii=False))
         elif args.to_daily:
             path = append_to_daily(format_output(messages, output_fmt))
             print(f"Appended to {path}")
@@ -506,7 +506,7 @@ async def cmd_thread(args):
 
         if args.output:
             result = save_to_file(messages, args.output, output_fmt)
-            print(json.dumps(result, indent=2))
+            print(json.dumps(result, indent=2, ensure_ascii=False))
         else:
             print(format_output(messages, output_fmt))
     finally:
@@ -527,7 +527,7 @@ async def cmd_send(args):
             client, chat_name=args.chat, text=args.text or "",
             reply_to=reply_to, file_path=args.file, allowed_groups=allowed_groups,
         )
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2, ensure_ascii=False))
     finally:
         await client.disconnect()
 
@@ -542,7 +542,7 @@ async def cmd_delete(args):
             client, chat_name=args.chat, message_ids=args.message_ids,
             revoke=not args.no_revoke,
         )
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2, ensure_ascii=False))
     finally:
         await client.disconnect()
 
@@ -557,7 +557,7 @@ async def cmd_forward(args):
             client, from_chat=args.from_chat, to_chat=args.to_chat,
             message_ids=args.message_ids,
         )
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2, ensure_ascii=False))
     finally:
         await client.disconnect()
 
@@ -569,7 +569,7 @@ async def cmd_mark_read(args):
     client = await get_client()
     try:
         result = await mark_read(client, chat_name=args.chat, max_id=args.max_id)
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2, ensure_ascii=False))
     finally:
         await client.disconnect()
 
@@ -581,7 +581,7 @@ async def cmd_edit(args):
     client = await get_client()
     try:
         result = await edit_message(client, chat_name=args.chat, message_id=args.message_id, text=args.text)
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2, ensure_ascii=False))
     finally:
         await client.disconnect()
 
