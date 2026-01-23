@@ -63,6 +63,19 @@ def get_connection() -> sqlite3.Connection:
 
 
 # ============================================================
+# Deduplication Note
+# ============================================================
+#
+# Cumulative metrics (steps, calories, distance) are recorded by BOTH
+# iPhone and Apple Watch simultaneously, causing double-counting when
+# both sources are summed. Solution: filter to Apple Watch data only
+# using "source_name LIKE '%Watch%'" since Watch is more accurate for
+# movement tracking (always on wrist).
+#
+# Also: start_date has timezone offset ("+0100") that SQLite's DATE()
+# function doesn't handle, so we use substr(start_date, 1, 10) instead.
+#
+# ============================================================
 # Query Functions
 # ============================================================
 
@@ -75,20 +88,22 @@ def daily_summary(date: str = None) -> Dict[str, Any]:
 
     result = {"date": date, "metrics": {}}
 
-    # Steps
+    # Steps (deduplicated - Apple Watch source only to avoid iPhone double-counting)
     cursor = conn.execute("""
         SELECT SUM(value) as total FROM health_records
         WHERE record_type = 'HKQuantityTypeIdentifierStepCount'
         AND start_date LIKE ?
+        AND source_name LIKE '%Watch%'
     """, (f"{date}%",))
     row = cursor.fetchone()
     result["metrics"]["steps"] = int(row["total"]) if row["total"] else 0
 
-    # Active calories
+    # Active calories (deduplicated - Apple Watch source only)
     cursor = conn.execute("""
         SELECT SUM(value) as total FROM health_records
         WHERE record_type = 'HKQuantityTypeIdentifierActiveEnergyBurned'
         AND start_date LIKE ?
+        AND source_name LIKE '%Watch%'
     """, (f"{date}%",))
     row = cursor.fetchone()
     result["metrics"]["active_calories"] = round(row["total"], 1) if row["total"] else 0
@@ -117,11 +132,12 @@ def daily_summary(date: str = None) -> Dict[str, Any]:
     row = cursor.fetchone()
     result["metrics"]["exercise_minutes"] = int(row["total"]) if row["total"] else 0
 
-    # Distance
+    # Distance (deduplicated - Apple Watch source only)
     cursor = conn.execute("""
         SELECT SUM(value) as total FROM health_records
         WHERE record_type = 'HKQuantityTypeIdentifierDistanceWalkingRunning'
         AND start_date LIKE ?
+        AND source_name LIKE '%Watch%'
     """, (f"{date}%",))
     row = cursor.fetchone()
     result["metrics"]["distance_km"] = round(row["total"], 2) if row["total"] else 0
@@ -159,13 +175,16 @@ def weekly_trends(weeks: int = 4) -> Dict[str, Any]:
             "metrics": {}
         }
 
-        # Average daily steps
+        # Average daily steps (deduplicated - Apple Watch source only)
+        # Note: Using substr(start_date,1,10) instead of DATE() because
+        # start_date has timezone offset (+0100) that DATE() doesn't handle
         cursor = conn.execute("""
             SELECT AVG(daily_steps) as avg FROM (
-                SELECT DATE(start_date) as day, SUM(value) as daily_steps
+                SELECT substr(start_date, 1, 10) as day, SUM(value) as daily_steps
                 FROM health_records
                 WHERE record_type = 'HKQuantityTypeIdentifierStepCount'
                 AND start_date >= ? AND start_date < ?
+                AND source_name LIKE '%Watch%'
                 GROUP BY day
             )
         """, (week_start.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d")))
@@ -462,7 +481,10 @@ def to_ascii(data: Any, title: str = "Health Data") -> str:
             for key, value in data["metrics"].items():
                 if isinstance(value, dict):
                     if "avg" in value:
-                        lines.append(f"  {key:20s} avg:{value['avg']:>6}  min:{value.get('min', 'N/A'):>4}  max:{value.get('max', 'N/A'):>4}")
+                        avg_val = value['avg'] if value['avg'] is not None else 'N/A'
+                        min_val = value.get('min', 'N/A') if value.get('min') is not None else 'N/A'
+                        max_val = value.get('max', 'N/A') if value.get('max') is not None else 'N/A'
+                        lines.append(f"  {key:20s} avg:{str(avg_val):>6}  min:{str(min_val):>4}  max:{str(max_val):>4}")
                     else:
                         lines.append(f"  {key:20s} {value.get('value', 'N/A')}")
                 else:
