@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automation Advisor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Geist+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Design System Variables */
+        :root {
+            /* Typography */
+            --font-serif: 'EB Garamond', serif;
+            --font-mono: 'Geist Mono', monospace;
+
+            /* Color Palette - Analytical Cream */
+            --cream-10: oklch(0.98 0.005 60);
+            --cream-20: oklch(0.96 0.010 58);
+            --cream-30: oklch(0.94 0.015 56);
+            --cream-40: oklch(0.90 0.020 54);
+            --cream-50: oklch(0.86 0.025 52);
+
+            --ink-10: oklch(0.75 0.015 40);
+            --ink-20: oklch(0.55 0.020 38);
+            --ink-30: oklch(0.35 0.025 36);
+            --ink-40: oklch(0.25 0.020 34);
+            --ink-50: oklch(0.18 0.015 32);
+
+            --accent-amber: oklch(0.72 0.14 55);
+            --accent-rose: oklch(0.62 0.15 18);
+            --accent-sage: oklch(0.65 0.08 145);
+
+            /* Semantic Mappings */
+            --bg-canvas: var(--cream-10);
+            --bg-paper: var(--cream-20);
+            --bg-elevated: white;
+            --text-primary: var(--ink-50);
+            --text-secondary: var(--ink-30);
+            --text-tertiary: var(--ink-20);
+            --border-subtle: var(--cream-40);
+            --border-medium: var(--cream-50);
+            --border-strong: var(--ink-10);
+
+            /* Spacing (8px grid) */
+            --space-xs: 0.5rem;
+            --space-sm: 1rem;
+            --space-md: 1.5rem;
+            --space-lg: 2rem;
+            --space-xl: 3rem;
+            --space-2xl: 4rem;
+            --space-3xl: 6rem;
+
+            /* Typography Scale */
+            --text-xs: 0.75rem;
+            --text-sm: 0.875rem;
+            --text-base: 1rem;
+            --text-lg: 1.125rem;
+            --text-xl: 1.375rem;
+            --text-2xl: 1.75rem;
+            --text-3xl: 2.25rem;
+            --text-4xl: 3rem;
+            --text-5xl: 3.75rem;
+
+            /* Line Heights */
+            --leading-tight: 1.2;
+            --leading-snug: 1.35;
+            --leading-normal: 1.5;
+            --leading-relaxed: 1.7;
+
+            /* Shadows */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-serif);
+            background: var(--bg-canvas);
+            color: var(--text-primary);
+            line-height: var(--leading-normal);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-elevated);
+            border-bottom: 2px solid var(--border-strong);
+            padding: var(--space-lg) var(--space-xl);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: var(--text-2xl);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+
+        .header-subtitle {
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        .progress-display {
+            display: flex;
+            align-items: baseline;
+            gap: var(--space-md);
+            font-family: var(--font-mono);
+        }
+
+        .progress-label {
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .progress-value {
+            font-size: var(--text-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-2xl) var(--space-xl);
+        }
+
+        /* Start Screen */
+        .start-container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .start-kicker {
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent-rose);
+            margin-bottom: var(--space-sm);
+            font-weight: 500;
+        }
+
+        .start-heading {
+            font-size: var(--text-5xl);
+            font-weight: 600;
+            line-height: var(--leading-tight);
+            letter-spacing: -0.03em;
+            margin-bottom: var(--space-lg);
+            color: var(--text-primary);
+        }
+
+        .start-deck {
+            font-size: var(--text-xl);
+            line-height: var(--leading-relaxed);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-2xl);
+            max-width: 600px;
+        }
+
+        .start-rule {
+            height: 1px;
+            background: var(--border-medium);
+            margin: var(--space-xl) 0;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-lg);
+            margin-bottom: var(--space-2xl);
+        }
+
+        .metric-item {
+            border-top: 2px solid var(--border-medium);
+            padding-top: var(--space-sm);
+        }
+
+        .metric-value {
+            font-family: var(--font-mono);
+            font-size: var(--text-2xl);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .metric-label {
+            font-size: var(--text-sm);
+            color: var(--text-tertiary);
+            line-height: var(--leading-snug);
+        }
+
+        .start-button {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            background: var(--text-primary);
+            color: var(--bg-elevated);
+            font-size: var(--text-base);
+            font-weight: 600;
+            padding: var(--space-md) var(--space-xl);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-family: var(--font-serif);
+            letter-spacing: -0.01em;
+        }
+
+        .start-button:hover {
+            background: var(--ink-40);
+            transform: translateX(4px);
+        }
+
+        .start-button .arrow {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-family: var(--font-mono);
+        }
+
+        .start-button:hover .arrow {
+            transform: translateX(4px);
+        }
+
+        /* Chat Screen */
+        .chat-container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 480px 1fr;
+            gap: var(--space-2xl);
+            align-items: start;
+        }
+
+        .question-panel {
+            position: sticky;
+            top: var(--space-xl);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-medium);
+            padding: var(--space-xl);
+        }
+
+        .question-kicker {
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--accent-rose);
+            margin-bottom: var(--space-md);
+            font-weight: 500;
+        }
+
+        .question-text {
+            font-size: var(--text-2xl);
+            font-weight: 500;
+            line-height: var(--leading-snug);
+            margin-bottom: var(--space-xl);
+            letter-spacing: -0.015em;
+        }
+
+        .input-section {
+            border-top: 1px solid var(--border-subtle);
+            padding-top: var(--space-lg);
+        }
+
+        /* Options */
+        .option-button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: var(--bg-paper);
+            border: 1px solid var(--border-subtle);
+            padding: var(--space-md) var(--space-lg);
+            margin-bottom: var(--space-sm);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: var(--font-serif);
+            font-size: var(--text-base);
+            color: var(--text-primary);
+        }
+
+        .option-button:hover {
+            border-color: var(--border-strong);
+            background: var(--bg-elevated);
+            transform: translateX(2px);
+        }
+
+        .option-button.selected {
+            border-color: var(--text-primary);
+            background: var(--bg-elevated);
+            border-width: 2px;
+        }
+
+        /* Textarea */
+        .text-input {
+            width: 100%;
+            min-height: 140px;
+            background: var(--bg-paper);
+            border: 1px solid var(--border-medium);
+            padding: var(--space-md);
+            font-family: var(--font-serif);
+            font-size: var(--text-base);
+            line-height: var(--leading-relaxed);
+            color: var(--text-primary);
+            resize: vertical;
+            transition: all 0.2s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: var(--text-primary);
+            background: var(--bg-elevated);
+        }
+
+        .input-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: var(--space-xs);
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+        }
+
+        .submit-row {
+            display: flex;
+            gap: var(--space-sm);
+            margin-top: var(--space-lg);
+        }
+
+        .submit-button {
+            flex: 1;
+            background: var(--text-primary);
+            color: var(--bg-elevated);
+            border: none;
+            padding: var(--space-md) var(--space-lg);
+            font-family: var(--font-serif);
+            font-size: var(--text-base);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+        }
+
+        .submit-button:hover {
+            background: var(--ink-40);
+        }
+
+        .submit-button .arrow {
+            font-family: var(--font-mono);
+            transition: transform 0.25s ease;
+        }
+
+        .submit-button:hover .arrow {
+            transform: translateX(3px);
+        }
+
+        .voice-button {
+            background: var(--bg-paper);
+            border: 1px solid var(--border-medium);
+            padding: var(--space-md) var(--space-lg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .voice-button:hover {
+            border-color: var(--border-strong);
+            background: var(--bg-elevated);
+        }
+
+        .voice-button.recording {
+            background: var(--accent-rose);
+            color: white;
+            border-color: var(--accent-rose);
+        }
+
+        /* Conversation Panel */
+        .conversation-panel {
+            background: var(--bg-paper);
+            border: 1px solid var(--border-subtle);
+            min-height: 600px;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: var(--space-xl);
+        }
+
+        .conversation-header {
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-tertiary);
+            padding-bottom: var(--space-md);
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: var(--space-lg);
+            font-weight: 500;
+        }
+
+        .message {
+            margin-bottom: var(--space-lg);
+            opacity: 0;
+            animation: messageSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-label {
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-tertiary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .message.user .message-label {
+            color: var(--accent-rose);
+        }
+
+        .message-content {
+            font-size: var(--text-base);
+            line-height: var(--leading-relaxed);
+            color: var(--text-primary);
+        }
+
+        .loading-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            color: var(--text-tertiary);
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .loading-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--text-tertiary);
+            border-radius: 50%;
+            animation: loadingPulse 1.4s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: 0s; }
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes loadingPulse {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+
+        /* Results Screen */
+        .results-container {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .results-header {
+            background: var(--bg-elevated);
+            border: 2px solid var(--border-strong);
+            padding: var(--space-2xl);
+            margin-bottom: var(--space-xl);
+            text-align: center;
+        }
+
+        .results-decision {
+            font-size: var(--text-4xl);
+            font-weight: 600;
+            margin-bottom: var(--space-md);
+            letter-spacing: -0.02em;
+        }
+
+        .results-score {
+            font-family: var(--font-mono);
+            font-size: var(--text-3xl);
+            font-weight: 600;
+            margin-bottom: var(--space-lg);
+        }
+
+        .results-reasoning {
+            font-size: var(--text-lg);
+            line-height: var(--leading-relaxed);
+            color: var(--text-secondary);
+        }
+
+        .scores-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
+        }
+
+        .score-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-medium);
+            padding: var(--space-lg);
+            text-align: center;
+        }
+
+        .score-value {
+            font-family: var(--font-mono);
+            font-size: var(--text-3xl);
+            font-weight: 600;
+            margin-bottom: var(--space-xs);
+        }
+
+        .score-label {
+            font-size: var(--text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-tertiary);
+        }
+
+        /* Utilities */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-paper);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-medium);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-strong);
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div>
+                    <h1 class="header-title">Automation Advisor</h1>
+                    <div class="header-subtitle">Decision Framework</div>
+                </div>
+                <div id="progress-indicator" class="progress-display hidden">
+                    <span class="progress-label" id="progress-label">Question</span>
+                    <span class="progress-value" id="progress-percent">0/8</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Start Screen -->
+        <main id="start-screen" class="main-content">
+            <div class="start-container">
+                <div class="start-kicker">Decision Framework</div>
+                <h2 class="start-heading">Should you automate this task?</h2>
+                <p class="start-deck">Transform vague intuition into quantified ROI analysis. Eight structured questions deliver a data-driven recommendation with clear next steps.</p>
+
+                <div class="start-rule"></div>
+
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-value">8</div>
+                        <div class="metric-label">Structured questions</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">3–5 min</div>
+                        <div class="metric-label">Average session</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">ROI</div>
+                        <div class="metric-label">Break-even analysis</div>
+                    </div>
+                </div>
+
+                <button class="start-button" onclick="startSession()">
+                    <span>Begin Analysis</span>
+                    <span class="arrow">→</span>
+                </button>
+            </div>
+        </main>
+
+        <!-- Chat Screen -->
+        <main id="chat-screen" class="main-content hidden">
+            <div class="chat-container">
+                <!-- Question Panel -->
+                <aside class="question-panel">
+                    <div class="question-kicker">Current Question</div>
+                    <h3 class="question-text" id="question-text"></h3>
+
+                    <div class="input-section">
+                        <!-- Multiple Choice -->
+                        <div id="options-container" class="hidden"></div>
+
+                        <!-- Multiple Select -->
+                        <div id="multiselect-container" class="hidden"></div>
+
+                        <!-- Freeform -->
+                        <div id="freeform-container" class="hidden">
+                            <textarea
+                                id="text-input"
+                                class="text-input"
+                                placeholder="Type your answer..."
+                                maxlength="1000"
+                                oninput="updateCharCount()"
+                                onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submitTextAnswer(); }"
+                            ></textarea>
+                            <div class="input-meta">
+                                <span>↵ Enter • ⇧↵ New line</span>
+                                <span><span id="char-count">0</span>/1000</span>
+                            </div>
+                            <div class="submit-row">
+                                <button class="submit-button" id="submit-text-btn" onclick="submitTextAnswer()">
+                                    <span>Continue</span>
+                                    <span class="arrow">→</span>
+                                </button>
+                                <button class="voice-button" id="voice-btn" onclick="toggleVoiceRecording()">
+                                    <span id="voice-icon">🎤</span>
+                                    <span id="voice-text">Voice</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Multi-select Submit -->
+                        <button id="multiselect-submit" class="submit-button hidden" onclick="submitMultiSelectAnswer()">
+                            <span>Continue</span>
+                            <span class="arrow">→</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Conversation Panel -->
+                <section class="conversation-panel">
+                    <div class="conversation-header">Conversation History</div>
+                    <div id="messages"></div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Results Screen -->
+        <main id="results-screen" class="main-content hidden">
+            <div class="results-container">
+                <div class="results-header">
+                    <div class="results-decision" id="result-decision"></div>
+                    <div class="results-score">Score: <span id="result-score">0</span></div>
+                    <p class="results-reasoning" id="result-reasoning"></p>
+                </div>
+
+                <div class="scores-grid">
+                    <div class="score-card">
+                        <div class="score-value" id="score-frequency">0</div>
+                        <div class="score-label">Frequency</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-value" id="score-time">0</div>
+                        <div class="score-label">Time</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-value" id="score-error">0</div>
+                        <div class="score-label">Error Cost</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="score-value" id="score-longevity">0</div>
+                        <div class="score-label">Longevity</div>
+                    </div>
+                </div>
+
+                <div id="recommendations" style="background: var(--bg-elevated); border: 1px solid var(--border-medium); padding: var(--space-xl);"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let sessionId = null;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        async function startSession() {
+            try {
+                const response = await fetch('/api/start', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.session_id) {
+                    sessionId = data.session_id;
+                    document.getElementById('start-screen').classList.add('hidden');
+                    document.getElementById('chat-screen').classList.remove('hidden');
+                    document.getElementById('progress-indicator').classList.remove('hidden');
+
+                    if (data.question) {
+                        displayQuestion(data.question);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to start session:', error);
+                alert('Failed to start session. Please try again.');
+            }
+        }
+
+        function displayQuestion(question) {
+            document.getElementById('question-text').textContent = question.text;
+
+            // Hide all input containers
+            document.getElementById('options-container').classList.add('hidden');
+            document.getElementById('multiselect-container').classList.add('hidden');
+            document.getElementById('freeform-container').classList.add('hidden');
+            document.getElementById('multiselect-submit').classList.add('hidden');
+
+            if (question.type === 'multiple_choice') {
+                const container = document.getElementById('options-container');
+                container.classList.remove('hidden');
+                container.innerHTML = question.options.map((opt, idx) =>
+                    `<button class="option-button" onclick="submitAnswer('${opt}')">${opt}</button>`
+                ).join('');
+            } else if (question.type === 'multiple_select') {
+                const container = document.getElementById('multiselect-container');
+                container.classList.remove('hidden');
+                container.innerHTML = question.options.map((opt, idx) =>
+                    `<button class="option-button" onclick="toggleMultiSelect(this, '${opt}')">${opt}</button>`
+                ).join('');
+                document.getElementById('multiselect-submit').classList.remove('hidden');
+            } else if (question.type === 'freeform') {
+                document.getElementById('freeform-container').classList.remove('hidden');
+                document.getElementById('text-input').value = '';
+                document.getElementById('text-input').focus();
+                updateCharCount();
+            }
+
+            // Update progress
+            const progressMatch = question.text.match(/Question (\d+) of (\d+)/);
+            if (progressMatch) {
+                document.getElementById('progress-percent').textContent = `${progressMatch[1]}/${progressMatch[2]}`;
+                document.getElementById('progress-label').textContent = `Question ${progressMatch[1]}`;
+            }
+        }
+
+        function toggleMultiSelect(button, value) {
+            button.classList.toggle('selected');
+        }
+
+        async function submitAnswer(answer) {
+            await sendAnswer(answer);
+        }
+
+        async function submitTextAnswer() {
+            const answer = document.getElementById('text-input').value.trim();
+            if (!answer) return;
+            await sendAnswer(answer);
+        }
+
+        async function submitMultiSelectAnswer() {
+            const selected = Array.from(document.querySelectorAll('#multiselect-container .option-button.selected'))
+                .map(btn => btn.textContent);
+            if (selected.length === 0) {
+                alert('Please select at least one option');
+                return;
+            }
+            await sendAnswer(selected.join(', '));
+        }
+
+        async function sendAnswer(answer) {
+            if (!sessionId) return;
+
+            try {
+                // Add user message
+                addMessage('user', answer);
+
+                // Show loading
+                const loadingId = addLoadingMessage();
+
+                const response = await fetch('/api/answer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId, answer: answer })
+                });
+
+                const data = await response.json();
+
+                // Remove loading
+                removeLoadingMessage(loadingId);
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to submit answer');
+                }
+
+                if (data.complete && data.result) {
+                    showResults(data.result);
+                } else if (data.question) {
+                    displayQuestion(data.question);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                removeLoadingMessage();
+                alert('Failed to submit answer. Please try again.');
+            }
+        }
+
+        function addMessage(role, content) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + role;
+            messageDiv.innerHTML = `
+                <div class="message-label">${role === 'user' ? 'You' : 'Advisor'}</div>
+                <div class="message-content">${content}</div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addLoadingMessage() {
+            const messagesDiv = document.getElementById('messages');
+            const loadingDiv = document.createElement('div');
+            const id = 'loading-' + Date.now();
+            loadingDiv.id = id;
+            loadingDiv.className = 'message';
+            loadingDiv.innerHTML = `
+                <div class="loading-indicator">
+                    <span>Processing</span>
+                    <div class="loading-dots">
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                    </div>
+                </div>
+            `;
+            messagesDiv.appendChild(loadingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            return id;
+        }
+
+        function removeLoadingMessage(id) {
+            const loadingDiv = id ? document.getElementById(id) : document.querySelector('.loading-indicator')?.parentElement;
+            if (loadingDiv) loadingDiv.remove();
+        }
+
+        function updateCharCount() {
+            const input = document.getElementById('text-input');
+            document.getElementById('char-count').textContent = input.value.length;
+        }
+
+        async function toggleVoiceRecording() {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        await transcribeAudio(audioBlob);
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    document.getElementById('voice-btn').classList.add('recording');
+                    document.getElementById('voice-text').textContent = 'Stop';
+                } catch (error) {
+                    console.error('Failed to start recording:', error);
+                    alert('Failed to access microphone');
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                document.getElementById('voice-btn').classList.remove('recording');
+                document.getElementById('voice-text').textContent = 'Voice';
+            }
+        }
+
+        async function transcribeAudio(audioBlob) {
+            const formData = new FormData();
+            formData.append('audio', audioBlob);
+
+            try {
+                const response = await fetch('/api/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.text) {
+                    document.getElementById('text-input').value = data.text;
+                    updateCharCount();
+                }
+            } catch (error) {
+                console.error('Transcription failed:', error);
+            }
+        }
+
+        function showResults(result) {
+            document.getElementById('chat-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+
+            document.getElementById('result-decision').textContent = result.decision;
+            document.getElementById('result-score').textContent = result.total_score;
+            document.getElementById('result-reasoning').textContent = result.reasoning;
+
+            document.getElementById('score-frequency').textContent = result.scores.frequency;
+            document.getElementById('score-time').textContent = result.scores.time;
+            document.getElementById('score-error').textContent = result.scores.error_cost;
+            document.getElementById('score-longevity').textContent = result.scores.longevity;
+
+            const recsDiv = document.getElementById('recommendations');
+            recsDiv.innerHTML = '<h3 style="font-size: var(--text-2xl); font-weight: 600; margin-bottom: var(--space-lg);">Recommendations</h3>' +
+                '<div style="font-size: var(--text-base); line-height: var(--leading-relaxed);">' +
+                result.recommendations.map(rec => `<p style="margin-bottom: var(--space-md);">• ${rec}</p>`).join('') +
+                '</div>';
+        }
+    </script>
+</body>
+</html>
