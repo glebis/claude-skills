@@ -4,6 +4,37 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
+### [Automation Advisor](./automation-advisor/) ⭐ NEW
+Quantified ROI analysis for automation decisions with voice-enabled web interface. Analytical precision design.
+
+**Features:**
+- 📊 8 structured questions transforming intuition into data
+- 💰 Break-even analysis with time/frequency scoring
+- 🎙️ Voice input via Groq Whisper transcription
+- 🗣️ Browser TTS for voice output
+- 🎨 Sophisticated cream theme with editorial typography
+- 📱 Multi-user session support
+- ⌨️ Keyboard-first interaction design
+
+**Quick Start:**
+```bash
+# Install dependencies
+pip install flask groq python-dotenv
+
+# Add Groq API key (optional, for voice)
+export GROQ_API_KEY="your-key"
+
+# Start web server
+python3 server_web.py
+
+# Open browser
+open http://localhost:8080
+```
+
+**Use when:** Deciding whether to automate repetitive tasks - transforms "this feels tedious" into quantified recommendations with clear next steps.
+
+---
+
 ### [Decision Toolkit](./decision-toolkit/) ⭐ NEW
 Generate structured decision-making tools — step-by-step guides, bias checkers, scenario matrices, and interactive dashboards.
 
