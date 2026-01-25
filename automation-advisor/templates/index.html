@@ -878,8 +878,8 @@
 
                 if (data.complete && data.result) {
                     showResults(data.result);
-                } else if (data.question) {
-                    await displayQuestion(data.question);
+                } else if (data.question || data.next_question) {
+                    await displayQuestion(data.question || data.next_question);
                 }
             } catch (error) {
                 console.error('Error:', error);
