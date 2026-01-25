@@ -750,7 +750,7 @@
                     document.getElementById('progress-indicator').classList.remove('hidden');
 
                     if (data.question) {
-                        displayQuestion(data.question);
+                        await displayQuestion(data.question);
                     }
                 }
             } catch (error) {
@@ -759,8 +759,11 @@
             }
         }
 
-        function displayQuestion(question) {
+        async function displayQuestion(question) {
             document.getElementById('question-text').textContent = question.text;
+
+            // Add question to conversation history
+            addMessage('advisor', question.text);
 
             // Hide all input containers
             document.getElementById('options-container').classList.add('hidden');
@@ -793,6 +796,34 @@
             if (progressMatch) {
                 document.getElementById('progress-percent').textContent = `${progressMatch[1]}/${progressMatch[2]}`;
                 document.getElementById('progress-label').textContent = `Question ${progressMatch[1]}`;
+            }
+
+            // Speak question with TTS
+            await speakText(question.text);
+        }
+
+        async function speakText(text) {
+            if (!sessionId) return;
+
+            try {
+                const response = await fetch('/api/synthesize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId, text: text })
+                });
+
+                if (!response.ok) {
+                    console.warn('TTS not available:', await response.text());
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.audio_url) {
+                    const audio = new Audio(data.audio_url);
+                    audio.play().catch(err => console.warn('Audio playback failed:', err));
+                }
+            } catch (error) {
+                console.warn('TTS error:', error);
             }
         }
 
@@ -848,7 +879,7 @@
                 if (data.complete && data.result) {
                     showResults(data.result);
                 } else if (data.question) {
-                    displayQuestion(data.question);
+                    await displayQuestion(data.question);
                 }
             } catch (error) {
                 console.error('Error:', error);
