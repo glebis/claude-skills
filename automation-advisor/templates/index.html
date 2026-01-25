@@ -792,10 +792,9 @@
             }
 
             // Update progress
-            const progressMatch = question.text.match(/Question (\d+) of (\d+)/);
-            if (progressMatch) {
-                document.getElementById('progress-percent').textContent = `${progressMatch[1]}/${progressMatch[2]}`;
-                document.getElementById('progress-label').textContent = `Question ${progressMatch[1]}`;
+            if (question.question_number && question.total_questions) {
+                document.getElementById('progress-percent').textContent = `${question.question_number}/${question.total_questions}`;
+                document.getElementById('progress-label').textContent = `Question ${question.question_number}`;
             }
 
             // Speak question with TTS

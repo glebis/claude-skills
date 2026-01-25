@@ -65,6 +65,27 @@ class WebAdvisorSession:
         self.conversation.append(msg)
         self.message_queue.put(msg)
 
+    def get_question_number(self) -> tuple[int, int]:
+        """Get current question number and total questions"""
+        phase_order = [
+            "start",
+            "context_how",
+            "context_frustration",
+            "context_consequences",
+            "score_frequency",
+            "score_time",
+            "score_error",
+            "score_longevity"
+        ]
+
+        if self.current_phase in phase_order:
+            question_num = phase_order.index(self.current_phase) + 1
+            total = len(phase_order)
+            return (question_num, total)
+        else:
+            # For override_flags, validation_pattern, build_estimate - show as complete
+            return (8, 8)
+
     def get_next_question(self) -> Optional[Dict]:
         """Get next question based on current phase"""
         questions = {
@@ -159,7 +180,12 @@ class WebAdvisorSession:
             }
         }
 
-        return questions.get(self.current_phase)
+        question = questions.get(self.current_phase)
+        if question:
+            question_num, total = self.get_question_number()
+            question["question_number"] = question_num
+            question["total_questions"] = total
+        return question
 
     def process_answer(self, answer: any) -> Dict:
         """Process user answer and move to next phase"""
