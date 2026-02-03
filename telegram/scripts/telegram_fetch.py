@@ -7,9 +7,11 @@ import asyncio
 import argparse
 import json
 import sys
+import re
+import yaml
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 
 from telethon import TelegramClient
 from telethon.tl.types import User, Chat, Channel
@@ -189,15 +191,28 @@ def format_message(msg, chat_name: str, chat_type: str) -> Dict:
     return result
 
 
-async def list_chats(client: TelegramClient, limit: int = 30, search: Optional[str] = None) -> List[Dict]:
-    """List available chats."""
+async def list_chats(client: TelegramClient, limit: int = 30, search: Optional[str] = None, exact: bool = False) -> List[Dict]:
+    """List available chats.
+
+    Args:
+        limit: Max number of chats to retrieve
+        search: Search term to filter by name
+        exact: If True, require exact name match (case-insensitive). If False, use substring matching.
+    """
     dialogs = await client.get_dialogs(limit=limit)
 
     chats = []
     for d in dialogs:
         name = d.name or "Unnamed"
-        if search and search.lower() not in name.lower():
-            continue
+        if search:
+            if exact:
+                # Exact match (case-insensitive)
+                if search.lower() != name.lower():
+                    continue
+            else:
+                # Substring match (case-insensitive)
+                if search.lower() not in name.lower():
+                    continue
         chats.append({
             "id": d.id,
             "name": name,
@@ -337,11 +352,13 @@ async def resolve_entity(client: TelegramClient, chat_name: str) -> tuple:
     return entity, resolved_name
 
 
-async def edit_message(client: TelegramClient, chat_name: str, message_id: int,
-                       text: str) -> Dict:
+async def edit_message(client: TelegramClient, chat_id: Optional[int] = None,
+                       chat_name: Optional[str] = None, message_id: int = None,
+                       text: str = None) -> Dict:
     """Edit an existing message.
 
     Args:
+        chat_id: Chat ID
         chat_name: Chat name, @username, or ID
         message_id: ID of the message to edit
         text: New text content
@@ -349,10 +366,17 @@ async def edit_message(client: TelegramClient, chat_name: str, message_id: int,
     Returns:
         Dict with edit status
     """
-    entity, resolved_name = await resolve_entity(client, chat_name)
+    # Resolve chat using either chat_id or chat_name
+    if chat_id:
+        entity, resolved_name = await resolve_entity(client, str(chat_id))
+    elif chat_name:
+        entity, resolved_name = await resolve_entity(client, chat_name)
+    else:
+        return {"edited": False, "error": "Must provide --chat or --chat-id"}
 
     if entity is None:
-        return {"edited": False, "error": f"Chat '{chat_name}' not found"}
+        chat_ref = chat_id if chat_id else chat_name
+        return {"edited": False, "error": f"Chat '{chat_ref}' not found"}
 
     try:
         await client.edit_message(entity, message_id, text)
@@ -698,6 +722,424 @@ async def fetch_thread_messages(client: TelegramClient, chat_id: int,
     return messages
 
 
+# ============================================================================
+# Publishing Functions
+# ============================================================================
+
+def parse_draft_frontmatter(content: str) -> Tuple[Dict, str]:
+    """Parse frontmatter and body from draft content.
+
+    Returns:
+        Tuple of (frontmatter_dict, body_content)
+    """
+    parts = content.split('---', 2)
+    if len(parts) < 3:
+        return {}, content
+
+    try:
+        frontmatter = yaml.safe_load(parts[1])
+        body = parts[2].strip()
+        return frontmatter, body
+    except Exception as e:
+        raise ValueError(f"Failed to parse frontmatter: {e}")
+
+
+def extract_media_references(frontmatter: Dict, body: str) -> List[str]:
+    """Extract media file references from frontmatter and body.
+
+    Returns:
+        List of media filenames (mp4, png, jpg, jpeg)
+    """
+    media_files = []
+
+    # Check frontmatter video field
+    if 'video' in frontmatter and frontmatter['video']:
+        media_files.append(frontmatter['video'])
+
+    # Find wikilinks with media extensions
+    wikilink_pattern = r'\[\[([^\[\]]+\.(mp4|png|jpg|jpeg))(?:\|[^\]]+)?\]\]'
+    matches = re.findall(wikilink_pattern, body, re.IGNORECASE)
+    for match in matches:
+        media_files.append(match[0])
+
+    return media_files
+
+
+def resolve_media_paths(filenames: List[str], vault_path: Path) -> List[Path]:
+    """Resolve media filenames to absolute paths.
+
+    Searches in:
+    1. Channels/klodkot/attachments/
+    2. Sources/
+
+    Returns:
+        List of absolute paths
+
+    Raises:
+        FileNotFoundError if any file not found
+    """
+    search_dirs = [
+        vault_path / "Channels" / "klodkot" / "attachments",
+        vault_path / "Sources"
+    ]
+
+    resolved = []
+    for filename in filenames:
+        found = False
+        for search_dir in search_dirs:
+            candidate = search_dir / filename
+            if candidate.exists():
+                resolved.append(candidate)
+                found = True
+                break
+
+        if not found:
+            raise FileNotFoundError(
+                f"Media file not found: {filename}. "
+                f"Searched in: {', '.join(str(d) for d in search_dirs)}"
+            )
+
+    return resolved
+
+
+def strip_draft_header(body: str) -> str:
+    """Strip markdown header ending with '- Telegram Draft' or similar."""
+    lines = body.strip().split('\n')
+
+    if lines and lines[0].startswith('#'):
+        first_line = lines[0]
+        # Remove headers ending with common draft markers
+        if any(marker in first_line.lower() for marker in ['telegram draft', 'draft', '— draft']):
+            # Remove first line and any following empty lines
+            lines = lines[1:]
+            while lines and not lines[0].strip():
+                lines.pop(0)
+            return '\n'.join(lines)
+
+    return body
+
+
+def strip_media_wikilinks(body: str) -> str:
+    """Strip media wikilinks from body text.
+
+    Removes: ![[image.png]], ![[video.mp4|caption]], etc.
+    These will be sent as Telegram media attachments.
+    """
+    # Pattern matches ![[filename.ext]] or ![[filename.ext|caption]]
+    # where ext is mp4, png, jpg, jpeg
+    pattern = r'!\[\[([^\[\]]+\.(mp4|png|jpg|jpeg))(?:\|[^\]]+)?\]\]\n?'
+    cleaned = re.sub(pattern, '', body, flags=re.IGNORECASE)
+
+    # Remove multiple consecutive newlines that might result
+    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+
+    return cleaned.strip()
+
+
+def check_footer_exists(body: str) -> bool:
+    """Check if footer signature already exists in body."""
+    footer_patterns = [
+        r'КЛОДКОТ',
+        r't\.me/klodkot'
+    ]
+
+    for pattern in footer_patterns:
+        if re.search(pattern, body, re.IGNORECASE):
+            return True
+
+    return False
+
+
+def append_footer(body: str) -> str:
+    """Append standard footer to body."""
+    footer = '\n\n**[КЛОДКОТ](https://t.me/klodkot)** — Claude Code и другие агенты: инструменты, кейсы, вдохновение'
+    return body + footer
+
+
+def convert_markdown_to_telegram_html(text: str) -> str:
+    """Convert markdown formatting to Telegram HTML.
+
+    Conversions:
+    - ## Header → <b>Header</b>
+    - **bold** → <b>bold</b>
+    - _italic_ → <i>italic</i>
+    - [text](url) → <a href="url">text</a>
+    - * item → → item (bullet lists to arrows)
+    """
+    # Convert headers to bold (must be done first, before other conversions)
+    text = re.sub(r'^##\s+(.+?)$', r'<b>\1</b>', text, flags=re.MULTILINE)
+
+    # Convert bullet lists to arrow format
+    text = re.sub(r'^\*\s+(.+?)$', r'→ \1', text, flags=re.MULTILINE)
+    text = re.sub(r'^-\s+(.+?)$', r'→ \1', text, flags=re.MULTILINE)
+
+    # Convert bold **text** to <b>text</b>
+    text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
+
+    # Convert italic _text_ to <i>text</i>
+    text = re.sub(r'_(.+?)_', r'<i>\1</i>', text)
+
+    # Convert markdown links [text](url) to <a href="url">text</a>
+    text = re.sub(r'\[([^\]]+)\]\(([^\)]+)\)', r'<a href="\2">\1</a>', text)
+
+    return text
+
+
+def update_frontmatter(file_path: Path, message_id: int) -> None:
+    """Update draft frontmatter with publish metadata.
+
+    Updates:
+    - type: published
+    - published_date: '[[YYYYMMDD]]'
+    - telegram_message_id: {message_id}
+    """
+    content = file_path.read_text(encoding='utf-8')
+    frontmatter, body = parse_draft_frontmatter(content)
+
+    # Update frontmatter
+    frontmatter['type'] = 'published'
+    frontmatter['published_date'] = f"[[{datetime.now().strftime('%Y%m%d')}]]"
+    frontmatter['telegram_message_id'] = message_id
+
+    # Reconstruct file
+    yaml_str = yaml.dump(frontmatter, allow_unicode=True, default_flow_style=False)
+    new_content = f"---\n{yaml_str}---\n\n{body}"
+
+    file_path.write_text(new_content, encoding='utf-8')
+
+
+def extract_first_line(body: str) -> str:
+    """Extract first meaningful line from body for index description.
+
+    Strips markdown formatting and truncates to 80 chars.
+    """
+    lines = body.strip().split('\n')
+
+    for line in lines:
+        line = line.strip()
+        # Skip empty lines and markdown headers
+        if not line or line.startswith('#'):
+            continue
+
+        # Strip markdown formatting
+        line = re.sub(r'\*\*([^*]+)\*\*', r'\1', line)  # Bold
+        line = re.sub(r'\*([^*]+)\*', r'\1', line)      # Italic
+        line = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line)  # Links
+        line = line.strip()
+
+        if line:
+            # Truncate if too long
+            if len(line) > 80:
+                line = line[:77] + '...'
+            return line
+
+    return "New post"
+
+
+def update_channel_index(index_path: Path, filename: str, description: str) -> None:
+    """Update channel index with new published entry.
+
+    Inserts at top of Published section.
+    """
+    content = index_path.read_text(encoding='utf-8')
+    lines = content.split('\n')
+
+    # Find the line with "**Published**: `published/`"
+    insert_idx = None
+    for i, line in enumerate(lines):
+        if '**Published**:' in line and 'published/' in line:
+            insert_idx = i + 1
+            break
+
+    if insert_idx is None:
+        raise ValueError("Could not find **Published**: section in channel index")
+
+    # Extract filename without extension
+    filename_no_ext = filename.replace('.md', '')
+
+    # Create new entry
+    new_entry = f"- [[{filename_no_ext}]] — {description}"
+
+    # Insert at top
+    lines.insert(insert_idx, new_entry)
+
+    # Write back
+    index_path.write_text('\n'.join(lines), encoding='utf-8')
+
+
+async def publish_draft(client: TelegramClient, draft_path: str, dry_run: bool) -> Dict:
+    """Publish a draft to Telegram channel.
+
+    Workflow:
+    1. Parse draft frontmatter + body
+    2. Validate channel field
+    3. Extract and resolve media paths
+    4. Check/append footer if needed
+    5. Send to Telegram (or preview if dry_run)
+    6. Update frontmatter, move file, update index (only if send succeeded)
+
+    Args:
+        client: Telegram client
+        draft_path: Path to draft file (can be relative to vault)
+        dry_run: If True, preview only without sending
+
+    Returns:
+        Dict with publish status and details
+    """
+    # Convert to absolute path
+    draft_file = Path(draft_path)
+    if not draft_file.is_absolute():
+        draft_file = VAULT_PATH / draft_path
+
+    if not draft_file.exists():
+        return {"published": False, "error": f"Draft file not found: {draft_path}"}
+
+    try:
+        # Parse draft
+        content = draft_file.read_text(encoding='utf-8')
+        frontmatter, body = parse_draft_frontmatter(content)
+
+        # Check if already published
+        if frontmatter.get('telegram_message_id'):
+            return {
+                "published": False,
+                "error": f"Draft already published (message_id: {frontmatter['telegram_message_id']})",
+                "already_published": True,
+                "message_id": frontmatter['telegram_message_id']
+            }
+
+        if frontmatter.get('type') == 'published':
+            return {
+                "published": False,
+                "error": "Draft type is already 'published'",
+                "already_published": True
+            }
+
+        # Validate channel
+        channel = frontmatter.get('channel', '')
+        # Handle both "klodkot" and "[[klodkot (Telegram channel)]]"
+        if isinstance(channel, str):
+            # Extract channel name from wikilink if present
+            if '[[' in channel:
+                channel_match = re.search(r'\[\[([^\]|]+)', channel)
+                if channel_match:
+                    channel_name = channel_match.group(1).split('(')[0].strip().lower()
+                else:
+                    channel_name = ''
+            else:
+                channel_name = channel.lower()
+
+            if 'klodkot' not in channel_name:
+                return {
+                    "published": False,
+                    "error": f"Invalid channel: {channel}. Expected 'klodkot'"
+                }
+        else:
+            return {
+                "published": False,
+                "error": f"Invalid channel type: {type(channel)}. Expected string"
+            }
+
+        # Strip draft header
+        body = strip_draft_header(body)
+
+        # Extract media references (before stripping them from body)
+        media_filenames = extract_media_references(frontmatter, body)
+
+        # Resolve media paths
+        media_paths = []
+        if media_filenames:
+            try:
+                media_paths = resolve_media_paths(media_filenames, VAULT_PATH)
+            except FileNotFoundError as e:
+                return {"published": False, "error": str(e)}
+
+        # Strip media wikilinks from body (they'll be sent as attachments)
+        body = strip_media_wikilinks(body)
+
+        # Check and append footer if needed
+        footer_exists = check_footer_exists(body)
+        final_body = body if footer_exists else append_footer(body)
+
+        # Convert markdown to Telegram HTML
+        final_body = convert_markdown_to_telegram_html(final_body)
+
+        # Prepare preview
+        preview = {
+            "draft_file": str(draft_file),
+            "channel": channel,
+            "media_count": len(media_paths),
+            "media_files": [p.name for p in media_paths],
+            "footer_exists": footer_exists,
+            "body_preview": final_body[:200] + "..." if len(final_body) > 200 else final_body
+        }
+
+        if dry_run:
+            preview["published"] = False
+            preview["dry_run"] = True
+            return preview
+
+        # Send to Telegram
+        entity, resolved_name = await resolve_entity(client, "@klodkot")
+        if entity is None:
+            return {"published": False, "error": "Could not resolve @klodkot channel"}
+
+        try:
+            if media_paths:
+                # Send as album with caption
+                msg = await client.send_file(
+                    entity,
+                    [str(p) for p in media_paths],
+                    caption=final_body,
+                    parse_mode='html'
+                )
+                # msg is a list when sending multiple files
+                message_id = msg[0].id if isinstance(msg, list) else msg.id
+            else:
+                # Send text message
+                msg = await client.send_message(entity, final_body, parse_mode='html')
+                message_id = msg.id
+        except Exception as e:
+            return {"published": False, "error": f"Failed to send to Telegram: {e}"}
+
+        # Post-publish operations (only if send succeeded)
+        warnings = []
+
+        try:
+            # Update frontmatter
+            update_frontmatter(draft_file, message_id)
+
+            # Move file to published/
+            published_dir = draft_file.parent.parent / "published"
+            published_dir.mkdir(exist_ok=True)
+            new_path = published_dir / draft_file.name
+            draft_file.rename(new_path)
+
+            # Update channel index
+            index_path = VAULT_PATH / "Channels" / "klodkot" / "klodkot.md"
+            description = extract_first_line(body)
+            update_channel_index(index_path, draft_file.name, description)
+
+        except Exception as e:
+            warnings.append(f"Post-publish error: {e}")
+
+        result = {
+            "published": True,
+            "channel": resolved_name,
+            "message_id": message_id,
+            "media_count": len(media_paths),
+            "moved_to": str(new_path) if 'new_path' in locals() else None
+        }
+
+        if warnings:
+            result["warnings"] = warnings
+
+        return result
+
+    except Exception as e:
+        return {"published": False, "error": f"Unexpected error: {e}"}
+
+
 async def main():
     parser = argparse.ArgumentParser(description="Fetch Telegram messages")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -706,6 +1148,7 @@ async def main():
     list_parser = subparsers.add_parser("list", help="List available chats")
     list_parser.add_argument("--limit", type=int, default=30, help="Max chats to show")
     list_parser.add_argument("--search", help="Filter chats by name")
+    list_parser.add_argument("--exact", action="store_true", help="Require exact name match (case-insensitive)")
 
     # Recent messages
     recent_parser = subparsers.add_parser("recent", help="Fetch recent messages")
@@ -756,7 +1199,8 @@ async def main():
 
     # Edit message
     edit_parser = subparsers.add_parser("edit", help="Edit an existing message")
-    edit_parser.add_argument("--chat", required=True, help="Chat name, @username, or ID")
+    edit_parser.add_argument("--chat", help="Chat name to filter")
+    edit_parser.add_argument("--chat-id", type=int, help="Chat ID to filter")
     edit_parser.add_argument("--message-id", type=int, required=True, help="Message ID to edit")
     edit_parser.add_argument("--text", required=True, help="New message text")
 
@@ -774,6 +1218,11 @@ async def main():
     thread_parser.add_argument("--json", action="store_true", help="Output as JSON")
     thread_parser.add_argument("--output", "-o", help="Save to file (markdown) instead of stdout")
 
+    # Publish draft
+    publish_parser = subparsers.add_parser("publish", help="Publish draft to channel")
+    publish_parser.add_argument("--draft", required=True, help="Draft file path (relative to vault or absolute)")
+    publish_parser.add_argument("--dry-run", action="store_true", help="Preview only, don't send")
+
     args = parser.parse_args()
 
     # Handle setup command before requiring authentication
@@ -786,7 +1235,7 @@ async def main():
 
     try:
         if args.command == "list":
-            chats = await list_chats(client, limit=args.limit, search=args.search)
+            chats = await list_chats(client, limit=args.limit, search=args.search, exact=args.exact)
             print(json.dumps(chats, indent=2, ensure_ascii=False))
 
         elif args.command == "recent":
@@ -892,6 +1341,7 @@ async def main():
         elif args.command == "edit":
             result = await edit_message(
                 client,
+                chat_id=args.chat_id,
                 chat_name=args.chat,
                 message_id=args.message_id,
                 text=args.text
@@ -923,6 +1373,12 @@ async def main():
             else:
                 output = format_output(messages, output_fmt)
                 print(output)
+
+        elif args.command == "publish":
+            result = await publish_draft(client, args.draft, args.dry_run)
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+            if not result.get("published", False) and not result.get("dry_run", False):
+                sys.exit(1)
 
     finally:
         await client.disconnect()
