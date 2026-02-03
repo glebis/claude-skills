@@ -1,0 +1,34 @@
+name: de-ai
+description: Transform AI-sounding text into human, authentic writing while preserving meaning and facts. Focuses on quality improvement over detection evasion. Supports multiple languages with language-specific optimization.
+version: 1.0.0
+author: Gleb Kalinin
+tags:
+  - writing
+  - humanization
+  - editing
+  - multilingual
+
+commands:
+  - name: de-ai
+    description: Humanize AI-generated text by removing AI tells and increasing authenticity
+    args:
+      text:
+        description: The text to humanize (optional if file provided)
+        required: false
+      file:
+        description: Path to file containing text to humanize
+        required: false
+      language:
+        description: "Target language (auto-detected if not specified): en, ru, de, es, fr"
+        required: false
+      register:
+        description: "Text type: personal, essay, critique, narrative, technical, academic"
+        required: false
+      interactive:
+        description: "Ask clarifying questions before processing (default: true)"
+        required: false
+        default: "true"
+      explain:
+        description: "Show what AI tells were removed (default: false)"
+        required: false
+        default: "false"

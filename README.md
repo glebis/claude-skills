@@ -4,6 +4,38 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
+### [De-AI Text Humanizer](./de-ai/) ⭐ NEW
+Transform AI-sounding text into human, authentic writing while preserving meaning and facts. Research-backed approach focusing on quality over detection evasion.
+
+**Features:**
+- 🤖 Interactive context gathering (purpose, audience, constraints)
+- 🌍 Language-specific optimization (Russian, German, English, Spanish, French)
+- 📝 Register-aware humanization (personal, essay, technical, academic)
+- 🔍 6-level AI tell diagnosis (structural, lexical, voice, rhetorical)
+- 📊 Research-backed (7 academic papers + 30+ commercial tools analyzed)
+- 💡 Optional change explanations
+- ⚡ No word limits (unlike commercial tools)
+- 🎯 Meaning preservation priority vs. detection evasion
+
+**Quick Start:**
+```bash
+# Interactive mode (asks questions)
+/de-ai --file article.md
+
+# Quick mode (no questions)
+/de-ai --file article.md --interactive false
+
+# Specify language and register
+/de-ai --file text.md --language ru --register essay
+
+# Show what AI tells were removed
+/de-ai --file content.md --explain true
+```
+
+**Use when:** You need to improve AI-generated text quality, remove bureaucratic language (канцелярит), humanize drafts while preserving facts, or refine professional writing across languages.
+
+---
+
 ### [Automation Advisor](./automation-advisor/) ⭐ NEW
 Quantified ROI analysis for automation decisions with voice-enabled web interface. Analytical precision design.
 
