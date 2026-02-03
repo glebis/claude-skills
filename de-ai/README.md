@@ -13,6 +13,19 @@ Unlike commercial de-AI tools that focus on detection evasion, this skill priori
 5. **Transparency** - explains what was changed and why
 6. **No word limits** - process entire documents
 
+## Installation
+
+```bash
+# Copy to Claude Code skills directory
+cp -r de-ai ~/.claude/skills/
+
+# Or clone from GitHub
+git clone https://github.com/glebis/claude-skills.git
+cp -r claude-skills/de-ai ~/.claude/skills/
+```
+
+No additional dependencies required - works out of the box with Claude Code.
+
 ## Usage
 
 ### Basic Usage
@@ -212,6 +225,74 @@ Focus: quality improvement, readability, authenticity
 | **Quality focus** | Professional improvement | Bypass AI detectors |
 | **Use case** | Professional writing | Academic cheating |
 
+## Real-World Workflows
+
+### Workflow 1: Blog Post Refinement
+```bash
+# Draft article with AI assistance
+# Save to draft.md
+
+# Interactive humanization (asks questions about audience, tone)
+/de-ai --file draft.md --register essay
+
+# Review output, iterate on specific sections if needed
+/de-ai --text "[problematic paragraph]" --interactive false --explain true
+```
+
+### Workflow 2: Russian Business Email
+```bash
+# AI-generated Russian email in email.md
+/de-ai --file email.md --language ru --register personal
+
+# Remove канцелярит, make conversational
+# Output preserves facts but sounds human
+```
+
+### Workflow 3: Technical Documentation
+```bash
+# AI-generated docs need humanization but must preserve accuracy
+/de-ai --file api-docs.md --register technical --interactive true
+
+# Claude asks: "Must preserve technical terms exactly?"
+# You confirm: "Yes, only humanize explanations"
+```
+
+### Workflow 4: Multilingual Marketing
+```bash
+# Process same content in multiple languages
+/de-ai --file campaign-en.md --language en --register personal
+/de-ai --file campaign-ru.md --language ru --register personal
+/de-ai --file campaign-de.md --language de --register personal
+
+# Each gets language-specific optimization
+```
+
+## Common AI Vocabulary Removed
+
+### Universal (Any Language)
+- crucial, transformative, robust, comprehensive
+- delve, underscore, paradigm, foster, navigate
+- landscape, realm, leverage, synergy, holistic
+- "it is important to note", "let's explore", "the key is"
+
+### Russian Specific
+- важно отметить, следует подчеркнуть, необходимо учитывать
+- в современном мире, в конечном счете, в целом
+- данный, указанный, вышеуказанный
+- комплексный, инновационный, эффективный
+- Excessive деепричастия/причастия
+
+### German Specific
+- Es ist wichtig zu beachten, Man sollte bedenken
+- Im Hinblick auf, Vor diesem Hintergrund, Darüber hinaus
+- umfassend, nachhaltig, ganzheitlich, zielgerichtet
+- Excessive Nominalstil and Schachtelsätze
+
+### English Specific
+- "in order to", "the fact that", "in today's world"
+- "here's the thing", "it's worth noting"
+- Over-use of "however", "moreover", "furthermore"
+
 ## Tips for Best Results
 
 1. **Provide context** - Let interactive mode ask questions
@@ -220,6 +301,8 @@ Focus: quality improvement, readability, authenticity
 4. **Review output** - Always read and refine the result
 5. **Use explain mode** - Learn what makes text sound AI-generated
 6. **Iterate** - Run multiple times on problem sections
+7. **Preserve facts first** - If unsure, use interactive mode to clarify constraints
+8. **Test both modes** - Interactive for important content, quick for drafts
 
 ## Technical Details
 
@@ -235,13 +318,69 @@ Focus: quality improvement, readability, authenticity
 - Language-aware transformations
 - Context-preserving changes
 
+## Troubleshooting
+
+### "Text already reads as human"
+**Issue**: Skill reports no changes needed
+**Solution**: Text may already be well-written. Try `--explain true` to see if any minor AI tells were found.
+
+### Output too conservative
+**Issue**: Not enough changes made
+**Solution**: Use `--interactive false` for more aggressive humanization, or specify lower formality in interactive questions.
+
+### Output too aggressive
+**Issue**: Changes feel excessive or meaning unclear
+**Solution**: Use interactive mode, specify "preserve technical accuracy" when asked about constraints.
+
+### Language not detected correctly
+**Issue**: Wrong language optimizations applied
+**Solution**: Explicitly specify `--language ru/de/en/es/fr`
+
+### Register mismatch
+**Issue**: Tone doesn't match content type
+**Solution**: Specify `--register technical/academic/personal/essay/critique/narrative`
+
+## FAQ
+
+**Q: Will this bypass AI detectors?**
+A: Not the goal. Focus is quality improvement. Detection evasion is unreliable since detectors use different models.
+
+**Q: Is this for academic cheating?**
+A: No. Intended for professional writing improvement, not hiding authorship. Use ethically.
+
+**Q: Can I use for commercial content?**
+A: Yes. MIT license allows commercial use. Improves AI-assisted professional writing.
+
+**Q: Does it work with non-English languages?**
+A: Yes. Optimized for Russian, German, English, Spanish, French with language-specific patterns.
+
+**Q: Will facts be preserved?**
+A: Yes. Meaning preservation is priority #1. Interactive mode asks about constraints.
+
+**Q: How is this different from QuillBot/Undetectable.ai?**
+A: They focus on detection evasion (often losing meaning). This focuses on quality and authenticity.
+
+**Q: Can I process long documents?**
+A: Yes. No word limits unlike commercial tools (125-300 word limits common).
+
+**Q: What if output needs refinement?**
+A: Run again on specific sections, use explain mode to understand changes, or provide more context in interactive mode.
+
+**Q: Does it add new information?**
+A: No. Never invents facts. Only rewrites existing content more authentically.
+
+**Q: Can I see what was changed?**
+A: Yes. Use `--explain true` to get bullet list of AI tells removed.
+
 ## Version History
 
 - **1.0.0** (2026-02-03): Initial release
   - Interactive context gathering
-  - Russian, German, English optimization
+  - Russian, German, English, Spanish, French optimization
   - Meaning preservation focus
   - Transparent change explanation
+  - 6-level AI tell diagnosis
+  - Register-aware humanization
 
 ## Related Resources
 
