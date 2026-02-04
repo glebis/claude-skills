@@ -4,6 +4,44 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
+### [Agency Docs Updater](./agency-docs-updater/) ⭐ NEW
+Automates meeting documentation workflow for agency-docs repository. Creates/updates MDX files with Fathom transcripts, YouTube videos, fact-checked summaries, and presentation slides.
+
+**Features:**
+- 📝 Auto-detect and translate summary language (English → Russian)
+- 🔢 Specify exact meeting number or auto-increment
+- 🔄 Update existing meeting files with --update flag
+- 🌐 Preserves technical terms (MCP, Skills, Claude Code, etc.)
+- 🎥 YouTube embed integration
+- 📊 Presentation auto-detection from lab folders
+- 🔍 Fact-checking integration via claude-code-guide agent
+- 🎯 Supports multiple Fathom URL field names
+
+**Quick Start:**
+```bash
+# Auto-detect everything (meeting number, language)
+python3 scripts/update_meeting_doc.py \
+  ~/Brains/brain/20260203-claude-code-lab-02.md \
+  https://www.youtube.com/watch?v=VIDEO_ID \
+  summary.md
+
+# Specify meeting number 07
+python3 scripts/update_meeting_doc.py \
+  transcript.md youtube_url summary.md -n 07
+
+# Update existing file
+python3 scripts/update_meeting_doc.py \
+  transcript.md youtube_url summary.md -n 07 --update
+
+# Force English (skip translation)
+python3 scripts/update_meeting_doc.py \
+  transcript.md youtube_url summary.md -l en
+```
+
+**Use when:** Publishing Claude Code lab sessions to documentation site — combines transcripts, videos, summaries, and slides into properly formatted MDX with automatic language handling.
+
+---
+
 ### [De-AI Text Humanizer](./de-ai/) ⭐ NEW
 Transform AI-sounding text into human, authentic writing while preserving meaning and facts. Research-backed approach focusing on quality over detection evasion.
 
