@@ -4,6 +4,37 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
+### [Doctor G](./doctorg/) ⭐ NEW
+Evidence-based health research using tiered trusted sources with GRADE-inspired evidence ratings. Integrates Apple Health data for personalized context.
+
+**Features:**
+- 🔬 3 depth levels: Quick (WebSearch), Deep (+Tavily), Full (+Firecrawl)
+- 📊 GRADE-inspired evidence strength ratings (Strong/Moderate/Weak/Minimal/Contested)
+- 🏥 40+ curated trusted sources across 4 tiers (primary research → journalism)
+- ❤️ Apple Health integration for personalized recommendations
+- ⚖️ Expert comparison mode (detects "X vs Y" questions)
+- 🔍 Topic-aware source prioritization (nutrition, exercise, sleep, cardiovascular, etc.)
+- ⚠️ Red flag detection (retracted studies, industry bias, predatory journals)
+
+**Quick Start:**
+```bash
+# Quick answer (~30s)
+/doctorg Is creatine safe for daily use?
+
+# Deep research (~90s)
+/doctorg --deep Huberman vs Attia on fasted training
+
+# Full investigation (~3min)
+/doctorg --full Safety profile of long-term melatonin supplementation
+
+# Without personal health data
+/doctorg --no-personal Best stretching protocol for lower back pain
+```
+
+**Use when:** Asking any health, nutrition, exercise, sleep, or wellness question and wanting evidence-based answers with explicit strength ratings rather than opinion.
+
+---
+
 ### [Agency Docs Updater](./agency-docs-updater/) ⭐ NEW
 Automates meeting documentation workflow for agency-docs repository. Creates/updates MDX files with Fathom transcripts, YouTube videos, fact-checked summaries, and presentation slides.
 
@@ -730,6 +761,8 @@ npm run cli -- meeting.md -o analysis.md --no-glossary
 git clone https://github.com/glebis/claude-skills.git
 
 # Copy desired skill to Claude Code skills directory
+cp -r claude-skills/doctorg ~/.claude/skills/
+# or
 cp -r claude-skills/llm-cli ~/.claude/skills/
 # or
 cp -r claude-skills/deep-research ~/.claude/skills/
@@ -835,6 +868,12 @@ Without verification, you'll receive a `model_not_found` error when trying to us
 ### Transcript Analyzer Skill
 - Node.js 18+
 - Cerebras API key from https://cloud.cerebras.ai
+
+### Doctor G Skill
+- Python 3.8+
+- Requires **health-data** skill for Apple Health integration (optional)
+- Requires **tavily-search** skill for `--deep` mode (optional)
+- Requires **firecrawl-research** skill for `--full` mode (optional)
 
 ### GitHub Gist Skill
 - Python 3.8+
