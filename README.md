@@ -35,41 +35,28 @@ Evidence-based health research using tiered trusted sources with GRADE-inspired 
 
 ---
 
-### [Agency Docs Updater](./agency-docs-updater/) ⭐ NEW
-Automates meeting documentation workflow for agency-docs repository. Creates/updates MDX files with Fathom transcripts, YouTube videos, fact-checked summaries, and presentation slides.
+### [Agency Docs Updater](./agency-docs-updater/)
+End-to-end pipeline for publishing Claude Code lab meetings. Single `/agency-docs-updater` invocation replaces 5+ manual steps: finds Fathom transcript, downloads video, uploads to YouTube, generates fact-checked Russian summary, creates MDX, and deploys to Vercel.
 
 **Features:**
-- 📝 Auto-detect and translate summary language (English → Russian)
-- 🔢 Specify exact meeting number or auto-increment
-- 🔄 Update existing meeting files with --update flag
-- 🌐 Preserves technical terms (MCP, Skills, Claude Code, etc.)
-- 🎥 YouTube embed integration
-- 📊 Presentation auto-detection from lab folders
-- 🔍 Fact-checking integration via claude-code-guide agent
-- 🎯 Supports multiple Fathom URL field names
+- 🔄 Full pipeline: transcript → video download → YouTube upload → summary → MDX → deploy
+- 📝 Fact-checked Russian summaries via claude-code-guide agent
+- 🎥 YouTube + Yandex.Disk upload with resume support
+- 📊 Lesson HTML copied to public/ and linked in meeting page
+- ✅ Local build verification + Vercel deployment check
+- 🔢 Auto-detect or specify meeting number
 
 **Quick Start:**
 ```bash
-# Auto-detect everything (meeting number, language)
-python3 scripts/update_meeting_doc.py \
-  ~/Brains/brain/20260203-claude-code-lab-02.md \
-  https://www.youtube.com/watch?v=VIDEO_ID \
-  summary.md
+# Run full pipeline (invoke as Claude Code skill)
+/agency-docs-updater
 
-# Specify meeting number 07
+# Or use the script directly
 python3 scripts/update_meeting_doc.py \
-  transcript.md youtube_url summary.md -n 07
-
-# Update existing file
-python3 scripts/update_meeting_doc.py \
-  transcript.md youtube_url summary.md -n 07 --update
-
-# Force English (skip translation)
-python3 scripts/update_meeting_doc.py \
-  transcript.md youtube_url summary.md -l en
+  transcript.md youtube_url summary.md [-n 08] [--update]
 ```
 
-**Use when:** Publishing Claude Code lab sessions to documentation site — combines transcripts, videos, summaries, and slides into properly formatted MDX with automatic language handling.
+**Use when:** Publishing Claude Code lab sessions — automates the entire flow from Fathom recording to live documentation site.
 
 ---
 
