@@ -1,46 +1,98 @@
 ---
 name: agency-docs-updater
-description: This skill should be used when updating ~/Sites/agency-docs meeting documentation after Claude Code lab sessions. Automatically creates/updates meeting MDX files with Fathom links, YouTube embeds, fact-checked summaries using claude-code-guide agent, and presentation content. Auto-detects lab number from filename, finds presentations, commits and pushes changes.
+description: End-to-end pipeline for publishing Claude Code lab meetings. Automatically finds/creates Fathom transcript, downloads video, uploads to YouTube, generates fact-checked Russian summary, creates MDX documentation, and pushes to agency-docs for Vercel deployment. Single invocation replaces 5+ manual steps.
 ---
 
-# Agency Docs Updater
+# Agency Docs Updater — End-to-End Pipeline
 
-## Overview
+When this skill is invoked, execute ALL steps below automatically in sequence. Do not stop to ask for confirmation between steps — run the full pipeline. Only pause if a step fails and cannot be recovered.
 
-Automates creation and updates of meeting documentation in the agency-docs repository after Claude Code lab sessions. Combines Fathom transcripts, YouTube videos, fact-checked summaries, and presentation content into properly formatted MDX files.
+## Step 1: Find Fathom Transcript
 
-## When to Use
-
-Use this skill after completing a Claude Code lab meeting publishing workflow when:
-- Video has been uploaded to YouTube via videopublish skill
-- Fathom transcript exists in Obsidian vault (~/Brains/brain/)
-- Need to create/update meeting documentation in ~/Sites/agency-docs
-- Want to auto-commit and push to trigger Vercel deployment
-
-## Workflow
-
-### Step 1: Generate Fact-Checked Summary
-
-Before running the script, generate a detailed meeting summary with fact-checking:
-
-```
-Using @claude-code-guide agent, create a detailed summary of the meeting from the Fathom transcript at [path].
-
-Requirements:
-- Summary should be comprehensive and structured
-- Fact-check all claims about Claude Code features using claude-code-guide agent knowledge
-- Format sections with H2 headers
-- Include key concepts, demos, and discussions
-- Save to summary.md
+```bash
+DATE=$(date +%Y%m%d)
 ```
 
-The summary should follow the existing pattern from agency-docs meetings:
-- Structured sections (## Section Name)
+Look for `~/Brains/brain/${DATE}-claude-code-lab-02.md`. If it exists, read it and extract `share_url` and `fathom_id` from its YAML frontmatter.
+
+If the file does NOT exist:
+1. Run `~/.claude/skills/calendar-sync/sync.sh` to sync today's calendar
+2. Re-check for the file
+3. If still missing, stop and report the issue
+
+Store these variables for later steps:
+- `FATHOM_FILE` = full path to transcript (e.g. `~/Brains/brain/20260207-claude-code-lab-02.md`)
+- `SHARE_URL` = the `share_url` from frontmatter
+- `DATE` = YYYYMMDD string
+- `VIDEO_NAME` = `${DATE}-claude-code-lab-02`
+
+## Step 2: Download Video from Fathom
+
+First check if `~/Brains/brain/${VIDEO_NAME}.mp4` already exists and is > 1MB. If so, skip this step.
+
+Otherwise:
+
+```bash
+cd ~/Brains/brain && python3 ~/.claude/skills/fathom/scripts/download_video.py \
+  "${SHARE_URL}" --output-name "${VIDEO_NAME}"
+```
+
+After download, verify the mp4 exists and is > 1MB:
+```bash
+ls -la ~/Brains/brain/${VIDEO_NAME}.mp4
+```
+
+If download fails, stop and report. This is a long-running operation (may take several minutes for a 2h video).
+
+## Step 3: Upload to YouTube via videopublish
+
+```bash
+cd ~/ai_projects/youtube-uploader && source venv/bin/activate && \
+python3 process_video.py \
+  --video ~/Brains/brain/${VIDEO_NAME}.mp4 \
+  --fathom-transcript ${FATHOM_FILE} \
+  --upload
+```
+
+Key notes:
+- `--fathom-transcript` makes it skip video transcription (uses Fathom transcript instead)
+- `--upload` triggers YouTube + Yandex.Disk upload
+- Handles: metadata generation, thumbnail creation, YouTube upload, Yandex upload
+
+Extract YouTube URL from stdout — look for the line:
+```
+✓ YouTube video: https://www.youtube.com/watch?v=VIDEO_ID
+```
+
+If not found in stdout, check the metadata JSON:
+```bash
+cat ~/ai_projects/youtube-uploader/processed/metadata/${VIDEO_NAME}.json
+```
+
+Store `YOUTUBE_URL` for the next steps.
+
+This step is long-running (10-30 minutes depending on upload speed). Run in background with `run_in_background: true`.
+
+If the upload fails or stalls mid-way, resume from the upload step only (skips metadata/thumbnail regeneration):
+```bash
+python3 process_video.py --video ~/Brains/brain/${VIDEO_NAME}.mp4 \
+  --fathom-transcript ${FATHOM_FILE} --upload --resume-from upload
+```
+
+**Parallelization**: Start Step 4 (summary generation) while Step 3 upload runs in background. The summary does not depend on the YouTube URL.
+
+## Step 4: Generate Fact-Checked Russian Summary
+
+Read the full Fathom transcript from `${FATHOM_FILE}`.
+
+Generate a comprehensive Russian-language summary of the meeting with these requirements:
+- Structured with `##` section headers
 - Bullet points for key concepts
-- Code examples where relevant
-- Clear, informative descriptions
+- Code examples where relevant (keep code/paths in English)
+- All technical terms in English (MCP, Skills, Claude Code, YOLO, vibe coding, etc.)
+- Comprehensive enough to serve as meeting notes
 
-**Important:** Use Task tool with claude-code-guide agent for fact-checking. Example:
+Then use the Task tool with `claude-code-guide` subagent to fact-check all Claude Code feature claims in the summary:
 
 ```
 Launch claude-code-guide agent to fact-check this summary about Claude Code features.
@@ -54,275 +106,103 @@ Verify:
 Correct any inaccuracies.
 ```
 
-### Step 2: Run Update Script
+After fact-checking, save the corrected summary to the scratchpad directory as `summary.md`.
 
-Execute the update script to create meeting documentation:
-
-```bash
-python3 scripts/update_meeting_doc.py \
-  ~/Brains/brain/YYYYMMDD-claude-code-lab-XX.md \
-  https://www.youtube.com/watch?v=VIDEO_ID \
-  summary.md
-```
-
-**Script behavior:**
-- Parses Fathom frontmatter for meeting URL (looks for `meeting_url`, `url`, or `fathom_url` fields)
-- Extracts lab number from filename pattern: `claude-code-lab-XX`
-- Auto-detects target docs directory: `~/Sites/agency-docs/content/docs/claude-code-internal-XX`
-- Auto-detects summary language (Cyrillic vs Latin characters)
-- Translates to Russian if needed (preserves technical terms in English)
-- Determines next meeting number from existing files (or uses specified number)
-- Finds latest presentation in `~/ai_projects/claude-code-lab/presentations/lab-XX/`
-- Creates MDX file at `meetings/XX.mdx`
-
-**Advanced options:**
-
-```bash
-# Specify exact meeting number (updates existing or creates new)
-python3 scripts/update_meeting_doc.py \
-  [fathom_file] [youtube_url] [summary_file] \
-  -n 07
-
-# Force Russian translation
-python3 scripts/update_meeting_doc.py \
-  [fathom_file] [youtube_url] [summary_file] \
-  -l ru
-
-# Update existing meeting file
-python3 scripts/update_meeting_doc.py \
-  [fathom_file] [youtube_url] [summary_file] \
-  -n 07 --update
-
-# Specify custom docs directory
-python3 scripts/update_meeting_doc.py \
-  [fathom_file] [youtube_url] [summary_file] \
-  ~/Sites/agency-docs/content/docs/custom-path
-```
-
-**Command-line flags:**
-- `-n, --meeting-number`: Specific meeting number (e.g., 07) - prevents auto-increment
-- `-l, --language`: Summary language (auto, en, or ru) - auto-detects and translates if needed
-- `--update`: Update existing meeting file instead of creating new
-- `docs_dir`: Optional positional argument for custom docs directory
-
-### Step 3: Edit Frontmatter
-
-The script creates a template with placeholders. Edit the generated MDX file:
-
-```yaml
----
-title: "Встреча XX: [Название встречи]"  # Replace with actual title
-description: [Краткое описание встречи]  # Replace with brief description
----
-```
-
-Update title and description based on meeting content.
-
-### Step 4: Commit and Push
-
-The script outputs git commands. Execute them:
-
-```bash
-cd ~/Sites/agency-docs
-git add .
-git commit -m "Add meeting XX documentation"
-git push
-```
-
-### Step 5: Verify Deployment
-
-Check Vercel deployment logs:
-
-```bash
-# Option 1: Check Vercel CLI
-vercel logs
-
-# Option 2: Visit Vercel dashboard
-# https://vercel.com/[your-org]/agency-docs/deployments
-```
-
-Verify the new meeting page loads correctly at the deployed URL.
-
-## File Structure
-
-### Input Files
-
-**Fathom Transcript** (`~/Brains/brain/YYYYMMDD-claude-code-lab-XX.md`):
-```yaml
----
-meeting_url: https://fathom.video/share/[id]
-# or
-url: https://fathom.video/share/[id]
----
-
-## Transcript
-**Speaker**: Content...
-```
-
-**Presentation** (auto-detected from `~/ai_projects/claude-code-lab/presentations/lab-XX/`):
-- Looks for latest `.md` file (not `.html`)
-- Excludes `homework-prompt.md`
-- Strips frontmatter before insertion
-
-**Summary** (`summary.md`):
-- Generated by claude-code-guide agent
-- Fact-checked Claude Code feature claims
-- Structured with H2 headers
-- Detailed enough for comprehensive overview
-
-### Output File
-
-**Meeting MDX** (`~/Sites/agency-docs/content/docs/claude-code-internal-XX/meetings/XX.mdx`):
-
-```mdx
----
-title: "Встреча XX: Title"
-description: Brief description
----
-
-**Дата:** Date | **Длительность:** ~2 часа
-
-## Видео
-
-**Fathom:** [Запись на Fathom](fathom_url)
-
-**YouTube:** [Смотреть на YouTube](youtube_url)
-
-<iframe ... YouTube embed ...></iframe>
-
----
-
-## Краткое содержание
-
-[Fact-checked summary from summary.md]
-
----
-
-[Presentation content from lab-XX presentations folder]
-```
-
-## Auto-Detection Logic
-
-### Lab Number Extraction
-Parses filename pattern: `YYYYMMDD-claude-code-lab-XX.md`
-- Extracts `XX` as lab number
-- Pads to 2 digits: `2` → `02`
-
-### Docs Directory
-Constructs path: `~/Sites/agency-docs/content/docs/claude-code-internal-XX/`
-
-### Meeting Number
-Two modes:
-1. **Auto-detect** (default): Scans `meetings/` directory for existing `XX.mdx` files, finds max, returns max + 1
-2. **Specified** (via `-n` flag): Uses exact number provided, checks if file exists
-
-### Presentation File
-Searches `~/ai_projects/claude-code-lab/presentations/lab-XX/`:
-- Finds all `.md` files
-- Excludes `homework-prompt.md`
-- Returns most recently modified
-- Continues without presentation if not found
-
-## Example Usage
-
-### Example 1: Auto-detect everything (default)
-
-```bash
-# Step 1: Generate fact-checked summary (via Claude)
-# "Using @claude-code-guide, create detailed fact-checked summary from
-#  ~/Brains/brain/20260203-claude-code-lab-02.md, save to summary.md"
-
-# Step 2: Run update script (auto-detects next meeting number, translates to Russian)
-python3 ~/.claude/skills/agency-docs-updater/scripts/update_meeting_doc.py \
-  ~/Brains/brain/20260203-claude-code-lab-02.md \
-  https://www.youtube.com/watch?v=abc123xyz \
-  summary.md
-
-# Step 3: Edit frontmatter, commit, push
-```
-
-### Example 2: Specify meeting number (update existing placeholder)
-
-```bash
-# Create/update meeting 07 specifically
-python3 ~/.claude/skills/agency-docs-updater/scripts/update_meeting_doc.py \
-  ~/Brains/brain/20260203-claude-code-lab-02.md \
-  https://www.youtube.com/watch?v=abc123xyz \
-  summary.md \
-  -n 07
-
-# If file exists, add --update flag
-python3 ~/.claude/skills/agency-docs-updater/scripts/update_meeting_doc.py \
-  ~/Brains/brain/20260203-claude-code-lab-02.md \
-  https://www.youtube.com/watch?v=abc123xyz \
-  summary.md \
-  -n 07 --update
-```
-
-### Example 3: Force English summary (skip translation)
+## Step 5: Run update_meeting_doc.py
 
 ```bash
 python3 ~/.claude/skills/agency-docs-updater/scripts/update_meeting_doc.py \
-  ~/Brains/brain/20260203-claude-code-lab-02.md \
-  https://www.youtube.com/watch?v=abc123xyz \
-  summary.md \
-  -l en
+  ${FATHOM_FILE} \
+  "${YOUTUBE_URL}" \
+  ${SCRATCHPAD}/summary.md
 ```
 
-## Error Handling
+The script auto-detects:
+- Lab number from filename (`claude-code-lab-XX` -> `XX`)
+- Target docs dir: `~/Sites/agency-docs/content/docs/claude-code-internal-XX/`
+- Next meeting number from existing files in `meetings/`
+- Presentation files from `~/ai_projects/claude-code-lab/presentations/lab-XX/`
+- Summary language (auto-translates to Russian if needed)
 
-**Missing Fathom URL in frontmatter:**
+Output: MDX file at `~/Sites/agency-docs/content/docs/claude-code-internal-XX/meetings/NN.mdx`
+
+After the script runs, post-process the generated MDX:
+
+1. **Strip appended presentation content**: The script appends Marp presentation markdown from `presentations/lab-XX/` which contains HTML comments (`<!-- _class: lead -->`) that break MDX compilation. Remove everything after the summary section (after the last `---` separator following the summary). The MDX should only contain: frontmatter, video section, and summary.
+
+2. **Copy lesson HTML to public**: If `~/ai_projects/claude-code-lab/lesson-generator/${DATE}.html` exists, copy it to `~/Sites/agency-docs/public/${DATE}-claude-code-lab-XX.html` (where XX is the lab number). Then add a link in the MDX video section:
+   ```
+   **Материалы:** [Презентация занятия](/${DATE}-claude-code-lab-XX.html)
+   ```
+
+3. **Replace frontmatter placeholders**:
+   - `[Название встречи]` -> actual meeting title derived from transcript content
+   - `[Краткое описание встречи]` -> brief description
+   - `[Дата встречи]` -> formatted date from the transcript
+
+4. **Verify build locally** before committing:
+   ```bash
+   cd ~/Sites/agency-docs && npm run build 2>&1 | tail -5
+   ```
+   If build fails, fix the MDX (common issues: HTML comments, unescaped `<` or `{` characters) and retry.
+
+## Step 6: Commit and Push
+
+```bash
+cd ~/Sites/agency-docs && git add . && git commit -m "Add meeting NN" && git push
 ```
-⚠️  Could not find Fathom URL in frontmatter (looking for 'meeting_url' or 'url')
+
+Replace `NN` with the actual meeting number from Step 5 output.
+
+This triggers Vercel deployment automatically.
+
+## Step 7: Verify Vercel Deployment
+
+Wait ~90 seconds after push, then check deployment status:
+
+```bash
+gh api repos/glebis/agency-docs/commits/COMMIT_HASH/status --jq '{state, total_count}'
+gh api repos/glebis/agency-docs/commits/COMMIT_HASH/statuses --jq '.[0] | {state, description}'
 ```
-Solution: Add `meeting_url:` or `url:` field to Fathom transcript frontmatter
 
-**Cannot extract lab number:**
+- If `state: success` — deployment is live.
+- If `state: failure` — check the build error locally with `cd ~/Sites/agency-docs && npm run build 2>&1 | tail -20`, fix, and re-push.
+- If `state: pending` — wait another 60 seconds and re-check.
+
+## Pipeline Summary
+
+After completion, report:
+1. Fathom transcript path
+2. Downloaded video path
+3. YouTube URL
+4. Generated MDX path
+5. Git commit hash
+6. Vercel deployment status (success/failure)
+
+## Error Recovery
+
+- **Step 1 fail (no transcript)**: Run calendar-sync, retry once. If still missing, stop.
+- **Step 2 fail (download)**: Check if share_url is valid. Report ffmpeg errors.
+- **Step 3 fail (upload)**: Check YouTube OAuth tokens, venv activation. Report specific error.
+- **Step 4 fail (summary)**: Proceed with English summary if Russian generation fails.
+- **Step 5 fail (MDX)**: Check that fathom_url exists in frontmatter. Check docs_dir exists.
+- **Step 6 fail (git)**: Report conflict details. Do not force-push.
+
+## Reference: CLI Interfaces
+
+### download_video.py
 ```
-ValueError: Could not extract lab number from filename: [filename]
+python3 download_video.py <share_url> --output-name <name_without_ext>
 ```
-Solution: Ensure filename matches pattern `*claude-code-lab-XX*`
+Downloads to current directory as `<name>.mp4`.
 
-**Presentations directory not found:**
+### process_video.py
 ```
-⚠️  Presentations directory not found: [path]
+python3 process_video.py --video <path> --fathom-transcript <path> --upload
 ```
-Result: Continues without presentation content
+Flags: `--upload` (YouTube+Yandex), `--yandex-only`, `--skip-thumbnail`, `--language <code>`, `--title <override>`.
 
-**No presentation markdown found:**
+### update_meeting_doc.py
 ```
-⚠️  No presentation markdown found in [path]
+python3 update_meeting_doc.py <fathom_file> <youtube_url> <summary_file> [-n NN] [-l ru|en|auto] [--update]
 ```
-Result: Continues without presentation content
-
-**Meeting file already exists:**
-```
-⚠️  Meeting file already exists: [path]
-    Use --update flag to update existing file, or omit -n to create new meeting
-```
-Solution: Add `--update` flag to update existing file, or remove `-n` flag to auto-increment
-
-## Integration with Other Skills
-
-**Before agency-docs-updater:**
-1. `videopublish` - Process and upload video to YouTube
-2. `fathom` - Sync meeting transcript to Obsidian vault
-
-**During agency-docs-updater:**
-1. Launch `claude-code-guide` agent for fact-checking summary
-2. Run `update_meeting_doc.py` script
-
-**After agency-docs-updater:**
-1. Verify Vercel deployment
-2. Check live documentation URL
-
-## Notes
-
-- **Language handling**: Auto-detects Cyrillic/Latin, defaults to Russian translation for docs
-- **Meeting numbering**: Supports both auto-increment and explicit specification via `-n` flag
-- **Update mode**: Use `--update` with `-n` to replace existing meeting docs
-- **Technical terms**: Translation preserves English terms (MCP, Skills, Claude Code, etc.)
-- **Presentation auto-detection**: Handles multiple labs cleanly
-- **Frontmatter**: Must be manually edited (title/description placeholders)
-- **Git operations**: Manual to allow review before pushing
-- **Idempotent**: Safe to run multiple times with same inputs
