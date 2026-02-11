@@ -4,7 +4,35 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
-### [Doctor G](./doctorg/) ⭐ NEW
+### [Insight Extractor](./insight-extractor/) ⭐ NEW
+Parse Claude Code's built-in `/insights` report and extract actionable items into structured, trackable markdown files. Designed for Obsidian vaults but works with any markdown-based knowledge system.
+
+**Features:**
+- 📊 Extracts 6 categories: action items, prompts/patterns, technical learnings, workflow improvements, tool discoveries, automation candidates
+- 🤖 Auto-creates task files for automation candidates (with agent-runnable tagging)
+- 🔗 Links insights to daily notes and updates a Map of Content
+- 💬 Interactive mode (`--interactive`) to cherry-pick items via AskUserQuestion
+- ⚙️ Configure mode (`--configure`) to set folders, date format, and preferences
+- 🖥️ Machine-specific filenames (for multi-machine setups)
+- 📝 TLDR + key insight summary on completion
+
+**Quick Start:**
+```bash
+# Run /insights first, then extract
+/insight-extractor
+
+# Interactive -- review and filter each category
+/insight-extractor --interactive
+
+# Configure output paths, date format, etc.
+/insight-extractor --configure
+```
+
+**Use when:** After running `/insights` to persist analysis into your vault, during weekly reviews, or to discover automation candidates from session patterns.
+
+---
+
+### [Doctor G](./doctorg/)
 Evidence-based health research using tiered trusted sources with GRADE-inspired evidence ratings. Integrates Apple Health data for personalized context.
 
 **Features:**
