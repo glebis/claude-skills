@@ -1,6 +1,10 @@
 # Telegram Post Skill
 
-Create, preview, and send formatted Telegram posts from draft markdown files.
+Create, preview, and send formatted Telegram posts from draft markdown files. Built for [@klodkot](https://t.me/klodkot) and Gleb Kalinin's other Telegram channels.
+
+**Note:** Channel configurations (footers, tags, language defaults) are specific to Gleb's channels. To use for your own channels, edit `CHANNEL_CONFIG` in `scripts/post.py`.
+
+**Configured channels:** [@klodkot](https://t.me/klodkot), @mentalhealthtech, @toolbuildingape, @opytnymputem
 
 ## When to Use
 
