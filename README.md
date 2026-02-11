@@ -461,6 +461,37 @@ python scripts/telegram_fetch.py send --chat "@username" --text "Hello!"
 
 ---
 
+### [Telegram Post](./telegram-post/) ⭐ NEW
+Create, preview, and publish formatted Telegram posts from draft markdown files with HTML formatting and media.
+
+**Features:**
+- 📝 Create drafts with proper frontmatter for any channel
+- 🔄 Markdown to Telegram HTML conversion (bold, italic, links, headers)
+- 🛡️ Formatting safety check -- refuses to send if stray markdown detected
+- 🎬 Video attached as caption (not separate reply)
+- 📤 Default target: Saved Messages (safe preview before publishing)
+- 📦 Post-publish: updates frontmatter, moves to published/, updates channel index
+- 🏷️ Channel-aware: footers, tags reference, language defaults
+
+**Quick Start:**
+```bash
+# Create a draft
+python3 scripts/post.py create "my-post-slug" --topic "Topic" --source "https://..."
+
+# Preview (always do this first)
+python3 scripts/post.py send "Channels/klodkot/drafts/20260211-my-post.md" --dry-run
+
+# Send to saved messages for review
+python3 scripts/post.py send "Channels/klodkot/drafts/20260211-my-post.md"
+
+# Publish to channel (triggers post-publish: move, frontmatter update, index)
+python3 scripts/post.py send "Channels/klodkot/drafts/20260211-my-post.md" -c "@klodkot"
+```
+
+**Use when:** Creating, previewing, or publishing Telegram channel posts from Obsidian draft files.
+
+---
+
 ### [Telegram Telethon](./telegram-telethon/) ⭐ NEW
 Full Telethon API wrapper with daemon mode and Claude Code integration. Monitor chats, auto-respond with Claude, and manage sessions.
 
