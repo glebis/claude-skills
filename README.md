@@ -462,16 +462,18 @@ python scripts/telegram_fetch.py send --chat "@username" --text "Hello!"
 ---
 
 ### [Telegram Post](./telegram-post/) ⭐ NEW
-Create, preview, and publish formatted Telegram posts from draft markdown files with HTML formatting and media.
+Create, preview, and publish formatted Telegram posts from draft markdown files with HTML formatting and media. Built for [@klodkot](https://t.me/klodkot) and Gleb Kalinin's other Telegram channels -- channel configs (footers, tags, language) are hardcoded but the pattern is easy to adapt.
 
 **Features:**
-- 📝 Create drafts with proper frontmatter for any channel
+- 📝 Create drafts with proper frontmatter for any configured channel
 - 🔄 Markdown to Telegram HTML conversion (bold, italic, links, headers)
 - 🛡️ Formatting safety check -- refuses to send if stray markdown detected
 - 🎬 Video attached as caption (not separate reply)
 - 📤 Default target: Saved Messages (safe preview before publishing)
 - 📦 Post-publish: updates frontmatter, moves to published/, updates channel index
 - 🏷️ Channel-aware: footers, tags reference, language defaults
+
+**Configured channels:** [@klodkot](https://t.me/klodkot), @mentalhealthtech, @toolbuildingape, @opytnymputem
 
 **Quick Start:**
 ```bash
@@ -488,7 +490,7 @@ python3 scripts/post.py send "Channels/klodkot/drafts/20260211-my-post.md"
 python3 scripts/post.py send "Channels/klodkot/drafts/20260211-my-post.md" -c "@klodkot"
 ```
 
-**Use when:** Creating, previewing, or publishing Telegram channel posts from Obsidian draft files.
+**Use when:** Creating, previewing, or publishing Telegram channel posts from Obsidian draft files. Note: channel configs are specific to Gleb's channels -- fork and edit `CHANNEL_CONFIG` in `post.py` for your own.
 
 ---
 
