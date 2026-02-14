@@ -1,11 +1,11 @@
 ---
 name: telegram
-description: This skill should be used when fetching, searching, downloading, sending, or editing messages on Telegram. Use for queries like "show my Telegram messages", "search Telegram for...", "get unread messages", "send a message to...", "edit that message", or "add Telegram messages to my notes".
+description: This skill should be used when fetching, searching, downloading, sending, editing, or publishing messages on Telegram. Use for queries like "show my Telegram messages", "search Telegram for...", "get unread messages", "send a message to...", "edit that message", "publish this draft to klodkot", or "add Telegram messages to my notes".
 ---
 
 # Telegram Message Skill
 
-Fetch, search, download, and send Telegram messages with flexible filtering and output options.
+Fetch, search, download, send, and publish Telegram messages with flexible filtering and output options.
 
 ## Prerequisites
 
@@ -49,7 +49,15 @@ To see available Telegram chats:
 python3 scripts/telegram_fetch.py list
 python3 scripts/telegram_fetch.py list --limit 50
 python3 scripts/telegram_fetch.py list --search "AI"
+python3 scripts/telegram_fetch.py list --search "claude code глеб + саши" --exact
 ```
+
+**Options:**
+- `--search "text"`: Filter by substring match (case-insensitive)
+- `--exact`: Require exact name match instead of substring (use with --search)
+- `--limit N`: Max chats to retrieve (default: 30, increase if chat not found)
+
+**Important:** If you're looking for a specific chat by exact name and it's not found, increase `--limit` to 100 or 200, as the chat may not be in the most recent 30.
 
 Returns JSON with chat IDs, names, types, and unread counts.
 
@@ -110,7 +118,16 @@ python3 scripts/telegram_fetch.py send --chat "Tool Building Ape" --text "Thanks
 
 # Send to a forum topic (for groups with topics enabled)
 python3 scripts/telegram_fetch.py send --chat "Group Name" --text "Hello topic!" --topic 12
+
+# Send with markdown formatting (converts **bold**, _italic_, [links](url) to Telegram HTML)
+python3 scripts/telegram_fetch.py send --chat "@username" --text "**Bold** and _italic_ text" --markdown
 ```
+
+**Formatting (`--markdown` flag):**
+- Without `--markdown`: text is sent as-is (plain text, no formatting)
+- With `--markdown`: converts markdown to Telegram HTML (`**bold**` -> bold, `_italic_` -> italic, `[text](url)` -> link, `## Header` -> bold, `* item` -> arrow list)
+- **IMPORTANT**: Always use `--markdown` when sending draft content that contains markdown formatting
+- The `publish` command handles markdown conversion automatically; the `send` command does NOT unless `--markdown` is specified
 
 ### Send Files
 
@@ -201,6 +218,43 @@ python3 scripts/telegram_fetch.py thread --chat-id -1003237581133 --thread-id 17
 
 Returns markdown or JSON with all messages from the specified thread.
 
+### Publish Draft to Channel
+
+To publish a draft from the klodkot channel to Telegram:
+
+```bash
+# Dry run (preview without sending)
+python3 scripts/telegram_fetch.py publish --draft "Channels/klodkot/drafts/20260122-anthropic-consciousness-question.md" --dry-run
+
+# Publish to channel
+python3 scripts/telegram_fetch.py publish --draft "Channels/klodkot/drafts/20260122-anthropic-consciousness-question.md"
+```
+
+**Workflow:**
+1. Parses draft frontmatter and body
+2. Validates channel field (must be "klodkot")
+3. Extracts media references from frontmatter `video:` field and wikilinks
+4. Resolves media paths in `Channels/klodkot/attachments/` or `Sources/`
+5. Strips draft headers (e.g., "# Title - Telegram Draft")
+6. Appends footer if not present: "**[КЛОДКОТ](https://t.me/klodkot)** — Claude Code и другие агенты: инструменты, кейсы, вдохновение"
+7. Sends to @klodkot channel (multiple media as album)
+8. Updates frontmatter with `published_date`, `telegram_message_id`
+9. Moves file from `drafts/` to `published/`
+10. Updates channel index with new entry at top
+
+**Media handling:**
+- Frontmatter: `video: filename.mp4`
+- Wikilinks: `[[filename.mp4]]`, `[[image.png|alt text]]`
+- Multiple media sent as Telegram album
+
+**Safety:**
+- `--dry-run` shows preview without sending
+- Validates before sending
+- Rollback on send failure (file not moved)
+- Warnings on post-publish errors (file sent but move/index update failed)
+
+**Returns:** JSON with publish status, message ID, warnings (if any)
+
 ## Output Options
 
 ### Default (Markdown to stdout)
@@ -263,6 +317,7 @@ When user asks:
 - "Get unread messages from Tool Building Ape" -> `unread` + filter output
 - "Add my Telegram messages to daily note" -> `recent --to-daily`
 - "What chats do I have on Telegram?" -> `list`
+- "Find the exact chat named X" -> `list --search "X" --exact --limit 200`
 - "Send hello to John on Telegram" -> `send --chat "John" --text "Hello!"`
 - "Message @username on Telegram" -> `send --chat "@username" --text "..."`
 - "Reply to that message with thanks" -> `send --chat "..." --text "Thanks!" --reply-to <id>`
@@ -277,6 +332,8 @@ When user asks:
 - "Fix the typo in message 123" -> `edit --chat "..." --message-id 123 --text "corrected text"`
 - "Is Telegram configured?" -> `setup`
 - "How do I set up Telegram?" -> `setup` (returns instructions if not configured)
+- "Publish this draft to klodkot" -> `publish --draft "Channels/klodkot/drafts/...md"`
+- "Preview this draft before publishing" -> `publish --draft "..." --dry-run`
 
 ## Rate Limiting
 
@@ -284,4 +341,8 @@ The script includes built-in rate limiting (0.1s between messages) and handles T
 
 ## Dependencies
 
-Requires `telethon` Python package. Install with: `pip install telethon`
+Requires Python packages:
+- `telethon` - Telegram API client
+- `pyyaml` - YAML parsing for draft frontmatter
+
+Install with: `pip install telethon pyyaml`
