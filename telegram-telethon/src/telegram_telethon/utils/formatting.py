@@ -38,25 +38,23 @@ def format_messages_markdown(messages: List[Dict]) -> str:
             text = f"[{media_type}]"
 
         if text:
-            # Build Telegram link
+            # Build Telegram message link
             link = ""
-            username = msg.get("chat_username")
-            chat_id = msg.get("chat_id")
             msg_id = msg.get("id")
-            topic_id = msg.get("topic_id")
-
             if msg_id:
+                username = msg.get("chat_username")
+                chat_id = msg.get("chat_id")
                 if username:
                     base = f"https://t.me/{username}"
                 elif chat_id:
-                    cid = str(chat_id)
-                    if cid.startswith("-100"):
-                        cid = cid[4:]
-                    base = f"https://t.me/c/{cid}"
-                else:
-                    base = ""
+                    # Strip -100 prefix from Telegram supergroup/channel IDs
+                    channel_id = str(chat_id)
+                    if channel_id.startswith("-100"):
+                        channel_id = channel_id[4:]
+                    base = f"https://t.me/c/{channel_id}"
 
-                if base:
+                if username or chat_id:
+                    topic_id = msg.get("topic_id")
                     link = f"{base}/{topic_id}/{msg_id}" if topic_id else f"{base}/{msg_id}"
 
             if link:

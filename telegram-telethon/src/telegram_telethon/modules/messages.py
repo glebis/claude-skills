@@ -94,8 +94,9 @@ def format_message(msg, chat_name: str, chat_type: str, include_chat_id: bool = 
     if msg.reply_to:
         result["reply_to_msg_id"] = msg.reply_to.reply_to_msg_id
 
-    # Chat metadata for link generation
-    if hasattr(msg, 'chat') and msg.chat:
+    # Chat metadata for link generation (always set chat_id here,
+    # even if include_chat_id also sets it above — links need it unconditionally)
+    if msg.chat:
         result["chat_username"] = getattr(msg.chat, 'username', None)
         result["chat_id"] = msg.chat.id
 
