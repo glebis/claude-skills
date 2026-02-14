@@ -38,7 +38,31 @@ def format_messages_markdown(messages: List[Dict]) -> str:
             text = f"[{media_type}]"
 
         if text:
-            lines.append(f"**{date_str}** - {sender}:")
+            # Build Telegram link
+            link = ""
+            username = msg.get("chat_username")
+            chat_id = msg.get("chat_id")
+            msg_id = msg.get("id")
+            topic_id = msg.get("topic_id")
+
+            if msg_id:
+                if username:
+                    base = f"https://t.me/{username}"
+                elif chat_id:
+                    cid = str(chat_id)
+                    if cid.startswith("-100"):
+                        cid = cid[4:]
+                    base = f"https://t.me/c/{cid}"
+                else:
+                    base = ""
+
+                if base:
+                    link = f"{base}/{topic_id}/{msg_id}" if topic_id else f"{base}/{msg_id}"
+
+            if link:
+                lines.append(f"**{date_str}** - {sender}: [{msg_id}]({link})")
+            else:
+                lines.append(f"**{date_str}** - {sender}:")
             lines.append(f"> {text}")
 
             # Add reactions if present
