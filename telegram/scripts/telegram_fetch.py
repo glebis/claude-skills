@@ -391,7 +391,8 @@ async def edit_message(client: TelegramClient, chat_id: Optional[int] = None,
 
 async def send_message(client: TelegramClient, chat_name: str, text: str,
                        reply_to: Optional[int] = None,
-                       file_path: Optional[str] = None) -> Dict:
+                       file_path: Optional[str] = None,
+                       parse_mode: Optional[str] = None) -> Dict:
     """Send a message or file to a chat, optionally as a reply.
 
     Supports:
@@ -400,6 +401,7 @@ async def send_message(client: TelegramClient, chat_name: str, text: str,
     - Phone numbers
     - Chat IDs (numeric)
     - File attachments (images, documents, videos)
+    - parse_mode: 'html' for HTML formatting, None for plain text
 
     Safety: Groups/channels require explicit whitelist in config.json
     """
@@ -439,7 +441,8 @@ async def send_message(client: TelegramClient, chat_name: str, text: str,
                 entity,
                 file_path,
                 caption=text if text else None,
-                reply_to=reply_to
+                reply_to=reply_to,
+                parse_mode=parse_mode
             )
             return {
                 "sent": True,
@@ -457,7 +460,8 @@ async def send_message(client: TelegramClient, chat_name: str, text: str,
             msg = await client.send_message(
                 entity,
                 text,
-                reply_to=reply_to
+                reply_to=reply_to,
+                parse_mode=parse_mode
             )
             return {
                 "sent": True,
@@ -467,6 +471,35 @@ async def send_message(client: TelegramClient, chat_name: str, text: str,
             }
     except Exception as e:
         return {"sent": False, "error": str(e)}
+
+
+async def pin_message(client: TelegramClient, chat_name: str, message_id: int,
+                      notify: bool = False) -> Dict:
+    """Pin a message in a chat.
+
+    Args:
+        chat_name: Chat name, @username, or ID
+        message_id: Message ID to pin
+        notify: Whether to notify members about the pin (default: False)
+
+    Returns:
+        Dict with pinned status and details
+    """
+    entity, resolved_name = await resolve_entity(client, chat_name)
+
+    if entity is None:
+        return {"pinned": False, "error": f"Chat '{chat_name}' not found"}
+
+    try:
+        await client.pin_message(entity, message_id, notify=notify)
+        return {
+            "pinned": True,
+            "chat": resolved_name,
+            "message_id": message_id,
+            "notify": notify
+        }
+    except Exception as e:
+        return {"pinned": False, "error": str(e)}
 
 
 DEFAULT_ATTACHMENTS_DIR = Path.home() / 'Downloads' / 'telegram_attachments'
@@ -1189,6 +1222,13 @@ async def main():
     send_parser.add_argument("--file", help="File path to send (image, document, video)")
     send_parser.add_argument("--reply-to", type=int, help="Message ID to reply to")
     send_parser.add_argument("--topic", type=int, help="Forum topic ID to send to (for groups with topics)")
+    send_parser.add_argument("--markdown", action="store_true", help="Convert markdown formatting to Telegram HTML before sending")
+
+    # Pin message
+    pin_parser = subparsers.add_parser("pin", help="Pin a message in a chat")
+    pin_parser.add_argument("--chat", required=True, help="Chat name, @username, or ID")
+    pin_parser.add_argument("--message-id", type=int, required=True, help="Message ID to pin")
+    pin_parser.add_argument("--notify", action="store_true", help="Notify members about the pin")
 
     # Download media
     download_parser = subparsers.add_parser("download", help="Download media attachments")
@@ -1319,14 +1359,29 @@ async def main():
             else:
                 # --topic is an alias for --reply-to (forum topics use reply_to internally)
                 reply_to = args.topic if args.topic else args.reply_to
+                text = args.text or ""
+                parse_mode = None
+                if args.markdown and text:
+                    text = convert_markdown_to_telegram_html(text)
+                    parse_mode = 'html'
                 result = await send_message(
                     client,
                     chat_name=args.chat,
-                    text=args.text or "",
+                    text=text,
                     reply_to=reply_to,
-                    file_path=args.file
+                    file_path=args.file,
+                    parse_mode=parse_mode
                 )
                 print(json.dumps(result, indent=2))
+
+        elif args.command == "pin":
+            result = await pin_message(
+                client,
+                chat_name=args.chat,
+                message_id=args.message_id,
+                notify=args.notify
+            )
+            print(json.dumps(result, indent=2))
 
         elif args.command == "download":
             results = await download_media(
