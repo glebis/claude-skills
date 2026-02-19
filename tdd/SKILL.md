@@ -340,6 +340,15 @@ Proceed to REFACTOR phase? (or adjust?)
 
 **Update state**: `"phase": "green"`, update `files_modified`. Write state immediately.
 
+**Step 12** (domain/domain-service slices only): Quick testability check before REFACTOR:
+
+For each new/modified class in a `domain` or `domain-service` layer slice, verify:
+- Constructor takes NO parameters typed from outer layers (no ORM sessions, HTTP clients, framework configs)
+- Class has NO static method calls to outer-layer code
+- If violations found, fix them now (move the dependency to a port interface) before entering REFACTOR
+
+This catches layer leaks that the Implementer agent may introduce despite constraints. Research shows AI-generated code violates architectural boundaries 80% of the time without explicit enforcement (arXiv:2512.04273).
+
 ---
 
 ### Phase 4: REFACTOR

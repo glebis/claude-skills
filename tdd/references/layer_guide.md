@@ -2,6 +2,13 @@
 
 Compact reference for layer-aware TDD. Not a DDD textbook — just enough for agents to enforce dependency direction and choose the right test strategy.
 
+## Why This Matters (Research-Backed)
+
+- **AI-generated code without architectural constraints produces 80% dependency violation rates** in hexagonal architecture (arXiv:2512.04273, 2025). Layer constraints in agent prompts directly counteract this.
+- **Static tools detect only ~77% of dependency violations** on average (Pruijt et al., 2017). Our refactorer supplements tooling by checking imports + transitive deps during code review.
+- **Test-driven prompting improves LLM code generation accuracy by 38-45%** (Naik et al., 2024). RED-first with focused prompts is empirically better than spec-first.
+- **TDD alone doesn't automatically improve design** (Turhan et al., 2017). The REFACTOR phase with dependency checks is essential, not optional — it's where architectural quality emerges.
+
 ## Layer Definitions (Inside → Outside)
 
 ### Domain Model (Core)
