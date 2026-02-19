@@ -28,8 +28,11 @@ ORCHESTRATOR (SKILL.md)
 |
 |-- FOR EACH SLICE:
 |   |-- Phase 2 (RED):    Task(Test Writer)  <- spec + API + layer constraints
+|   |   |-- Post-RED lint: block mocking libs in domain tests
 |   |-- Phase 3 (GREEN):  Task(Implementer)  <- failing test + error + layer deps
-|   |   |-- Testability check (domain/domain-service slices)
+|   |   |-- Layer path validation: reject files outside slice's layer
+|   |   |-- Domain purity check (constructors, imports, statics)
+|   |   |-- Full-repo import scan: catch violations in untouched files
 |   |-- Phase 4 (REFACTOR): Task(Refactorer) <- all code + dependency direction audit
 |
 |-- Summary
@@ -46,9 +49,19 @@ Each slice is tagged with a layer (`domain`, `domain-service`, `application`, `i
 | application | In-memory fakes for all ports | Imports domain + domain-service |
 | infrastructure | Integration tests, real deps allowed | Implements inner-layer interfaces |
 
-The Refactorer agent checks both direct and transitive dependency direction violations, flagging them as high-priority suggestions.
+Enforcement is multi-layered (not just textual reminders):
+
+1. **Path validation** (GREEN phase): Implementer output files checked against `layer_map` — rejects writes to outer-layer directories
+2. **Post-RED test lint**: Scans test code for mocking libraries (`jest.mock`, `Mock()`, etc.) in domain/domain-service tests
+3. **Domain purity check**: Verifies constructors take no outer-layer types, no static calls to infrastructure
+4. **Full-repo import scan**: Checks ALL source files (not just session-modified) for dependency direction violations
+5. **Refactorer audit**: Checks direct + transitive dependency violations, flagging as high-priority suggestions
+
+Port interface rule: **the consumer defines the contract** — ports live in the layer that needs them, not the layer that implements them.
 
 This layer awareness degrades gracefully: for simple projects where everything lives in one layer, all slices get `layer: "application"` and the constraints don't add overhead.
+
+Edge cases handled: infrastructure-only features, missing port interfaces (created by first slice that needs them), and cross-cutting slices (tagged by innermost layer touched).
 
 ## File Structure
 

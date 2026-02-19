@@ -13,6 +13,10 @@ Multi-agent TDD orchestration with architecturally enforced context isolation. U
 - `--auto` mode: run all slices without pausing, stop only on unrecoverable errors
 - Inside-out vertical slicing by architectural layer (domain -> domain-service -> application -> infrastructure)
 - Layer-specific test constraints and dependency rules per slice
+- `layer_map` path validation: rejects Implementer writes to wrong-layer directories
+- Post-RED test lint: blocks mocking libraries in domain/domain-service tests
+- Full-repo import scan: catches dependency violations in untouched files
+- Port interface rule: consumer defines the contract (Dependency Inversion)
 - Retry loop: up to 5 fresh Implementer attempts with previous-attempt context (no accumulated history)
 - Regression auto-fix: detects and repairs broken tests after implementation (3-attempt limit)
 - Greenfield project support: handles empty codebases with no existing tests
@@ -20,7 +24,7 @@ Multi-agent TDD orchestration with architecturally enforced context isolation. U
 - `extract_api.sh`: public API surface extractor (signatures only, no bodies) for 7 languages
 - Implementer always returns complete file content (no ambiguous partial patches)
 - Failure recovery table covering 11 error scenarios with concrete recovery actions
-- 16 documented anti-patterns with prevention guidance
+- 18 documented anti-patterns with prevention guidance (incl. service locator, Active Record bleed)
 - Session state via `.tdd-state.json` with `--resume` support
 - 7 frameworks: Jest, Vitest, pytest, Go test, cargo test, RSpec, PHPUnit
 - Bug-fix TDD: reproduce-first workflow
