@@ -58,24 +58,18 @@ extract_typescript() {
   find "$dir" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' \) \
     -not -name '*.test.*' -not -name '*.spec.*' -not -name '*.d.ts' \
     -not -path '*/node_modules/*' -not -path '*/.next/*' -not -path '*/dist/*' \
-    -not -path '*/__tests__/*' \
+    -not -path '*/__tests__/*' -not -path '*/build/*' \
     -print0 2>/dev/null | sort -z | while IFS= read -r -d '' file; do
 
     local rel="${file#$dir/}"
-    local has_exports=false
 
-    # Extract export lines
+    # Extract export lines (includes re-exports and default exports)
     local exports
-    exports=$(grep -nE '^export (default )?(function|const|let|class|interface|type|enum|abstract class)' "$file" 2>/dev/null || true)
+    exports=$(grep -nE '^export ' "$file" 2>/dev/null | grep -vE '^\s*//' || true)
 
     if [[ -n "$exports" ]]; then
-      if [[ "$has_exports" == false ]]; then
-        echo "## $rel"
-        has_exports=true
-      fi
-
+      echo "## $rel"
       while IFS= read -r line; do
-        # Strip function bodies: keep signature up to opening brace or semicolon
         local cleaned
         cleaned=$(echo "$line" | sed -E 's/\{[^}]*$/\{...}/' | sed -E 's/= .+$/= ...;/')
         echo "  $cleaned"
@@ -98,9 +92,9 @@ extract_python() {
 
     local rel="${file#$dir/}"
 
-    # Get public functions and classes (not starting with _)
+    # Get public functions, classes, and decorated methods (not starting with _)
     local signatures
-    signatures=$(grep -nE '^(def [a-zA-Z][a-zA-Z0-9_]*|class [a-zA-Z][a-zA-Z0-9_]*|async def [a-zA-Z][a-zA-Z0-9_]*)' "$file" 2>/dev/null | grep -v '^\s*def _' || true)
+    signatures=$(grep -nE '^(def [a-zA-Z][a-zA-Z0-9_]*|class [a-zA-Z][a-zA-Z0-9_]*|async def [a-zA-Z][a-zA-Z0-9_]*|@(property|staticmethod|classmethod|dataclass))' "$file" 2>/dev/null | grep -v '^\s*def _' || true)
 
     if [[ -n "$signatures" ]]; then
       echo "## $rel"

@@ -14,6 +14,27 @@ Enforce disciplined RED-GREEN-REFACTOR cycles using **separate subagents** for t
 - User wants to add a feature with test coverage enforced from the start
 - User wants to fix a bug by first writing a reproducing test
 
+## Invocation Modes
+
+| Invocation | Behavior |
+|-----------|----------|
+| `/tdd <feature>` | Interactive mode — pause for approval at slices and each RED checkpoint |
+| `/tdd --auto <feature>` | Autonomous mode — run all slices without pausing; stop ONLY on unrecoverable errors |
+| `/tdd --resume` | Resume from `.tdd-state.json` in project root |
+
+In `--auto` mode, skip all `[HUMAN CHECKPOINT]` steps. Print status lines instead:
+
+```
+[auto] RED  slice 1/4: "validates email format" — test failing as expected
+[auto] GREEN slice 1/4: passing (attempt 1)
+[auto] REFACTOR slice 1/4: 1 suggestion applied, 0 skipped
+```
+
+Stop and ask the user ONLY when:
+- Implementation fails after 5 attempts
+- Regressions cannot be auto-fixed after 3 attempts
+- A script error makes it impossible to continue (missing binary, permission denied, etc.)
+
 ## Architecture Overview
 
 ```
@@ -33,9 +54,9 @@ ORCHESTRATOR (you, reading this file)
 
 | Agent | Sees | Does NOT See |
 |-------|------|-------------|
-| **Test Writer** | Slice spec, public API signatures, framework conventions | Implementation code, other slices, implementation plans |
-| **Implementer** | Failing test code, test failure output, file tree, existing source | Original spec, slice descriptions, future plans |
-| **Refactorer** | All implementation + all tests + green results | Original spec, decomposition rationale |
+| **Test Writer** | Slice spec, public API signatures, framework conventions, layer constraints | Implementation code, other slices, implementation plans |
+| **Implementer** | Failing test code, test failure output, file tree, existing source, layer constraints | Original spec, slice descriptions, future plans |
+| **Refactorer** | All implementation + all tests + green results, layers touched | Original spec, decomposition rationale |
 
 ## Workflow
 
@@ -50,30 +71,42 @@ go.mod (go test), Cargo.toml (cargo test), Gemfile (rspec), composer.json (phpun
 
 If ambiguous, ask: "What command runs your tests? (e.g., `npm test`, `pytest`)"
 
-**Step 2**: Verify green baseline.
+**Step 2**: Detect language from source files (for agent prompts):
+
+```
+TypeScript (.ts/.tsx), JavaScript (.js/.jsx), Python (.py), Go (.go), Rust (.rs), Ruby (.rb), PHP (.php)
+```
+
+**Step 3**: Verify green baseline.
 
 ```bash
 bash ~/.claude/skills/tdd/scripts/run_tests.sh {FRAMEWORK} "{TEST_COMMAND}"
 ```
 
-Parse the JSON output. If `status` is not `"pass"`, stop: "Existing tests are failing. TDD starts from a green baseline."
+Parse the JSON output.
 
-**Step 3**: Extract the public API surface.
+- If `status` is `"pass"`: proceed.
+- If `status` is `"fail"`: stop — "Existing tests are failing. TDD starts from a green baseline."
+- If `status` is `"error"` AND `total` is 0: **greenfield project** — no tests exist yet. This is fine. Proceed.
+
+**Step 4**: Extract the public API surface.
 
 ```bash
 bash ~/.claude/skills/tdd/scripts/extract_api.sh {SOURCE_DIR}
 ```
 
-Save the output — this is what the Test Writer will see.
+Save the output — this is what the Test Writer will see. If empty (greenfield), that's expected.
 
-**Step 4**: Create the state file `.tdd-state.json` in the project root:
+**Step 5**: Create the state file `.tdd-state.json` in the project root:
 
 ```json
 {
   "feature": "user's feature description",
   "framework": "jest|vitest|pytest|go|cargo|rspec|phpunit",
+  "language": "typescript|javascript|python|go|rust|ruby|php",
   "test_command": "the full test command",
   "source_dir": "src/",
+  "auto_mode": false,
   "slices": [],
   "current_slice": 0,
   "phase": "setup",
@@ -82,25 +115,57 @@ Save the output — this is what the Test Writer will see.
 }
 ```
 
-This enables `/tdd --resume` to pick up where a previous session left off.
+Each slice in the `slices` array includes a `layer` field: `"domain"`, `"domain-service"`, `"application"`, or `"infrastructure"`. See Phase 1 for how layers are assigned.
+
+**Update state**: `"phase": "setup"`. Write state file immediately.
+
+---
 
 ### Phase 1: Specification Decomposition
 
 Take the user's feature request and decompose into **ordered vertical slices**. Each slice is one testable behavior.
 
+#### Inside-Out Slice Ordering
+
+After identifying all slices, **sort them inside-out by architectural layer**. This ensures each slice can build on real (not mocked) implementations from previous slices:
+
+1. **Domain model** slices first — pure logic, no dependencies, no mocks needed
+2. **Domain service** slices — cross-aggregate operations using real domain objects
+3. **Application service / use case** slices — orchestration using in-memory fakes for ports
+4. **Infrastructure adapter** slices last — repos, external APIs, framework adapters
+
+Assign each slice a `layer` tag: `domain`, `domain-service`, `application`, or `infrastructure`. Use the heuristics from `references/layer_guide.md` to classify.
+
+**Why inside-out?** Domain slices produce real objects that later slices use directly. This minimizes mocking and catches integration issues early. It also ensures business rules are implemented and tested before any infrastructure decisions are made.
+
+For simple projects where all code lives in one layer, all slices get `layer: "application"` and the ordering doesn't change — the guidance degrades gracefully.
+
 Present to the user:
 
 ```
-I've broken this into N vertical slices:
-1. [behavior] — [what the test verifies]
-2. [behavior] — [what the test verifies]
-...
+I've broken this into N vertical slices (ordered inside-out):
 
-Each slice follows RED → GREEN → REFACTOR before moving to the next.
+Domain:
+1. [behavior] — [what the test verifies]
+
+Domain Services:
+2. [behavior] — [what the test verifies]
+
+Application:
+3. [behavior] — [what the test verifies]
+
+Infrastructure:
+4. [behavior] — [what the test verifies]
+
+Each slice follows RED -> GREEN -> REFACTOR before moving to the next.
 Does this decomposition look right?
 ```
 
-**Wait for user approval.** Update `.tdd-state.json` with the slices array.
+If all slices fall in one layer, skip the layer headings and present as a flat list.
+
+**Wait for user approval** (even in `--auto` mode — slice decomposition always needs sign-off).
+
+**Update state**: Write slices array (each with `layer` field), set `"phase": "decomposed"`.
 
 ---
 
@@ -112,14 +177,17 @@ Does this decomposition look right?
 bash ~/.claude/skills/tdd/scripts/extract_api.sh {SOURCE_DIR}
 ```
 
-**Step 2**: Read the prompt template from `references/agent_prompts.md` → "Test Writer Agent" section. Construct the prompt by filling in:
+**Step 2**: Read the prompt template from `references/agent_prompts.md` -> "Test Writer Agent" section. Construct the prompt by filling in:
 
 - `{SLICE_SPEC}`: The current slice's behavior description
-- `{API_SURFACE}`: Output from extract_api.sh
+- `{LANGUAGE}`: Detected language from Phase 0
 - `{FRAMEWORK}`: Detected framework name
+- `{API_SURFACE}`: Output from extract_api.sh
 - `{TEST_FILE_PATH}`: Where the test should go (follow project conventions)
-- `{EXISTING_TEST_CONTENT}`: Current content of the test file (if it exists)
+- `{EXISTING_TEST_CONTENT}`: Current content of the test file (if it exists), or "No test file exists yet."
 - `{FRAMEWORK_SKELETON}`: The relevant skeleton from `references/framework_configs.md`
+- `{LAYER}`: The slice's layer tag from Phase 1
+- `{LAYER_TEST_CONSTRAINTS}`: Layer-specific test constraints (see agent_prompts.md -> Layer-Specific Constraint Lookup)
 
 **Step 3**: Launch the Test Writer agent:
 
@@ -127,13 +195,14 @@ bash ~/.claude/skills/tdd/scripts/extract_api.sh {SOURCE_DIR}
 Task(subagent_type="general-purpose", prompt=<constructed prompt>)
 ```
 
-**Step 4**: Parse the JSON response. Strip markdown fences if present:
-1. Remove leading/trailing whitespace
-2. If response starts with `` ```json `` or `` ``` ``, remove first line and last `` ``` ``
-3. Parse as JSON
-4. If parse fails, find first `{` and last `}`, try that substring
+**Step 4**: Parse the JSON response using the `parse_agent_json` logic from `agent_prompts.md`:
+1. Strip markdown fences if present
+2. Try direct JSON parse
+3. If that fails, find first `{` and last `}`, try that substring
+4. If still invalid: retry the Task call once with appended "Return ONLY a JSON object."
+5. If still failing: extract test code manually from the raw response
 
-**Step 5**: Write the test code to the test file. If the file exists, append the test function. If new, create with proper imports.
+**Step 5**: Write the test code to the test file. If the file exists, append the test function (and merge imports). If new, create with the agent's `imports_needed` + `test_code`.
 
 **Step 6**: Run the test to confirm it FAILS:
 
@@ -141,12 +210,15 @@ Task(subagent_type="general-purpose", prompt=<constructed prompt>)
 bash ~/.claude/skills/tdd/scripts/run_tests.sh {FRAMEWORK} "{TEST_COMMAND_FOR_SPECIFIC_TEST}"
 ```
 
-The test **MUST fail** (status: `"fail"`). If it passes:
-- The behavior already exists, OR
-- The test is trivially passing (wrong assertion)
-- Investigate before proceeding. Do NOT move to GREEN.
+**Step 7**: Evaluate the result:
 
-**Step 7**: Present to the user (HUMAN CHECKPOINT):
+| Result | Action |
+|--------|--------|
+| `status: "fail"` | Expected. Test is RED. Proceed. |
+| `status: "pass"` | Behavior already exists. Log: "Test passes — skipping slice (already implemented)." Increment `current_slice`, move to next slice. |
+| `status: "error"`, compile/syntax error | Fix: the test has a typo or bad import. Read the `raw_tail`, fix the test file directly. Re-run. If still erroring after 2 fix attempts, ask user. |
+
+**Step 8** (interactive mode only — skip in `--auto`): Present to the user:
 
 ```
 RED: Test written and failing as expected.
@@ -162,28 +234,35 @@ Proceed to GREEN phase? (or adjust the test?)
 
 **Wait for user approval before proceeding to GREEN.**
 
-Update `.tdd-state.json`: `"phase": "red"`.
+**Update state**: `"phase": "red"`, add test file to `test_files_created`. Write state immediately.
 
 ---
 
 ### Phase 3: GREEN — Minimal Implementation
 
-**Step 1**: Read the failing test file and the test failure output.
+**Step 1**: Read the failing test file and the test failure output (the full `raw_tail` from the RED phase run_tests.sh result).
 
 **Step 2**: Build the file tree of source files (not test files, not node_modules, etc.):
 
 ```bash
-find {SOURCE_DIR} -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' ... \) | grep -v test | grep -v node_modules | head -50
+find {SOURCE_DIR} -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.rs' -o -name '*.rb' -o -name '*.php' \) | grep -v test | grep -v spec | grep -v node_modules | grep -v __pycache__ | grep -v vendor | grep -v target | grep -v dist | grep -v build | head -50
 ```
 
 **Step 3**: Read existing source files that the test imports or references.
 
-**Step 4**: Read the prompt template from `references/agent_prompts.md` → "Implementer Agent" section. Fill in:
+**Step 4**: Read the prompt template from `references/agent_prompts.md` -> "Implementer Agent" section. Fill in:
 
+- `{LANGUAGE}`: Detected language
 - `{FAILING_TEST_CODE}`: The complete test file content
 - `{TEST_FAILURE_OUTPUT}`: The `raw_tail` from run_tests.sh JSON output
-- `{FILE_TREE}`: Source file listing
-- `{EXISTING_SOURCE}`: Content of relevant source files
+- `{FILE_TREE}`: Source file listing from Step 2
+- `{EXISTING_SOURCE}`: Content of relevant source files (if any — may be empty for greenfield)
+- `{LAYER}`: The slice's layer tag from Phase 1
+- `{LAYER_DEPENDENCY_CONSTRAINT}`: Layer-specific dependency constraint (see agent_prompts.md -> Layer-Specific Constraint Lookup)
+
+On retries (attempt > 1), also fill in the `{?PREVIOUS_ATTEMPT}` section:
+- `{PREVIOUS_ATTEMPT_DESCRIPTION}`: the `explanation` field from the failed attempt
+- `{PREVIOUS_ATTEMPT_ERROR}`: the `raw_tail` from the test run after the failed attempt
 
 **CRITICAL**: Do NOT include the slice specification, feature description, or any future plans. The Implementer works from the test alone.
 
@@ -193,9 +272,11 @@ find {SOURCE_DIR} -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' ... \)
 Task(subagent_type="general-purpose", prompt=<constructed prompt>)
 ```
 
-**Step 6**: Parse the JSON response. Apply file changes:
-- For `"action": "create"` — use the Write tool
-- For `"action": "modify"` — use the Edit tool
+**Step 6**: Parse the JSON response. Apply file changes using the Write tool:
+
+For each file in the response `files` array:
+- Use the Write tool to create or overwrite the file with the complete content returned by the agent
+- The Implementer always returns full file content — no partial patches
 
 **Step 7**: Run the specific test:
 
@@ -207,19 +288,30 @@ bash ~/.claude/skills/tdd/scripts/run_tests.sh {FRAMEWORK} "{TEST_COMMAND_FOR_SP
 
 ```
 attempt = 1
-while status == "fail" AND attempt <= 5:
-    Read the NEW failure output
-    Launch a FRESH Task(Implementer) with the updated failure output
-    Apply changes
+max_attempts = 5
+previous_explanation = null
+previous_error = null
+
+while status != "pass" AND attempt <= max_attempts:
+    previous_explanation = explanation from last Implementer response
+    previous_error = raw_tail from last test run
+
+    Launch FRESH Task(Implementer) with:
+      - same test code + file tree + existing source (re-read!)
+      - NEW failure output
+      - PREVIOUS_ATTEMPT section filled in
+
+    Apply changes (Write tool for each file)
     Re-run test
     attempt += 1
 
-if still failing after 5 attempts:
-    Present to user: "Implementation failed after 5 attempts. Last error: {error}"
+if still failing after max_attempts:
+    STOP. Present to user:
+    "Implementation failed after 5 attempts. Last error: {raw_tail}"
     Ask: "Adjust the test, try a different approach, or debug manually?"
 ```
 
-Each retry is a **fresh** Task call — no accumulated context from previous attempts. This prevents the Implementer from going down rabbit holes.
+Each retry is a **fresh** Task call with only the previous attempt's explanation and error. This prevents the Implementer from going down rabbit holes while giving it enough context to try a different strategy.
 
 **Step 9**: Once the specific test passes, run the FULL test suite:
 
@@ -227,9 +319,14 @@ Each retry is a **fresh** Task call — no accumulated context from previous att
 bash ~/.claude/skills/tdd/scripts/run_tests.sh {FRAMEWORK} "{FULL_TEST_COMMAND}" --all
 ```
 
-If regressions detected, fix them before proceeding.
+**Step 10**: Handle regressions:
 
-**Step 10**: Present to the user:
+| Result | Action |
+|--------|--------|
+| All pass | Proceed to REFACTOR |
+| Regressions found | Auto-fix: launch a fresh Implementer with the regression test failures. Apply. Re-run full suite. Repeat up to 3 times. If still failing after 3 regression-fix attempts, STOP and present to user. |
+
+**Step 11** (interactive mode only — skip in `--auto`): Present to the user:
 
 ```
 GREEN: Test passing with minimal implementation.
@@ -241,7 +338,7 @@ All tests: {passed} passing, {failed} failing
 Proceed to REFACTOR phase? (or adjust?)
 ```
 
-Update `.tdd-state.json`: `"phase": "green"`, update `files_modified`.
+**Update state**: `"phase": "green"`, update `files_modified`. Write state immediately.
 
 ---
 
@@ -252,11 +349,13 @@ Update `.tdd-state.json`: `"phase": "green"`, update `files_modified`.
 - All source files modified during this session
 - The green test output
 
-**Step 2**: Read the prompt template from `references/agent_prompts.md` → "Refactorer Agent" section. Fill in:
+**Step 2**: Read the prompt template from `references/agent_prompts.md` -> "Refactorer Agent" section. Fill in:
 
+- `{LANGUAGE}`: Detected language
 - `{GREEN_TEST_OUTPUT}`: Full test output showing all green
 - `{ALL_TEST_CODE}`: Content of all test files
 - `{ALL_IMPLEMENTATION_CODE}`: Content of all modified source files
+- `{SLICE_LAYERS}`: Comma-separated list of unique layers from all slices completed so far
 
 **Step 3**: Launch the Refactorer agent:
 
@@ -264,15 +363,17 @@ Update `.tdd-state.json`: `"phase": "green"`, update `files_modified`.
 Task(subagent_type="general-purpose", prompt=<constructed prompt>)
 ```
 
-**Step 4**: Parse the JSON response. Apply suggestions **one at a time**, in priority order:
+**Step 4**: Parse the JSON response. If `suggestions` is empty, skip to Step 6.
+
+Apply suggestions **one at a time**, in priority order (high first):
 
 For each suggestion:
-1. Apply the code change (Edit tool)
+1. Apply the code change (Edit tool, using `old_code` -> `new_code` for each file)
 2. Run the full test suite
-3. If any test fails → **revert immediately** (undo the edit) and skip this suggestion
-4. If all tests pass → keep the change
+3. If any test fails -> **revert immediately** (re-read the file from before the edit and Write it back) and skip this suggestion
+4. If all tests pass -> keep the change
 
-**Step 5**: Present:
+**Step 5** (interactive mode only — skip in `--auto`): Present:
 
 ```
 REFACTOR: Code improved, all tests still passing.
@@ -284,15 +385,21 @@ All tests: {count} passing
 [Moving to slice N of M] or [All slices complete]
 ```
 
-Update `.tdd-state.json`: `"phase": "refactor"`.
+In `--auto` mode, print one-liner:
+
+```
+[auto] REFACTOR slice N/M: {applied_count} applied, {skipped_count} skipped
+```
+
+**Update state**: `"phase": "refactor"`. Write state immediately.
 
 ---
 
 ### Phase 5: Next Slice or Complete
 
-If more slices remain → increment `current_slice` in state, return to Phase 2.
+If more slices remain -> increment `current_slice` in state, return to Phase 2.
 
-If all slices complete → present summary:
+If all slices complete -> present summary:
 
 ```
 TDD Complete: {feature name}
@@ -303,7 +410,7 @@ Files created/modified: {list}
 All tests passing: yes
 ```
 
-Clean up: optionally remove `.tdd-state.json` (ask user).
+Clean up: remove `.tdd-state.json` (in `--auto` mode, remove silently; in interactive, ask user).
 
 ---
 
@@ -314,10 +421,19 @@ When user invokes `/tdd --resume`:
 1. Read `.tdd-state.json` from project root
 2. Report current state: "Found TDD session for '{feature}'. Currently at slice {N}/{total}, phase: {phase}."
 3. Resume from the current phase of the current slice
+4. If `auto_mode` is true in state, continue in auto mode
 
 ---
 
 ## Edge Cases
+
+### Greenfield Projects
+
+No source files, no tests, no test configuration. Handle gracefully:
+
+1. **Phase 0 Step 3**: If run_tests.sh returns `status: "error"` with `total: 0`, check if any test files exist. If none, this is greenfield — proceed.
+2. **Phase 0 Step 4**: extract_api.sh will return empty output. Pass `"(No existing API — this is a new project)"` to the Test Writer.
+3. **Phase 2**: The Test Writer will create test files from scratch. May need to set up the test framework config (e.g., `jest.config.js`, `pytest.ini`). If the first test run fails with a framework error (not a test failure), create minimal framework config and retry.
 
 ### Bug Fix TDD
 
@@ -330,7 +446,7 @@ When user invokes `/tdd --resume`:
 
 1. Write a test for CURRENT behavior (should PASS — this is a characterization test)
 2. Modify the test for DESIRED behavior (should FAIL)
-3. Proceed with GREEN → REFACTOR
+3. Proceed with GREEN -> REFACTOR
 
 ### User-Provided Tests
 
@@ -345,6 +461,28 @@ If a test sometimes passes/fails: stop, report, fix the flaky test before contin
 
 ---
 
+## Failure Recovery Reference
+
+| Failure | Phase | Recovery |
+|---------|-------|----------|
+| Test Writer returns invalid JSON | RED | Parse with fence-stripping + substring extraction. Retry once with "Return ONLY JSON." Fall back to manual extraction. |
+| Test passes when it should fail | RED | Log "already implemented", skip slice, move to next. |
+| Test has syntax/compile error | RED | Read raw_tail, fix test file directly. Retry up to 2 times. Then ask user. |
+| Implementer returns invalid JSON | GREEN | Same JSON recovery as Test Writer. |
+| Test still fails after implementation | GREEN | Retry loop: up to 5 fresh Implementer calls with previous-attempt context. Then ask user. |
+| Full suite has regressions | GREEN | Auto-fix: fresh Implementer with regression failures. Up to 3 attempts. Then ask user. |
+| Refactorer suggestion breaks tests | REFACTOR | Revert immediately, skip suggestion, continue with next. |
+| run_tests.sh timeout | Any | Increase timeout. If persistent, ask user about test performance. |
+| run_tests.sh returns `"error"` | Any | Read raw_tail for cause. Script error (missing binary, bad path) -> fix and retry. Compilation error -> treat as implementation error. |
+| extract_api.sh returns empty | RED | Normal for greenfield. Pass "(No existing API)" message. |
+| Agent response is completely empty | Any | Retry the Task call once. If still empty, ask user. |
+
+---
+
+## Layer Reference
+
+See `references/layer_guide.md` for layer definitions, dependency rules, test strategies by layer, and detection heuristics.
+
 ## Anti-Patterns to Avoid
 
 See `references/anti_patterns.md`. Critical ones:
@@ -353,6 +491,8 @@ See `references/anti_patterns.md`. Critical ones:
 - Never write all tests at once (vertical slicing)
 - Never test implementation details
 - Never skip the RED phase
+- Never let domain code import infrastructure (dependency direction violation)
+- Never mock domain objects — construct real instances instead
 
 ---
 
