@@ -91,17 +91,37 @@ extract_python() {
     -print0 2>/dev/null | sort -z | while IFS= read -r -d '' file; do
 
     local rel="${file#$dir/}"
+    local output=""
 
-    # Get public functions, classes, and decorated methods (not starting with _)
-    local signatures
-    signatures=$(grep -nE '^(def [a-zA-Z][a-zA-Z0-9_]*|class [a-zA-Z][a-zA-Z0-9_]*|async def [a-zA-Z][a-zA-Z0-9_]*|@(property|staticmethod|classmethod|dataclass))' "$file" 2>/dev/null | grep -v '^\s*def _' || true)
+    # Extract __all__ exports if present
+    local all_exports
+    all_exports=$(grep -n '^__all__' "$file" 2>/dev/null || true)
+    if [[ -n "$all_exports" ]]; then
+      output+="$all_exports"$'\n'
+    fi
 
-    if [[ -n "$signatures" ]]; then
+    # Get top-level functions, classes, and decorators
+    local top_level
+    top_level=$(grep -nE '^(def [a-zA-Z][a-zA-Z0-9_]*|class [a-zA-Z][a-zA-Z0-9_]*|async def [a-zA-Z][a-zA-Z0-9_]*|@(property|staticmethod|classmethod|dataclass|runtime_checkable))' "$file" 2>/dev/null | grep -v '^\s*def _' || true)
+    if [[ -n "$top_level" ]]; then
+      output+="$top_level"$'\n'
+    fi
+
+    # Get class methods (1-level indent: 4 spaces or 1 tab)
+    local methods
+    methods=$(grep -nE '^(    |\t)(def [a-zA-Z][a-zA-Z0-9_]*|async def [a-zA-Z][a-zA-Z0-9_]*)' "$file" 2>/dev/null | grep -v 'def _[a-zA-Z]' || true)
+    if [[ -n "$methods" ]]; then
+      output+="$methods"$'\n'
+    fi
+
+    output=$(echo "$output" | sort -t: -k1,1n | uniq)
+
+    if [[ -n "$output" ]]; then
       echo "## $rel"
       while IFS= read -r line; do
-        # Keep only the signature line (up to the colon)
+        [[ -z "$line" ]] && continue
         echo "  $line"
-      done <<< "$signatures"
+      done <<< "$output"
       echo ""
     fi
   done
