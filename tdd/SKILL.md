@@ -1,11 +1,11 @@
 ---
 name: tdd
-description: This skill should be used when the user wants to implement features or fix bugs using test-driven development. Enforces the RED-GREEN-REFACTOR cycle with vertical slicing, context isolation between test writing and implementation, human checkpoints, and auto-test feedback loops. Supports Jest, Vitest, pytest, Go test, cargo test, PHPUnit, and RSpec.
+description: This skill should be used when the user wants to implement features or fix bugs using test-driven development. Enforces the RED-GREEN-REFACTOR cycle with vertical slicing, context isolation between test writing and implementation, human checkpoints, and auto-test feedback loops. Uses multi-agent orchestration with the Task tool for architecturally enforced context isolation. Supports Jest, Vitest, pytest, Go test, cargo test, PHPUnit, and RSpec.
 ---
 
-# Test-Driven Development
+# Test-Driven Development — Multi-Agent Orchestration
 
-Enforce disciplined RED-GREEN-REFACTOR cycles where tests are written before implementation, one vertical slice at a time. The core constraint: **no implementation code exists without a corresponding failing test written first.**
+Enforce disciplined RED-GREEN-REFACTOR cycles using **separate subagents** for test writing and implementation. The core innovation: **the Test Writer never sees implementation code, and the Implementer never sees the specification.** This prevents the LLM from leaking implementation intent into test design.
 
 ## When to Use
 
@@ -14,243 +14,358 @@ Enforce disciplined RED-GREEN-REFACTOR cycles where tests are written before imp
 - User wants to add a feature with test coverage enforced from the start
 - User wants to fix a bug by first writing a reproducing test
 
-## Core Principles
+## Architecture Overview
 
-1. **Vertical slicing** -- one failing test, then minimal implementation to pass it, then refactor. Never write all tests first.
-2. **Context isolation** -- when writing a test, reason only from the specification/requirement, not from a planned implementation. This prevents tests that mirror implementation details.
-3. **Test public interfaces** -- test behavior through public APIs and return values. Avoid testing internal implementation, mocking internals, or verifying call counts on private methods.
-4. **Human checkpoints** -- present the failing test to the user for approval before writing implementation. The user is the arbiter of test correctness.
-5. **Auto-test feedback loop** -- after writing implementation, run the test immediately. If it fails, iterate. If it passes, present for refactoring.
+```
+ORCHESTRATOR (you, reading this file)
+├─ Phase 0: Setup — detect framework, extract API, create state file
+├─ Phase 1: Decompose into vertical slices → user approves
+│
+├─ FOR EACH SLICE:
+│   ├─ Phase 2 (RED):    Task(Test Writer)  ← spec + API only
+│   ├─ Phase 3 (GREEN):  Task(Implementer)  ← failing test + error only
+│   └─ Phase 4 (REFACTOR): Task(Refactorer) ← all code + green results
+│
+└─ Summary
+```
+
+### Context Boundaries (the key constraint)
+
+| Agent | Sees | Does NOT See |
+|-------|------|-------------|
+| **Test Writer** | Slice spec, public API signatures, framework conventions | Implementation code, other slices, implementation plans |
+| **Implementer** | Failing test code, test failure output, file tree, existing source | Original spec, slice descriptions, future plans |
+| **Refactorer** | All implementation + all tests + green results | Original spec, decomposition rationale |
 
 ## Workflow
 
 ### Phase 0: Setup (once per session)
 
-Detect the project's test framework and runner:
+**Step 1**: Detect framework and test runner.
 
 ```
-Project detection checklist:
-- package.json → jest, vitest, mocha, playwright
-- pyproject.toml / setup.cfg / pytest.ini → pytest
-- go.mod → go test
-- Cargo.toml → cargo test
-- composer.json → phpunit
-- Gemfile → rspec
+Check for: package.json (jest/vitest), pyproject.toml/pytest.ini (pytest),
+go.mod (go test), Cargo.toml (cargo test), Gemfile (rspec), composer.json (phpunit)
 ```
 
-Determine the test command. If ambiguous, ask the user:
-"What command runs your tests? (e.g., `npm test`, `pytest`, `go test ./...`)"
+If ambiguous, ask: "What command runs your tests? (e.g., `npm test`, `pytest`)"
 
-Store the test command for the session. Check if tests currently pass:
+**Step 2**: Verify green baseline.
 
 ```bash
-<TEST_COMMAND>
+bash ~/.claude/skills/tdd/scripts/run_tests.sh {FRAMEWORK} "{TEST_COMMAND}"
 ```
 
-If existing tests fail, stop and report. TDD starts from a green baseline.
+Parse the JSON output. If `status` is not `"pass"`, stop: "Existing tests are failing. TDD starts from a green baseline."
+
+**Step 3**: Extract the public API surface.
+
+```bash
+bash ~/.claude/skills/tdd/scripts/extract_api.sh {SOURCE_DIR}
+```
+
+Save the output — this is what the Test Writer will see.
+
+**Step 4**: Create the state file `.tdd-state.json` in the project root:
+
+```json
+{
+  "feature": "user's feature description",
+  "framework": "jest|vitest|pytest|go|cargo|rspec|phpunit",
+  "test_command": "the full test command",
+  "source_dir": "src/",
+  "slices": [],
+  "current_slice": 0,
+  "phase": "setup",
+  "files_modified": [],
+  "test_files_created": []
+}
+```
+
+This enables `/tdd --resume` to pick up where a previous session left off.
 
 ### Phase 1: Specification Decomposition
 
-Take the user's feature request or bug report and decompose it into **ordered vertical slices**. Each slice is one testable behavior.
+Take the user's feature request and decompose into **ordered vertical slices**. Each slice is one testable behavior.
 
-Present the slices to the user:
+Present to the user:
 
 ```
 I've broken this into N vertical slices:
-1. [behavior description] -- [what the test would verify]
-2. [behavior description] -- [what the test would verify]
+1. [behavior] — [what the test verifies]
+2. [behavior] — [what the test verifies]
 ...
 
-Each slice follows RED -> GREEN -> REFACTOR before moving to the next.
+Each slice follows RED → GREEN → REFACTOR before moving to the next.
 Does this decomposition look right?
 ```
 
-Wait for user approval. Adjust if needed.
+**Wait for user approval.** Update `.tdd-state.json` with the slices array.
 
-### Phase 2: RED -- Write One Failing Test
+---
 
-**Critical constraint**: When writing the test, reason ONLY from the specification for this slice. Do not plan or think about the implementation.
+### Phase 2: RED — Write One Failing Test
 
-Write exactly one test that:
-- Tests a single behavior from the current slice
-- Uses the public interface (function signatures, API endpoints, component props)
-- Has a descriptive name that reads as a behavior specification
-- Contains clear assertions on expected outcomes
-- Will FAIL because the implementation does not yet exist
-
-**Test naming convention**: `test_<behavior_in_plain_english>` or `it("should <behavior>")` or `Test<Behavior>`.
-
-Run the test to confirm it fails:
+**Step 1**: Refresh the API surface (it changes as slices are implemented):
 
 ```bash
-<TEST_COMMAND> <specific_test_file_or_filter>
+bash ~/.claude/skills/tdd/scripts/extract_api.sh {SOURCE_DIR}
 ```
 
-**The test MUST fail.** If it passes, the behavior already exists or the test is wrong. Investigate before proceeding.
+**Step 2**: Read the prompt template from `references/agent_prompts.md` → "Test Writer Agent" section. Construct the prompt by filling in:
 
-Present the failing test and output to the user:
+- `{SLICE_SPEC}`: The current slice's behavior description
+- `{API_SURFACE}`: Output from extract_api.sh
+- `{FRAMEWORK}`: Detected framework name
+- `{TEST_FILE_PATH}`: Where the test should go (follow project conventions)
+- `{EXISTING_TEST_CONTENT}`: Current content of the test file (if it exists)
+- `{FRAMEWORK_SKELETON}`: The relevant skeleton from `references/framework_configs.md`
+
+**Step 3**: Launch the Test Writer agent:
+
+```
+Task(subagent_type="general-purpose", prompt=<constructed prompt>)
+```
+
+**Step 4**: Parse the JSON response. Strip markdown fences if present:
+1. Remove leading/trailing whitespace
+2. If response starts with `` ```json `` or `` ``` ``, remove first line and last `` ``` ``
+3. Parse as JSON
+4. If parse fails, find first `{` and last `}`, try that substring
+
+**Step 5**: Write the test code to the test file. If the file exists, append the test function. If new, create with proper imports.
+
+**Step 6**: Run the test to confirm it FAILS:
+
+```bash
+bash ~/.claude/skills/tdd/scripts/run_tests.sh {FRAMEWORK} "{TEST_COMMAND_FOR_SPECIFIC_TEST}"
+```
+
+The test **MUST fail** (status: `"fail"`). If it passes:
+- The behavior already exists, OR
+- The test is trivially passing (wrong assertion)
+- Investigate before proceeding. Do NOT move to GREEN.
+
+**Step 7**: Present to the user (HUMAN CHECKPOINT):
 
 ```
 RED: Test written and failing as expected.
 
-Test: <test name>
-File: <test file path>
-Failure: <failure message summary>
+Test: {test_name}
+File: {test_file_path}
+Failure: {failure message from JSON}
 
-This test verifies: <what behavior this proves>
+This test verifies: {test_description from agent response}
 
 Proceed to GREEN phase? (or adjust the test?)
 ```
 
-Wait for user approval.
+**Wait for user approval before proceeding to GREEN.**
 
-### Phase 3: GREEN -- Minimal Implementation
+Update `.tdd-state.json`: `"phase": "red"`.
 
-Write the **minimum code** to make the failing test pass. Constraints:
+---
 
-- No code beyond what the test requires
-- No premature abstractions
-- No error handling for untested cases
-- No optimization
-- Hardcoded values are acceptable if they satisfy the test
+### Phase 3: GREEN — Minimal Implementation
 
-Run the test:
+**Step 1**: Read the failing test file and the test failure output.
+
+**Step 2**: Build the file tree of source files (not test files, not node_modules, etc.):
 
 ```bash
-<TEST_COMMAND> <specific_test_file_or_filter>
+find {SOURCE_DIR} -type f \( -name '*.ts' -o -name '*.js' -o -name '*.py' ... \) | grep -v test | grep -v node_modules | head -50
 ```
 
-**If the test fails**: Read the error, adjust the implementation, re-run. Repeat up to 5 times. If still failing after 5 attempts, present the situation to the user -- the test may need adjustment.
+**Step 3**: Read existing source files that the test imports or references.
 
-**If the test passes**: Run the FULL test suite to check for regressions:
+**Step 4**: Read the prompt template from `references/agent_prompts.md` → "Implementer Agent" section. Fill in:
+
+- `{FAILING_TEST_CODE}`: The complete test file content
+- `{TEST_FAILURE_OUTPUT}`: The `raw_tail` from run_tests.sh JSON output
+- `{FILE_TREE}`: Source file listing
+- `{EXISTING_SOURCE}`: Content of relevant source files
+
+**CRITICAL**: Do NOT include the slice specification, feature description, or any future plans. The Implementer works from the test alone.
+
+**Step 5**: Launch the Implementer agent:
+
+```
+Task(subagent_type="general-purpose", prompt=<constructed prompt>)
+```
+
+**Step 6**: Parse the JSON response. Apply file changes:
+- For `"action": "create"` — use the Write tool
+- For `"action": "modify"` — use the Edit tool
+
+**Step 7**: Run the specific test:
 
 ```bash
-<TEST_COMMAND>
+bash ~/.claude/skills/tdd/scripts/run_tests.sh {FRAMEWORK} "{TEST_COMMAND_FOR_SPECIFIC_TEST}"
+```
+
+**Step 8**: RETRY LOOP (if test still fails):
+
+```
+attempt = 1
+while status == "fail" AND attempt <= 5:
+    Read the NEW failure output
+    Launch a FRESH Task(Implementer) with the updated failure output
+    Apply changes
+    Re-run test
+    attempt += 1
+
+if still failing after 5 attempts:
+    Present to user: "Implementation failed after 5 attempts. Last error: {error}"
+    Ask: "Adjust the test, try a different approach, or debug manually?"
+```
+
+Each retry is a **fresh** Task call — no accumulated context from previous attempts. This prevents the Implementer from going down rabbit holes.
+
+**Step 9**: Once the specific test passes, run the FULL test suite:
+
+```bash
+bash ~/.claude/skills/tdd/scripts/run_tests.sh {FRAMEWORK} "{FULL_TEST_COMMAND}" --all
 ```
 
 If regressions detected, fix them before proceeding.
 
-Present the result:
+**Step 10**: Present to the user:
 
 ```
 GREEN: Test passing with minimal implementation.
 
-Implementation: <brief description of what was written>
-Files changed: <list>
-All tests: <pass count> passing, <fail count> failing
+Implementation: {explanation from agent response}
+Files changed: {list}
+All tests: {passed} passing, {failed} failing
 
 Proceed to REFACTOR phase? (or adjust?)
 ```
 
+Update `.tdd-state.json`: `"phase": "green"`, update `files_modified`.
+
+---
+
 ### Phase 4: REFACTOR
 
-With all tests green, improve code quality without changing behavior:
+**Step 1**: Gather all context:
+- All test files created/modified during this session
+- All source files modified during this session
+- The green test output
 
-- Extract duplicated code
-- Improve naming
-- Simplify logic
-- Apply appropriate patterns
+**Step 2**: Read the prompt template from `references/agent_prompts.md` → "Refactorer Agent" section. Fill in:
 
-**After every refactoring change**, re-run the full test suite:
+- `{GREEN_TEST_OUTPUT}`: Full test output showing all green
+- `{ALL_TEST_CODE}`: Content of all test files
+- `{ALL_IMPLEMENTATION_CODE}`: Content of all modified source files
 
-```bash
-<TEST_COMMAND>
+**Step 3**: Launch the Refactorer agent:
+
+```
+Task(subagent_type="general-purpose", prompt=<constructed prompt>)
 ```
 
-If any test fails during refactoring, revert the change immediately and try a different approach.
+**Step 4**: Parse the JSON response. Apply suggestions **one at a time**, in priority order:
 
-Present the result:
+For each suggestion:
+1. Apply the code change (Edit tool)
+2. Run the full test suite
+3. If any test fails → **revert immediately** (undo the edit) and skip this suggestion
+4. If all tests pass → keep the change
+
+**Step 5**: Present:
 
 ```
 REFACTOR: Code improved, all tests still passing.
 
-Changes: <what was refactored>
-All tests: <pass count> passing
+Applied: {list of accepted suggestions}
+Skipped: {list of reverted suggestions, if any}
+All tests: {count} passing
 
-[If more slices remain]: Moving to slice N of M.
-[If all slices complete]: All slices implemented. TDD cycle complete.
+[Moving to slice N of M] or [All slices complete]
 ```
+
+Update `.tdd-state.json`: `"phase": "refactor"`.
+
+---
 
 ### Phase 5: Next Slice or Complete
 
-If more slices remain, return to Phase 2 with the next slice.
+If more slices remain → increment `current_slice` in state, return to Phase 2.
 
-If all slices are complete, present a summary:
+If all slices complete → present summary:
 
 ```
-TDD Complete: <feature/fix name>
+TDD Complete: {feature name}
 
 Slices implemented: N
 Tests written: N
-Files created/modified: <list>
+Files created/modified: {list}
 All tests passing: yes
-
-Test coverage for new code: <if coverage tool available>
 ```
+
+Clean up: optionally remove `.tdd-state.json` (ask user).
+
+---
+
+## Resume Support
+
+When user invokes `/tdd --resume`:
+
+1. Read `.tdd-state.json` from project root
+2. Report current state: "Found TDD session for '{feature}'. Currently at slice {N}/{total}, phase: {phase}."
+3. Resume from the current phase of the current slice
+
+---
 
 ## Edge Cases
 
 ### Bug Fix TDD
 
-For bug fixes, the workflow adjusts:
+1. Write a test demonstrating the bug (should FAIL showing the bug exists)
+2. Confirm failure matches the reported bug — human checkpoint
+3. Fix: minimal code to make test pass (GREEN phase as normal)
+4. Verify: no regressions
 
-1. **Reproduce first**: Write a test that demonstrates the bug (it should FAIL showing the bug exists)
-2. **Confirm the failure matches the reported bug** -- human checkpoint
-3. **Fix**: Write minimal code to make the test pass
-4. **Verify**: Ensure no regressions
+### Existing Code (Characterization Tests)
 
-### Adding Tests to Existing Code (Characterization Tests)
+1. Write a test for CURRENT behavior (should PASS — this is a characterization test)
+2. Modify the test for DESIRED behavior (should FAIL)
+3. Proceed with GREEN → REFACTOR
 
-When adding TDD to code that already exists:
+### User-Provided Tests
 
-1. Write a test for the CURRENT behavior (it should PASS)
-2. This is a "characterization test" -- it documents what the code does now
-3. Then modify the test for the DESIRED behavior (it should FAIL)
-4. Proceed with normal GREEN -> REFACTOR
-
-### When the User Writes Tests
-
-If the user provides test code:
-
-1. Run it to confirm it fails (RED confirmed)
-2. Skip to Phase 3 (GREEN)
-3. User-provided tests are authoritative -- do not modify them without asking
+If user provides test code:
+1. Run to confirm it fails (RED confirmed)
+2. Skip to Phase 3 (GREEN) — user-provided tests are authoritative
+3. Do not modify without asking
 
 ### Flaky Tests
 
-If a test sometimes passes and sometimes fails:
+If a test sometimes passes/fails: stop, report, fix the flaky test before continuing.
 
-1. Stop the TDD cycle
-2. Report the flakiness to the user
-3. Fix the flaky test before continuing (flaky tests poison TDD)
+---
 
 ## Anti-Patterns to Avoid
 
-See `references/anti_patterns.md` for the full list. Critical ones:
+See `references/anti_patterns.md`. Critical ones:
+- Never modify a test to make it pass (change implementation, not tests)
+- Never write implementation before tests
+- Never write all tests at once (vertical slicing)
+- Never test implementation details
+- Never skip the RED phase
 
-- **Never modify a test to make it pass** -- change implementation, not tests (unless the test is genuinely wrong, confirmed with user)
-- **Never write implementation before tests** -- if implementation code was written first, delete it and start over
-- **Never write all tests at once** -- one test per cycle (vertical slicing)
-- **Never test implementation details** -- no mocking internal methods, no asserting private state
-- **Never skip the RED phase** -- every test must be seen failing before implementation
+---
 
 ## Framework Quick Reference
 
-See `references/framework_configs.md` for setup details per framework.
+See `references/framework_configs.md` for setup details.
 
 | Framework | Run single test | Run all | Watch mode |
 |-----------|----------------|---------|------------|
 | Jest | `npx jest --testPathPattern=<file> -t "<name>"` | `npx jest` | `npx jest --watch` |
 | Vitest | `npx vitest run <file> -t "<name>"` | `npx vitest run` | `npx vitest` |
 | pytest | `pytest <file>::<test_name> -v` | `pytest -v` | `pytest-watch` |
-| Go | `go test -run <TestName> ./...` | `go test ./...` | -- |
+| Go | `go test -run <TestName> ./...` | `go test ./...` | — |
 | Cargo | `cargo test <test_name>` | `cargo test` | `cargo watch -x test` |
 | RSpec | `rspec <file>:<line>` | `rspec` | `guard` |
-| PHPUnit | `phpunit --filter <test_name>` | `phpunit` | -- |
-
-## Session Memory
-
-After completing a TDD session, note patterns that emerged:
-- Which slices were too large and needed further decomposition
-- Whether the test framework needed special configuration
-- Any anti-patterns that crept in and how they were caught
+| PHPUnit | `phpunit --filter <test_name>` | `phpunit` | — |
