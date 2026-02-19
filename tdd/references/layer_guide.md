@@ -36,6 +36,16 @@ Compact reference for layer-aware TDD. Not a DDD textbook — just enough for ag
 - Test with: integration tests, may use real dependencies or test containers
 - Example: `PostgresUserRepository` implementing `UserRepository` interface
 
+## Port Interface Placement
+
+Ports (interfaces that abstract external dependencies) are defined by **the layer that consumes them**, not the layer that implements them:
+
+- A `UserRepository` interface consumed by a domain service lives in `domain/ports/` or `domain-service/ports/`
+- A `NotificationService` interface consumed by an application use case lives in `application/ports/`
+- Infrastructure implements these interfaces but never defines them
+
+Rule: **the consumer defines the contract; the provider fulfills it**. This is the Dependency Inversion Principle.
+
 ## Dependency Rule
 
 Dependencies flow INWARD only. Inner layers define interfaces (ports); outer layers implement them (adapters).

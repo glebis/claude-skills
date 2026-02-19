@@ -256,8 +256,8 @@ When constructing agent prompts, substitute `{LAYER_TEST_CONSTRAINTS}` and `{LAY
 **{LAYER_DEPENDENCY_CONSTRAINT}** for the Implementer:
 
 - `domain`: "This is the innermost layer. It MUST NOT import anything from domain-service, application, or infrastructure layers. No ORM imports, no HTTP clients, no framework imports. Only standard library and domain types."
-- `domain-service`: "This layer may import from the domain model only. It MUST NOT import from application or infrastructure layers. Define any needed interfaces (ports) here or in the domain layer."
-- `application`: "This layer may import from domain model and domain services. It MUST NOT import from infrastructure. It should define port interfaces that infrastructure will implement."
+- `domain-service`: "This layer may import from the domain model only. It MUST NOT import from application or infrastructure layers. If this service needs an external dependency (e.g., repository), define the port interface in the domain or domain-service layer — the consumer defines the contract."
+- `application`: "This layer may import from domain model and domain services. It MUST NOT import from infrastructure. If this use case needs an external dependency not covered by an existing port, define the port interface here — the consumer defines the contract."
 - `infrastructure`: "This layer may import from all inner layers. It implements interfaces defined in inner layers. Framework and external library imports are expected here."
 
 **{SLICE_LAYERS}** for the Refactorer:

@@ -110,12 +110,30 @@ Save the output — this is what the Test Writer will see. If empty (greenfield)
   "slices": [],
   "current_slice": 0,
   "phase": "setup",
+  "layer_map": {},
   "files_modified": [],
   "test_files_created": []
 }
 ```
 
 Each slice in the `slices` array includes a `layer` field: `"domain"`, `"domain-service"`, `"application"`, or `"infrastructure"`. See Phase 1 for how layers are assigned.
+
+The `layer_map` maps directory prefixes to layers. Built during Phase 1 from project structure:
+
+```json
+{
+  "layer_map": {
+    "src/domain/": "domain",
+    "src/services/": "domain-service",
+    "src/application/": "application",
+    "src/infrastructure/": "infrastructure",
+    "src/adapters/": "infrastructure",
+    "src/controllers/": "infrastructure"
+  }
+}
+```
+
+If the project has no clear directory-layer mapping (flat structure), set `layer_map` to `{}` and skip path-based validation.
 
 **Update state**: `"phase": "setup"`. Write state file immediately.
 
@@ -139,6 +157,20 @@ Assign each slice a `layer` tag: `domain`, `domain-service`, `application`, or `
 **Why inside-out?** Domain slices produce real objects that later slices use directly. This minimizes mocking and catches integration issues early. It also ensures business rules are implemented and tested before any infrastructure decisions are made.
 
 For simple projects where all code lives in one layer, all slices get `layer: "application"` and the ordering doesn't change — the guidance degrades gracefully.
+
+#### Edge Cases in Slice Ordering
+
+**Infrastructure-only features** (e.g., "add email provider retry logic", "switch from Postgres to MySQL"):
+- If a feature has NO domain or application behavior changes, all slices may be `infrastructure`. This is valid — skip the inner layers entirely.
+- Present as: "This is a pure infrastructure change. All slices are infrastructure-layer."
+
+**Missing port interface** (domain-service needs a port that doesn't exist yet):
+- The first slice that needs the port should create the interface as part of its implementation. The Implementer is allowed to create files in inner layers (domain/domain-service can define their own ports).
+- Example: a `domain-service` slice for `RegistrationService` creates `domain/ports/UserRepository` interface as part of GREEN.
+
+**Cross-cutting slices** (a slice touches multiple layers):
+- Tag with the INNERMOST layer it touches. The Implementer may create files in that layer and any inner layers.
+- Example: a use case that also introduces a new domain event is tagged `application` but creates a file in `domain/events/`.
 
 Present to the user:
 
@@ -203,6 +235,20 @@ Task(subagent_type="general-purpose", prompt=<constructed prompt>)
 5. If still failing: extract test code manually from the raw response
 
 **Step 5**: Write the test code to the test file. If the file exists, append the test function (and merge imports). If new, create with the agent's `imports_needed` + `test_code`.
+
+**Step 5a** (post-write test lint): Scan the test code for layer-violating patterns:
+
+| Layer | Forbidden patterns in test code |
+|-------|-------------------------------|
+| `domain` | `jest.mock(`, `vi.mock(`, `Mock(`, `mock.patch`, `unittest.mock`, `gomock`, `mockery` — domain tests must not use mocking libraries |
+| `domain-service` | Same mocking patterns for domain objects (mocking ports/repos is OK) |
+| `application` | No forbidden patterns (mocking ports is expected) |
+| `infrastructure` | No forbidden patterns |
+
+If forbidden patterns found:
+1. Remove the offending mock/pattern from the test
+2. Re-launch Test Writer with appended: "Do NOT use mocking libraries. This is a {LAYER} layer test. Use real domain objects."
+3. If second attempt still uses forbidden patterns, ask user
 
 **Step 6**: Run the test to confirm it FAILS:
 
@@ -272,7 +318,30 @@ On retries (attempt > 1), also fill in the `{?PREVIOUS_ATTEMPT}` section:
 Task(subagent_type="general-purpose", prompt=<constructed prompt>)
 ```
 
-**Step 6**: Parse the JSON response. Apply file changes using the Write tool:
+**Step 6**: Parse the JSON response. **Validate layer boundaries**, then apply file changes.
+
+**Step 6a** (Layer path validation): If `layer_map` is not empty, check each file path in the response against the current slice's layer:
+
+```
+For each file in response.files:
+  inferred_layer = lookup file.path against layer_map (longest prefix match)
+  if inferred_layer exists AND inferred_layer != current_slice.layer:
+    if inferred_layer is OUTER relative to current_slice.layer:
+      REJECT: "Implementer created/modified {file.path} which belongs to
+      the {inferred_layer} layer, but this is a {current_slice.layer} slice.
+      Inner layers must not depend on outer layers."
+      → Re-launch Implementer with appended constraint:
+        "Do NOT create or modify files in {inferred_layer} directories.
+        This slice is {current_slice.layer} only."
+    if inferred_layer is INNER relative to current_slice.layer:
+      ALLOW: outer layers may touch inner-layer files (e.g., adding a port interface)
+```
+
+Layer ordering for "outer" check: domain < domain-service < application < infrastructure.
+
+If `layer_map` is empty (flat project), skip this validation.
+
+**Step 6b**: Apply validated file changes using the Write tool:
 
 For each file in the response `files` array:
 - Use the Write tool to create or overwrite the file with the complete content returned by the agent
@@ -340,14 +409,42 @@ Proceed to REFACTOR phase? (or adjust?)
 
 **Update state**: `"phase": "green"`, update `files_modified`. Write state immediately.
 
-**Step 12** (domain/domain-service slices only): Quick testability check before REFACTOR:
+**Step 12** (domain/domain-service slices only): Layer purity check before REFACTOR:
 
-For each new/modified class in a `domain` or `domain-service` layer slice, verify:
-- Constructor takes NO parameters typed from outer layers (no ORM sessions, HTTP clients, framework configs)
-- Class has NO static method calls to outer-layer code
+For each new/modified file in a `domain` or `domain-service` layer slice:
+- **Import scan**: Read all import/require statements. Check each imported module against `layer_map`. Flag any import from an outer layer as a violation.
+- **Constructor check**: Verify constructor takes NO parameters typed from outer layers (no ORM sessions, HTTP clients, framework configs)
+- **Static call check**: No static method calls to outer-layer code
 - If violations found, fix them now (move the dependency to a port interface) before entering REFACTOR
 
-This catches layer leaks that the Implementer agent may introduce despite constraints. Research shows AI-generated code violates architectural boundaries 80% of the time without explicit enforcement (arXiv:2512.04273).
+**Step 13**: Full-repo import scan (all layers, runs once per slice):
+
+Scan ALL source files (not just session-modified) for dependency direction violations:
+
+```bash
+# For each source file, extract imports and check against layer_map
+# Language-specific patterns:
+#   Python: from X import Y, import X
+#   TypeScript/JS: import ... from 'X', require('X')
+#   Go: import "X"
+```
+
+For each file:
+1. Determine its layer from `layer_map` (skip if no match)
+2. For each import, determine the imported module's layer from `layer_map`
+3. If imported layer is OUTER relative to file's layer → violation
+
+Report violations to the user before REFACTOR:
+
+```
+Layer scan found N dependency direction violation(s):
+- domain/user.py imports infrastructure/db.py (domain → infrastructure)
+- domain/services/registration.py imports adapters/email.py (domain-service → infrastructure)
+```
+
+In `--auto` mode: attempt auto-fix (replace concrete import with port interface). In interactive mode: present violations and ask user how to proceed.
+
+This supplements the Refactorer's import checking (which only sees session files) with a repo-wide scan. Static tools miss ~23% of violations (Pruijt et al., 2017) — combining textual + structural checks improves coverage.
 
 ---
 
