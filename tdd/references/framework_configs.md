@@ -146,6 +146,81 @@ def test_should_add(calculator):
     assert calculator.add(2, 3) == 5
 ```
 
+### pytest-asyncio
+
+**Detection**: `pytest-asyncio` in pyproject.toml/requirements, or `asyncio_mode` in pytest.ini/pyproject.toml
+
+**asyncio_mode detection**: Check `pytest.ini` and `pyproject.toml` for `asyncio_mode = auto`. When `auto` mode is set, `@pytest.mark.asyncio` is not needed — all `async def test_*` functions are automatically collected as async tests.
+
+**Run commands**: Same as pytest (no difference for async tests).
+
+**Async test skeleton** (asyncio_mode = auto):
+```python
+from unittest.mock import AsyncMock, MagicMock
+
+
+async def test_should_process_message():
+    # Arrange
+    service = MessageService()
+    mock_repo = AsyncMock()
+    mock_repo.save.return_value = None
+
+    # Act
+    result = await service.process("hello", repo=mock_repo)
+
+    # Assert
+    assert result.status == "processed"
+    mock_repo.save.assert_awaited_once()
+```
+
+**Async test skeleton** (asyncio_mode = strict, or not set):
+```python
+import pytest
+from unittest.mock import AsyncMock
+
+
+@pytest.mark.asyncio
+async def test_should_process_message():
+    service = MessageService()
+    result = await service.process("hello")
+    assert result.status == "processed"
+```
+
+**Async fixtures**:
+```python
+import pytest
+from unittest.mock import AsyncMock, MagicMock
+
+
+@pytest.fixture
+def mock_bot():
+    bot = MagicMock()
+    bot.send_message = AsyncMock()
+    return bot
+
+
+@pytest.fixture
+def mock_update():
+    update = MagicMock()
+    update.effective_chat.id = 12345
+    update.message.text = "test"
+    return update
+
+
+@pytest.fixture
+async def db_session():
+    """Async fixture with setup and teardown."""
+    session = await create_test_session()
+    yield session
+    await session.close()
+```
+
+**Key patterns**:
+- Use `AsyncMock` for any method that is `async def` — it returns an awaitable
+- Use `MagicMock` for synchronous attributes/properties on async objects
+- `assert_awaited_once()` / `assert_awaited_once_with(...)` — async equivalents of `assert_called_once`
+- Async fixtures use `async def` + `yield` for setup/teardown
+
 ---
 
 ## Go

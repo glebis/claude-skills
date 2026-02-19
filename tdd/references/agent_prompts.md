@@ -39,6 +39,33 @@ This slice belongs to the **{LAYER}** layer.
 
 {LAYER_TEST_CONSTRAINTS}
 
+## Mocking guidance (application layer)
+When the slice is `application` layer and the code under test depends on async interfaces:
+- Prefer writing a simple in-memory fake over using Mock/MagicMock with complex `.return_value` chains
+- Use `AsyncMock` for any async method (not `MagicMock`)
+- If a `@runtime_checkable Protocol` exists for the dependency, implement it with a fake class:
+
+```python
+# Instead of:
+mock_repo = AsyncMock()
+mock_repo.get_by_id.return_value = User(id=1, name="test")
+mock_repo.save.return_value = None
+
+# Prefer (when the mock setup becomes non-trivial):
+class FakeUserRepo:
+    def __init__(self):
+        self.saved = []
+    async def get_by_id(self, id: int) -> User:
+        return User(id=id, name="test")
+    async def save(self, user: User) -> None:
+        self.saved.append(user)
+```
+
+For simple cases (1-2 methods, no state tracking), `AsyncMock` is fine. Use fakes when:
+- The mock needs 3+ configured return values
+- You need to track call history beyond simple assert_called
+- The Protocol has methods that interact with each other
+
 ## Rules
 1. Write EXACTLY ONE test function for the specified behavior
 2. The test MUST fail because the implementation does not yet exist
@@ -105,13 +132,16 @@ This code belongs to the **{LAYER}** layer.
 5. Hardcoded values are acceptable if they satisfy the test
 6. Do NOT modify the test file
 7. Do NOT add features or behaviors not tested
-8. ALWAYS return the COMPLETE file content for every file you change or create
-9. Respect the layer dependency constraint above -- do NOT import from outer layers
+8. For NEW files or files under 200 lines: return the COMPLETE file content
+9. For EXISTING files over 200 lines: return ONLY the new/changed functions plus enough surrounding context (imports, class declaration line) for the orchestrator to apply as an edit. Set `"action": "edit"` for these files.
+10. Respect the layer dependency constraint above -- do NOT import from outer layers
 
 ## Output
 Return a single JSON object. Do NOT wrap in markdown fences. Do NOT include any text before or after the JSON.
 
-{"files": [{"path": "relative/path/to/file.ext", "action": "create or overwrite", "content": "COMPLETE file content -- the entire file from first line to last", "description": "what this file does"}], "explanation": "brief explanation of the implementation approach"}
+{"files": [{"path": "relative/path/to/file.ext", "action": "create | overwrite | edit", "content": "COMPLETE file content for create/overwrite, or ONLY changed functions with context for edit", "description": "what this file does"}], "explanation": "brief explanation of the implementation approach"}
+
+Use `"action": "edit"` for existing files over 200 lines. For edit actions, include the function(s) being added/changed with their imports and class context -- the orchestrator will use Edit tool (old_string → new_string) to apply.
 ```
 
 Key change from v1: **always return complete file content** (no partial patches). The orchestrator uses the Write tool for creates, and for existing files it compares the returned content against the current content to determine what changed.
@@ -250,7 +280,7 @@ When constructing agent prompts, substitute `{LAYER_TEST_CONSTRAINTS}` and `{LAY
 
 - `domain`: "Write tests using only domain types. NO database mocks, NO HTTP mocks, NO file system. Test pure business logic through public methods. Construct real domain objects directly — never mock them."
 - `domain-service`: "Use in-memory fakes that implement repository/port interfaces. Test the domain service's coordination logic. NO real I/O, NO database, NO HTTP. Use real domain objects from the domain layer."
-- `application`: "Use in-memory fakes for all ports and repositories. Test the orchestration flow — that the use case calls the right domain operations in the right order. NO real infrastructure."
+- `application`: "Use in-memory fakes for all ports and repositories. Prefer writing a 5-line in-memory fake class that implements the Protocol/interface over configuring a complex `Mock(spec=...)` with multiple return values. Use `AsyncMock` for async interfaces. Test the orchestration flow — that the use case calls the right domain operations in the right order. NO real infrastructure."
 - `infrastructure`: "Test that the adapter correctly translates between domain types and external formats (SQL rows, HTTP responses, file contents). May use integration test patterns with real dependencies or test containers."
 
 **{LAYER_DEPENDENCY_CONSTRAINT}** for the Implementer:
@@ -266,9 +296,14 @@ Comma-separated list of unique layers from all slices completed so far. Example:
 
 ### Applying Implementer Output
 
-Since the Implementer always returns complete file content:
-1. For each file in the response `files` array:
-   - If the file doesn't exist: use Write tool to create it
-   - If the file exists: use Write tool to overwrite with the returned content
-2. After writing all files, run the test immediately
-3. If the overwrite introduced unrelated changes (e.g., reformatting), the full test suite will catch regressions
+For each file in the response `files` array, check the `action` field:
+
+1. `"create"`: Use Write tool to create the new file
+2. `"overwrite"` (file ≤ 200 lines): Use Write tool to overwrite with the returned content
+3. `"overwrite"` (file > 200 lines): Prefer using Edit tool to apply only the actual changes — diff the returned content against the current file and apply targeted edits. This prevents accidental reformatting of large files.
+4. `"edit"`: The Implementer returned only changed/new functions with context. Use the Edit tool with `old_string` → `new_string`:
+   - For new functions: identify the insertion point (end of class, after last import, etc.) and use Edit to insert
+   - For modified functions: use the existing function as `old_string` and the modified version as `new_string`
+   - For new imports: prepend to the existing import block
+
+After applying all files, run the test immediately. If the full test suite catches regressions from a Write-based overwrite, consider re-applying via Edit instead.

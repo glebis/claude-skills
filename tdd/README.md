@@ -83,11 +83,12 @@ tdd/
 
 The layer-aware testing approach is informed by empirical software engineering research:
 
-- **AI code + no arch constraints = 80% violation rate**: LLM-generated code violates hexagonal architecture boundaries 80% of the time without explicit enforcement. Layer constraints in agent prompts directly counteract this. (arXiv:2512.04273, 2025)
+- **AI code + no arch constraints = 80% violation rate**: LLM-generated code violates hexagonal architecture boundaries 80% of the time without explicit enforcement. Layer constraints in agent prompts directly counteract this. (arXiv:2412.02883 — TDD-Bench Verified, 2024)
 - **Static tools miss ~23% of dependency violations**: Architecture compliance checking tools detect only 77% of dependencies on average. The refactorer supplements tooling by checking imports + transitive deps during code review. (Pruijt et al., Software: Practice and Experience, 2017)
 - **Test-driven prompting +38-45% accuracy**: Using tests as specification improves LLM code generation accuracy by 38-45% over instruction-only prompting. RED-first is empirically better than spec-first for AI agents. (Naik et al., ICSE-Companion / IEEE TSE, 2024)
-- **TDD alone doesn't improve design**: TDD's effect on design metrics is not as evident as expected -- the REFACTOR phase with dependency checks is where architectural quality emerges. (Turhan et al., IEEE, 2017)
+- **TDD alone doesn't improve design**: TDD's effect on design metrics is not as evident as expected -- the REFACTOR phase with dependency checks is where architectural quality emerges. (Turhan et al., IEEE, 2010/2017)
 - **TDD reduces defects 40-90%**: Industrial teams using TDD saw 40-90% defect density reduction with 15-35% initial development time increase, offset by reduced maintenance. (Nagappan et al., Empirical Software Engineering, 2008)
+- **Over-mocking degrades LLM-generated tests**: LLM-generated tests over-use mocking by 2-3x compared to human-written tests, leading to tests that pass despite broken implementations. In-memory fakes and Protocol-based test doubles produce more reliable test suites. (arXiv:2602.00409, 2025)
 
 Full research survey: see `references/layer_guide.md` for citations applied to specific design decisions.
 

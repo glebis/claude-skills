@@ -135,6 +135,40 @@ The `layer_map` maps directory prefixes to layers. Built during Phase 1 from pro
 
 If the project has no clear directory-layer mapping (flat structure), set `layer_map` to `{}` and skip path-based validation.
 
+**Step 5a** (auto-detect layer_map): If `layer_map` is empty, scan the source directory for common DDD/layered architecture directory names and auto-populate:
+
+```
+Common directory → layer mappings (check if directories exist):
+  */domain/       → "domain"
+  */models/       → "domain"          (ORM models often serve as domain entities)
+  */entities/     → "domain"
+  */value_objects/ → "domain"
+  */services/     → "application"     (unless clearly infrastructure)
+  */application/  → "application"
+  */use_cases/    → "application"
+  */core/         → "application"
+  */infrastructure/ → "infrastructure"
+  */adapters/     → "infrastructure"
+  */controllers/  → "infrastructure"
+  */api/          → "infrastructure"
+  */bot/          → "infrastructure"  (Telegram/Discord bot handlers)
+  */handlers/     → "infrastructure"
+  */repositories/ → "infrastructure"  (concrete repo implementations)
+```
+
+Only add entries for directories that actually exist in the source tree. If fewer than 2 directories match, leave `layer_map` empty (flat project). Present the auto-detected map to the user for confirmation:
+
+```
+Auto-detected layer map from directory structure:
+  src/models/     → domain
+  src/services/   → application
+  src/core/       → application
+  src/bot/        → infrastructure
+  src/api/        → infrastructure
+
+Does this mapping look correct? (adjust if needed)
+```
+
 **Update state**: `"phase": "setup"`. Write state file immediately.
 
 ---
@@ -236,7 +270,15 @@ Task(subagent_type="general-purpose", prompt=<constructed prompt>)
 
 **Step 5**: Write the test code to the test file. If the file exists, append the test function (and merge imports). If new, create with the agent's `imports_needed` + `test_code`.
 
-**Step 5a** (post-write test lint): Scan the test code for layer-violating patterns:
+**Step 5a** (post-write test smell scan): Scan the test code for common smells before running:
+
+| Smell | Detection | Action |
+|-------|-----------|--------|
+| **Assertion Roulette** | Multiple bare `assert` statements without messages in the same test function (3+) | Warn the user (don't block): "Test has N bare assertions — consider adding failure messages for easier debugging." |
+| **Unknown Test** | Test name is generic: matches `test_1`, `test_it`, `test_works`, `test_example`, `test_thing` | Re-launch Test Writer with appended: "Use a descriptive test name that reads as a behavior spec (e.g., test_rejects_empty_email)." |
+| **Tautological assertion** | `assert True`, `assert result is not None` when function has no None return path, `assert isinstance(result, X)` as sole assertion | Re-launch Test Writer with appended: "The assertion is tautological — test the actual behavior/value, not just that the function returns something." |
+
+**Step 5b** (post-write layer lint): Scan the test code for layer-violating patterns:
 
 | Layer | Forbidden patterns in test code |
 |-------|-------------------------------|
@@ -250,19 +292,22 @@ If forbidden patterns found:
 2. Re-launch Test Writer with appended: "Do NOT use mocking libraries. This is a {LAYER} layer test. Use real domain objects."
 3. If second attempt still uses forbidden patterns, ask user
 
-**Step 6**: Run the test to confirm it FAILS:
+**Step 6**: Run the test to confirm it FAILS (expect an assertion failure, not a setup error):
 
 ```bash
 bash ~/.claude/skills/tdd/scripts/run_tests.sh {FRAMEWORK} "{TEST_COMMAND_FOR_SPECIFIC_TEST}"
 ```
 
-**Step 7**: Evaluate the result:
+**Step 7**: Evaluate the result with semantic validation:
 
 | Result | Action |
 |--------|--------|
-| `status: "fail"` | Expected. Test is RED. Proceed. |
+| `status: "fail"`, assertion error | **Proper RED** — test fails because the expected behavior doesn't exist yet. Proceed. |
+| `status: "fail"`, `ImportError` / `ModuleNotFoundError` | **Setup problem, not a proper RED.** The test can't even import the module under test. Fix: create a minimal stub (empty class/function) so the import resolves, then re-run. The test should now fail on the assertion instead. |
+| `status: "fail"`, `AttributeError` on missing method | Similar to import error — the class exists but the method doesn't. This is an acceptable RED if the assertion would also fail. Proceed. |
 | `status: "pass"` | Behavior already exists. Log: "Test passes — skipping slice (already implemented)." Increment `current_slice`, move to next slice. |
-| `status: "error"`, compile/syntax error | Fix: the test has a typo or bad import. Read the `raw_tail`, fix the test file directly. Re-run. If still erroring after 2 fix attempts, ask user. |
+| `status: "error"`, `SyntaxError` | Fix: the test has a typo. Read the `raw_tail`, fix the test file directly. Re-run. If still erroring after 2 fix attempts, ask user. |
+| `status: "error"`, compile/framework error | Fix: bad import, missing fixture, or framework misconfiguration. Read the `raw_tail`, fix the test file directly. Re-run. If still erroring after 2 fix attempts, ask user. |
 
 **Step 8** (interactive mode only — skip in `--auto`): Present to the user:
 
@@ -341,11 +386,12 @@ Layer ordering for "outer" check: domain < domain-service < application < infras
 
 If `layer_map` is empty (flat project), skip this validation.
 
-**Step 6b**: Apply validated file changes using the Write tool:
+**Step 6b**: Apply validated file changes:
 
 For each file in the response `files` array:
-- Use the Write tool to create or overwrite the file with the complete content returned by the agent
-- The Implementer always returns full file content — no partial patches
+- If `action` is `"create"` or `"overwrite"`: Use the Write tool to create or overwrite the file with the complete content
+- If `action` is `"edit"` (used for existing files over 200 lines): Use the Edit tool with `old_string` → `new_string` to apply the changes. The Implementer returns only the changed functions with surrounding context — identify the insertion point or the function being replaced, and use Edit tool accordingly. If the edit target is ambiguous, fall back to reading the full file and using Write.
+- For existing files over 200 lines where the Implementer returned full content anyway (action = "overwrite"), prefer using Edit tool to apply only the diff — this prevents accidental reformatting of untouched code
 
 **Step 7**: Run the specific test:
 
@@ -475,9 +521,15 @@ Apply suggestions **one at a time**, in priority order (high first):
 
 For each suggestion:
 1. Apply the code change (Edit tool, using `old_code` -> `new_code` for each file)
-2. Run the full test suite
-3. If any test fails -> **revert immediately** (re-read the file from before the edit and Write it back) and skip this suggestion
-4. If all tests pass -> keep the change
+2. Run the project linter/formatter check (detect from project config):
+   - **Python**: `python -m black --check {files} && python -m flake8 {files} && python -m mypy {files}`
+   - **TypeScript/JS**: `npx eslint {files}` or `npx tsc --noEmit`
+   - **Go**: `go vet ./...`
+   - **Rust**: `cargo clippy`
+   - If lint fails -> **revert immediately** and skip this suggestion (same as test failure)
+3. Run the full test suite
+4. If any test fails -> **revert immediately** (re-read the file from before the edit and Write it back) and skip this suggestion
+5. If all tests pass and lint passes -> keep the change
 
 **Step 5** (interactive mode only — skip in `--auto`): Present:
 
