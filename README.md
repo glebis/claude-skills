@@ -4,18 +4,34 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
-### [TDD (Test-Driven Development)](./tdd/) ⭐ NEW
-Enforced RED-GREEN-REFACTOR workflow for AI-assisted coding. Prevents the common failure modes of LLM-driven TDD: skipping the red phase, writing all tests at once, and modifying tests to match implementation.
+### [TDD (Test-Driven Development)](./tdd/)
+Multi-agent TDD orchestration with architecturally enforced context isolation. Uses Claude Code's Task tool to spawn separate subagents for test writing and implementation -- the Test Writer never sees implementation code, and the Implementer never sees the specification.
 
 **Features:**
-- 🔴🟢🔵 Strict RED → GREEN → REFACTOR phase enforcement
+- 🧠 Multi-agent context isolation: Test Writer, Implementer, and Refactorer run as separate Task subagents with strict information boundaries
+- 🔴🟢🔵 Strict RED -> GREEN -> REFACTOR phase enforcement
 - 📐 Vertical slicing: one test, one implementation, per cycle
-- 🧠 Context isolation: test writing reasons from spec only, not from planned implementation
 - 👤 Human checkpoints: user validates each failing test before implementation begins
-- 🔄 Auto-test feedback loop: runs tests after every change, iterates on failures
-- 🚫 Anti-pattern detection: 16 documented anti-patterns with prevention guidance
+- 🔄 Auto-test feedback loop with structured JSON output from universal test runner
+- 🔁 Retry loop: up to 5 fresh Implementer attempts on failure (no accumulated context)
+- 📊 `run_tests.sh`: universal test runner wrapping 7 frameworks into structured JSON
+- 🔍 `extract_api.sh`: public API surface extractor (signatures only, no bodies)
+- 🚫 16 documented anti-patterns with prevention guidance
+- 💾 Session state via `.tdd-state.json` with `--resume` support
 - 🛠️ 7 frameworks: Jest, Vitest, pytest, Go test, cargo test, RSpec, PHPUnit
-- 🐛 Bug-fix TDD: reproduce-first workflow (failing test proves bug exists)
+- 🐛 Bug-fix TDD: reproduce-first workflow
+
+**Architecture:**
+```
+ORCHESTRATOR (main Claude context)
+├─ Phase 0: Setup (detect framework, extract API, create state)
+├─ Phase 1: Decompose into vertical slices -> user approves
+├─ FOR EACH SLICE:
+│   ├─ Phase 2 (RED):     Task(Test Writer)  <- spec + API only
+│   ├─ Phase 3 (GREEN):   Task(Implementer)  <- failing test + error only
+│   └─ Phase 4 (REFACTOR): Task(Refactorer)  <- all code + green results
+└─ Summary
+```
 
 **Quick Start:**
 ```bash
@@ -25,7 +41,10 @@ cp -r tdd ~/.claude/skills/
 # Invoke with a feature description
 /tdd "add user authentication with JWT tokens"
 
-# Or for bug fixes
+# Resume a paused session
+/tdd --resume
+
+# Bug fix
 /tdd "fix: cart total doesn't include tax"
 ```
 
@@ -35,7 +54,7 @@ cp -r tdd ~/.claude/skills/
 - [TDFlow](https://arxiv.org/html/2510.23761v1) (test quality as ceiling for implementation quality)
 - [alexop.dev](https://alexop.dev/posts/custom-tdd-workflow-claude-code-vue/) (context isolation between phases)
 
-**Use when:** Implementing features or fixing bugs where you want disciplined test-first development. Especially valuable for complex logic, algorithms, or business rules where test quality directly determines code quality.
+**Use when:** Implementing features or fixing bugs where you want disciplined test-first development. The multi-agent architecture is especially valuable when single-context TDD produces tests that mirror implementation details.
 
 ---
 
