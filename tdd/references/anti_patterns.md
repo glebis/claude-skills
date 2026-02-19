@@ -92,3 +92,52 @@
 ### Ignoring test failures in the full suite
 **Symptom**: A new test passes but existing tests break, and the broken tests are dismissed as "unrelated."
 **Fix**: Every test failure after GREEN is a regression until proven otherwise. Investigate and fix before moving to REFACTOR.
+
+## Layer & Dependency Anti-Patterns
+
+### Domain importing infrastructure
+**Symptom**: Domain model code imports ORM classes, HTTP clients, file system modules, or framework utilities.
+**Examples**:
+- `from sqlalchemy.orm import Session` in a domain entity
+- `import axios from 'axios'` in a domain service
+- `use Illuminate\Database\Eloquent\Model` in a domain value object
+
+**Fix**: Domain code must have zero external dependencies. If the domain needs to persist or communicate, define an interface (port) in the domain layer and let infrastructure implement it.
+**Why it matters**: Domain code that imports infrastructure cannot be tested without that infrastructure. It also locks business logic to a specific technology choice.
+
+### Business logic in handlers/controllers
+**Symptom**: Validation rules, calculations, state transitions, or conditional logic living in HTTP handlers, CLI commands, or event listeners instead of domain objects or services.
+**Examples**:
+- Price calculation in an Express route handler
+- Email format validation in a controller
+- Order state machine transitions in a message consumer
+
+**Fix**: Extract the logic into a domain entity, value object, or domain service. The handler should only translate HTTP/CLI/event input into domain calls and translate domain output back.
+**Why it matters**: Business logic in handlers is untestable without spinning up the framework. It also gets duplicated when you add a second entry point (API + CLI + queue consumer).
+
+### Mocking domain objects
+**Symptom**: Using `jest.mock()`, `unittest.mock.Mock()`, or similar to create fake domain entities or value objects instead of constructing real instances.
+**Examples**:
+- `const user = { validate: jest.fn().mockReturnValue(true) }` instead of `new User("valid@email.com")`
+- `mock_order = Mock(spec=Order)` instead of `Order(items=[item1, item2])`
+
+**Fix**: Domain objects are pure and cheap to construct. Use real instances in tests. Only mock at boundaries (repositories, external services).
+**Why it matters**: Mocking domain objects defeats the purpose of testing — you're testing your mocks, not your domain logic. If a domain object is hard to construct, that's a design smell.
+
+### Anemic domain model
+**Symptom**: Entities with only getters/setters, all logic in services. Tests pass but the design is wrong — behavior is disconnected from the data it operates on.
+**Examples**:
+- `User` class with only `name`, `email` properties; `UserService.validateUser(user)` does all validation
+- `Order` with `items` list; `OrderCalculator.calculateTotal(order)` computes the total externally
+
+**Fix**: Move behavior onto the entity that owns the data. `user.validate()`, `order.calculateTotal()`. Services coordinate; entities compute.
+**Why it matters**: Anemic models scatter related logic across services, making it harder to find, test, and enforce invariants. It's procedural code wearing OOP clothing.
+
+### Repository interface in wrong layer
+**Symptom**: The repository interface (`UserRepository`, `OrderRepository`) is defined alongside its implementation in the infrastructure layer, rather than in the domain layer.
+**Examples**:
+- `infrastructure/repositories/user_repository.py` contains both the interface and the PostgreSQL implementation
+- `src/database/UserRepository.ts` defines the interface and exports it
+
+**Fix**: Define the interface in the domain layer (`domain/repositories/user_repository.py`). The infrastructure layer imports and implements it. This is the Dependency Inversion Principle.
+**Why it matters**: If the interface lives in infrastructure, domain code must import infrastructure to reference it — breaking the dependency rule.
