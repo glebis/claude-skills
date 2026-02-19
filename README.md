@@ -4,6 +4,41 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
+### [TDD (Test-Driven Development)](./tdd/) ⭐ NEW
+Enforced RED-GREEN-REFACTOR workflow for AI-assisted coding. Prevents the common failure modes of LLM-driven TDD: skipping the red phase, writing all tests at once, and modifying tests to match implementation.
+
+**Features:**
+- 🔴🟢🔵 Strict RED → GREEN → REFACTOR phase enforcement
+- 📐 Vertical slicing: one test, one implementation, per cycle
+- 🧠 Context isolation: test writing reasons from spec only, not from planned implementation
+- 👤 Human checkpoints: user validates each failing test before implementation begins
+- 🔄 Auto-test feedback loop: runs tests after every change, iterates on failures
+- 🚫 Anti-pattern detection: 16 documented anti-patterns with prevention guidance
+- 🛠️ 7 frameworks: Jest, Vitest, pytest, Go test, cargo test, RSpec, PHPUnit
+- 🐛 Bug-fix TDD: reproduce-first workflow (failing test proves bug exists)
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r tdd ~/.claude/skills/
+
+# Invoke with a feature description
+/tdd "add user authentication with JWT tokens"
+
+# Or for bug fixes
+/tdd "fix: cart total doesn't include tax"
+```
+
+**Design informed by:**
+- [tdd-guard](https://github.com/nizos/tdd-guard) (hook-enforced TDD)
+- [Matt Pocock's TDD Skill](https://www.aihero.dev/skill-test-driven-development-claude-code) (vertical slicing)
+- [TDFlow](https://arxiv.org/html/2510.23761v1) (test quality as ceiling for implementation quality)
+- [alexop.dev](https://alexop.dev/posts/custom-tdd-workflow-claude-code-vue/) (context isolation between phases)
+
+**Use when:** Implementing features or fixing bugs where you want disciplined test-first development. Especially valuable for complex logic, algorithms, or business rules where test quality directly determines code quality.
+
+---
+
 ### [Insight Extractor](./insight-extractor/) ⭐ NEW
 Parse Claude Code's built-in `/insights` report and extract actionable items into structured, trackable markdown files. Designed for Obsidian vaults but works with any markdown-based knowledge system.
 
@@ -834,6 +869,8 @@ cp -r claude-skills/retrospective ~/.claude/skills/
 cp -r claude-skills/github-gist ~/.claude/skills/
 # or
 cp -r claude-skills/decision-toolkit ~/.claude/skills/
+# or
+cp -r claude-skills/tdd ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
