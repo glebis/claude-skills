@@ -8,18 +8,22 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 Multi-agent TDD orchestration with architecturally enforced context isolation. Uses Claude Code's Task tool to spawn separate subagents for test writing and implementation -- the Test Writer never sees implementation code, and the Implementer never sees the specification.
 
 **Features:**
-- 🧠 Multi-agent context isolation: Test Writer, Implementer, and Refactorer run as separate Task subagents with strict information boundaries
-- 🔴🟢🔵 Strict RED -> GREEN -> REFACTOR phase enforcement
-- 📐 Vertical slicing: one test, one implementation, per cycle
-- 👤 Human checkpoints: user validates each failing test before implementation begins
-- 🔄 Auto-test feedback loop with structured JSON output from universal test runner
-- 🔁 Retry loop: up to 5 fresh Implementer attempts on failure (no accumulated context)
-- 📊 `run_tests.sh`: universal test runner wrapping 7 frameworks into structured JSON
-- 🔍 `extract_api.sh`: public API surface extractor (signatures only, no bodies)
-- 🚫 16 documented anti-patterns with prevention guidance
-- 💾 Session state via `.tdd-state.json` with `--resume` support
-- 🛠️ 7 frameworks: Jest, Vitest, pytest, Go test, cargo test, RSpec, PHPUnit
-- 🐛 Bug-fix TDD: reproduce-first workflow
+- Multi-agent context isolation: Test Writer, Implementer, and Refactorer run as separate Task subagents with strict information boundaries
+- Strict RED -> GREEN -> REFACTOR phase enforcement
+- `--auto` mode: run all slices without pausing, stop only on unrecoverable errors
+- Inside-out vertical slicing by architectural layer (domain -> domain-service -> application -> infrastructure)
+- Layer-specific test constraints and dependency rules per slice
+- Retry loop: up to 5 fresh Implementer attempts with previous-attempt context (no accumulated history)
+- Regression auto-fix: detects and repairs broken tests after implementation (3-attempt limit)
+- Greenfield project support: handles empty codebases with no existing tests
+- `run_tests.sh`: universal test runner wrapping 7 frameworks into structured JSON with timeout support
+- `extract_api.sh`: public API surface extractor (signatures only, no bodies) for 7 languages
+- Implementer always returns complete file content (no ambiguous partial patches)
+- Failure recovery table covering 11 error scenarios with concrete recovery actions
+- 16 documented anti-patterns with prevention guidance
+- Session state via `.tdd-state.json` with `--resume` support
+- 7 frameworks: Jest, Vitest, pytest, Go test, cargo test, RSpec, PHPUnit
+- Bug-fix TDD: reproduce-first workflow
 
 **Architecture:**
 ```
@@ -38,8 +42,11 @@ ORCHESTRATOR (main Claude context)
 # Copy to skills directory
 cp -r tdd ~/.claude/skills/
 
-# Invoke with a feature description
+# Interactive mode (pauses at each RED checkpoint)
 /tdd "add user authentication with JWT tokens"
+
+# Autonomous mode (runs all slices, stops only on errors)
+/tdd --auto "add user authentication with JWT tokens"
 
 # Resume a paused session
 /tdd --resume
@@ -54,7 +61,7 @@ cp -r tdd ~/.claude/skills/
 - [TDFlow](https://arxiv.org/html/2510.23761v1) (test quality as ceiling for implementation quality)
 - [alexop.dev](https://alexop.dev/posts/custom-tdd-workflow-claude-code-vue/) (context isolation between phases)
 
-**Use when:** Implementing features or fixing bugs where you want disciplined test-first development. The multi-agent architecture is especially valuable when single-context TDD produces tests that mirror implementation details.
+**Use when:** Implementing features or fixing bugs where you want disciplined test-first development. Use `--auto` for maximum autonomy. The multi-agent architecture is especially valuable when single-context TDD produces tests that mirror implementation details.
 
 ---
 
