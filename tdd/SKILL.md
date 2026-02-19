@@ -21,6 +21,7 @@ Enforce disciplined RED-GREEN-REFACTOR cycles using **separate subagents** for t
 | `/tdd <feature>` | Interactive mode — pause for approval at slices and each RED checkpoint |
 | `/tdd --auto <feature>` | Autonomous mode — run all slices without pausing; stop ONLY on unrecoverable errors |
 | `/tdd --resume` | Resume from `.tdd-state.json` in project root |
+| `/tdd --dry-run <feature>` | Validation mode — runs Phase 0 + Phase 1 fully, renders all prompts, but skips `Task()` calls. No code is written. |
 
 In `--auto` mode, skip all `[HUMAN CHECKPOINT]` steps. Print status lines instead:
 
@@ -34,6 +35,42 @@ Stop and ask the user ONLY when:
 - Implementation fails after 5 attempts
 - Regressions cannot be auto-fixed after 3 attempts
 - A script error makes it impossible to continue (missing binary, permission denied, etc.)
+
+In `--dry-run` mode, validate the entire orchestration pipeline without executing any subagents or writing any code:
+
+1. **Phase 0 runs fully**: detect framework, verify baseline, extract API, discover docs, create state file
+2. **Phase 1 runs fully**: decompose into slices (still requires user approval)
+3. **For each slice**: render all three agent prompts (Test Writer, Implementer, Refactorer) with actual variables. Print rendered prompts to the user with character counts.
+4. **No `Task()` calls are made**. No test files are written. No implementation code is generated.
+5. **Validate**: check that all template variables resolve (no `{UNRESOLVED}` placeholders), all scripts execute without error, and the state file is well-formed.
+6. **Report summary**:
+
+```
+DRY RUN COMPLETE: {feature name}
+
+Phase 0:
+  Framework: {framework}
+  Language: {language}
+  Baseline: {pass|greenfield}
+  API surface: {line count} lines
+  Doc context: {line count} lines (or "none")
+
+Phase 1:
+  Slices: {N} ({layer breakdown})
+
+Prompts rendered: {N * 3} (all variables resolved)
+  Test Writer:   {char count} chars
+  Implementer:   {char count} chars
+  Refactorer:    {char count} chars
+
+State file: .tdd-state.json written
+No code was modified.
+```
+
+This mode is useful for:
+- Validating that scripts work in the project's environment
+- Reviewing prompt content before committing to a full TDD run
+- Testing skill changes without side effects
 
 ## Architecture Overview
 
@@ -97,7 +134,24 @@ bash ~/.claude/skills/tdd/scripts/extract_api.sh {SOURCE_DIR}
 
 Save the output — this is what the Test Writer will see. If empty (greenfield), that's expected.
 
-**Step 5**: Create the state file `.tdd-state.json` in the project root:
+**Step 5**: Discover project documentation.
+
+```bash
+bash ~/.claude/skills/tdd/scripts/discover_docs.sh {PROJECT_ROOT} --lang {LANGUAGE}
+```
+
+This searches for:
+- **Documentation files**: README, ARCHITECTURE.md, docs/ folder, DESIGN.md, SPEC files, ADRs
+- **API specifications**: OpenAPI/Swagger, GraphQL schemas, .proto files
+- **Source docstrings**: JSDoc, Python docstrings, Go doc comments, Rust `///` comments
+
+Save the output as `{DOC_CONTEXT}`. This feeds into:
+- **Phase 1** — so slice decomposition is informed by documented behavior and API contracts
+- **Phase 2** — so the Test Writer writes tests aligned with documented intent, not just code signatures
+
+If empty (no docs found), that's fine — proceed without doc context.
+
+**Step 6**: Create the state file `.tdd-state.json` in the project root:
 
 ```json
 {
@@ -106,7 +160,9 @@ Save the output — this is what the Test Writer will see. If empty (greenfield)
   "language": "typescript|javascript|python|go|rust|ruby|php",
   "test_command": "the full test command",
   "source_dir": "src/",
+  "doc_context": "output from discover_docs.sh (or empty string)",
   "auto_mode": false,
+  "dry_run": false,
   "slices": [],
   "current_slice": 0,
   "phase": "setup",
@@ -177,6 +233,8 @@ Does this mapping look correct? (adjust if needed)
 
 Take the user's feature request and decompose into **ordered vertical slices**. Each slice is one testable behavior.
 
+**Use doc context**: When decomposing, cross-reference `{DOC_CONTEXT}` from Phase 0 Step 5. Documentation often describes intended behaviors, edge cases, and API contracts that should inform slice boundaries. If docs mention specific error cases, validation rules, or behavioral requirements, consider them as slice candidates.
+
 #### Inside-Out Slice Ordering
 
 After identifying all slices, **sort them inside-out by architectural layer**. This ensures each slice can build on real (not mocked) implementations from previous slices:
@@ -235,6 +293,22 @@ If all slices fall in one layer, skip the layer headings and present as a flat l
 
 ---
 
+### Dry-Run Phase Override (Phase 2–4)
+
+In `--dry-run` mode, **replace Phases 2–4 entirely** with the following for each slice:
+
+1. Refresh API surface (`extract_api.sh`)
+2. Render the **Test Writer prompt** with all variables filled in. Print it under a `### Test Writer Prompt (slice N)` heading.
+3. Render the **Implementer prompt** using placeholder test code: `"(dry-run: test code would be generated by Test Writer)"` for `{FAILING_TEST_CODE}` and `"(dry-run: no test output)"` for `{TEST_FAILURE_OUTPUT}`.
+4. Render the **Refactorer prompt** using placeholder values: `"(dry-run: no green output)"` for `{GREEN_TEST_OUTPUT}`, `"(dry-run: code from Test Writer)"` for `{ALL_TEST_CODE}`, `"(dry-run: code from Implementer)"` for `{ALL_IMPLEMENTATION_CODE}`.
+5. For each rendered prompt, verify no `{UNRESOLVED_VARIABLE}` patterns remain (regex: `\{[A-Z][A-Z_]+\}`). Report any unresolved variables as errors.
+6. Print character counts for each prompt.
+7. Move to next slice (no `Task()` calls, no file writes, no test runs).
+
+After all slices are processed, print the dry-run summary and exit. Do NOT clean up the state file — it's useful for subsequent `--resume`.
+
+---
+
 ### Phase 2: RED — Write One Failing Test
 
 **Step 1**: Refresh the API surface (it changes as slices are implemented):
@@ -249,6 +323,7 @@ bash ~/.claude/skills/tdd/scripts/extract_api.sh {SOURCE_DIR}
 - `{LANGUAGE}`: Detected language from Phase 0
 - `{FRAMEWORK}`: Detected framework name
 - `{API_SURFACE}`: Output from extract_api.sh
+- `{DOC_CONTEXT}`: Output from discover_docs.sh (Phase 0 Step 5). Include only sections relevant to the current slice — filter by keyword match if the full output is large.
 - `{TEST_FILE_PATH}`: Where the test should go (follow project conventions)
 - `{EXISTING_TEST_CONTENT}`: Current content of the test file (if it exists), or "No test file exists yet."
 - `{FRAMEWORK_SKELETON}`: The relevant skeleton from `references/framework_configs.md`
