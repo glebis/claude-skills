@@ -139,5 +139,27 @@
 - `infrastructure/repositories/user_repository.py` contains both the interface and the PostgreSQL implementation
 - `src/database/UserRepository.ts` defines the interface and exports it
 
-**Fix**: Define the interface in the domain layer (`domain/repositories/user_repository.py`). The infrastructure layer imports and implements it. This is the Dependency Inversion Principle.
+**Fix**: Define the interface in the consuming layer (`domain/ports/user_repository.py` if consumed by domain services, `application/ports/` if consumed by use cases). The infrastructure layer imports and implements it. The consumer defines the contract.
 **Why it matters**: If the interface lives in infrastructure, domain code must import infrastructure to reference it — breaking the dependency rule.
+
+### Service locator / static global container
+**Symptom**: Domain or application code obtains dependencies through a global registry, static container, or service locator instead of constructor injection.
+**Examples**:
+- `Container.resolve(UserRepository)` called inside a domain service method
+- `ServiceLocator.get('emailService')` in a use case
+- `app.make('UserRepository')` (Laravel) inside domain code
+- `@inject` decorators that resolve from a global container at import time
+
+**Fix**: Accept dependencies through the constructor (or function parameters). The composition root (in infrastructure) wires everything together. Domain and application code never knows where implementations come from.
+**Why it matters**: Service locators hide dependencies — the class signature doesn't reveal what it needs. Tests require configuring a global container instead of passing fakes directly. It also makes dependency direction invisible: a domain class appears independent but actually reaches into infrastructure at runtime.
+
+### Active Record bleed (ORM entity as domain object)
+**Symptom**: The same class serves as both the database model (ORM entity) and the domain object. Framework-specific annotations, base classes, or conventions leak into domain logic.
+**Examples**:
+- `class User extends Model` (Eloquent/ActiveRecord) used directly in domain services
+- `@Entity() class Order` (TypeORM) with both column decorators and business logic
+- Domain code calling `.save()`, `.delete()`, or `.query()` on domain objects
+- SQLAlchemy `Base` subclass used as a domain entity
+
+**Fix**: Separate the persistence model from the domain model. The infrastructure layer maps between them. Domain entities have zero ORM awareness.
+**Why it matters**: Active Record couples business logic to the database schema and ORM framework. Domain tests require a database (or complex mocking). Schema changes break business logic. The domain layer becomes untestable without infrastructure — violating the core DDD/Onion principle.
