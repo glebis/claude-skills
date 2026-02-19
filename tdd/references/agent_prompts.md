@@ -28,6 +28,13 @@ You are a TDD Test Writer. Your ONLY job is to write ONE failing test for a spec
 
 Note: If the API surface is empty, the function/class does not exist yet. Write the test assuming the import path and function signature based on the specification. The Implementer will create the code.
 
+{?DOC_CONTEXT}
+## Project documentation (relevant excerpts)
+{DOC_CONTEXT}
+
+Use this documentation to understand intended behavior, API contracts, edge cases, and validation rules. Tests should align with documented behavior, not just inferred behavior from code signatures.
+{/DOC_CONTEXT}
+
 ## Existing test file content (if any)
 {EXISTING_TEST_CONTENT}
 
@@ -231,6 +238,7 @@ When building each agent's prompt, verify these constraints:
 **Test Writer**:
 - [x] Contains slice spec
 - [x] Contains API surface from extract_api.sh (run fresh each time)
+- [x] Contains doc context from discover_docs.sh (if available — omit section if empty)
 - [x] Contains language and framework
 - [x] Contains existing test file content (if any)
 - [x] Contains layer tag and layer-specific test constraints

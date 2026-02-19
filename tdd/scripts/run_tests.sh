@@ -173,8 +173,8 @@ print(json.dumps(results[:10]))
 parse_go() {
   local total=0 passed=0 failed=0 failures="[]"
 
-  passed=$(grep -cE '^--- PASS:' "$TMPFILE" || echo 0)
-  failed=$(grep -cE '^--- FAIL:' "$TMPFILE" || echo 0)
+  passed=$(grep -cE '^--- PASS:' "$TMPFILE" 2>/dev/null) || passed=0
+  failed=$(grep -cE '^--- FAIL:' "$TMPFILE" 2>/dev/null) || failed=0
   total=$((passed + failed))
 
   if [[ "$failed" -gt 0 ]] || [[ "$EXIT_CODE" -ne 0 ]]; then

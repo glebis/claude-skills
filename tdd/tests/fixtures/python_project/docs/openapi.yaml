@@ -1,0 +1,20 @@
+openapi: "3.0.0"
+info:
+  title: Calculator API
+  version: "1.0.0"
+paths:
+  /calculate:
+    post:
+      summary: Perform a calculation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                operation:
+                  type: string
+                a:
+                  type: number
+                b:
+                  type: number
