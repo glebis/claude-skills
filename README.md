@@ -97,6 +97,54 @@ Parse Claude Code's built-in `/insights` report and extract actionable items int
 
 ---
 
+### [Vault Daydream](./daydream/) ⭐ NEW
+Multi-agent system that mines your Obsidian vault for non-obvious connections between notes, mimicking the brain's default mode network. Samples random note pairs, synthesizes connections via Sonnet, filters with Haiku critic. Inspired by [Gwern's LLM Daydreaming](https://gwern.net/ai-daydreaming).
+
+**Features:**
+- 🧠 Simulates the brain's default mode network for knowledge vaults
+- 🎲 Recency-weighted random pair sampling (50 pairs per run)
+- 🔀 Multi-agent architecture: Sonnet synthesizer + Haiku critic in parallel batches
+- 📊 Quality filtering: only insights scoring >= 7.0 average (novelty, coherence, usefulness)
+- 📝 Obsidian-native output: individual insight notes with wikilinks + daily digest
+- 🔄 History dedup: tracks previously sampled pairs to avoid repetition
+- 📅 Daily note integration with daydream summary
+
+**Architecture:**
+```
+Skill (orchestrator)
+  |-- Glob/Read: scan vault, extract excerpts
+  |-- Generate 50 random pairs (recency-weighted)
+  |-- Task(model: sonnet) x 10: synthesize connections  <-- parallel
+  |-- Task(model: haiku) x 10: critique/score insights  <-- parallel
+  |-- Filter (avg >= 7.0)
+  +-- Write: save insight notes + daily digest
+```
+
+No external dependencies -- pure Claude Code tools (Glob, Read, Write, Bash, Task).
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r daydream ~/.claude/skills/
+
+# Edit instructions.md to set your VAULT_ROOT path
+# Then invoke
+/daydream
+```
+
+**Output:**
+- `Daydreams/YYYYMMDD-slug.md` -- individual insight notes with scores and wikilinks
+- `Daydreams/digests/YYYYMMDD-digest.md` -- daily digest with stats and ranked insights
+- Daily note `## Daydream` section -- summary with top connections
+
+**Cost:** ~$0.40-0.50 per run (~50 pairs) via Claude Code usage.
+
+**Inspired by:** [Gwern's "LLM Daydreaming"](https://gwern.net/ai-daydreaming) -- the idea that LLMs can productively "daydream" by finding unexpected connections between disparate pieces of knowledge, similar to how the brain's default mode network generates creative insights during idle periods.
+
+**Use when:** You want to discover surprising connections across your knowledge base -- run daily or weekly to surface insights you wouldn't find through deliberate search.
+
+---
+
 ### [Doctor G](./doctorg/)
 Evidence-based health research using tiered trusted sources with GRADE-inspired evidence ratings. Integrates Apple Health data for personalized context.
 
@@ -901,6 +949,8 @@ cp -r claude-skills/github-gist ~/.claude/skills/
 cp -r claude-skills/decision-toolkit ~/.claude/skills/
 # or
 cp -r claude-skills/tdd ~/.claude/skills/
+# or
+cp -r claude-skills/daydream ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
