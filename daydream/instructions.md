@@ -2,10 +2,19 @@
 
 You are running the Vault Daydream skill. Follow these steps precisely.
 
+## Step 0: Resolve Vault Root
+
+Determine `VAULT_ROOT`:
+1. Check if the current working directory contains a `.obsidian/` folder. If yes, use it as `VAULT_ROOT`.
+2. If not, use `AskUserQuestion` to ask:
+   - Question: "Where is your Obsidian vault located?"
+   - Options: provide 2-3 likely paths if detectable (e.g., from `find ~ -maxdepth 3 -name ".obsidian" -type d 2>/dev/null | head -3`), plus an "Other" option for custom input.
+3. Store the resolved path as `VAULT_ROOT` for all subsequent steps.
+
 ## Constants
 
 ```
-VAULT_ROOT = <your vault path>  # e.g., ~/Obsidian/vault
+VAULT_ROOT = (resolved in Step 0)
 DAYDREAMS_DIR = Daydreams
 DIGESTS_DIR = Daydreams/digests
 HISTORY_FILE = ai-research/daydream/history.json
