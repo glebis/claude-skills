@@ -12,7 +12,8 @@ Inspired by [Gwern's LLM Daydreaming](https://gwern.net/ai-daydreaming).
 
 ## What it does
 
-1. Scans vault for notes modified in last 120 days
+1. Auto-detects vault root from current directory (asks if not found)
+2. Scans vault for notes modified in last 120 days
 2. Generates 50 recency-weighted random pairs
 3. Synthesizes connections (Sonnet, parallel batches of 5)
 4. Critiques and scores insights (Haiku, parallel batches)
