@@ -145,6 +145,71 @@ cp -r daydream ~/.claude/skills/
 
 ---
 
+### [Thinking Patterns](./thinking-patterns/) ⭐ NEW
+Longitudinal cognitive pattern analysis across months of recorded conversations. Extracts 12 evidence-based dimensions from Fathom transcripts, synthesizes cross-session patterns, and detects blind spots via multi-agent parallel processing.
+
+**Scientific Foundation:**
+- **Tier 1 (Validated):** Burns' cognitive distortions, LIWC dimensions, epistemic markers, Russell's Circumplex Model
+- **Tier 2 (Established):** Lakoff conceptual metaphors, McAdams narrative identity, Kegan immunity to change, ACT flexibility
+- **Tier 3 (Applied):** Kegan developmental stages, Schon reflective practice, agency language ratio
+
+**12 Extraction Dimensions:**
+- Cognitive distortions, problem framing, conceptual metaphors, hedging/certainty
+- Code-switching (bilingual), decision moments, emotional indicators, avoidance/deflection
+- Agency language, competing commitments, role/register markers, energy signals
+
+**10 Output Sections + Blind Spot Summary:**
+1. Recurring Narratives -- 2. Problem Framing -- 3. Metaphors -- 4. Decision Heuristics -- 5. Topics Avoided -- 6. Contradictions & Competing Commitments -- 7. Energy Patterns -- 8. Role Shifts -- 9. Execution Gap -- 10. Cognitive Distortions & Biases -- plus "The 5 Things You Don't See"
+
+**Architecture:**
+```
+Stage 0: Corpus Discovery (orchestrator)
+  |-- Find transcripts, classify by type, extract speaker lines
+Stage 1: Per-Transcript Extraction (~13 parallel sonnet agents)
+  |-- 12 dimensions extracted per transcript
+Stage 2: Aggregation (orchestrator)
+  |-- De-duplicate, cluster, package into synthesis bundles
+Stage 3: Cross-Session Synthesis (4 parallel + 1 sequential sonnet agents)
+  |-- Pattern detection, blind spot analysis, contradiction mapping
+Stage 4: Output (orchestrator)
+  +-- Compile analysis document, link to daily note
+```
+
+**Features:**
+- Multi-agent parallel extraction (up to 13 sonnet agents) and synthesis (5 agents)
+- Bilingual support: English structure, Russian quotes preserved with translations
+- Weighted corpus: coaching (1.0), meetings (0.9), podcasts (0.8), impromptu (0.7), workshops (0.6), labs (0.4)
+- Unknown speaker recovery for Fathom transcripts with failed diarization
+- Immunity to Change maps (Kegan & Lahey) for competing commitments
+- Evidence-grounded: every finding backed by 2+ dated session quotes
+- Execution gap analysis against stated priorities (Profile Brief, My Focus)
+- Configurable date ranges, session type weights, speaker identifiers
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r thinking-patterns ~/.claude/skills/
+
+# Dry run -- see corpus stats and batch plan
+/thinking-patterns --dry-run
+
+# Full analysis (default: last 3 months)
+/thinking-patterns
+
+# Custom date range
+/thinking-patterns --period 2026-01 2026-02
+```
+
+**Output:**
+- `ai-research/YYYYMMDD-thinking-patterns-analysis.md` -- full analysis with evidence
+- Daily note link under `## Research`
+
+**Cost:** ~$3.50 per full run, ~6-8 minutes runtime.
+
+**Use when:** Quarterly self-reflection, coaching preparation, or whenever you want evidence-based insight into your own cognitive patterns across recorded conversations.
+
+---
+
 ### [Doctor G](./doctorg/)
 Evidence-based health research using tiered trusted sources with GRADE-inspired evidence ratings. Integrates Apple Health data for personalized context.
 
@@ -951,6 +1016,8 @@ cp -r claude-skills/decision-toolkit ~/.claude/skills/
 cp -r claude-skills/tdd ~/.claude/skills/
 # or
 cp -r claude-skills/daydream ~/.claude/skills/
+# or
+cp -r claude-skills/thinking-patterns ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli

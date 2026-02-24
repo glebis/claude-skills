@@ -1,0 +1,46 @@
+{
+  "period_start": "2025-12-01",
+  "period_end": "2026-02-28",
+  "output_folder": "ai-research",
+  "weights": {
+    "coaching": 1.0,
+    "client_meeting": 0.9,
+    "podcast": 0.8,
+    "impromptu": 0.7,
+    "workshop": 0.6,
+    "lab": 0.4
+  },
+  "reference_docs": [
+    "20260130-profile-brief.md",
+    "My Focus.md",
+    "My Focus - Strategic Decisions Framework.md"
+  ],
+  "extraction_model": "sonnet",
+  "synthesis_model": "sonnet",
+  "extraction_batch_size": 4,
+  "synthesis_agents": 5,
+  "max_parallel_agents": 13,
+  "min_sessions_for_finding": 2,
+  "speaker_identifiers": ["Gleb Kalinin", "Gleb", "Калинин Глеб", "Глеб Калинин", "Глеб"],
+  "unknown_speaker_recovery": true,
+  "unknown_speaker_max_participants": 2,
+  "transcript_patterns": [
+    "*-coaching*.md",
+    "*-meeting*.md",
+    "*-call*.md",
+    "*-lab*.md",
+    "*-workshop*.md",
+    "*-podcast*.md",
+    "*-impromptu*.md",
+    "*-session*.md",
+    "*-agency-community*.md"
+  ],
+  "session_type_keywords": {
+    "coaching": ["coaching", "coach", "anastasia", "grebenshekova"],
+    "client_meeting": ["meeting", "call", "between"],
+    "podcast": ["podcast", "agency-community"],
+    "impromptu": ["impromptu"],
+    "workshop": ["workshop", "skills-subagents"],
+    "lab": ["lab", "claude-code-lab"]
+  }
+}
