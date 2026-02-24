@@ -972,6 +972,41 @@ npm run cli -- meeting.md -o analysis.md --no-glossary
 
 **Use when:** You need to extract action items from meetings, find decisions in conversations, or build glossaries from recorded discussions.
 
+---
+
+### [Wispr Analytics](./wispr-analytics/)
+Extract and analyze [Wispr Flow](https://wispr.com/) voice dictation history from the local SQLite database. Combines quantitative metrics with LLM-powered qualitative analysis for self-reflection, work pattern recognition, and mental health awareness.
+
+**Features:**
+- Reads directly from Wispr Flow's local SQLite database (~8,500+ dictations)
+- Period selection: `today`, `yesterday`, `week`, `month`, specific dates, date ranges
+- Five analysis modes: `all`, `technical` (coding/work), `soft` (communication patterns), `trends` (volume/frequency), `mental` (sentiment/energy/rumination)
+- App-aware categorization: coding, AI tools, communication, writing
+- Bilingual analysis (Russian/English) with language-switching pattern detection
+- Hourly activity heatmaps and daily trend tables
+- LLM-powered qualitative analysis with mode-specific prompt templates
+- Saves output to Obsidian vault (`meta/wispr-analytics/`)
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r wispr-analytics ~/.claude/skills/
+
+# Today's full analysis
+/wispr-analytics today
+
+# Last 7 days, communication patterns
+/wispr-analytics week soft
+
+# Monthly mental health reflection
+/wispr-analytics month mental
+
+# Specific date range, productivity focus
+/wispr-analytics 2026-02-01:2026-02-14 technical
+```
+
+**Use when:** Self-reflection on work patterns, reviewing dictation habits, tracking energy/sentiment over time, understanding how you communicate across contexts, or generating periodic self-awareness reports.
+
 ## 🚀 Installation
 
 ### Using Claude Code
