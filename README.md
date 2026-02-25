@@ -1007,6 +1007,32 @@ cp -r wispr-analytics ~/.claude/skills/
 
 **Use when:** Self-reflection on work patterns, reviewing dictation habits, tracking energy/sentiment over time, understanding how you communicate across contexts, or generating periodic self-awareness reports.
 
+### [Context Builder](./context-builder/) ⭐ NEW
+Generate interactive AI transformation context-builder prompts for consulting clients. Creates structured discovery session prompts that guide a company through context gathering about their business, pain points, tech stack, and AI opportunities -- producing a resumable, multi-section questionnaire with Express and Deep Dive modes.
+
+**Features:**
+- 5-phase workflow: Intake (AskUserQuestion) -> Research (web + vault) -> Section Selection -> Generation -> Delivery
+- 15 pre-built sections in the section library (Revenue Map, Existential Question, Process Inventory, Pain Points, Tech Stack, AI Opportunities, New Business Models, People & Org, Client Value Chain, Data Assets, and more)
+- Focus-based section presets: AI Automation (7 sections), Existential Strategy (7 sections), Full Assessment (10+)
+- Two modes per generated prompt: Express (~15-20 min, 4 mega-sections) and Deep Dive (~60-90 min, 10 sections)
+- Session resumability: generated prompts check for existing output files and pick up where they left off
+- Auto-research: searches the web and Obsidian vault for company info, transcripts, and existing notes before generating
+- Baked-in consulting frameworks: BCG 10/20/70, Andrew Ng's Playbook, Deloitte AI Maturity, Value Stream Mapping, custom heuristics ("The But Heuristic", "Metro Newspaper Test", "Curiosity > Fear")
+- Output: per-section markdown files + compiled CLAUDE.md context file for future sessions
+- Optional Telegram delivery of generated prompts
+- Multilingual support (e.g., Russian session language with English output files)
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r context-builder ~/.claude/skills/
+
+# Run the skill
+/context-builder
+```
+
+**Use when:** Preparing for a consulting engagement, onboarding a new client, running a structured discovery session, or doing a self-assessment of your own business's AI transformation readiness.
+
 ## 🚀 Installation
 
 ### Using Claude Code
