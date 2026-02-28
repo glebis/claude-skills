@@ -1,0 +1,29 @@
+{
+  "cache": {
+    "state": {
+      "documents": {
+        "def-456": {
+          "id": "def-456",
+          "title": "Another Meeting",
+          "created_at": "2026-02-27T14:00:00Z",
+          "people": {
+            "creator": {"name": "Gleb Kalinin", "email": "glebis@gmail.com"},
+            "attendees": [
+              {"email": "alice@example.com", "details": {"person": {"name": {"fullName": "Alice Johnson"}}}}
+            ]
+          },
+          "google_calendar_event": {
+            "start": {"dateTime": "2026-02-27T14:00:00+01:00"},
+            "end": {"dateTime": "2026-02-27T15:30:00+01:00"}
+          },
+          "notes_markdown": "",
+          "summary": "",
+          "type": "meeting"
+        }
+      },
+      "transcripts": {},
+      "meetingsMetadata": {}
+    },
+    "version": 5
+  }
+}

@@ -69,6 +69,37 @@ cp -r tdd ~/.claude/skills/
 
 ---
 
+### [Granola Meeting Importer](./granola/) ⭐ NEW
+Query Granola's local cache and API to list meetings, view transcripts, and export to Obsidian vault in Fathom-compatible format.
+
+**Features:**
+- List all meetings from Granola's local cache with attendee and transcript info
+- Show meeting details by ID prefix or title substring
+- Get transcripts from local cache with API fallback
+- Export to Obsidian markdown with Fathom-compatible frontmatter (`**Speaker**: text` format)
+- Speaker attribution: microphone source mapped to meeting creator, system audio to "Other"
+- API integration using Granola's local WorkOS auth token (no separate API key needed)
+- 18 tests covering pure functions and CLI integration
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r granola ~/.claude/skills/
+
+# List meetings
+python3 ~/.claude/skills/granola/scripts/granola.py list
+
+# Export a meeting to Obsidian
+python3 ~/.claude/skills/granola/scripts/granola.py export "meeting title"
+
+# Get transcript
+python3 ~/.claude/skills/granola/scripts/granola.py transcript abc123
+```
+
+**Use when:** Importing Granola meeting recordings and transcripts into an Obsidian vault, or querying meeting history from the command line.
+
+---
+
 ### [Insight Extractor](./insight-extractor/) ⭐ NEW
 Parse Claude Code's built-in `/insights` report and extract actionable items into structured, trackable markdown files. Designed for Obsidian vaults but works with any markdown-based knowledge system.
 
