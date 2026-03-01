@@ -1064,6 +1064,41 @@ cp -r context-builder ~/.claude/skills/
 
 **Use when:** Preparing for a consulting engagement, onboarding a new client, running a structured discovery session, or doing a self-assessment of your own business's AI transformation readiness.
 
+### [Sketch MCP Server](https://github.com/glebis/sketch-mcp-server) ⭐ NEW
+Collaborative SVG canvas MCP server with a Fabric.js browser editor. Claude writes and reads SVG via MCP tools while the user edits interactively in the browser. Real-time sync via WebSocket.
+
+**Features:**
+- Open named canvases in standalone browser windows (Chrome --app mode)
+- Set, replace, or incrementally add SVG elements with live updates
+- Fixed-width Textbox support with word wrapping (Fabric.js Textbox)
+- Lock/unlock objects -- freeze grid structure while keeping text areas editable
+- JSON template save/load -- preserves Textbox widths, lock states, and all object properties
+- Undo/redo with lock state persistence
+- Built-in toolbar: select, draw, shapes (rect, ellipse, triangle, line, arrow), text tool (click for IText, drag for Textbox)
+- Clipboard paste support (images, SVG)
+- Includes a before/after grid template
+
+**MCP Tools:**
+- `sketch_open_canvas` -- create/open canvas, launches browser
+- `sketch_get_svg` / `sketch_set_svg` -- read/replace SVG
+- `sketch_add_element` -- add SVG fragment without clearing
+- `sketch_add_textbox` -- add fixed-width text area with word wrapping
+- `sketch_lock_objects` / `sketch_unlock_objects` -- freeze/unfreeze objects
+- `sketch_save_template` / `sketch_load_template` / `sketch_list_templates` -- JSON template persistence
+- `sketch_clear_canvas` / `sketch_focus_canvas` / `sketch_close_canvas` -- canvas management
+
+**Quick Start:**
+```bash
+# Clone and build
+git clone https://github.com/glebis/sketch-mcp-server.git
+cd sketch-mcp-server && npm install && npm run build
+
+# Add to Claude Code MCP config
+# mcpServers: { "sketch-mcp-server": { "command": "node", "args": ["path/to/dist/index.js", "--stdio"] } }
+```
+
+**Use when:** Visual prototyping, creating diagrams, building reusable canvas templates, before/after comparisons, or any task where Claude and the user need a shared visual workspace.
+
 ## 🚀 Installation
 
 ### Using Claude Code
