@@ -205,9 +205,17 @@ const slideRenderers = {
   </section>`
 };
 
-// Helper: escape HTML
-function escapeHtml(str) {
+// Helper: escape HTML (preserve $ for JSON regex patterns)
+function escapeHtml(str, preserveDollar = false) {
   if (!str) return '';
+  if (preserveDollar) {
+    // For JSON - don't escape $ to preserve regex patterns
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/'/g, '&#039;');
+  }
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -219,22 +227,33 @@ function escapeHtml(str) {
 // Helper: basic syntax highlighting
 function highlightCode(code, language) {
   if (!code) return '';
-  let escaped = escapeHtml(code);
+  const isJson = language === 'json';
 
-  // Comments
-  escaped = escaped.replace(/(\/\/.*$|#.*$)/gm, '<span class="code-comment">$1</span>');
-  escaped = escaped.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>');
+  // For JSON, preserve $ to avoid breaking regex patterns in strings
+  let escaped = escapeHtml(code, isJson);
 
-  // Strings
+  if (isJson) {
+    // For JSON: only highlight strings (skip comments to avoid // in URLs being matched)
+    escaped = escaped.replace(/(".*?")/g, '<span class="code-string">$1</span>');
+    return escaped;
+  }
+
+  // For other languages: process in correct order
+  // 1. Strings FIRST - so comments don't match inside strings
   escaped = escaped.replace(/(".*?"|'.*?'|`.*?`)/g, '<span class="code-string">$1</span>');
 
-  // Keywords
+  // 2. Comments AFTER strings (// and # won't match inside strings now)
+  escaped = escaped.replace(/(\/\/.*$)/gm, '<span class="code-comment">$1</span>');
+  escaped = escaped.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>');
+  escaped = escaped.replace(/(#.*$)/gm, '<span class="code-comment">$1</span>');
+
+  // 3. Keywords
   const keywords = ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'import', 'export', 'from', 'class', 'extends', 'async', 'await', 'try', 'catch', 'throw', 'new', 'this', 'true', 'false', 'null', 'undefined'];
   keywords.forEach(kw => {
     escaped = escaped.replace(new RegExp(`\\b(${kw})\\b`, 'g'), '<span class="code-keyword">$1</span>');
   });
 
-  // Numbers
+  // 4. Numbers
   escaped = escaped.replace(/\b(\d+)\b/g, '<span class="code-number">$1</span>');
 
   return escaped;
