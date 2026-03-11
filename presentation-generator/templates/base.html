@@ -56,6 +56,50 @@
     .slide .two-col > div, .slide .color-swatch, .slide .svg-demo svg {
       opacity: 0;
     }
+
+    /* Copy button styles */
+    .code-container {
+      position: relative;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.75rem;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 6px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 10;
+    }
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    .copy-btn.copied {
+      background: rgba(46, 204, 113, 0.3);
+      border-color: rgba(46, 204, 113, 0.6);
+    }
+    .copy-icon, .check-icon {
+      flex-shrink: 0;
+    }
+
+    /* Clickable task cards */
+    .task-card.clickable {
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .task-card.clickable:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
   </style>
 </head>
 <body>
@@ -375,6 +419,43 @@
         }
       }
     });
+
+    // Copy code functionality
+    function copyCode(btn) {
+      const codeContainer = btn.closest('.code-container');
+      const codeElement = codeContainer.querySelector('code');
+      const text = codeElement.textContent;
+
+      navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add('copied');
+        btn.querySelector('.copy-icon').style.display = 'none';
+        btn.querySelector('.check-icon').style.display = 'block';
+        btn.querySelector('.copy-text').textContent = 'Copied!';
+
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.querySelector('.copy-icon').style.display = 'block';
+          btn.querySelector('.check-icon').style.display = 'none';
+          btn.querySelector('.copy-text').textContent = 'Copy';
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
+    }
+
+    // Navigate to slide by title
+    function navigateToSlide(title) {
+      // Find slide with matching h2 title
+      const slides = document.querySelectorAll('.slide');
+      for (const slide of slides) {
+        const heading = slide.querySelector('h2');
+        if (heading && heading.textContent.trim() === title) {
+          slide.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
+      }
+      console.warn('Slide not found:', title);
+    }
   </script>
 
 </body>

@@ -79,7 +79,19 @@ const slideRenderers = {
     ${slide.label ? `<div class="label" style="color: var(--color-success);">${slide.label}</div>` : ''}
     <h2>${slide.title}</h2>
     ${slide.description ? `<p style="opacity: 0.8; margin-bottom: 1.5rem;">${slide.description}</p>` : ''}
-    <pre style="max-width: 900px;"><code>${highlightCode(slide.code, slide.language)}</code></pre>
+    <div class="code-container">
+      <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">
+        <svg class="copy-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <svg class="check-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span class="copy-text">Copy</span>
+      </button>
+      <pre style="max-width: 900px;"><code>${highlightCode(slide.code, slide.language)}</code></pre>
+    </div>
     ${slide.tags ? `
     <div style="margin-top: 1.5rem;">
       ${slide.tags.map(t => `<span class="tag tag--${t.type || ''}">${t.text}</span>`).join('')}
@@ -111,7 +123,7 @@ const slideRenderers = {
     ${slide.body ? `<p style="font-size: 1.2rem; max-width: 700px;">${slide.body}</p>` : ''}
     <div class="task-grid">
       ${slide.items.map(item => `
-      <div class="task-card">
+      <div class="task-card${item.target ? ' clickable' : ''}"${item.target ? ` onclick="navigateToSlide('${item.target.replace(/'/g, "\\'")}')"` : ''}>
         <div class="task-number">${item.number || ''}</div>
         <div class="task-title">${item.title}</div>
         <div class="task-desc">${item.desc || ''}</div>
