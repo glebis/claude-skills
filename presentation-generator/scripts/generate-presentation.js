@@ -79,12 +79,54 @@ const slideRenderers = {
     ${slide.label ? `<div class="label" style="color: var(--color-success);">${slide.label}</div>` : ''}
     <h2>${slide.title}</h2>
     ${slide.description ? `<p style="opacity: 0.8; margin-bottom: 1.5rem;">${slide.description}</p>` : ''}
-    <pre style="max-width: 900px;"><code>${highlightCode(slide.code, slide.language)}</code></pre>
+    <div class="code-container">
+      <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">
+        <svg class="copy-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <svg class="check-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span class="copy-text">Copy</span>
+      </button>
+      <pre style="max-width: 900px;"><code>${highlightCode(slide.code, slide.language)}</code></pre>
+    </div>
     ${slide.tags ? `
     <div style="margin-top: 1.5rem;">
       ${slide.tags.map(t => `<span class="tag tag--${t.type || ''}">${t.text}</span>`).join('')}
     </div>` : ''}
     <div class="slide-number">${index + 1} / ${total}</div>
+  </section>`,
+
+  // Repo slide - GitHub repository link
+  repo: (slide, index, total) => `
+  <section id="slide-${index + 1}" class="slide slide--dark centered">
+    ${slide.label ? `<div class="label" style="color: var(--color-secondary);">${slide.label}</div>` : ''}
+    <div style="margin-top: 2rem;">
+      <svg viewBox="0 0 24 24" width="80" height="80" fill="var(--color-background)">
+        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+      </svg>
+    </div>
+    ${slide.title ? `<h2 style="margin-top: 1.5rem; color: var(--color-background);">${slide.title}</h2>` : ''}
+    ${slide.body ? `<p style="color: rgba(255,255,255,0.8); font-size: 1.3rem; margin-top: 1rem;">${slide.body}</p>` : ''}
+    <a href="${slide.url}" target="_blank" rel="noopener noreferrer" class="repo-link" style="
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 1rem 2rem;
+      background: var(--color-background);
+      color: var(--color-primary);
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-weight: bold;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      border: 3px solid var(--color-secondary);
+      transition: transform 0.2s, box-shadow 0.2s;
+    " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 0 var(--color-secondary)';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none';">
+      ${slide.url}
+    </a>
+    <div class="slide-number" style="color: rgba(255,255,255,0.5);">${index + 1} / ${total}</div>
   </section>`,
 
   // Stats slide - big numbers with labels
@@ -111,7 +153,7 @@ const slideRenderers = {
     ${slide.body ? `<p style="font-size: 1.2rem; max-width: 700px;">${slide.body}</p>` : ''}
     <div class="task-grid">
       ${slide.items.map(item => `
-      <div class="task-card">
+      <div class="task-card${item.target ? ' clickable' : ''}"${item.target ? ` onclick="navigateToSlide('${item.target.replace(/'/g, "\\'")}')"` : ''}>
         <div class="task-number">${item.number || ''}</div>
         <div class="task-title">${item.title}</div>
         <div class="task-desc">${item.desc || ''}</div>
@@ -205,9 +247,17 @@ const slideRenderers = {
   </section>`
 };
 
-// Helper: escape HTML
-function escapeHtml(str) {
+// Helper: escape HTML (preserve $ for JSON regex patterns)
+function escapeHtml(str, preserveDollar = false) {
   if (!str) return '';
+  if (preserveDollar) {
+    // For JSON - don't escape $ to preserve regex patterns
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/'/g, '&#039;');
+  }
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -219,22 +269,33 @@ function escapeHtml(str) {
 // Helper: basic syntax highlighting
 function highlightCode(code, language) {
   if (!code) return '';
-  let escaped = escapeHtml(code);
+  const isJson = language === 'json';
 
-  // Comments
-  escaped = escaped.replace(/(\/\/.*$|#.*$)/gm, '<span class="code-comment">$1</span>');
-  escaped = escaped.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>');
+  // For JSON, preserve $ to avoid breaking regex patterns in strings
+  let escaped = escapeHtml(code, isJson);
 
-  // Strings
+  if (isJson) {
+    // For JSON: only highlight strings (skip comments to avoid // in URLs being matched)
+    escaped = escaped.replace(/(".*?")/g, '<span class="code-string">$1</span>');
+    return escaped;
+  }
+
+  // For other languages: process in correct order
+  // 1. Strings FIRST - so comments don't match inside strings
   escaped = escaped.replace(/(".*?"|'.*?'|`.*?`)/g, '<span class="code-string">$1</span>');
 
-  // Keywords
+  // 2. Comments AFTER strings (// and # won't match inside strings now)
+  escaped = escaped.replace(/(\/\/.*$)/gm, '<span class="code-comment">$1</span>');
+  escaped = escaped.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>');
+  escaped = escaped.replace(/(#.*$)/gm, '<span class="code-comment">$1</span>');
+
+  // 3. Keywords
   const keywords = ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'import', 'export', 'from', 'class', 'extends', 'async', 'await', 'try', 'catch', 'throw', 'new', 'this', 'true', 'false', 'null', 'undefined'];
   keywords.forEach(kw => {
     escaped = escaped.replace(new RegExp(`\\b(${kw})\\b`, 'g'), '<span class="code-keyword">$1</span>');
   });
 
-  // Numbers
+  // 4. Numbers
   escaped = escaped.replace(/\b(\d+)\b/g, '<span class="code-number">$1</span>');
 
   return escaped;
