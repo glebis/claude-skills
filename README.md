@@ -70,7 +70,7 @@ cp -r tdd ~/.claude/skills/
 ---
 
 ### [Granola Meeting Importer](./granola/) ⭐ NEW
-Query Granola's local cache and API to list meetings, view transcripts, and export to Obsidian vault in Fathom-compatible format.
+Query Granola's local cache and API to list meetings, view transcripts, and export to Obsidian vault in Fathom-compatible format. Includes auto-sync via macOS LaunchAgent.
 
 **Features:**
 - List all meetings from Granola's local cache with attendee and transcript info
@@ -79,6 +79,7 @@ Query Granola's local cache and API to list meetings, view transcripts, and expo
 - Export to Obsidian markdown with Fathom-compatible frontmatter (`**Speaker**: text` format)
 - Speaker attribution: microphone source mapped to meeting creator, system audio to "Other"
 - API integration using Granola's local WorkOS auth token (no separate API key needed)
+- **Auto-sync script** (`sync.sh`) — checks for new meetings every 15 min via LaunchAgent, exports only unseen ones, logs to `~/Library/Logs/granola-sync.log`
 - 18 tests covering pure functions and CLI integration
 
 **Quick Start:**
@@ -94,9 +95,13 @@ python3 ~/.claude/skills/granola/scripts/granola.py export "meeting title"
 
 # Get transcript
 python3 ~/.claude/skills/granola/scripts/granola.py transcript abc123
+
+# Set up auto-sync (see SKILL.md for LaunchAgent setup)
+chmod +x ~/.claude/skills/granola/scripts/sync.sh
+bash ~/.claude/skills/granola/scripts/sync.sh  # test run
 ```
 
-**Use when:** Importing Granola meeting recordings and transcripts into an Obsidian vault, or querying meeting history from the command line.
+**Use when:** Importing Granola meeting recordings and transcripts into an Obsidian vault, querying meeting history from the command line, or setting up automated transcript sync on a schedule.
 
 ---
 
