@@ -1,0 +1,3835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Inner Temple</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Geist+Mono:wght@400;500&family=Geist:wght@300;400;500;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #030108; overflow: hidden; font-family: 'Geist', sans-serif; cursor: crosshair; }
+  .hud-btn:focus-visible { outline: 1px solid rgba(255,214,10,0.6); outline-offset: 2px; }
+  button:focus-visible { outline: 1px solid rgba(255,214,10,0.6); outline-offset: 2px; }
+
+  /* === PROJECTOR-READY TYPOGRAPHY === */
+  #title { position: fixed; top: 32px; left: 40px; font-size: 20px; font-weight: 500; color: rgba(232, 93, 4, 0.65); letter-spacing: 5px; text-transform: uppercase; z-index: 20; user-select: none; text-shadow: 0 0 20px rgba(232,93,4,0.15); }
+  #breath { position: fixed; top: 34px; right: 40px; width: 16px; height: 16px; border-radius: 50%; background: rgba(232, 93, 4, 0.2); z-index: 20; box-shadow: 0 0 10px rgba(232,93,4,0.15); }
+  #layer-label { position: fixed; bottom: 40px; left: 40px; font-family: 'Geist Mono', monospace; font-size: 18px; color: rgba(255,214,10,0); letter-spacing: 2px; text-transform: uppercase; z-index: 20; user-select: none; transition: color 0.8s; text-shadow: 0 0 15px rgba(255,214,10,0.1); }
+  #depth-bar { position: fixed; right: 40px; top: 50%; transform: translateY(-50%); width: 4px; height: 300px; background: rgba(255,255,255,0.12); border-radius: 2px; z-index: 20; }
+  #depth-dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: rgba(232,93,4,0.8); left: -5px; transition: top 0.3s, transform 0.5s, box-shadow 0.5s; box-shadow: 0 0 10px rgba(232,93,4,0.4); }
+
+  #discovery { position: fixed; bottom: 40px; right: 40px; font-family: 'Geist Mono', monospace; font-size: 15px; color: rgba(232,93,4,0.5); z-index: 20; user-select: none; text-align: right; line-height: 1.8; }
+
+  /* === CARD — cinematic film title typography === */
+  #card {
+    position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%);
+    max-width: 700px; width: 90%; padding: 0;
+    background: none; border: none; backdrop-filter: none;
+    z-index: 30; opacity: 0; pointer-events: none;
+    transition: opacity 0.8s;
+  }
+  #card.visible { opacity: 1; pointer-events: auto; }
+  #card .c-type {
+    font-family: 'Geist Mono', monospace; font-size: 14px;
+    color: rgba(232,93,4,0.6); text-transform: uppercase;
+    letter-spacing: 4px; margin-bottom: 12px;
+    opacity: 0; animation: cardFadeIn 0.8s ease forwards;
+    animation-delay: 0.3s;
+    text-shadow: 0 0 20px rgba(232,93,4,0.3);
+  }
+  #card .c-title {
+    font-weight: 800; font-size: 36px;
+    color: rgba(255,255,255,0.95); margin-bottom: 16px;
+    letter-spacing: 1px; line-height: 1.2;
+    opacity: 0; animation: cardFadeIn 1s ease forwards;
+    animation-delay: 0.6s;
+    text-shadow: 0 0 30px rgba(255,255,255,0.15), 0 2px 40px rgba(0,0,0,0.8);
+  }
+  #card .c-body {
+    font-size: 18px; color: rgba(255,255,255,0.7); line-height: 1.8;
+    opacity: 0; animation: cardFadeIn 0.8s ease forwards;
+    animation-delay: 1.0s;
+    text-shadow: 0 1px 20px rgba(0,0,0,0.7);
+  }
+  #card .c-lore {
+    margin-top: 16px; font-family: 'EB Garamond', serif; font-size: 18px; color: rgba(220,180,120,0.85);
+    font-style: italic; line-height: 1.8;
+    opacity: 0; animation: cardFadeIn 0.8s ease forwards;
+    animation-delay: 1.3s;
+    text-shadow: 0 1px 20px rgba(0,0,0,0.7);
+  }
+  #card .c-secret {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid rgba(255,214,10,0.08);
+    font-family: 'EB Garamond', serif; font-size: 18px; color: rgba(255,214,10,0.75); font-style: italic;
+    opacity: 0; animation: cardFadeIn 0.8s ease forwards;
+    animation-delay: 1.5s;
+    text-shadow: 0 1px 20px rgba(0,0,0,0.7);
+  }
+  #card .c-close {
+    position: absolute; top: -30px; right: 0;
+    font-size: 20px; color: rgba(255,255,255,0.3);
+    cursor: pointer; pointer-events: auto;
+    background: none; border: none; padding: 4px 8px;
+    opacity: 0; animation: cardFadeIn 0.5s ease forwards;
+    animation-delay: 1.8s;
+  }
+
+  @keyframes cardFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === WHISPER — projector readable === */
+  #whisper { position: fixed; top: 45%; left: 50%; transform: translate(-50%,-50%); font-family: 'EB Garamond', serif; font-size: 22px; font-weight: 400; font-style: italic; color: rgba(255,214,10,0); text-align: center; max-width: 600px; line-height: 2.2; letter-spacing: 0.5px; z-index: 15; user-select: none; pointer-events: none; transition: color 5s; text-shadow: 0 0 20px rgba(255,214,10,0.1); }
+
+  /* === HUD BUTTONS — projector readable === */
+  .hud-btn { position: fixed; padding: 12px 22px; font-family: 'Geist Mono', monospace; font-size: 13px; letter-spacing: 2px; border: 1px solid rgba(255,214,10,0.25); color: rgba(255,214,10,0.7); background: rgba(10,6,18,0.6); border-radius: 4px; pointer-events: auto; cursor: pointer; text-transform: uppercase; transition: all 0.25s; z-index: 25; user-select: none; }
+  .hud-btn:hover { border-color: rgba(255,214,10,0.5); color: rgba(255,214,10,0.95); }
+  .hud-btn.active { color: #0A0612; border-color: rgba(255,214,10,0.85); background: rgba(255,214,10,0.85); }
+  #flyBtn { bottom: 36px; right: 170px; }
+  #secretsBtn { bottom: 36px; right: 310px; }
+  #handBtn { bottom: 36px; right: 450px; }
+  #audioBtn { bottom: 36px; right: 560px; }
+
+  /* === INTRO — projector readable === */
+  #intro { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #030108; z-index: 50; display: flex; align-items: center; justify-content: center; flex-direction: column; transition: opacity 2.5s; }
+  #intro.out { opacity: 0; pointer-events: none; }
+  #intro h1 { font-size: 32px; font-weight: 300; color: rgba(232,93,4,0.6); letter-spacing: 6px; text-transform: uppercase; margin-bottom: 32px; text-shadow: 0 0 30px rgba(232,93,4,0.15); }
+  #intro p { font-size: 18px; font-weight: 300; color: rgba(255,255,255,0.6); letter-spacing: 0.5px; line-height: 2.2; text-align: center; max-width: 600px; }
+  #intro .enter { margin-top: 44px; font-family: 'Geist Mono', monospace; font-size: 15px; color: rgba(255,214,10,0.45); letter-spacing: 3px; cursor: pointer; text-transform: uppercase; border: 1px solid rgba(255,214,10,0.18); padding: 14px 36px; border-radius: 4px; transition: all 0.3s; background: transparent; }
+  #intro .enter:hover { color: rgba(255,214,10,0.8); border-color: rgba(255,214,10,0.35); }
+
+  /* === SECRETS LOG — projector readable === */
+  #secrets-log { position: fixed; top: 80px; right: 40px; width: 320px; max-height: 55vh; overflow-y: auto; font-family: 'Geist Mono', monospace; font-size: 13px; color: rgba(220,180,120,0.6); z-index: 25; user-select: none; pointer-events: none; line-height: 2; display: none; opacity: 0; transition: opacity 0.5s; }
+  #secrets-log.visible { display: block; opacity: 1; }
+  #secrets-log .s-entry { border-bottom: 1px solid rgba(220,180,120,0.08); padding: 6px 0; }
+  #secrets-log .s-new { color: rgba(255,214,10,0.75); }
+  #filter-label { position: fixed; top: 32px; left: 50%; transform: translateX(-50%); font-family: 'Geist Mono', monospace; font-size: 14px; color: rgba(255,214,10,0.5); letter-spacing: 4px; text-transform: uppercase; z-index: 20; user-select: none; opacity: 0; transition: opacity 1s; text-shadow: 0 0 15px rgba(255,214,10,0.15); }
+  #hint { position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%); font-family: 'Geist Mono', monospace; font-size: 13px; color: rgba(255,214,10,0.4); letter-spacing: 2px; text-transform: uppercase; z-index: 20; user-select: none; pointer-events: none; opacity: 0; transition: opacity 2s; text-shadow: 0 0 15px rgba(255,214,10,0.1); }
+
+  /* === IMMERSIVE MODE (Shift+.) === */
+  body.immersive-active #title,
+  body.immersive-active #breath,
+  body.immersive-active #layer-label,
+  body.immersive-active #depth-bar,
+  body.immersive-active #discovery,
+  body.immersive-active #filter-label,
+  body.immersive-active #whisper,
+  body.immersive-active #secrets-log,
+  body.immersive-active #card,
+  body.immersive-active #hint,
+  body.immersive-active #flyBtn,
+  body.immersive-active #secretsBtn,
+  body.immersive-active #handBtn,
+  body.immersive-active #audioBtn,
+  body.immersive-active #handCam,
+  body.immersive-active #handStatus,
+  body.immersive-active #intro {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+</style>
+</head>
+<body>
+
+<video id="handCam" autoplay playsinline style="position:fixed;bottom:10px;left:10px;width:160px;height:120px;opacity:0.15;z-index:50;border-radius:8px;transform:scaleX(-1);pointer-events:none;display:none;"></video>
+<div id="handStatus" style="position:fixed;bottom:10px;left:180px;font-family:'Geist Mono',monospace;font-size:10px;color:rgba(46,196,182,0.4);z-index:50;display:none;">TRACKING</div>
+
+<div id="intro">
+  <h1>The Inner Temple</h1>
+  <p>Five gods shaped this place. Their names are written in nucleotides.<br>
+  Spirits move between the layers — patterns that repeat, connections that hide.<br>
+  Secrets reveal themselves to those who look slowly.</p>
+  <button class="enter" id="enterBtn">Enter</button>
+</div>
+
+<div id="title">the inner temple</div>
+<div id="breath"></div>
+<div id="layer-label"></div>
+<div id="depth-bar"><div id="depth-dot"></div></div>
+<div id="discovery"></div>
+<div id="filter-label"></div>
+<div id="whisper"></div>
+<div id="secrets-log"></div>
+
+<button id="flyBtn" class="hud-btn">▶ journey</button>
+<button id="secretsBtn" class="hud-btn">◉ secrets</button>
+<button id="handBtn" class="hud-btn">HANDS</button>
+<button id="audioBtn" class="hud-btn">AUDIO</button>
+
+<div id="card">
+  <button class="c-close" id="cardClose" aria-label="Close">✕</button>
+  <div class="c-type"></div>
+  <div class="c-title"></div>
+  <div class="c-body"></div>
+  <div class="c-lore"></div>
+  <div class="c-secret"></div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+const INSTALL_MODE = new URLSearchParams(location.search).has('install');
+
+// Wide-angle barrel distortion shader
+const BarrelDistortionShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    distortion: { value: 0.12 },
+    zoom: { value: 0.98 },
+  },
+  vertexShader: `varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float distortion;
+    uniform float zoom;
+    varying vec2 vUv;
+    void main(){
+      vec2 uv = vUv * 2.0 - 1.0;
+      float r2 = dot(uv, uv);
+      float f = 1.0 + r2 * distortion;
+      vec2 distUv = uv * f * zoom;
+      distUv = distUv * 0.5 + 0.5;
+      if(distUv.x<0.0||distUv.x>1.0||distUv.y<0.0||distUv.y>1.0){
+        gl_FragColor=vec4(0.02,0.01,0.05,1.0);
+      } else {
+        // Chromatic aberration — slight RGB split at edges
+        float aberr = r2 * 0.001;
+        float r = texture2D(tDiffuse, distUv + vec2(aberr, 0.0)).r;
+        float g = texture2D(tDiffuse, distUv).g;
+        float b = texture2D(tDiffuse, distUv - vec2(aberr, 0.0)).b;
+        // Subtle vignette
+        float vignette = 1.0 - r2 * 0.2;
+        gl_FragColor = vec4(r*vignette, g*vignette, b*vignette, 1.0);
+      }
+    }
+  `,
+};
+
+// ─────────────────────────────────────────
+// DATA LOADING — template version
+// Accepts INLINE_TEMPLE_DATA or fetches temple-data.json
+// ─────────────────────────────────────────
+let TEMPLE_DATA = null;
+try {
+  if (typeof INLINE_TEMPLE_DATA !== 'undefined') {
+    TEMPLE_DATA = INLINE_TEMPLE_DATA;
+    console.log('Temple data loaded from inline, version:', TEMPLE_DATA.version);
+  }
+} catch(e) {}
+
+if (!TEMPLE_DATA) {
+  try {
+    const resp = await fetch('temple-data.json');
+    if (resp.ok) {
+      TEMPLE_DATA = await resp.json();
+      console.log('Temple data loaded from temple-data.json, version:', TEMPLE_DATA.version);
+    }
+  } catch(e) {}
+}
+
+if (!TEMPLE_DATA) {
+  console.error('No temple data found. Place temple-data.json alongside this file or inline INLINE_TEMPLE_DATA.');
+  // Create minimal fallback to prevent crashes
+  TEMPLE_DATA = { config: { layers: [], domains: {}, palette: {}, floor: {}, depthColors: {}, trailColors: {}, spiritColors: [], domainDescriptions: {}, intro: {} }, entities: { gods: [], demigods: [], spirits: [], crystals: [], narratives: [], tensions: [], blindSpots: [], depths: [], research: [], values: [], trails: [], questions: [], growth: [] }, secrets: [], whispers: [], fields: [], connections: { structural: [] } };
+}
+
+window.templeData = TEMPLE_DATA;
+window.reloadTempleData = async () => {
+  try {
+    const resp = await fetch('temple-data.json?t=' + Date.now());
+    if (resp.ok) {
+      window.templeData = await resp.json();
+      console.log('Temple data reloaded, version:', window.templeData.version);
+      return window.templeData;
+    }
+  } catch(e) { console.error('Reload failed:', e); }
+};
+
+// ─── Destructure TEMPLE_DATA into rendering constants ───
+const _cfg = TEMPLE_DATA.config || {};
+const _ent = TEMPLE_DATA.entities || {};
+
+// Config-driven intro text
+if (_cfg.intro) {
+  const introEl = document.getElementById('intro');
+  if (introEl) {
+    const h1 = introEl.querySelector('h1');
+    const p = introEl.querySelector('p');
+    if (h1 && _cfg.intro.heading) h1.textContent = _cfg.intro.heading;
+    if (p && _cfg.intro.body) p.innerHTML = _cfg.intro.body.replace(/\n/g, '<br>');
+  }
+}
+if (_cfg.title) document.title = _cfg.title;
+
+// ─────────────────────────────────────────
+// THE PANTHEON — Five Gods of the Temple
+// ─────────────────────────────────────────
+const GODS = (_ent.gods || []).map(g => ({
+  key: g.key,
+  name: g.name,
+  epithet: g.epithet,
+  color: typeof g.color === 'string' ? parseInt(g.color.replace('#',''), 16) : g.color,
+  lore: g.lore,
+  domain: g.domain,
+  y: g.y,
+  angle: g.angle
+}));
+
+// ─────────────────────────────────────────
+// THE LESSER DEITIES — genetic variants that shape the terrain
+// ─────────────────────────────────────────
+const DEMIGODS = (_ent.demigods || []).map(dg => ({
+  key: dg.key,
+  name: dg.name,
+  epithet: dg.epithet,
+  color: typeof dg.color === 'string' ? parseInt(dg.color.replace('#',''), 16) : dg.color,
+  lore: dg.lore,
+  connects: dg.connects || []
+}));
+
+// ─────────────────────────────────────────
+// THE SPIRITS — Patterns that move between layers
+// ─────────────────────────────────────────
+const SPIRITS = _ent.spirits || [];
+
+// ─────────────────────────────────────────
+// THE SECRETS — Hidden connections revealed by exploration
+// ─────────────────────────────────────────
+const SECRETS = TEMPLE_DATA.secrets || [];
+
+// ─────────────────────────────────────────
+// WHISPERS — text that appears when you hold still
+// ─────────────────────────────────────────
+// Voice shifts from observational → first person as you descend
+const WHISPERS = (TEMPLE_DATA.whispers || []).map(w => ({
+  y: w.y || w.yRange || [0,0],
+  text: w.text || ''
+}));
+
+// ─────────────────────────────────────────
+// SCENE
+// ─────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x030108);
+scene.fog = new THREE.FogExp2(0x030108, 0.005);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 500);
+camera.position.set(45, 15, 45);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
+document.body.appendChild(renderer.domElement);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomStrength = INSTALL_MODE ? 0.4 : 0.6;
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), bloomStrength, 0.3, 0.25));
+const barrelPass = new ShaderPass(BarrelDistortionShader);
+composer.addPass(barrelPass);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+Object.assign(controls, { enableDamping:true, dampingFactor:0.05, minDistance:6, maxDistance:160, maxPolarAngle:Math.PI*0.88, minPolarAngle:Math.PI*0.12, autoRotate:true, autoRotateSpeed:0.12, enabled:false });
+controls.target.set(0, -5, 0);
+
+// Diurnal drift — the piece changes with time of day
+(function applyDiurnalDrift() {
+  const now = new Date();
+  const hour = now.getHours();
+  const dow = now.getDay();
+  // Fog: thicker at night (peaks 3am), thinner midday
+  scene.fog.density = 0.004 + 0.005 * Math.pow(Math.max(0, Math.cos((hour - 3) / 24 * Math.PI * 2)), 2);
+  // Auto-rotate: slower on weekends
+  controls.autoRotateSpeed = (dow === 0 || dow === 6) ? 0.07 : 0.12;
+})();
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+});
+
+// ─────────────────────────────────────────
+// SIMPLEX NOISE (organic movement substrate)
+// ─────────────────────────────────────────
+// Compact 3D simplex noise — drives all biological motion
+const _sn_grad3=[[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
+const _sn_perm=new Uint8Array(512);
+(function(){const p=[];for(let i=0;i<256;i++)p[i]=i;for(let i=255;i>0;i--){const j=Math.floor((i+1)*(.5+.5*Math.sin(i*127.1)));const t=p[i];p[i]=p[j%256];p[j%256]=t;}for(let i=0;i<512;i++)_sn_perm[i]=p[i&255];})();
+function simplex3(x,y,z){const F3=1/3,G3=1/6;const s=(x+y+z)*F3;const i=Math.floor(x+s),j=Math.floor(y+s),k=Math.floor(z+s);const t=(i+j+k)*G3;const X0=i-t,Y0=j-t,Z0=k-t;const x0=x-X0,y0=y-Y0,z0=z-Z0;let i1,j1,k1,i2,j2,k2;if(x0>=y0){if(y0>=z0){i1=1;j1=0;k1=0;i2=1;j2=1;k2=0;}else if(x0>=z0){i1=1;j1=0;k1=0;i2=1;j2=0;k2=1;}else{i1=0;j1=0;k1=1;i2=1;j2=0;k2=1;}}else{if(y0<z0){i1=0;j1=0;k1=1;i2=0;j2=1;k2=1;}else if(x0<z0){i1=0;j1=1;k1=0;i2=0;j2=1;k2=1;}else{i1=0;j1=1;k1=0;i2=1;j2=1;k2=0;}}const x1=x0-i1+G3,y1=y0-j1+G3,z1=z0-k1+G3;const x2=x0-i2+2*G3,y2=y0-j2+2*G3,z2=z0-k2+2*G3;const x3=x0-1+3*G3,y3=y0-1+3*G3,z3=z0-1+3*G3;const ii=i&255,jj=j&255,kk=k&255;let n0=0,n1=0,n2=0,n3=0;let t0=0.6-x0*x0-y0*y0-z0*z0;if(t0>0){t0*=t0;const gi=_sn_perm[ii+_sn_perm[jj+_sn_perm[kk]]]%12;n0=t0*t0*(_sn_grad3[gi][0]*x0+_sn_grad3[gi][1]*y0+_sn_grad3[gi][2]*z0);}let t1=0.6-x1*x1-y1*y1-z1*z1;if(t1>0){t1*=t1;const gi=_sn_perm[ii+i1+_sn_perm[jj+j1+_sn_perm[kk+k1]]]%12;n1=t1*t1*(_sn_grad3[gi][0]*x1+_sn_grad3[gi][1]*y1+_sn_grad3[gi][2]*z1);}let t2=0.6-x2*x2-y2*y2-z2*z2;if(t2>0){t2*=t2;const gi=_sn_perm[ii+i2+_sn_perm[jj+j2+_sn_perm[kk+k2]]]%12;n2=t2*t2*(_sn_grad3[gi][0]*x2+_sn_grad3[gi][1]*y2+_sn_grad3[gi][2]*z2);}let t3=0.6-x3*x3-y3*y3-z3*z3;if(t3>0){t3*=t3;const gi=_sn_perm[ii+1+_sn_perm[jj+1+_sn_perm[kk+1]]]%12;n3=t3*t3*(_sn_grad3[gi][0]*x3+_sn_grad3[gi][1]*y3+_sn_grad3[gi][2]*z3);}return 32*(n0+n1+n2+n3);}
+
+// ─────────────────────────────────────────
+// ENTITY SYSTEM
+// ─────────────────────────────────────────
+const meshIndex = new Map();
+const interactables = [];
+const breathU = { value:0 }, timeU = { value:0 };
+// Persistence — returning visitors see their previous state
+const _saved = INSTALL_MODE ? {d:[],s:[],v:0,ht:{},uc:[]} : JSON.parse(localStorage.getItem('temple_state') || '{"d":[],"s":[],"v":0,"ht":{},"uc":[]}');
+const discovered = new Set(_saved.d);
+const secretsFound = new Set(_saved.s);
+const visitCount = (_saved.v || 0) + 1;
+const heatmap = _saved.ht || {};
+const userConnections = _saved.uc || [];
+const clickHistory = [];
+function saveState() {
+  if (INSTALL_MODE) return;
+  localStorage.setItem('temple_state', JSON.stringify({
+    d:[...discovered], s:[...secretsFound], v:visitCount, ht:heatmap, uc:userConnections
+  }));
+}
+
+const FILTER_MODES = [
+  { id:'all', label:'', types:null },
+  { id:'gods', label:'GENETIC LAYER', types:['god'] },
+  { id:'tensions', label:'FAULT LINES', types:['tension'] },
+  { id:'spirits', label:'PATTERNS', types:['spirit'] },
+  { id:'deep', label:'INNER GEOLOGY', types:['crystal','blind'] },
+  { id:'questions', label:'OPEN QUESTIONS', types:['question'] },
+  { id:'research', label:'ACCUMULATION', types:['research'] },
+  { id:'growth', label:'RECENT GROWTH', types:['growth'] },
+  { id:'values', label:'OPERATING RULES', types:['value'] },
+  { id:'trails', label:'ACTIVE TRAILS', types:['trail'] },
+  { id:'narratives', label:'LIVING STORIES', types:['narrative'] },
+  { id:'demigods', label:'LESSER DEITIES', types:['demigod'] },
+  { id:'depths', label:'DEEP STRUCTURE', types:['depth'] },
+];
+let filterIdx = 0;
+let latestMode = false;
+let latestIdx = 0;
+let latestFly = null;
+let latestSorted = [];
+
+function flyToNode(mesh, duration) {
+  const pos = mesh.getWorldPosition(new THREE.Vector3());
+  const dir = pos.clone().normalize();
+  if (dir.length() < 0.01) dir.set(1, 0.3, 1).normalize();
+  const camTarget = pos.clone().add(dir.multiplyScalar(8)).add(new THREE.Vector3(0, 2, 0));
+  latestFly = { active: true, startTime: performance.now(), duration,
+    fromPos: camera.position.clone(), toPos: camTarget,
+    fromTarget: controls.target.clone(), toTarget: pos };
+}
+
+function enterLatestMode() {
+  latestSorted = growthMeshes.slice().sort((a, b) => {
+    const da = a.userData.data.date || '';
+    const db = b.userData.data.date || '';
+    return db.localeCompare(da);
+  });
+  if (latestSorted.length === 0) return;
+  latestMode = true;
+  latestIdx = 0;
+  // Apply growth filter
+  const growthFilterIdx = FILTER_MODES.findIndex(f => f.id === 'growth');
+  if (growthFilterIdx >= 0) applyFilter(growthFilterIdx);
+  // Focus on first item
+  const m = latestSorted[0];
+  activeTarget = m;
+  presentCard(m);
+  drawConn(m);
+  flyToNode(m, 1500);
+}
+
+function exitLatestMode() {
+  latestMode = false;
+  latestFly = null;
+  applyFilter(0);
+}
+
+function latestNav(delta) {
+  if (!latestMode || latestSorted.length === 0) return;
+  latestIdx = (latestIdx + delta + latestSorted.length) % latestSorted.length;
+  const m = latestSorted[latestIdx];
+  activeTarget = m;
+  presentCard(m);
+  drawConn(m);
+  flyToNode(m, 1500);
+}
+
+function applyFilter(idx) {
+  filterIdx = idx;
+  const mode = FILTER_MODES[idx];
+  const filterLabel = document.getElementById('filter-label');
+
+  interactables.forEach(m => {
+    const type = m.userData.type;
+    const key = m.userData.key;
+    if (!m.userData.baseOpacity) m.userData.baseOpacity = m.material.opacity;
+    const base = m.userData.baseOpacity;
+
+    let target;
+    if (!mode.types) {
+      target = base; // all mode
+    } else if (mode.types.includes(type)) {
+      target = base; // in focus
+    } else {
+      // check adjacency
+      const focused = interactables.filter(n => mode.types.includes(n.userData.type));
+      const isAdj = focused.some(f => {
+        const conns = connMap.get(f.userData.key);
+        return conns && conns.has(key);
+      });
+      target = isAdj ? base * 0.35 : base * 0.07;
+    }
+    m.userData.targetOpacity = target;
+  });
+
+  filterLabel.textContent = mode.label;
+  filterLabel.style.opacity = mode.label ? '1' : '0';
+}
+
+function reg(m, k) { m.userData.key = k; meshIndex.set(k, m); }
+
+// ── Layer shells ──
+const LAYERS = (_cfg.layers || []).map(l => ({
+  name: l.name,
+  y: l.y,
+  h: l.h,
+  c: typeof l.color === 'string' ? parseInt(l.color.replace('#',''), 16) : l.color,
+  o: l.opacity
+}));
+
+const layerVS=`uniform float u_breath,u_time;varying vec3 vW,vN;void main(){vN=normalize(normalMatrix*normal);vec3 p=position;p.xz+=p.xz*sin(p.y*.3+u_time*.5)*u_breath*.016;vW=(modelMatrix*vec4(p,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`;
+const layerFS=`uniform float u_o,u_time,u_breath;uniform vec3 u_c;varying vec3 vW,vN;float h(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}float n(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}void main(){float v=n(vW*.15+u_time*.03),v2=n(vW*.4+u_time*.01),rim=pow(1.-abs(dot(vN,vec3(0,0,1))),2.);gl_FragColor=vec4(u_c*(.8+v*.4),u_o*(.3+v*.5+v2*.2)*(.8+u_breath*.4)+rim*u_o*.5);}`;
+
+LAYERS.forEach(l => {
+  const r = 20 - LAYERS.indexOf(l) * 1.2;
+  const m = new THREE.Mesh(
+    new THREE.CylinderGeometry(r,r,l.h,64,1,true),
+    new THREE.ShaderMaterial({ uniforms:{u_breath:breathU,u_time:timeU,u_o:{value:l.o},u_c:{value:new THREE.Color(l.c)}}, vertexShader:layerVS, fragmentShader:layerFS, transparent:true, side:THREE.DoubleSide, depthWrite:false })
+  );
+  m.position.y = l.y; scene.add(m);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r,.08,8,128), new THREE.MeshBasicMaterial({color:l.c,transparent:true,opacity:.06}));
+  ring.position.y=l.y+l.h/2; ring.rotation.x=Math.PI/2; scene.add(ring);
+});
+
+// ── Gods (genetic variants as glowing deity nodes) ──
+const godMeshes = [];
+const godParticleSystems = []; // per-god orbiting particle data
+
+GODS.forEach((g, gi) => {
+  // Override The Painter's color to a more distinctive violet
+  const godColor = g.key === 'SLC6A4' ? 0xB388FF : g.color;
+
+  const geo = new THREE.IcosahedronGeometry(3.0, 1);
+  const mat = new THREE.MeshBasicMaterial({ color:godColor, transparent:true, opacity:0.45 });
+  const m = new THREE.Mesh(geo, mat);
+  const r = 16;
+  m.position.set(Math.cos(g.angle)*r, g.y, Math.sin(g.angle)*r);
+  m.userData = { type:'god', data:g, breathFreq: 0.0015 + gi * 0.0004 };
+  scene.add(m); reg(m, g.key); interactables.push(m); godMeshes.push(m);
+
+  // Aura — enlarged
+  const aura = new THREE.Mesh(new THREE.SphereGeometry(6,24,24), new THREE.MeshBasicMaterial({ color:godColor, transparent:true, opacity:0.02, blending:THREE.AdditiveBlending, depthWrite:false }));
+  m.add(aura);
+
+  // Wire halo
+  const wire = new THREE.Mesh(geo.clone(), new THREE.MeshBasicMaterial({ color:godColor, transparent:true, opacity:0.15, wireframe:true }));
+  wire.scale.setScalar(1.15); m.add(wire);
+
+  // Floating name label (always visible)
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 512; labelCanvas.height = 128;
+  const lCtx = labelCanvas.getContext('2d');
+  lCtx.font = 'bold 36px Geist, sans-serif';
+  lCtx.fillStyle = `rgba(255,255,255,0.85)`;
+  lCtx.textAlign = 'center';
+  lCtx.fillText(g.name, 256, 45);
+  lCtx.font = '20px Geist Mono, monospace';
+  lCtx.fillStyle = `rgba(255,200,100,0.5)`;
+  lCtx.fillText(g.epithet, 256, 80);
+  const labelTex = new THREE.CanvasTexture(labelCanvas);
+  const labelSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:labelTex, transparent:true, opacity:0.9, depthWrite:false }));
+  labelSprite.scale.set(12, 3, 1);
+  labelSprite.position.y = 5;
+  m.add(labelSprite);
+
+  // ── Orbiting particles ──
+  const pCount = 80 + Math.floor(Math.random() * 41); // 80-120
+  const pPositions = new Float32Array(pCount * 3);
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+
+  // God-specific: The Painter uses short lines (LineSegments), others use Points
+  let pMesh;
+  if (g.key === 'SLC6A4') {
+    // Trails: render as short line segments (each particle = 2 vertices)
+    const trailPositions = new Float32Array(pCount * 6); // 2 verts per particle
+    const trailGeo = new THREE.BufferGeometry();
+    trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+    pMesh = new THREE.LineSegments(trailGeo, new THREE.LineBasicMaterial({
+      color: godColor, transparent: true, opacity: 0.5,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    }));
+  } else {
+    pMesh = new THREE.Points(pGeo, new THREE.PointsMaterial({
+      color: godColor, size: 0.15, transparent: true, opacity: 0.5,
+      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+    }));
+  }
+  scene.add(pMesh);
+
+  // Per-particle orbit parameters
+  const orbits = [];
+  // Orbit plane tilt per god
+  const tiltX = (gi * 0.7 + 0.3) * (gi % 2 === 0 ? 1 : -1);
+  const tiltZ = (gi * 0.5 + 0.2) * (gi % 2 === 0 ? -1 : 1);
+
+  for (let p = 0; p < pCount; p++) {
+    let semiA, semiB, speed, phase, spiralDir;
+
+    if (g.key === 'DRD2') {
+      // The Hungry One: FAST orbits (1.5x speed)
+      semiA = 4 + Math.random() * 5;
+      semiB = 3 + Math.random() * 4;
+      speed = (0.8 + Math.random() * 0.6) * 1.5;
+      phase = Math.random() * Math.PI * 2;
+    } else if (g.key === 'FKBP5') {
+      // The Sentinel: TIGHT orbits (small radius)
+      semiA = 1.5 + Math.random() * 2;
+      semiB = 1.2 + Math.random() * 1.8;
+      speed = 0.6 + Math.random() * 0.5;
+      phase = Math.random() * Math.PI * 2;
+    } else if (g.key === 'SLC6A4') {
+      // The Painter: normal orbits, trails handled in rendering
+      semiA = 3.5 + Math.random() * 4;
+      semiB = 3 + Math.random() * 3.5;
+      speed = 0.5 + Math.random() * 0.4;
+      phase = Math.random() * Math.PI * 2;
+    } else if (g.key === 'NF-\u03BAB') {
+      // The Spiral: particles spiral inward then outward
+      semiA = 3 + Math.random() * 5;
+      semiB = 2.5 + Math.random() * 4;
+      speed = 0.5 + Math.random() * 0.5;
+      phase = Math.random() * Math.PI * 2;
+      spiralDir = Math.random() > 0.5 ? 1 : -1;
+    } else if (g.key === 'OPRM1') {
+      // The Bonding One: particles in PAIRS
+      semiA = 3.5 + Math.random() * 4;
+      semiB = 3 + Math.random() * 3.5;
+      speed = 0.5 + Math.random() * 0.4;
+      // Even particles get a base phase, odd particles pair close
+      if (p % 2 === 0) {
+        phase = Math.random() * Math.PI * 2;
+      } else {
+        phase = orbits[p - 1].phase + 0.08 + Math.random() * 0.04;
+        semiA = orbits[p - 1].semiA + 0.15;
+        semiB = orbits[p - 1].semiB + 0.15;
+        speed = orbits[p - 1].speed;
+      }
+    } else {
+      semiA = 3.5 + Math.random() * 4;
+      semiB = 3 + Math.random() * 3.5;
+      speed = 0.5 + Math.random() * 0.4;
+      phase = Math.random() * Math.PI * 2;
+    }
+
+    orbits.push({
+      semiA, semiB, speed, phase,
+      precession: (Math.random() - 0.5) * 0.0003,
+      yOff: (Math.random() - 0.5) * 2,
+      spiralDir: spiralDir || 0
+    });
+  }
+
+  godParticleSystems.push({
+    mesh: pMesh, orbits, pCount, tiltX, tiltZ,
+    godMesh: m, godKey: g.key, isTrail: g.key === 'SLC6A4'
+  });
+});
+
+// ── Lesser deities (genetic variants, smaller ring) ──
+const demigodMeshes = [];
+DEMIGODS.forEach((dg, i) => {
+  const angle = (i / DEMIGODS.length) * Math.PI * 2;
+  const r = 20; // outside the main cylinder, same radius as layer shells
+  const y = 10 - i * 2.5; // spread vertically through the structure
+  const geo = new THREE.IcosahedronGeometry(1.4, 0); // smaller than gods (3.0)
+  const mat = new THREE.MeshBasicMaterial({ color: dg.color, transparent: true, opacity: 0.35 });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(Math.cos(angle) * r, y, Math.sin(angle) * r);
+  m.userData = { type: 'demigod', data: dg, breathFreq: 0.002 + i * 0.0003 };
+  scene.add(m); reg(m, dg.key); interactables.push(m); demigodMeshes.push(m);
+  // Wire overlay
+  const wire = new THREE.Mesh(geo.clone(), new THREE.MeshBasicMaterial({ color: dg.color, transparent: true, opacity: 0.1, wireframe: true }));
+  wire.scale.setScalar(1.12); m.add(wire);
+  // Aura (smaller than gods)
+  m.add(new THREE.Mesh(new THREE.SphereGeometry(3, 16, 16), new THREE.MeshBasicMaterial({ color: dg.color, transparent: true, opacity: 0.02, blending: THREE.AdditiveBlending, depthWrite: false })));
+  // Label
+  const lc = document.createElement('canvas'); lc.width = 512; lc.height = 96;
+  const lx = lc.getContext('2d');
+  lx.font = 'bold 28px Geist, sans-serif'; lx.fillStyle = 'rgba(255,255,255,0.75)'; lx.textAlign = 'center';
+  lx.fillText(dg.name, 256, 35);
+  lx.font = '16px Geist Mono, monospace'; lx.fillStyle = 'rgba(255,200,100,0.4)';
+  lx.fillText(dg.epithet, 256, 65);
+  const ls = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lc), transparent: true, opacity: 0.8, depthWrite: false }));
+  ls.scale.set(10, 2, 1); ls.position.y = 3; m.add(ls);
+  // Hit helper
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 8), new THREE.MeshBasicMaterial({ visible: false }));
+  m.add(hit); hit.userData = { proxy: m };
+});
+
+// ── Surface particles ──
+const surfGeo = new THREE.BufferGeometry();
+const surfN = 500;
+const sp = new Float32Array(surfN*3), sc = new Float32Array(surfN*3), sv = [];
+const dColors = _cfg.domains || { Pharmacogenomics:[.91,.36,.02], Embodied:[.18,.77,.72], Anxiety:[.9,.25,.27], Neuroimmunology:[.23,.53,1], Protocols:[.02,.84,.63], Psychotherapy:[1,.84,.04] };
+const dKeys = Object.keys(dColors);
+for(let i=0;i<surfN;i++){const a=Math.random()*Math.PI*2,r=3+Math.random()*16;sp[i*3]=Math.cos(a)*r;sp[i*3+1]=8+Math.random()*12;sp[i*3+2]=Math.sin(a)*r;const d=dColors[dKeys[~~(Math.random()*dKeys.length)]];sc[i*3]=d[0];sc[i*3+1]=d[1];sc[i*3+2]=d[2];sv.push({vx:(Math.random()-.5)*.01,vy:(Math.random()-.5)*.005,vz:(Math.random()-.5)*.01});}
+surfGeo.setAttribute('position',new THREE.BufferAttribute(sp,3));
+surfGeo.setAttribute('color',new THREE.BufferAttribute(sc,3));
+scene.add(new THREE.Points(surfGeo, new THREE.PointsMaterial({size:.3,vertexColors:true,transparent:true,opacity:.4,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true})));
+
+// ── Research orbs ──
+const RESEARCH = (_ent.research || []).map(r => ({ n: r.n || r.name, d: r.d || r.domain, desc: r.desc }));
+RESEARCH.forEach((r,i)=>{
+  const a=(i/RESEARCH.length)*Math.PI*2+Math.random()*.3, rad=5+Math.random()*12, y=8+Math.random()*11;
+  const dc=dColors[r.d]||[.91,.36,.02];
+  const m=new THREE.Mesh(new THREE.SphereGeometry(.4,16,16),new THREE.MeshBasicMaterial({color:new THREE.Color(dc[0],dc[1],dc[2]),transparent:true,opacity:.5}));
+  m.position.set(Math.cos(a)*rad,y,Math.sin(a)*rad);
+  m.userData={type:'research',data:r,orbit:{a,s:.0001+Math.random()*.0002,r:rad,y}};
+  scene.add(m); reg(m,r.n); interactables.push(m);
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({color:new THREE.Color(dc[0],dc[1],dc[2]),transparent:true,opacity:.12,blending:THREE.AdditiveBlending}));
+  spr.scale.set(2.5,2.5,1); m.add(spr);
+  // Invisible click helper (larger hit target)
+  const hitHelper=new THREE.Mesh(new THREE.SphereGeometry(1.5,8,8),new THREE.MeshBasicMaterial({visible:false}));
+  m.add(hitHelper); hitHelper.userData={proxy:m};
+});
+
+// ── Tensions (fault lines) ──
+const TENSIONS = (_ent.tensions || []).map(t => ({ n: t.n || t.name, a: t.a || t.poleA, b: t.b || t.poleB, deep: t.deep, ang: t.ang || t.angle || 0 }));
+const tensionMeshes=[];
+TENSIONS.forEach((t,i)=>{
+  const pts=[];const top=15,bot=t.deep?-20:-5,r=14;
+  for(let s=0;s<=30;s++){const f=s/30,y=top+(bot-top)*f,w=Math.sin(f*Math.PI*3+i)*2;pts.push(new THREE.Vector3(Math.cos(t.ang+w*.02)*(r+w),y,Math.sin(t.ang+w*.02)*(r+w)));}
+  const curve=new THREE.CatmullRomCurve3(pts);
+  const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,40,.15,8,false),new THREE.MeshBasicMaterial({color:0xff6b35,transparent:true,opacity:.15,blending:THREE.AdditiveBlending}));
+  tube.material.toneMapped=false;
+  tube.userData={type:'tension',data:t};
+  scene.add(tube); reg(tube,t.n); tensionMeshes.push(tube); interactables.push(tube);
+  scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve,40,.6,8,false),new THREE.MeshBasicMaterial({color:0xff6b35,transparent:true,opacity:.025,blending:THREE.AdditiveBlending,depthWrite:false})));
+});
+
+// ── Crystallized narratives ──
+const CRYSTALS = (_ent.crystals || []).map(c => ({ n: c.n || c.name, d: c.d || c.desc, g: c.g || c.question, res: c.res || c.resistance || 0.8 }));
+
+const NARRATIVES = _ent.narratives || [];
+
+const DEPTHS = _ent.depths || [];
+
+const crystalMeshes=[];
+CRYSTALS.forEach((c,i)=>{
+  const a=(i/CRYSTALS.length)*Math.PI*2+.5,r=10,y=-9;
+  const m=new THREE.Mesh(new THREE.IcosahedronGeometry(1.5+c.res*.8,0),new THREE.MeshBasicMaterial({color:0xff6040,transparent:true,opacity:.5}));
+  m.material.toneMapped=false;
+  m.position.set(Math.cos(a)*r,y,Math.sin(a)*r);
+  m.userData={type:'crystal',data:c,cracked:false,crackT:0};
+  scene.add(m); reg(m,c.n); crystalMeshes.push(m); interactables.push(m);
+  const cWire=new THREE.Mesh(m.geometry.clone(),new THREE.MeshBasicMaterial({color:0xff8060,transparent:true,opacity:.2,wireframe:true}));
+  cWire.scale.set(1.1,1.1,1.1); m.add(cWire);
+  m.add(new THREE.Mesh(new THREE.SphereGeometry(3.5,16,16),new THREE.MeshBasicMaterial({color:0xff6040,transparent:true,opacity:.04,blending:THREE.AdditiveBlending,depthWrite:false})));
+  // Crystal label
+  const clc=document.createElement('canvas');clc.width=512;clc.height=64;
+  const clx=clc.getContext('2d');clx.font='bold 28px Geist,sans-serif';clx.fillStyle='rgba(255,180,100,0.75)';clx.textAlign='center';clx.fillText(c.n,256,40);
+  const cls=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(clc),transparent:true,opacity:.8,depthWrite:false}));
+  cls.scale.set(10,1.3,1);cls.position.y=3.5;m.add(cls);
+});
+
+// ── Living Stories (Narratives) ──
+const narrativeMeshes=[];
+NARRATIVES.forEach((n,i)=>{
+  const a=(i/NARRATIVES.length)*Math.PI*2,r=13,y=-6;
+  const statusVis={'crystallized':{op:.5,col:0xd4a574},'hardening':{op:.5,col:0xd4a574},'crystallizing':{op:.5,col:0xd4a574},'stressed':{op:.4,col:0xcc8844},'intensifying':{op:.4,col:0xcc8844},'fluid':{op:.3,col:0xaa9966},'unresolved':{op:.3,col:0xaa9966},'acknowledged':{op:.3,col:0xaa9966},'unprocessed':{op:.15,col:0x887755},'emerging':{op:.15,col:0x887755},'core':{op:.5,col:0xffe8c8}};
+  const sv=statusVis[n.status]||{op:.3,col:0xaa9966};
+  const m=new THREE.Mesh(new THREE.DodecahedronGeometry(0.9,0),new THREE.MeshBasicMaterial({color:sv.col,transparent:true,opacity:sv.op}));
+  m.material.toneMapped=false;
+  m.position.set(Math.cos(a)*r,y,Math.sin(a)*r);
+  m.userData={type:'narrative',data:n,key:n.key,baseOpacity:sv.op,statusCol:sv.col,pulse:n.status==='stressed'||n.status==='intensifying'};
+  scene.add(m); reg(m,n.key); narrativeMeshes.push(m); interactables.push(m);
+  const nWire=new THREE.Mesh(m.geometry.clone(),new THREE.MeshBasicMaterial({color:sv.col,transparent:true,opacity:.15,wireframe:true}));
+  nWire.scale.set(1.15,1.15,1.15); m.add(nWire);
+  // Narrative label
+  const nlc=document.createElement('canvas');nlc.width=512;nlc.height=64;
+  const nlx=nlc.getContext('2d');nlx.font='24px Geist,sans-serif';nlx.fillStyle='rgba(212,165,116,'+Math.min(sv.op+0.2,0.8)+')';nlx.textAlign='center';nlx.fillText(n.name,256,40);
+  const nls=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(nlc),transparent:true,opacity:Math.min(sv.op+0.15,0.8),depthWrite:false}));
+  nls.scale.set(9,1.2,1);nls.position.y=2.2;m.add(nls);
+  // Hit helper
+  m.add(new THREE.Mesh(new THREE.SphereGeometry(1.5,8,8),new THREE.MeshBasicMaterial({visible:false})));
+});
+
+// ── Deep Structure (IFS parts, polyvagal states, attachment, existential, shadow, generative) ──
+const DEPTH_COLORS = Object.fromEntries(
+  Object.entries(_cfg.depthColors || {ifs:'#cc4444',state:'#44ccaa',attachment:'#cc88cc',existential:'#888888',shadow:'#333333',generative:'#ffdd66'})
+    .map(([k,v]) => [k, typeof v === 'string' ? parseInt(v.replace('#',''),16) : v])
+);
+const depthMeshes=[];
+DEPTHS.forEach((dp,i)=>{
+  const a=(i/DEPTHS.length)*Math.PI*2+0.3, r=11;
+  const y=-10-(i/DEPTHS.length)*3; // distribute between -10 and -13
+  const col=DEPTH_COLORS[dp.type]||0x888888;
+  const isShadow=dp.type==='shadow';
+  const baseOp=isShadow?0.15:0.4;
+  const m=new THREE.Mesh(new THREE.TetrahedronGeometry(1.0,0),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:baseOp}));
+  m.material.toneMapped=false;
+  m.position.set(Math.cos(a)*r,y,Math.sin(a)*r);
+  m.userData={type:'depth',data:dp,key:dp.key,baseOpacity:baseOp,isShadow:isShadow};
+  scene.add(m); reg(m,dp.key); depthMeshes.push(m); interactables.push(m);
+  // Wire overlay
+  const dWire=new THREE.Mesh(m.geometry.clone(),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:isShadow?0.05:0.12,wireframe:true}));
+  dWire.scale.setScalar(1.15); m.add(dWire);
+  // Edge glow for shadow type
+  if(isShadow){m.add(new THREE.Mesh(new THREE.SphereGeometry(2.5,16,16),new THREE.MeshBasicMaterial({color:0x666666,transparent:true,opacity:0.03,blending:THREE.AdditiveBlending,depthWrite:false})));}
+  // Label
+  const dlc=document.createElement('canvas');dlc.width=512;dlc.height=64;
+  const dlx=dlc.getContext('2d');dlx.font='22px Geist,sans-serif';dlx.fillStyle='rgba(255,255,255,'+(isShadow?'0.25':'0.6')+')';dlx.textAlign='center';dlx.fillText(dp.name,256,40);
+  const dls=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(dlc),transparent:true,opacity:isShadow?0.2:0.6,depthWrite:false}));
+  dls.scale.set(9,1.2,1);dls.position.y=2.2;m.add(dls);
+  // Hit helper
+  const dHit=new THREE.Mesh(new THREE.SphereGeometry(1.5,8,8),new THREE.MeshBasicMaterial({visible:false}));
+  m.add(dHit); dHit.userData={proxy:m};
+});
+
+// ── Blind spots ──
+const blindVS=`varying vec3 vW,vN,vV;void main(){vN=normalize(normalMatrix*normal);vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;vV=normalize(cameraPosition-w.xyz);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
+const blindFS=`uniform vec3 u_c;uniform float u_time,u_reveal,u_breath;varying vec3 vW,vN,vV;float h(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}float n(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}void main(){float ob=pow(1.-abs(dot(vV,vN)),1.5),v=n(vW*.3+u_time*.05);float ph=ob*(.4+v*.6)*u_reveal+smoothstep(.25,0.,abs(dot(vN,vec3(0,1,0))))*(.15+u_breath*.4);gl_FragColor=vec4(u_c*(1.+v*.3),min(1.,ph*.5));}`;
+
+const BLINDS = (_ent.blindSpots || []).map(b => ({ n: b.n || b.name, d: b.d || b.desc, g: b.g || b.question }));
+const blindMeshes=[];
+BLINDS.forEach((b,i)=>{
+  const a=(i/BLINDS.length)*Math.PI*2+1,r=12,y=-14;
+  const m=new THREE.Mesh(new THREE.SphereGeometry(2.5,32,32),new THREE.ShaderMaterial({
+    uniforms:{u_c:{value:new THREE.Color(0x8050ff)},u_time:timeU,u_reveal:{value:.5},u_breath:breathU},
+    vertexShader:blindVS,fragmentShader:blindFS,transparent:true,side:THREE.DoubleSide,depthWrite:false
+  }));
+  m.position.set(Math.cos(a)*r,y,Math.sin(a)*r);
+  m.userData={type:'blind',data:b,revealed:false};
+  scene.add(m); reg(m,b.n); blindMeshes.push(m); interactables.push(m);
+  m.add(new THREE.Mesh(new THREE.SphereGeometry(1,16,16),new THREE.MeshBasicMaterial({color:0x020105,transparent:true,opacity:.9})));
+  // Blind spot label
+  const blc=document.createElement('canvas');blc.width=512;blc.height=64;
+  const blx=blc.getContext('2d');blx.font='24px Geist,sans-serif';blx.fillStyle='rgba(180,140,255,0.6)';blx.textAlign='center';blx.fillText(b.n,256,40);
+  const bls=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(blc),transparent:true,opacity:.7,depthWrite:false}));
+  bls.scale.set(10,1.3,1);bls.position.y=4;m.add(bls);
+});
+
+// ── Load floor ──
+const floor=new THREE.Mesh(new THREE.CylinderGeometry(18,18,2,64),new THREE.MeshBasicMaterial({color:0x0a0502,transparent:true,opacity:.85}));
+floor.position.y=-21;
+floor.userData={type:'floor',data:{n:'The Load Floor',d:'Partnership trauma. The floor everything stands on. It has weight.',g:'If the partnership had ended well, what would I be building right now — and why isn\'t that possible without him?'}};
+scene.add(floor); reg(floor,'The Load Floor'); interactables.push(floor);
+
+// ── Question fireflies ──
+const QUES = _ent.questions || [];
+const qMeshes=[];
+QUES.forEach(q=>{
+  const a=Math.random()*Math.PI*2,r=4+Math.random()*14,y=-15+Math.random()*30;
+  const m=new THREE.Mesh(new THREE.SphereGeometry(.2,8,8),new THREE.MeshBasicMaterial({color:0x2ec4b6,transparent:true,opacity:.6}));
+  m.material.toneMapped=false;
+  m.position.set(Math.cos(a)*r,y,Math.sin(a)*r);
+  m.userData={type:'question',data:q,orbit:{aH:a,aV:Math.random()*Math.PI,sH:.0003+Math.random()*.0005,sV:.0001+Math.random()*.0003,r,y}};
+  scene.add(m);reg(m,q.text);interactables.push(m);qMeshes.push(m);
+  const qSpr=new THREE.Sprite(new THREE.SpriteMaterial({color:0x2ec4b6,transparent:true,opacity:.1,blending:THREE.AdditiveBlending}));
+  qSpr.scale.set(2,2,1); m.add(qSpr);
+  // Invisible click helper
+  const qHit=new THREE.Mesh(new THREE.SphereGeometry(1.8,8,8),new THREE.MeshBasicMaterial({visible:false}));
+  m.add(qHit); qHit.userData={proxy:m};
+});
+
+// ── Spirits (patterns that move between layers — floating sigils) ──
+const spiritMeshes=[];
+const spiritColors = (_cfg.spiritColors || ['#ccaa88','#ff8844','#ffdd44','#6688cc','#cc88ff']).map(c => typeof c === 'string' ? parseInt(c.replace('#',''),16) : c);
+SPIRITS.forEach((s,i)=>{
+  const angle=(i/SPIRITS.length)*Math.PI*2+2.2;
+  const r=8+Math.random()*6;
+  const y=-4+i*-3;
+  // Octahedron — spirit shape
+  const geo=new THREE.OctahedronGeometry(1.8, 0);
+  const mat=new THREE.MeshBasicMaterial({color:spiritColors[i]||0xaa70ff,transparent:true,opacity:0.4,wireframe:true});
+  const m=new THREE.Mesh(geo,mat);
+  m.position.set(Math.cos(angle)*r, y, Math.sin(angle)*r);
+  m.userData={type:'spirit',data:s,orbit:{angle,speed:0.0004+Math.random()*0.0003,r,baseY:y}};
+  scene.add(m);reg(m,s.key);interactables.push(m);spiritMeshes.push(m);
+  // Inner glow
+  const glow=new THREE.Mesh(new THREE.SphereGeometry(4,16,16),new THREE.MeshBasicMaterial({color:spiritColors[i]||0x8050ff,transparent:true,opacity:0.12,blending:THREE.AdditiveBlending,depthWrite:false}));
+  m.add(glow);
+});
+
+// Lights
+scene.add(new THREE.AmbientLight(0x1a0a05,.5));
+const pLight=new THREE.PointLight(0xe85d04,.5,80); scene.add(pLight);
+
+// Apply accumulated visitor heat
+interactables.forEach(m => {
+  const heat = heatmap[m.userData.key] || 0;
+  if(heat === 0) return;
+  const warmth = Math.min(heat / 20, 1.0);
+  // Warm the color slightly toward gold
+  if(m.material.color) {
+    m.material.color.lerp(new THREE.Color(0xffd60a), warmth * 0.12);
+  }
+});
+
+// Store home positions for all entities
+interactables.forEach(m => { m.userData.homePos = m.position.clone(); });
+
+// ─────────────────────────────────────────
+// GROWTH — new items accreting at the periphery
+// ─────────────────────────────────────────
+const GROWTH = _ent.growth || [];
+
+const growthMeshes = [];
+const growthTendrils = [];
+
+// Place growth items at the periphery, connected to their parent entities
+GROWTH.forEach((g, gi) => {
+  // Find parent entity to grow FROM
+  const parentKey = g.connects[0];
+  const parentMesh = meshIndex.get(parentKey);
+  if (!parentMesh) return;
+  const parentPos = parentMesh.position.clone();
+
+  // Growth position: close to parent, slightly outward (coral accretes, doesn't fly away)
+  const outDir = new THREE.Vector3(parentPos.x, 0, parentPos.z).normalize();
+  const growPos = parentPos.clone().add(outDir.multiplyScalar(3.5 + gi * 0.8));
+  growPos.y += simplex3(gi*13, 0, 0) * 2.5; // noise-driven vertical scatter
+
+  // Organic shape: heavily noise-displaced icosahedron (coral polyp)
+  const baseGeo = new THREE.IcosahedronGeometry(0.6 + Math.random() * 0.5, 2);
+  const posAttr = baseGeo.attributes.position;
+  for (let v = 0; v < posAttr.count; v++) {
+    const x = posAttr.getX(v), y = posAttr.getY(v), z = posAttr.getZ(v);
+    // Stronger displacement + directional bias (grows upward like coral)
+    const n = simplex3(x * 3 + gi * 10, y * 3, z * 3);
+    const upBias = y > 0 ? 0.4 : 0.15; // more displacement upward
+    posAttr.setXYZ(v, x * (1 + n * 0.35), y * (1 + Math.abs(n) * upBias), z * (1 + n * 0.35));
+  }
+  posAttr.needsUpdate = true;
+  baseGeo.computeVertexNormals();
+
+  // Color: warm palette matching the temple (amber for new, warm dim for settled)
+  const isNew = g.status === 'new';
+  const color = isNew ? 0xffb347 : 0xc4873a; // warm amber new, muted warm integrating
+  const mat = new THREE.MeshBasicMaterial({
+    color, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
+  });
+
+  const mesh = new THREE.Mesh(baseGeo, mat);
+  mesh.position.copy(growPos);
+  mesh.userData = {
+    type: 'growth', data: g, key: g.id,
+    birthTime: performance.now() + gi * 3000, // stagger: 3s apart (more breathing room)
+    targetOpacity: isNew ? 0.6 : 0.3,
+    grown: false,
+  };
+  scene.add(mesh);
+  reg(mesh, g.id);
+  interactables.push(mesh);
+  growthMeshes.push(mesh);
+  mesh.userData.homePos = growPos.clone();
+
+  // Add invisible hit helper
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 8), new THREE.MeshBasicMaterial({visible:false}));
+  mesh.add(hit); hit.userData = {proxy: mesh};
+
+  // Floating label — warm palette
+  const lc = document.createElement('canvas'); lc.width = 512; lc.height = 64;
+  const lx = lc.getContext('2d');
+  lx.font = isNew ? 'bold 24px Geist, sans-serif' : '22px Geist, sans-serif';
+  lx.fillStyle = isNew ? 'rgba(255,200,100,0.85)' : 'rgba(200,160,90,0.5)';
+  lx.textAlign = 'center';
+  lx.fillText(g.title, 256, 40);
+  const ls = new THREE.Sprite(new THREE.SpriteMaterial({map: new THREE.CanvasTexture(lc), transparent: true, opacity: 0, depthWrite: false}));
+  ls.scale.set(10, 1.3, 1); ls.position.y = 2.2;
+  mesh.add(ls);
+  mesh.userData.labelSprite = ls;
+
+  // Warm glow for new items
+  if (isNew) {
+    const glowSpr = new THREE.Sprite(new THREE.SpriteMaterial({
+      color: 0xffb347, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false
+    }));
+    glowSpr.scale.set(4, 4, 1);
+    mesh.add(glowSpr);
+    mesh.userData.glowSprite = glowSpr;
+  }
+
+  // Tendril connecting to parent — thicker, organic, with extra control points
+  const t1 = parentPos.clone().lerp(growPos, 0.3);
+  const t2 = parentPos.clone().lerp(growPos, 0.7);
+  t1.y += 1.0 + simplex3(gi*7, 0, 0) * 1.5;
+  t1.x += simplex3(gi*7+10, 0, 0) * 1.5;
+  t2.y += 0.5 + simplex3(gi*7+20, 0, 0) * 1.5;
+  t2.z += simplex3(gi*7+30, 0, 0) * 1.5;
+
+  const curve = new THREE.CatmullRomCurve3([parentPos.clone(), t1, t2, growPos.clone()]);
+  const tendrilGeo = new THREE.TubeGeometry(curve, 24, 0.08, 6, false); // thicker: 0.08 vs 0.04
+  const tendrilMat = new THREE.MeshBasicMaterial({
+    color: isNew ? 0xffb347 : 0xc4873a,
+    transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
+  });
+  const tendril = new THREE.Mesh(tendrilGeo, tendrilMat);
+  scene.add(tendril);
+  growthTendrils.push({ mesh: tendril, growthMesh: mesh, targetOpacity: isNew ? 0.4 : 0.2 });
+
+  // Also connect to second entity if it exists
+  if (g.connects[1]) {
+    const parent2 = meshIndex.get(g.connects[1]);
+    if (parent2) {
+      const p2Pos = parent2.position.clone();
+      const s1 = p2Pos.clone().lerp(growPos, 0.35);
+      const s2 = p2Pos.clone().lerp(growPos, 0.65);
+      s1.y += simplex3(gi*7+50, 0, 0) * 2;
+      s2.x += simplex3(gi*7+60, 0, 0) * 1.5;
+      const curve2 = new THREE.CatmullRomCurve3([p2Pos.clone(), s1, s2, growPos.clone()]);
+      const t2mesh = new THREE.Mesh(
+        new THREE.TubeGeometry(curve2, 24, 0.06, 6, false),
+        tendrilMat.clone()
+      );
+      scene.add(t2mesh);
+      growthTendrils.push({ mesh: t2mesh, growthMesh: mesh, targetOpacity: isNew ? 0.25 : 0.12 });
+    }
+  }
+});
+
+// ── VALUES — operating rules, crown ring above surface ──
+const VALUES = _ent.values || [];
+const valueMeshes = [];
+VALUES.forEach((v,i) => {
+  const a = (i / VALUES.length) * Math.PI * 2;
+  const r = 22, y = 20;
+  const geo = new THREE.OctahedronGeometry(0.7, 0);
+  const mat = new THREE.MeshBasicMaterial({color:0xffe8c8, transparent:true, opacity:0.55, toneMapped:false});
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(Math.cos(a)*r, y, Math.sin(a)*r);
+  m.userData = {type:'value', data:v};
+  scene.add(m); reg(m, v.key); interactables.push(m); valueMeshes.push(m);
+  const lc = document.createElement('canvas'); lc.width = 512; lc.height = 64;
+  const lx = lc.getContext('2d');
+  lx.font = 'bold 24px Geist, sans-serif';
+  lx.fillStyle = 'rgba(255,232,200,0.8)';
+  lx.textAlign = 'center';
+  lx.fillText(v.name, 256, 40);
+  const ls = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(lc), transparent:true, opacity:0.75, depthWrite:false}));
+  ls.scale.set(10, 1.3, 1); ls.position.y = 1.8;
+  m.add(ls);
+  m.add(new THREE.Mesh(new THREE.SphereGeometry(2,16,16), new THREE.MeshBasicMaterial({color:0xffe8c8, transparent:true, opacity:0.04, blending:THREE.AdditiveBlending, depthWrite:false})));
+});
+
+// ── TRAILS — active journeys, mid-ring between values and surface ──
+const TRAILS = _ent.trails || [];
+const trailMeshes = [];
+const TRAIL_COLORS = Object.fromEntries(
+  Object.entries(_cfg.trailColors || {high:'#4ecdc4',medium:'#ffd93d',low:'#6c5ce7'})
+    .map(([k,v]) => [k, typeof v === 'string' ? parseInt(v.replace('#',''),16) : v])
+);
+TRAILS.forEach((tr,i) => {
+  const a = (i / TRAILS.length) * Math.PI * 2 + 0.3;
+  const r = 20, y = 17;
+  const geo = new THREE.SphereGeometry(0.6, 12, 8);
+  geo.scale(1, 1, 2.2);
+  const col = TRAIL_COLORS[tr.velocity] || 0xffd93d;
+  const mat = new THREE.MeshBasicMaterial({color:col, transparent:true, opacity:0.45, toneMapped:false});
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(Math.cos(a)*r, y, Math.sin(a)*r);
+  m.lookAt(0, y, 0);
+  m.userData = {type:'trail', data:tr};
+  scene.add(m); reg(m, tr.key); interactables.push(m); trailMeshes.push(m);
+  const lc = document.createElement('canvas'); lc.width = 512; lc.height = 64;
+  const lx = lc.getContext('2d');
+  lx.font = '22px Geist, sans-serif';
+  lx.fillStyle = `rgba(${col===0x4ecdc4?'78,205,196':col===0xffd93d?'255,217,61':'108,92,231'},0.85)`;
+  lx.textAlign = 'center';
+  lx.fillText(tr.name, 256, 40);
+  const ls = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(lc), transparent:true, opacity:0.7, depthWrite:false}));
+  ls.scale.set(10, 1.3, 1); ls.position.y = 2;
+  m.add(ls);
+  m.add(new THREE.Mesh(new THREE.SphereGeometry(2.5,16,16), new THREE.MeshBasicMaterial({color:col, transparent:true, opacity:0.03, blending:THREE.AdditiveBlending, depthWrite:false})));
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 8), new THREE.MeshBasicMaterial({visible:false}));
+  m.add(hit); hit.userData = {proxy: m};
+});
+
+// Growth card display
+function presentGrowthCard(g) {
+  const statusLabel = g.status === 'new' ? '● new' : g.status === 'integrating' ? '◐ integrating' : '○ settled';
+  showCard(
+    `growth · ${g.type} · ${statusLabel}`,
+    g.title,
+    g.body,
+    `${g.date} — ${g.source}`,
+    ''
+  );
+}
+
+// ─────────────────────────────────────────
+// CONNECTION SYSTEM
+// ─────────────────────────────────────────
+const connGroup = new THREE.Group(); scene.add(connGroup);
+let activeTarget = null;
+
+// ── Connect mode state ──
+let connectMode = false;
+let connectFirst = null; // key of first selected node
+
+// Build connection map from SECRETS
+const connMap = new Map();
+function addC(a,b){if(!a||!b||a===b)return;if(!connMap.has(a))connMap.set(a,new Set());if(!connMap.has(b))connMap.set(b,new Set());connMap.get(a).add(b);connMap.get(b).add(a);}
+SECRETS.forEach(s=>{if(s.trigger.length===2)addC(s.trigger[0],s.trigger[1]);});
+// Additional structural connections — from data
+if (TEMPLE_DATA.connections && TEMPLE_DATA.connections.structural) {
+  TEMPLE_DATA.connections.structural.forEach(([a,b]) => addC(a,b));
+}
+// Entity-declared connections
+GODS.forEach(g=>{addC(g.key,g.domain);});
+DEMIGODS.forEach(dg=>{dg.connects.forEach(c=>addC(dg.key,c));});
+RESEARCH.forEach(r=>addC(r.n,r.d));
+VALUES.forEach(v => { (v.connects||[]).forEach(c => addC(v.key, c)); });
+TRAILS.forEach(tr => { (tr.connects||[]).forEach(c => addC(tr.key, c)); });
+NARRATIVES.forEach(n => { (n.connects||[]).forEach(c => addC(n.key, c)); });
+DEPTHS.forEach(dp => { (dp.connects||[]).forEach(c => addC(dp.key, c)); });
+
+// ── Ambient web: always-visible thin connections ──
+const ambientWeb = new THREE.Group();
+scene.add(ambientWeb);
+
+function buildAmbientWeb() {
+  const drawn = new Set();
+  connMap.forEach((targets, sourceKey) => {
+    const srcMesh = meshIndex.get(sourceKey);
+    if (!srcMesh) return;
+    targets.forEach(targetKey => {
+      const pairKey = [sourceKey, targetKey].sort().join('|');
+      if (drawn.has(pairKey)) return;
+      drawn.add(pairKey);
+      const tgtMesh = meshIndex.get(targetKey);
+      if (!tgtMesh) return;
+      const s = srcMesh.position.clone();
+      const e = tgtMesh.position.clone();
+      const mid = s.clone().lerp(e, 0.5);
+      mid.y += 1 + simplex3(s.x * 0.3, s.z * 0.3, e.x * 0.3) * 3;
+      const curve = new THREE.CatmullRomCurve3([s, mid, e]);
+      const geo = new THREE.TubeGeometry(curve, 12, 0.02, 4, false);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xe85d04, transparent: true, opacity: 0.012,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      });
+      ambientWeb.add(new THREE.Mesh(geo, mat));
+    });
+  });
+}
+buildAmbientWeb();
+
+// ── Organic Canopy — the temple reaches upward ──
+const canopyGroup = new THREE.Group();
+scene.add(canopyGroup);
+
+// Generate 18 branching tendrils that grow upward from the surface layer
+for (let branch = 0; branch < 18; branch++) {
+  const baseAngle = (branch / 18) * Math.PI * 2 + Math.random() * 0.3;
+  const baseR = 14 + Math.random() * 6;
+  const baseY = 15 + Math.random() * 5;
+
+  const points = [];
+  let cx = Math.cos(baseAngle) * baseR;
+  let cy = baseY;
+  let cz = Math.sin(baseAngle) * baseR;
+
+  const numPts = 5 + Math.floor(Math.random() * 4);
+  for (let p = 0; p < numPts; p++) {
+    points.push(new THREE.Vector3(cx, cy, cz));
+    cy += 3 + Math.random() * 4;
+    cx += (Math.random() - 0.5) * 6;
+    cz += (Math.random() - 0.5) * 6;
+    const spread = p / numPts;
+    cx *= 1 + spread * 0.15;
+    cz *= 1 + spread * 0.15;
+  }
+
+  const curve = new THREE.CatmullRomCurve3(points);
+  const tubeGeo = new THREE.TubeGeometry(curve, 20, 0.08, 6, false);
+
+  const branchColor = new THREE.Color().setHSL(
+    0.08 + Math.random() * 0.04,
+    0.5 + Math.random() * 0.3,
+    0.3 + Math.random() * 0.2
+  );
+
+  const mat = new THREE.MeshBasicMaterial({
+    color: branchColor,
+    transparent: true,
+    opacity: 0.06 + Math.random() * 0.04,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+
+  const mesh = new THREE.Mesh(tubeGeo, mat);
+  canopyGroup.add(mesh);
+
+  if (Math.random() > 0.3) {
+    const tip = points[points.length - 1];
+    const bud = new THREE.Mesh(
+      new THREE.SphereGeometry(0.3 + Math.random() * 0.3, 8, 8),
+      new THREE.MeshBasicMaterial({
+        color: branchColor,
+        transparent: true,
+        opacity: 0.15,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        toneMapped: false,
+      })
+    );
+    bud.position.copy(tip);
+    canopyGroup.add(bud);
+  }
+}
+
+// Downward root tendrils from the load floor
+for (let root = 0; root < 12; root++) {
+  const baseAngle = (root / 12) * Math.PI * 2 + Math.random() * 0.5;
+  const baseR = 10 + Math.random() * 8;
+  const points = [];
+  let cx = Math.cos(baseAngle) * baseR;
+  let cy = -20;
+  let cz = Math.sin(baseAngle) * baseR;
+
+  const numPts = 4 + Math.floor(Math.random() * 3);
+  for (let p = 0; p < numPts; p++) {
+    points.push(new THREE.Vector3(cx, cy, cz));
+    cy -= 2 + Math.random() * 4;
+    cx += (Math.random() - 0.5) * 4;
+    cz += (Math.random() - 0.5) * 4;
+  }
+
+  const curve = new THREE.CatmullRomCurve3(points);
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0x1a0a05,
+    transparent: true,
+    opacity: 0.04 + Math.random() * 0.03,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  canopyGroup.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.06, 5, false), mat));
+}
+
+// ── Energy Fields — atmospheric cloud meta-entities ──
+const FIELDS = TEMPLE_DATA.fields || [];
+
+const fieldMeshes = [];
+const fieldVS = `
+  uniform float u_time, u_breath;
+  varying vec3 vWorldPos;
+  varying vec3 vNormal;
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+    vec3 pos = position;
+    float n = sin(pos.x * 0.5 + u_time * 0.3) * cos(pos.z * 0.5 + u_time * 0.2) * 0.15;
+    pos += normal * n * u_breath;
+    vWorldPos = (modelMatrix * vec4(pos, 1.0)).xyz;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+  }
+`;
+const fieldFS = `
+  uniform vec3 u_color;
+  uniform float u_time, u_breath;
+  varying vec3 vWorldPos;
+  varying vec3 vNormal;
+  void main() {
+    float rim = 1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0)));
+    rim = pow(rim, 2.0);
+    float n = sin(vWorldPos.x * 0.3 + u_time * 0.1) * sin(vWorldPos.y * 0.3 + u_time * 0.15) * sin(vWorldPos.z * 0.3 + u_time * 0.12);
+    float alpha = rim * (0.03 + n * 0.015) * (0.8 + u_breath * 0.4);
+    gl_FragColor = vec4(u_color, alpha);
+  }
+`;
+
+FIELDS.forEach((f, i) => {
+  const geo = new THREE.SphereGeometry(f.radius, 32, 32);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      u_color: { value: new THREE.Color(f.color[0], f.color[1], f.color[2]) },
+      u_time: timeU,
+      u_breath: breathU,
+    },
+    vertexShader: fieldVS,
+    fragmentShader: fieldFS,
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(f.x, f.y, f.z);
+  mesh.userData = { type: 'field', data: f };
+  scene.add(mesh);
+  fieldMeshes.push(mesh);
+});
+
+// Replay persisted user connections
+userConnections.forEach(([a,b]) => addC(a,b));
+
+// Add a single ambient web thread for a connection pair
+function addAmbientThread(keyA, keyB) {
+  const srcMesh = meshIndex.get(keyA);
+  const tgtMesh = meshIndex.get(keyB);
+  if (!srcMesh || !tgtMesh) return;
+  const s = srcMesh.position.clone();
+  const e = tgtMesh.position.clone();
+  const mid = s.clone().lerp(e, 0.5);
+  mid.y += 1 + simplex3(s.x * 0.3, s.z * 0.3, e.x * 0.3) * 3;
+  const curve = new THREE.CatmullRomCurve3([s, mid, e]);
+  const geo = new THREE.TubeGeometry(curve, 12, 0.02, 4, false);
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0xe85d04, transparent: true, opacity: 0.012,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  ambientWeb.add(new THREE.Mesh(geo, mat));
+}
+
+// Build ambient threads for persisted user connections
+userConnections.forEach(([a,b]) => addAmbientThread(a,b));
+
+// Ascendant god: one god per day is slightly more prominent
+const ascendantIdx = Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000) % GODS.length;
+godMeshes[ascendantIdx].scale.multiplyScalar(1.12);
+
+const activeConns = [];
+
+// Shared pulse texture — created once, reused by all connections (H2 fix)
+const pulseCanvas = document.createElement('canvas');
+pulseCanvas.width = 64; pulseCanvas.height = 64;
+const pulseCtx = pulseCanvas.getContext('2d');
+const pulseGrad = pulseCtx.createRadialGradient(32,32,0,32,32,32);
+pulseGrad.addColorStop(0,'rgba(255,215,0,0.8)');
+pulseGrad.addColorStop(0.4,'rgba(255,215,0,0.3)');
+pulseGrad.addColorStop(1,'rgba(255,215,0,0)');
+pulseCtx.fillStyle = pulseGrad;
+pulseCtx.fillRect(0,0,64,64);
+const sharedPulseTexture = new THREE.CanvasTexture(pulseCanvas);
+
+function clearConn(){
+  while(connGroup.children.length){
+    const c=connGroup.children.pop();
+    if(c.geometry)c.geometry.dispose();
+    if(c.material){if(c.material.map && c.material.map !== sharedPulseTexture)c.material.map.dispose();c.material.dispose();}
+  }
+  activeConns.length=0;
+}
+
+function drawConn(src){
+  clearConn();
+  if(!src||!src.userData.key)return;
+  const related=connMap.get(src.userData.key);
+  if(!related)return;
+  const start=src.getWorldPosition(new THREE.Vector3());
+  const now=performance.now();
+  related.forEach(tk=>{
+    const tm=meshIndex.get(tk);if(!tm)return;
+    const end=tm.getWorldPosition(new THREE.Vector3());
+    const mid=start.clone().lerp(end,.5).add(new THREE.Vector3(0,5+Math.random()*8,0));
+    const curve=new THREE.CatmullRomCurve3([start.clone(),mid,end.clone()]);
+    const coreMat=new THREE.MeshBasicMaterial({color:0xfff1b2,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false});
+    const haloMat=new THREE.MeshBasicMaterial({color:0xffaa40,transparent:true,opacity:.15,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false});
+    // C1 fix: create full geometry upfront, use drawRange to reveal progressively
+    const coreGeo=new THREE.TubeGeometry(curve,30,.1,8,false);
+    const haloGeo=new THREE.TubeGeometry(curve,30,.4,8,false);
+    coreGeo.setDrawRange(0,0);
+    haloGeo.setDrawRange(0,0);
+    const coreM=new THREE.Mesh(coreGeo,coreMat);
+    const haloM=new THREE.Mesh(haloGeo,haloMat);
+    const coreIndexCount=coreGeo.index?coreGeo.index.count:(coreGeo.attributes.position.count);
+    const haloIndexCount=haloGeo.index?haloGeo.index.count:(haloGeo.attributes.position.count);
+    connGroup.add(coreM);connGroup.add(haloM);
+    activeConns.push({curve,startTime:now,growing:true,coreMesh:coreM,haloMesh:haloM,coreMat,haloMat,coreIndexCount,haloIndexCount,pulseSphere:null,pulseGlow:null,pulseStartTime:0});
+  });
+}
+
+function updateConnections(t){
+  for(const c of activeConns){
+    if(c.growing){
+      const elapsed=t-c.startTime;
+      const progress=Math.min(elapsed/1200,1);
+      // C1 fix: single integer write per frame instead of geometry rebuild
+      c.coreMesh.geometry.setDrawRange(0,Math.floor(c.coreIndexCount*progress));
+      c.haloMesh.geometry.setDrawRange(0,Math.floor(c.haloIndexCount*progress));
+      if(progress>=1){
+        c.growing=false;
+        const sphereGeo=new THREE.SphereGeometry(.18,12,12);
+        const sphereMat=new THREE.MeshBasicMaterial({color:0xFFD700,transparent:true,opacity:1.0,toneMapped:false,blending:THREE.AdditiveBlending,depthWrite:false});
+        const sphere=new THREE.Mesh(sphereGeo,sphereMat);
+        // H2 fix: reuse shared pulse texture
+        const spriteMat=new THREE.SpriteMaterial({map:sharedPulseTexture,transparent:true,opacity:0.7,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false});
+        const sprite=new THREE.Sprite(spriteMat);
+        sprite.scale.set(1.2,1.2,1);
+        sphere.add(sprite);
+        connGroup.add(sphere);
+        sphere.position.copy(c.curve.getPointAt(0));
+        c.pulseSphere=sphere;
+        c.pulseGlow=sprite;
+        c.pulseStartTime=t;
+      }
+    } else if(c.pulseSphere){
+      const elapsed=t-c.pulseStartTime;
+      const loopT=(elapsed%2500)/2500;
+      const pt=c.curve.getPointAt(loopT);
+      c.pulseSphere.position.copy(pt);
+      c.pulseSphere.material.opacity=0.8+Math.sin(loopT*Math.PI*2)*0.2;
+    }
+  }
+}
+
+// Gravity attractor
+let gravityActive = false;
+let gravityStrength = 0;
+const _gravLerpTarget = new THREE.Vector3(); // reusable
+
+// ─────────────────────────────────────────
+// SECRET DISCOVERY ENGINE
+// ─────────────────────────────────────────
+const secretsLog = document.getElementById('secrets-log');
+let showSecrets = false;
+
+function checkSecrets(newKey) {
+  clickHistory.push(newKey);
+  if(clickHistory.length>8) clickHistory.shift();
+
+  SECRETS.forEach(s=>{
+    if(secretsFound.has(s.id)) return;
+    const [a,b] = s.trigger;
+    // Check if both triggers are in recent click history
+    if(clickHistory.includes(a) && clickHistory.includes(b)){
+      secretsFound.add(s.id);
+      saveState();
+      // Show secret in card
+      document.querySelector('#card .c-secret').textContent = '🔮 Secret #'+s.id+': '+s.text;
+      document.querySelector('#card .c-secret').style.display = 'block';
+      // Add to log
+      const entry = document.createElement('div');
+      entry.className = 's-entry s-new';
+      entry.textContent = `#${s.id} — ${s.trigger.join(' ↔ ')}`;
+      secretsLog.prepend(entry);
+      setTimeout(()=>entry.classList.remove('s-new'), 3000);
+    }
+  });
+}
+
+document.getElementById('secretsBtn').addEventListener('click', ()=>{
+  showSecrets = !showSecrets;
+  secretsLog.classList.toggle('visible', showSecrets);
+  document.getElementById('secretsBtn').classList.toggle('active', showSecrets);
+});
+
+// ─────────────────────────────────────────
+// AUDIO — Rich Evolving Configurable Soundscape
+// ─────────────────────────────────────────
+let audioCtx=null, audioN={};
+
+// ── Audio profiles per entity type ──
+const AUDIO_PROFILES = {
+  god:      { baseFreq: 55,  waveform: 'sawtooth', filterQ: 2, reverbMix: 0.6, delayTime: 0.4, delayFeedback: 0.3 },
+  demigod:  { baseFreq: 82,  waveform: 'triangle', filterQ: 3, reverbMix: 0.4, delayTime: 0.3, delayFeedback: 0.2 },
+  crystal:  { baseFreq: 110, waveform: 'sine',     filterQ: 8, reverbMix: 0.7, delayTime: 0.6, delayFeedback: 0.4 },
+  blind:    { baseFreq: 73,  waveform: 'square',   filterQ: 1, reverbMix: 0.8, delayTime: 0.8, delayFeedback: 0.5 },
+  tension:  { baseFreq: 65,  waveform: 'sawtooth', filterQ: 4, reverbMix: 0.5, delayTime: 0.5, delayFeedback: 0.35 },
+  spirit:   { baseFreq: 165, waveform: 'sine',     filterQ: 6, reverbMix: 0.9, delayTime: 1.0, delayFeedback: 0.6 },
+  research: { baseFreq: 220, waveform: 'triangle', filterQ: 5, reverbMix: 0.3, delayTime: 0.2, delayFeedback: 0.15 },
+  growth:   { baseFreq: 330, waveform: 'sine',     filterQ: 4, reverbMix: 0.5, delayTime: 0.4, delayFeedback: 0.25 },
+  value:    { baseFreq: 440, waveform: 'sine',     filterQ: 7, reverbMix: 0.4, delayTime: 0.3, delayFeedback: 0.2 },
+  narrative:{ baseFreq: 98,  waveform: 'triangle', filterQ: 3, reverbMix: 0.6, delayTime: 0.5, delayFeedback: 0.35 },
+};
+
+// ── Entity ambient drone system — continuous per-type sonic fields ──
+let entityDrones = {};
+let entityDroneSchedulers = {};
+
+// ── Helper: create white noise buffer ──
+function createNoiseBuffer(ctx, duration) {
+  const len = ctx.sampleRate * duration;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+// ── FM Synthesis helper ──
+function createFMPair(ctx, carrierFreq, modFreq, modDepth, carrierType) {
+  const carrier = ctx.createOscillator();
+  carrier.type = carrierType || 'sine';
+  carrier.frequency.value = carrierFreq;
+  const modulator = ctx.createOscillator();
+  modulator.type = 'sine';
+  modulator.frequency.value = modFreq;
+  const modGain = ctx.createGain();
+  modGain.gain.value = modDepth;
+  modulator.connect(modGain);
+  modGain.connect(carrier.frequency);
+  modulator.start();
+  carrier.start();
+  return { carrier, modulator, modGain };
+}
+
+// ── Ring modulation helper ──
+function createRingMod(ctx, carrierFreq, modFreq) {
+  const carrier = ctx.createOscillator();
+  carrier.type = 'sine';
+  carrier.frequency.value = carrierFreq;
+  const modulator = ctx.createOscillator();
+  modulator.type = 'sine';
+  modulator.frequency.value = modFreq;
+  const ringGain = ctx.createGain();
+  ringGain.gain.value = 0;
+  modulator.connect(ringGain.gain);
+  carrier.connect(ringGain);
+  carrier.start();
+  modulator.start();
+  return { carrier, modulator, output: ringGain };
+}
+
+// ── Filtered noise burst (one-shot) ──
+function playNoiseBurst(ctx, freq, bandwidth, dur, vol, dest) {
+  const buf = createNoiseBuffer(ctx, dur + 0.1);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = freq / bandwidth;
+  const g = ctx.createGain();
+  g.gain.value = vol;
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+  src.connect(bp); bp.connect(g); g.connect(dest);
+  src.start(); src.stop(ctx.currentTime + dur);
+}
+
+// ── Pitch glide helper ──
+function playGlide(ctx, startFreq, endFreq, dur, type, vol, dest) {
+  const o = ctx.createOscillator();
+  o.type = type || 'sine';
+  o.frequency.value = startFreq;
+  o.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + dur);
+  const g = ctx.createGain();
+  g.gain.value = vol;
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+  o.connect(g); g.connect(dest);
+  o.start(); o.stop(ctx.currentTime + dur);
+}
+
+// Pentatonic scale degrees (just intonation ratios)
+const SCALE = [1, 9/8, 5/4, 3/2, 5/3];
+const TRANSITION_TIME = 7; // seconds — all crossfades take this long
+const MELODY_CYCLE = 90000; // 90 second melody cycle
+
+let melodyOsc = null, melodyGain = null, melodyFilter = null;
+let voice1 = null, voice2 = null;
+let grainInterval = null;
+
+// ── Convolution reverb impulse response generator ──
+function createImpulseResponse(ctx, duration, decay) {
+  const rate = ctx.sampleRate;
+  const length = rate * duration;
+  const impulse = ctx.createBuffer(2, length, rate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = impulse.getChannelData(ch);
+    for (let i = 0; i < length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+    }
+  }
+  return impulse;
+}
+
+// ── Formant synthesis helper ──
+function createFormant(ctx, freq, formantFreqs, dest) {
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.value = freq;
+  const formantGain = ctx.createGain();
+  formantGain.gain.value = 0.008;
+  const filters = [];
+  formantFreqs.forEach(ff => {
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = ff;
+    filter.Q.value = 15;
+    osc.connect(filter);
+    filter.connect(formantGain);
+    filters.push(filter);
+  });
+  formantGain.connect(dest);
+  osc.start();
+  return { osc, gain: formantGain, filters };
+}
+
+// Vowel formant frequencies [F1, F2, F3]
+const VOWELS = {
+  ah: [730, 1090, 2440],
+  oh: [570, 840, 2410],
+  ee: [270, 2290, 3010],
+  oo: [300, 870, 2240],
+};
+
+// ── Get node audio freq based on type and Y position ──
+function getNodeFreq(type, nodeY) {
+  const profile = AUDIO_PROFILES[type] || AUDIO_PROFILES.god;
+  return profile.baseFreq * (0.5 + (nodeY + 22) / 44);
+}
+
+function initAudio(){
+  const ctx = new(window.AudioContext||window.webkitAudioContext)();
+  audioCtx = ctx;
+
+  // ── Master chain: filter → gain → destination ──
+  const masterFilter = ctx.createBiquadFilter();
+  masterFilter.type = 'lowpass'; masterFilter.frequency.value = 2000; masterFilter.Q.value = 0.7;
+  const mg = ctx.createGain(); mg.gain.value = 0.10;
+  masterFilter.connect(mg); mg.connect(ctx.destination);
+
+  // ── Shared reverb (convolution) — main hall ──
+  const reverb = ctx.createConvolver();
+  reverb.buffer = createImpulseResponse(ctx, 3.5, 2.5);
+  const reverbGain = ctx.createGain();
+  reverbGain.gain.value = 0.3;
+  reverb.connect(reverbGain);
+  reverbGain.connect(masterFilter);
+
+  // ── Long reverb — cathedral tail for ethereal sounds ──
+  const longReverb = ctx.createConvolver();
+  longReverb.buffer = createImpulseResponse(ctx, 7.0, 1.8);
+  const longReverbGain = ctx.createGain();
+  longReverbGain.gain.value = 0.15;
+  longReverb.connect(longReverbGain);
+  longReverbGain.connect(masterFilter);
+
+  // ── Shared delay with feedback ──
+  const delay = ctx.createDelay(2.0);
+  delay.delayTime.value = 0.5;
+  const delayFeedback = ctx.createGain();
+  delayFeedback.gain.value = 0.3;
+  const delayFilter = ctx.createBiquadFilter();
+  delayFilter.type = 'lowpass';
+  delayFilter.frequency.value = 2000;
+  delay.connect(delayFilter);
+  delayFilter.connect(delayFeedback);
+  delayFeedback.connect(delay);
+  delay.connect(reverbGain); // delay feeds into reverb
+
+  // ── Listener position ──
+  const L = ctx.listener;
+  if(L.positionX){ L.positionX.value=0; L.positionY.value=5; L.positionZ.value=30; }
+  else { L.setPosition(0,5,30); }
+
+  // ── Depth layers: ambient drones that respond to camera height ──
+
+  // Deep sub-bass layer (30-40Hz — felt more than heard)
+  const subOsc1 = ctx.createOscillator(); subOsc1.type='sine'; subOsc1.frequency.value=36.7;
+  const subOsc2 = ctx.createOscillator(); subOsc2.type='sine'; subOsc2.frequency.value=37.1;
+  // Ultra-low sub-bass for deep strata (30Hz — chest vibration territory)
+  const ultraSub = ctx.createOscillator(); ultraSub.type='sine'; ultraSub.frequency.value=30;
+  const ultraSubGain = ctx.createGain(); ultraSubGain.gain.value=0;
+  ultraSub.connect(ultraSubGain);
+  const subGain = ctx.createGain(); subGain.gain.value=0;
+  subOsc1.connect(subGain); subOsc2.connect(subGain);
+  ultraSubGain.connect(masterFilter);
+  subGain.connect(masterFilter);
+  subGain.connect(reverb);
+  subOsc1.start(); subOsc2.start(); ultraSub.start();
+
+  // Mid drone layer — FM synthesis for richer texture
+  const midOsc1 = ctx.createOscillator(); midOsc1.type='triangle'; midOsc1.frequency.value=110;
+  const midOsc2 = ctx.createOscillator(); midOsc2.type='triangle'; midOsc2.frequency.value=110.3;
+  // FM modulator for mid-range complexity
+  const midFM = ctx.createOscillator(); midFM.type='sine'; midFM.frequency.value=55.1;
+  const midFMGain = ctx.createGain(); midFMGain.gain.value=15;
+  midFM.connect(midFMGain); midFMGain.connect(midOsc1.frequency);
+  const midGain = ctx.createGain(); midGain.gain.value=0;
+  midOsc1.connect(midGain); midOsc2.connect(midGain);
+  midGain.connect(masterFilter);
+  midOsc1.start(); midOsc2.start(); midFM.start();
+
+  // High shimmer layer (500-700Hz range)
+  const hiOsc1 = ctx.createOscillator(); hiOsc1.type='sine'; hiOsc1.frequency.value=523.25;
+  const hiOsc2 = ctx.createOscillator(); hiOsc2.type='sine'; hiOsc2.frequency.value=523.8;
+  const hiOsc3 = ctx.createOscillator(); hiOsc3.type='sine'; hiOsc3.frequency.value=659.25;
+  const hiOsc4 = ctx.createOscillator(); hiOsc4.type='sine'; hiOsc4.frequency.value=660.1;
+  const hiGain = ctx.createGain(); hiGain.gain.value=0;
+  const hiFilter = ctx.createBiquadFilter(); hiFilter.type='bandpass'; hiFilter.frequency.value=600; hiFilter.Q.value=2;
+  hiOsc1.connect(hiFilter); hiOsc2.connect(hiFilter); hiOsc3.connect(hiFilter); hiOsc4.connect(hiFilter);
+  hiFilter.connect(hiGain);
+  hiGain.connect(masterFilter);
+  hiGain.connect(delay);
+  hiOsc1.start(); hiOsc2.start(); hiOsc3.start(); hiOsc4.start();
+
+  // Ultra-high crystalline layer (2000-4000Hz — activated near canopy/growth)
+  const ultraHi1 = ctx.createOscillator(); ultraHi1.type='sine'; ultraHi1.frequency.value=2637;
+  const ultraHi2 = ctx.createOscillator(); ultraHi2.type='sine'; ultraHi2.frequency.value=2640;
+  const ultraHi3 = ctx.createOscillator(); ultraHi3.type='sine'; ultraHi3.frequency.value=3520;
+  const ultraHi4 = ctx.createOscillator(); ultraHi4.type='sine'; ultraHi4.frequency.value=3523;
+  const ultraHiGain = ctx.createGain(); ultraHiGain.gain.value=0;
+  const ultraHiFilter = ctx.createBiquadFilter(); ultraHiFilter.type='bandpass'; ultraHiFilter.frequency.value=3000; ultraHiFilter.Q.value=1;
+  ultraHi1.connect(ultraHiFilter); ultraHi2.connect(ultraHiFilter);
+  ultraHi3.connect(ultraHiFilter); ultraHi4.connect(ultraHiFilter);
+  ultraHiFilter.connect(ultraHiGain);
+  ultraHiGain.connect(longReverb); // ethereal sounds into long reverb
+  ultraHi1.start(); ultraHi2.start(); ultraHi3.start(); ultraHi4.start();
+
+  // ── Idle ambient texture: very quiet filtered noise that's always present ──
+  const ambientNoiseBuf = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
+  const ambientNoiseData = ambientNoiseBuf.getChannelData(0);
+  for (let i = 0; i < ambientNoiseData.length; i++) {
+    ambientNoiseData[i] = Math.random() * 2 - 1;
+  }
+  const ambientNoise = ctx.createBufferSource();
+  ambientNoise.buffer = ambientNoiseBuf; ambientNoise.loop = true;
+  const ambientLP = ctx.createBiquadFilter(); ambientLP.type='lowpass'; ambientLP.frequency.value=300; ambientLP.Q.value=0.5;
+  const ambientHP = ctx.createBiquadFilter(); ambientHP.type='highpass'; ambientHP.frequency.value=80;
+  const ambientNoiseGain = ctx.createGain(); ambientNoiseGain.gain.value=0.004;
+  ambientNoise.connect(ambientLP); ambientLP.connect(ambientHP); ambientHP.connect(ambientNoiseGain);
+  ambientNoiseGain.connect(longReverb);
+  ambientNoise.start();
+
+  // ── God signature sounds — spatialized via PannerNode ──
+  const godSigs = GODS.map((g, gi) => {
+    const panner = ctx.createPanner();
+    panner.panningModel='HRTF'; panner.distanceModel='inverse';
+    panner.refDistance=5; panner.maxDistance=80; panner.rolloffFactor=1.2;
+    panner.coneInnerAngle=360; panner.coneOuterAngle=360;
+    const r=16, x=Math.cos(g.angle)*r, y=g.y, z=Math.sin(g.angle)*r;
+    if(panner.positionX){ panner.positionX.value=x; panner.positionY.value=y; panner.positionZ.value=z; }
+    else { panner.setPosition(x,y,z); }
+
+    const gain = ctx.createGain(); gain.gain.value=0.15;
+    const filter = ctx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=1200; filter.Q.value=1;
+
+    let oscs=[];
+    if(g.key==='DRD2'){
+      const o1=ctx.createOscillator(); o1.type='sawtooth'; o1.frequency.value=73.4;
+      const o2=ctx.createOscillator(); o2.type='sawtooth'; o2.frequency.value=74.2;
+      const tremolo=ctx.createGain(); tremolo.gain.value=0.5;
+      const lfo=ctx.createOscillator(); lfo.type='sine'; lfo.frequency.value=3.7;
+      const lfoGain=ctx.createGain(); lfoGain.gain.value=0.4;
+      lfo.connect(lfoGain); lfoGain.connect(tremolo.gain);
+      o1.connect(tremolo); o2.connect(tremolo); tremolo.connect(filter);
+      lfo.start(); o1.start(); o2.start();
+      oscs=[o1,o2,lfo];
+    } else if(g.key==='FKBP5'){
+      const o1=ctx.createOscillator(); o1.type='sine'; o1.frequency.value=164.8;
+      const o2=ctx.createOscillator(); o2.type='sine'; o2.frequency.value=174.6;
+      const o3=ctx.createOscillator(); o3.type='sine'; o3.frequency.value=165.3;
+      o1.connect(filter); o2.connect(filter); o3.connect(filter);
+      o1.start(); o2.start(); o3.start();
+      oscs=[o1,o2,o3];
+    } else if(g.key==='SLC6A4'){
+      const freqs=[220, 330, 440, 554.4, 660];
+      freqs.forEach(f=>{
+        const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
+        const oGain=ctx.createGain(); oGain.gain.value=0.12;
+        o.connect(oGain); oGain.connect(filter); o.start(); oscs.push(o);
+        const o2=ctx.createOscillator(); o2.type='sine'; o2.frequency.value=f+0.3+Math.random()*0.6;
+        o2.connect(oGain); o2.start(); oscs.push(o2);
+      });
+    } else if(g.key==='NF-κB'){
+      const o1=ctx.createOscillator(); o1.type='square'; o1.frequency.value=82.5;
+      const o1Gain=ctx.createGain(); o1Gain.gain.value=0.2;
+      o1.connect(o1Gain); o1Gain.connect(filter);
+      const o2=ctx.createOscillator(); o2.type='sine'; o2.frequency.value=83.1;
+      o2.connect(o1Gain);
+      o1.start(); o2.start();
+      oscs=[o1,o2];
+    } else if(g.key==='OPRM1'){
+      const o1=ctx.createOscillator(); o1.type='sine'; o1.frequency.value=146.8;
+      const o2=ctx.createOscillator(); o2.type='sine'; o2.frequency.value=148.0;
+      const o3=ctx.createOscillator(); o3.type='sine'; o3.frequency.value=220;
+      const o4=ctx.createOscillator(); o4.type='sine'; o4.frequency.value=220.8;
+      const warmFilter=ctx.createBiquadFilter(); warmFilter.type='lowpass'; warmFilter.frequency.value=400; warmFilter.Q.value=0.5;
+      o1.connect(warmFilter); o2.connect(warmFilter); o3.connect(warmFilter); o4.connect(warmFilter);
+      warmFilter.connect(filter);
+      o1.start(); o2.start(); o3.start(); o4.start();
+      oscs=[o1,o2,o3,o4];
+    }
+
+    // God signals route: dry + reverb + delay
+    filter.connect(gain); gain.connect(panner); panner.connect(masterFilter);
+    const godReverbSend = ctx.createGain(); godReverbSend.gain.value = 0.4;
+    panner.connect(godReverbSend); godReverbSend.connect(reverb);
+    const godDelaySend = ctx.createGain(); godDelaySend.gain.value = 0.2;
+    panner.connect(godDelaySend); godDelaySend.connect(delay);
+
+    return { panner, gain, filter, oscs, key:g.key, baseFreqs:oscs.map(o=>o.frequency?o.frequency.value:0) };
+  });
+
+  // ── Mutating melodic progression ──
+  melodyOsc = ctx.createOscillator();
+  melodyOsc.type = 'triangle';
+  melodyOsc.frequency.value = 110;
+  melodyFilter = ctx.createBiquadFilter();
+  melodyFilter.type = 'lowpass';
+  melodyFilter.frequency.value = 800;
+  melodyFilter.Q.value = 4;
+  melodyGain = ctx.createGain();
+  melodyGain.gain.value = 0;
+  melodyOsc.connect(melodyFilter);
+  melodyFilter.connect(melodyGain);
+  melodyGain.connect(delay);   // melody through delay
+  melodyGain.connect(reverb);  // and reverb
+  melodyOsc.start();
+
+  // ── Static crackle noise ──
+  const crackleBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const crackleData = crackleBuffer.getChannelData(0);
+  for (let i = 0; i < crackleData.length; i++) {
+    crackleData[i] = Math.random() > 0.997 ? (Math.random() * 2 - 1) * 0.8 : 0;
+  }
+  const crackleSource = ctx.createBufferSource();
+  crackleSource.buffer = crackleBuffer;
+  crackleSource.loop = true;
+  const crackleFilter = ctx.createBiquadFilter();
+  crackleFilter.type = 'bandpass';
+  crackleFilter.frequency.value = 3000;
+  crackleFilter.Q.value = 2;
+  const crackleGain = ctx.createGain();
+  crackleGain.gain.value = 0.015;
+  crackleSource.connect(crackleFilter);
+  crackleFilter.connect(crackleGain);
+  crackleGain.connect(masterFilter);
+  crackleSource.start();
+
+  // ── Formant synthesis — vowel-like singing drones ──
+  voice1 = createFormant(ctx, 73, VOWELS.ah, reverb);
+  voice2 = createFormant(ctx, 110, VOWELS.oh, reverb);
+
+  // ── Granular shuffle buffer ──
+  const shuffleBuffer = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
+  const shuffleData = shuffleBuffer.getChannelData(0);
+  for (let i = 0; i < shuffleData.length; i++) {
+    shuffleData[i] = Math.sin(i * 0.01) * Math.random() * 0.3;
+  }
+
+  // Schedule random grains
+  if (grainInterval) clearInterval(grainInterval);
+  grainInterval = setInterval(() => {
+    if (!audioCtx || !audioN.shuffleBuffer) return;
+    // Grain probability modulated by proximity to tension lines (set in updateAudio)
+    const prob = audioN.grainProbability || 0.3;
+    if (Math.random() > prob) return;
+    const grain = audioCtx.createBufferSource();
+    grain.buffer = audioN.shuffleBuffer;
+    grain.playbackRate.value = 0.5 + Math.random() * 1.5;
+    const grainGain = audioCtx.createGain();
+    grainGain.gain.value = 0.01;
+    grainGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    grain.connect(grainGain);
+    grainGain.connect(audioN.delay);
+    const offset = Math.random() * 3;
+    grain.start(0, offset, 0.1 + Math.random() * 0.2);
+  }, 200);
+
+  audioN = {
+    mg, masterFilter, reverb, reverbGain, longReverb, longReverbGain,
+    delay, delayFeedback, delayFilter,
+    subGain, midGain, hiGain, ultraSubGain: ultraSubGain, ultraHiGain: ultraHiGain,
+    subOsc1, subOsc2, ultraSub, midOsc1, midOsc2, midFM, midFMGain,
+    hiOsc1, hiOsc2, hiOsc3, hiOsc4, hiFilter: hiFilter,
+    ultraHi1, ultraHi2, ultraHi3, ultraHi4, ultraHiFilter,
+    ambientNoiseGain, ambientLP,
+    godSigs, crackleGain, crackleFilter,
+    shuffleBuffer, grainProbability: 0.3,
+    voice1, voice2
+  };
+}
+
+// Legacy playNote — simple fallback for non-typed sounds
+function playNote(freq, dur) {
+  if (!audioCtx) return;
+  const o1 = audioCtx.createOscillator();
+  const o2 = audioCtx.createOscillator();
+  o1.type = 'sine'; o2.type = 'triangle';
+  o1.frequency.value = freq;
+  o2.frequency.value = freq * 1.003;
+  const g = audioCtx.createGain();
+  g.gain.value = 0.08;
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  const f = audioCtx.createBiquadFilter();
+  f.type = 'lowpass';
+  f.frequency.value = freq * 4;
+  o1.connect(f); o2.connect(f);
+  f.connect(g);
+  g.connect(audioN.mg);
+  g.connect(audioN.reverb);
+  g.connect(audioN.delay);
+  o1.start(); o2.start();
+  o1.stop(audioCtx.currentTime + dur);
+  o2.stop(audioCtx.currentTime + dur);
+}
+
+// ═══════════════════════════════════════════════════════
+// TYPE-SPECIFIC CLICK SOUND GENERATORS
+// Each entity type gets a distinct sonic character
+// ═══════════════════════════════════════════════════════
+
+function playGodSound(freq) {
+  // Deep resonant drone: FM synthesis + sub-bass + slow evolving
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const dur = 5;
+  // Sub-bass fundamental
+  const sub = ctx.createOscillator(); sub.type = 'sine'; sub.frequency.value = freq * 0.5;
+  // FM pair for complex timbre
+  const fm = createFMPair(ctx, freq, freq * 1.5, freq * 0.8, 'sawtooth');
+  // Detuned pair for beating
+  const o2 = ctx.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = freq * 1.003;
+  // Slow filter sweep
+  const filt = ctx.createBiquadFilter(); filt.type = 'lowpass';
+  filt.frequency.value = 200; filt.Q.value = 3;
+  filt.frequency.linearRampToValueAtTime(800, now + dur * 0.4);
+  filt.frequency.linearRampToValueAtTime(150, now + dur);
+  // Gain envelope: slow attack, long sustain, slow fade
+  const g = ctx.createGain(); g.gain.value = 0;
+  g.gain.linearRampToValueAtTime(0.04, now + 0.8);
+  g.gain.linearRampToValueAtTime(0.035, now + dur * 0.7);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  sub.connect(filt); fm.carrier.connect(filt); o2.connect(filt);
+  filt.connect(g);
+  g.connect(audioN.mg); g.connect(audioN.reverb); g.connect(audioN.delay);
+  sub.start(); o2.start();
+  sub.stop(now + dur); fm.carrier.stop(now + dur); fm.modulator.stop(now + dur); o2.stop(now + dur);
+}
+
+function playDemigodSound(freq) {
+  // Mid-range harmonics: gentle pulsations via AM + brighter timbre
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const dur = 3;
+  const baseFreq = freq || 165;
+  // Two detuned triangle waves
+  const o1 = ctx.createOscillator(); o1.type = 'triangle'; o1.frequency.value = baseFreq;
+  const o2 = ctx.createOscillator(); o2.type = 'triangle'; o2.frequency.value = baseFreq * 1.005;
+  // AM tremolo at 2Hz — gentle pulsation
+  const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 2;
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 0.3;
+  const tremolo = ctx.createGain(); tremolo.gain.value = 0.7;
+  lfo.connect(lfoGain); lfoGain.connect(tremolo.gain);
+  // Harmonic overtone (octave + fifth)
+  const o3 = ctx.createOscillator(); o3.type = 'sine'; o3.frequency.value = baseFreq * 3;
+  const o3g = ctx.createGain(); o3g.gain.value = 0.015;
+  // Bandpass to give character
+  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = baseFreq * 2; bp.Q.value = 1.5;
+  bp.frequency.linearRampToValueAtTime(baseFreq * 4, now + dur * 0.3);
+  bp.frequency.linearRampToValueAtTime(baseFreq * 1.5, now + dur);
+  const g = ctx.createGain(); g.gain.value = 0;
+  g.gain.linearRampToValueAtTime(0.035, now + 0.3);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  o1.connect(tremolo); o2.connect(tremolo); tremolo.connect(bp);
+  o3.connect(o3g); o3g.connect(bp);
+  bp.connect(g);
+  g.connect(audioN.mg); g.connect(audioN.reverb);
+  lfo.start(); o1.start(); o2.start(); o3.start();
+  lfo.stop(now + dur); o1.stop(now + dur); o2.stop(now + dur); o3.stop(now + dur);
+}
+
+function playTensionSound() {
+  // Dissonant intervals: beating frequencies, tension-resolution
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const dur = 4;
+  // Tritone interval — maximum dissonance
+  const f1 = 65, f2 = f1 * Math.sqrt(2); // tritone
+  const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = f1;
+  const o2 = ctx.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = f2;
+  // Beating pair close to f1
+  const o3 = ctx.createOscillator(); o3.type = 'sine'; o3.frequency.value = f1 + 1.5;
+  // Ring mod for metallic overtones
+  const ring = createRingMod(ctx, f1 * 2, f2);
+  const ringGain = ctx.createGain(); ringGain.gain.value = 0.008;
+  ring.output.connect(ringGain);
+  // Resolution: pitch glides toward consonance at end
+  o2.frequency.linearRampToValueAtTime(f1 * 1.5, now + dur * 0.8); // resolve to fifth
+  // Harsh filter
+  const filt = ctx.createBiquadFilter(); filt.type = 'bandpass'; filt.frequency.value = 300; filt.Q.value = 6;
+  filt.frequency.linearRampToValueAtTime(150, now + dur);
+  const g = ctx.createGain(); g.gain.value = 0;
+  g.gain.linearRampToValueAtTime(0.025, now + 0.15);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  o1.connect(filt); o2.connect(filt); o3.connect(filt); ringGain.connect(filt);
+  filt.connect(g);
+  g.connect(audioN.mg); g.connect(audioN.reverb); g.connect(audioN.delay);
+  o1.start(); o2.start(); o3.start();
+  o1.stop(now + dur); o2.stop(now + dur); o3.stop(now + dur);
+  ring.carrier.stop(now + dur); ring.modulator.stop(now + dur);
+}
+
+function playNarrativeSound(freq) {
+  // Melodic arpeggiated fragments with long reverb
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const baseFreq = freq || 196;
+  const arpNotes = [1, 5/4, 3/2, 2, 5/2, 3]; // ascending arpeggio
+  const noteLen = 0.4, gap = 0.15;
+  arpNotes.forEach((ratio, i) => {
+    const t = now + i * (noteLen + gap) * (0.8 + Math.random() * 0.4);
+    const f = baseFreq * ratio;
+    const o = ctx.createOscillator(); o.type = 'triangle';
+    o.frequency.value = f;
+    o.frequency.linearRampToValueAtTime(f * 0.98, t + noteLen); // slight droop
+    const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 2.01; // octave shimmer
+    const g = ctx.createGain(); g.gain.value = 0;
+    g.gain.linearRampToValueAtTime(0.02 - i * 0.002, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + noteLen + 0.3);
+    const filt = ctx.createBiquadFilter(); filt.type = 'lowpass';
+    filt.frequency.value = f * 6; filt.Q.value = 1;
+    o.connect(filt); o2.connect(filt);
+    const o2g = ctx.createGain(); o2g.gain.value = 0.3;
+    o2.disconnect(); o2.connect(o2g); o2g.connect(filt);
+    filt.connect(g);
+    // Heavy reverb send, lighter dry
+    const dryG = ctx.createGain(); dryG.gain.value = 0.4;
+    g.connect(dryG); dryG.connect(audioN.mg);
+    g.connect(audioN.reverb);
+    g.connect(audioN.delay);
+    o.start(t); o2.start(t);
+    o.stop(t + noteLen + 0.5); o2.stop(t + noteLen + 0.5);
+  });
+}
+
+function playBlindSpotSound() {
+  // High ethereal whisper: filtered noise + very high sine + pitch glides
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const dur = 3.5;
+  // Whisper texture: narrow-band noise at high frequency
+  playNoiseBurst(ctx, 4000, 800, dur, 0.008, audioN.reverb);
+  playNoiseBurst(ctx, 6000, 400, dur * 0.7, 0.005, audioN.reverb);
+  // Ethereal high tone with slow vibrato
+  const o1 = ctx.createOscillator(); o1.type = 'sine'; o1.frequency.value = 3200;
+  const vib = ctx.createOscillator(); vib.type = 'sine'; vib.frequency.value = 0.3;
+  const vibG = ctx.createGain(); vibG.gain.value = 40;
+  vib.connect(vibG); vibG.connect(o1.frequency);
+  // Descending glide
+  o1.frequency.linearRampToValueAtTime(2400, now + dur);
+  const g = ctx.createGain(); g.gain.value = 0;
+  g.gain.linearRampToValueAtTime(0.012, now + 0.5);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  o1.connect(g);
+  g.connect(audioN.mg); g.connect(audioN.reverb);
+  o1.start(); vib.start();
+  o1.stop(now + dur); vib.stop(now + dur);
+}
+
+function playGrowthSound() {
+  // Crystalline bell: ring modulation + high harmonics + short decay
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const dur = 2;
+  const f = 880 + Math.random() * 440;
+  // Ring mod for bell-like inharmonic spectrum
+  const ring = createRingMod(ctx, f, f * 1.414);
+  const ringOut = ctx.createGain(); ringOut.gain.value = 0.015;
+  ring.output.connect(ringOut);
+  // Pure fundamental
+  const o1 = ctx.createOscillator(); o1.type = 'sine'; o1.frequency.value = f;
+  // Third harmonic for brightness
+  const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 3.01;
+  const o2g = ctx.createGain(); o2g.gain.value = 0.2;
+  o2.connect(o2g);
+  // Sharp attack, medium decay
+  const g = ctx.createGain(); g.gain.value = 0;
+  g.gain.linearRampToValueAtTime(0.03, now + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+  // Highpass to keep it crystalline
+  const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 400;
+  o1.connect(hp); o2g.connect(hp); ringOut.connect(hp);
+  hp.connect(g);
+  g.connect(audioN.mg); g.connect(audioN.reverb); g.connect(audioN.delay);
+  o1.start(); o2.start();
+  o1.stop(now + dur); o2.stop(now + dur);
+  ring.carrier.stop(now + dur); ring.modulator.stop(now + dur);
+}
+
+function playResearchSound() {
+  // Granular clicking/ticking: rapid filtered noise bursts + FM texture
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  // Series of micro-clicks at varied rates
+  const numClicks = 5 + Math.floor(Math.random() * 8);
+  for (let i = 0; i < numClicks; i++) {
+    const t = now + i * (0.06 + Math.random() * 0.12);
+    const clickFreq = 2000 + Math.random() * 4000;
+    const clickDur = 0.02 + Math.random() * 0.04;
+    // Tiny noise burst
+    const buf = createNoiseBuffer(ctx, 0.1);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass';
+    bp.frequency.value = clickFreq; bp.Q.value = 20;
+    const cg = ctx.createGain(); cg.gain.value = 0.015;
+    cg.gain.exponentialRampToValueAtTime(0.0001, t + clickDur);
+    src.connect(bp); bp.connect(cg);
+    cg.connect(audioN.mg); cg.connect(audioN.delay);
+    src.start(t); src.stop(t + clickDur + 0.05);
+  }
+  // Underlying FM texture
+  const fm = createFMPair(ctx, 220, 377, 80, 'sine');
+  const fg = ctx.createGain(); fg.gain.value = 0;
+  fg.gain.linearRampToValueAtTime(0.008, now + 0.1);
+  fg.gain.exponentialRampToValueAtTime(0.0001, now + 1.5);
+  fm.carrier.connect(fg); fg.connect(audioN.reverb);
+  fm.carrier.stop(now + 1.8); fm.modulator.stop(now + 1.8);
+}
+
+function playValueSound(freq) {
+  // Warm sustained chord: major triad with slow chorus
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const dur = 3;
+  const f = freq || 220;
+  const chord = [f, f * 5/4, f * 3/2, f * 2]; // major triad + octave
+  const master = ctx.createGain(); master.gain.value = 0;
+  master.gain.linearRampToValueAtTime(0.025, now + 0.6);
+  master.gain.linearRampToValueAtTime(0.02, now + dur * 0.6);
+  master.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  const warmFilt = ctx.createBiquadFilter(); warmFilt.type = 'lowpass';
+  warmFilt.frequency.value = f * 3; warmFilt.Q.value = 0.5;
+  chord.forEach(cf => {
+    const o1 = ctx.createOscillator(); o1.type = 'sine'; o1.frequency.value = cf;
+    const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = cf * 1.002; // chorus
+    o1.connect(warmFilt); o2.connect(warmFilt);
+    o1.start(); o2.start();
+    o1.stop(now + dur); o2.stop(now + dur);
+  });
+  warmFilt.connect(master);
+  master.connect(audioN.mg); master.connect(audioN.reverb);
+}
+
+function playTrailSound(freq) {
+  // Warm sustained pad + gentle pitch rise — "journey" feel
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const dur = 3;
+  const f = freq || 261.6;
+  // Root + fifth pad
+  const o1 = ctx.createOscillator(); o1.type = 'sine'; o1.frequency.value = f;
+  const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 3/2;
+  const o3 = ctx.createOscillator(); o3.type = 'triangle'; o3.frequency.value = f * 2.003;
+  // Gentle upward glide
+  o1.frequency.linearRampToValueAtTime(f * 1.05, now + dur);
+  o2.frequency.linearRampToValueAtTime(f * 3/2 * 1.05, now + dur);
+  const warmFilt = ctx.createBiquadFilter(); warmFilt.type = 'lowpass';
+  warmFilt.frequency.value = f * 2; warmFilt.Q.value = 0.7;
+  warmFilt.frequency.linearRampToValueAtTime(f * 5, now + dur * 0.4);
+  warmFilt.frequency.linearRampToValueAtTime(f * 2, now + dur);
+  const g = ctx.createGain(); g.gain.value = 0;
+  g.gain.linearRampToValueAtTime(0.025, now + 0.4);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  o1.connect(warmFilt); o2.connect(warmFilt); o3.connect(warmFilt);
+  warmFilt.connect(g);
+  g.connect(audioN.mg); g.connect(audioN.reverb);
+  o1.start(); o2.start(); o3.start();
+  o1.stop(now + dur); o2.stop(now + dur); o3.stop(now + dur);
+}
+
+function playSpiritSound() {
+  // Very high ethereal — shimmer harmonics floating up
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const dur = 4;
+  const baseF = 2000 + Math.random() * 1000;
+  // Three ascending sine tones at very low volume
+  [0, 0.6, 1.2].forEach((delay, i) => {
+    const f = baseF * (1 + i * 0.25);
+    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+    o.frequency.linearRampToValueAtTime(f * 1.3, now + delay + dur);
+    const g = ctx.createGain(); g.gain.value = 0;
+    g.gain.linearRampToValueAtTime(0.008, now + delay + 0.3);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + delay + dur);
+    o.connect(g); g.connect(audioN.reverb);
+    o.start(now + delay); o.stop(now + delay + dur);
+  });
+  // Whisper noise
+  playNoiseBurst(ctx, 5000, 2000, dur * 0.6, 0.004, audioN.reverb);
+}
+
+function playDepthSound(freq) {
+  // Deep FM growl — sub-bass with complex modulation
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const dur = 4;
+  const f = freq || 55;
+  const fm = createFMPair(ctx, f, f * 0.7, f * 2, 'sine');
+  const sub = ctx.createOscillator(); sub.type = 'sine'; sub.frequency.value = f * 0.5;
+  const filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 120; filt.Q.value = 4;
+  filt.frequency.linearRampToValueAtTime(400, now + dur * 0.3);
+  filt.frequency.linearRampToValueAtTime(80, now + dur);
+  const g = ctx.createGain(); g.gain.value = 0;
+  g.gain.linearRampToValueAtTime(0.03, now + 0.5);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  fm.carrier.connect(filt); sub.connect(filt); filt.connect(g);
+  g.connect(audioN.mg); g.connect(audioN.reverb);
+  sub.start(); sub.stop(now + dur);
+  fm.carrier.stop(now + dur); fm.modulator.stop(now + dur);
+}
+
+function playCrystalSound() {
+  // Crystal crack then ring: noise transient + resonant harmonics
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  // Crack transient: very short noise burst
+  playNoiseBurst(ctx, 3000, 4000, 0.04, 0.04, audioN.mg);
+  // Ring: high bell-like harmonics
+  const freqs = [1760, 2217, 2640, 3520];
+  freqs.forEach((f, i) => {
+    const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+    const g = ctx.createGain(); g.gain.value = 0;
+    g.gain.linearRampToValueAtTime(0.012 / (i + 1), now + 0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 1.5 + i * 0.3);
+    o.connect(g); g.connect(audioN.mg); g.connect(audioN.reverb);
+    o.start(); o.stop(now + 2 + i * 0.3);
+  });
+}
+
+function playFloorSound() {
+  // The deepest: sub-bass rumble + filtered noise crescendo
+  if (!audioCtx) return;
+  const ctx = audioCtx, now = ctx.currentTime;
+  const dur = 8;
+  // Deep sub-bass drone
+  const o1 = ctx.createOscillator(); o1.type = 'sine'; o1.frequency.value = 30;
+  const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = 30.3;
+  // Rumble noise
+  const noiseBuf = createNoiseBuffer(ctx, dur + 1);
+  const nSrc = ctx.createBufferSource(); nSrc.buffer = noiseBuf;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 60; lp.Q.value = 4;
+  lp.frequency.linearRampToValueAtTime(200, now + dur * 0.7);
+  lp.frequency.linearRampToValueAtTime(40, now + dur);
+  const g = ctx.createGain(); g.gain.value = 0;
+  g.gain.linearRampToValueAtTime(0.04, now + 2);
+  g.gain.linearRampToValueAtTime(0.05, now + dur * 0.7);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  o1.connect(g); o2.connect(g); nSrc.connect(lp); lp.connect(g);
+  g.connect(audioN.mg); g.connect(audioN.reverb);
+  o1.start(); o2.start(); nSrc.start();
+  o1.stop(now + dur); o2.stop(now + dur); nSrc.stop(now + dur);
+}
+
+// ── Melody progression updater (called from updateAudio) ──
+function updateMelody(t, camY) {
+  if (!melodyOsc || !audioCtx) return;
+  const cyclePos = (t % MELODY_CYCLE) / MELODY_CYCLE;
+
+  // Slowly walk through scale degrees
+  const noteIdx = Math.floor(cyclePos * 16) % SCALE.length;
+  const nextIdx = (noteIdx + 1) % SCALE.length;
+  const noteFrac = (cyclePos * 16) % 1;
+
+  // Smooth glide between notes — depth-responsive base
+  const baseNote = 110 * (0.5 + (camY + 22) / 44);
+  const currentFreq = baseNote * SCALE[noteIdx];
+  const nextFreq = baseNote * SCALE[nextIdx];
+  const targetFreq = currentFreq + (nextFreq - currentFreq) * noteFrac * noteFrac;
+
+  melodyOsc.frequency.linearRampToValueAtTime(targetFreq, audioCtx.currentTime + 0.5);
+
+  // Filter sweep over the cycle: opens then closes
+  const filterSweep = Math.sin(cyclePos * Math.PI * 2) * 0.5 + 0.5;
+  melodyFilter.frequency.linearRampToValueAtTime(400 + filterSweep * 2000, audioCtx.currentTime + 0.5);
+
+  // Volume envelope: quiet at start, peaks at 40%, fades
+  const volEnv = Math.sin(cyclePos * Math.PI);
+  melodyGain.gain.linearRampToValueAtTime(volEnv * 0.04, audioCtx.currentTime + 0.5);
+}
+
+function updateAudio(t, camY, breath){
+  if(!audioCtx||!audioN.godSigs) return;
+  const tSec = t * 0.001;
+  const now = audioCtx.currentTime;
+
+  // ── Update listener position to camera ──
+  const L = audioCtx.listener;
+  const cx=camera.position.x, cy2=camera.position.y, cz=camera.position.z;
+  if(L.positionX){
+    L.positionX.linearRampToValueAtTime(cx, now+0.05);
+    L.positionY.linearRampToValueAtTime(cy2, now+0.05);
+    L.positionZ.linearRampToValueAtTime(cz, now+0.05);
+  } else { L.setPosition(cx,cy2,cz); }
+  const fwd=new THREE.Vector3(); camera.getWorldDirection(fwd);
+  if(L.forwardX){
+    L.forwardX.value=fwd.x; L.forwardY.value=fwd.y; L.forwardZ.value=fwd.z;
+    L.upX.value=0; L.upY.value=1; L.upZ.value=0;
+  } else { L.setOrientation(fwd.x,fwd.y,fwd.z,0,1,0); }
+
+  // ── Breath modulation: master volume + filter cutoff ──
+  const breathVol = 0.06 + breath * 0.06; // 0.06 → 0.12
+  audioN.mg.gain.linearRampToValueAtTime(breathVol, now + 0.08);
+  const breathCutoff = 800 + breath * 2400;
+  audioN.masterFilter.frequency.linearRampToValueAtTime(breathCutoff, now + 0.08);
+
+  // ── Depth-responsive layers (smooth transitions) ──
+  const normY = THREE.MathUtils.clamp((camY + 22) / 40, 0, 1);
+
+  // Ultra sub-bass (30Hz): only when very deep, slow LFO amplitude
+  const ultraSubVol = THREE.MathUtils.smoothstep(1 - normY, 0.85, 1.0) * 0.25 * (0.7 + Math.sin(tSec * 0.05) * 0.3);
+  audioN.ultraSubGain.gain.linearRampToValueAtTime(ultraSubVol, now + TRANSITION_TIME);
+  audioN.ultraSub.frequency.linearRampToValueAtTime(30 + Math.sin(tSec * 0.03) * 2, now + 0.5);
+
+  // Sub-bass: loud when deep
+  const subVol = THREE.MathUtils.smoothstep(1 - normY, 0.7, 1.0) * 0.35;
+  audioN.subGain.gain.linearRampToValueAtTime(subVol, now + TRANSITION_TIME);
+  audioN.subOsc2.frequency.linearRampToValueAtTime(37.1 + Math.sin(tSec*0.07)*0.8, now + 0.1);
+
+  // Mid drone: loudest in middle — FM depth responds to breath
+  const midVol = Math.max(0, (1 - Math.abs(normY - 0.5) * 3) * 0.2);
+  audioN.midGain.gain.linearRampToValueAtTime(midVol, now + TRANSITION_TIME);
+  audioN.midOsc2.frequency.linearRampToValueAtTime(110.3 + Math.sin(tSec*0.11)*0.5, now + 0.1);
+  // FM modulation depth varies with breath — more complex timbre on inhale
+  audioN.midFMGain.gain.linearRampToValueAtTime(5 + breath * 25, now + 0.2);
+  audioN.midFM.frequency.linearRampToValueAtTime(55.1 + Math.sin(tSec * 0.037) * 8, now + 0.5);
+
+  // High shimmer: loud when high
+  const hiVol = THREE.MathUtils.smoothstep(normY, 0.6, 1.0) * 0.12;
+  audioN.hiGain.gain.linearRampToValueAtTime(hiVol, now + TRANSITION_TIME);
+  audioN.hiOsc2.frequency.linearRampToValueAtTime(523.8 + Math.sin(tSec*0.031)*1.2, now + 0.1);
+  audioN.hiOsc4.frequency.linearRampToValueAtTime(660.1 + Math.sin(tSec*0.043)*1.5, now + 0.1);
+
+  // Ultra-high crystalline: only at very top (canopy/growth territory)
+  const ultraHiVol = THREE.MathUtils.smoothstep(normY, 0.8, 1.0) * 0.03;
+  audioN.ultraHiGain.gain.linearRampToValueAtTime(ultraHiVol, now + TRANSITION_TIME);
+  // Slow detuning drift for beating
+  audioN.ultraHi2.frequency.linearRampToValueAtTime(2640 + Math.sin(tSec * 0.019) * 3, now + 0.5);
+  audioN.ultraHi4.frequency.linearRampToValueAtTime(3523 + Math.sin(tSec * 0.023) * 4, now + 0.5);
+
+  // Idle ambient noise: always present, breathes with the cycle
+  const ambientNoiseVol = 0.002 + breath * 0.003;
+  audioN.ambientNoiseGain.gain.linearRampToValueAtTime(ambientNoiseVol, now + 0.5);
+  // Filter cutoff drifts with depth — lower when deep, brighter when high
+  audioN.ambientLP.frequency.linearRampToValueAtTime(150 + normY * 400, now + 2);
+
+  // ── Crackle intensity: more crackle near blind spots (deep) ──
+  const crackleIntensity = 0.005 + (1 - normY) * 0.025;
+  audioN.crackleGain.gain.linearRampToValueAtTime(crackleIntensity, now + TRANSITION_TIME);
+
+  // ── Formant voice pitch: modulate based on proximity to gods ──
+  let minGodDist = 999;
+  audioN.godSigs.forEach((sig, gi) => {
+    const gm = godMeshes[gi];
+    if(gm){
+      const wp = gm.getWorldPosition(new THREE.Vector3());
+      const d = camera.position.distanceTo(wp);
+      if(d < minGodDist) minGodDist = d;
+    }
+  });
+  const godProximity = THREE.MathUtils.clamp(1 - minGodDist / 40, 0, 1);
+  if(audioN.voice1) audioN.voice1.osc.frequency.linearRampToValueAtTime(73 + godProximity * 20, now + 2);
+  if(audioN.voice2) audioN.voice2.osc.frequency.linearRampToValueAtTime(110 + godProximity * 30, now + 2);
+
+  // Morph vowels over 60-second cycle
+  const vowelKeys = Object.keys(VOWELS);
+  const vowelCycle = (t % 60000) / 60000;
+  const vowelIdx = Math.floor(vowelCycle * vowelKeys.length) % vowelKeys.length;
+  const nextVowelIdx = (vowelIdx + 1) % vowelKeys.length;
+  const vowelBlend = (vowelCycle * vowelKeys.length) % 1;
+  const currentVowel = VOWELS[vowelKeys[vowelIdx]];
+  const nextVowel = VOWELS[vowelKeys[nextVowelIdx]];
+  if(audioN.voice1 && audioN.voice1.filters){
+    audioN.voice1.filters.forEach((f, fi) => {
+      const target = currentVowel[fi] + (nextVowel[fi] - currentVowel[fi]) * vowelBlend;
+      f.frequency.linearRampToValueAtTime(target, now + 2);
+    });
+  }
+  if(audioN.voice2 && audioN.voice2.filters){
+    audioN.voice2.filters.forEach((f, fi) => {
+      const target = currentVowel[fi] + (nextVowel[fi] - currentVowel[fi]) * vowelBlend;
+      f.frequency.linearRampToValueAtTime(target * 1.05, now + 2); // slight offset
+    });
+  }
+
+  // ── Grain probability: higher near tension fault lines ──
+  let minTensionDist = 999;
+  tensionMeshes.forEach(tm => {
+    const wp = new THREE.Vector3();
+    tm.getWorldPosition(wp);
+    const d = camera.position.distanceTo(wp);
+    if(d < minTensionDist) minTensionDist = d;
+  });
+  audioN.grainProbability = THREE.MathUtils.clamp(0.15 + (1 - minTensionDist / 20) * 0.55, 0.15, 0.7);
+
+  // ── Update melody progression ──
+  updateMelody(t, camY);
+
+  // ── God signature evolution ──
+  audioN.godSigs.forEach((sig, gi) => {
+    const gm = godMeshes[gi];
+    if(gm){
+      const wp = gm.getWorldPosition(new THREE.Vector3());
+      if(sig.panner.positionX){
+        sig.panner.positionX.linearRampToValueAtTime(wp.x, now+0.05);
+        sig.panner.positionY.linearRampToValueAtTime(wp.y, now+0.05);
+        sig.panner.positionZ.linearRampToValueAtTime(wp.z, now+0.05);
+      } else { sig.panner.setPosition(wp.x, wp.y, wp.z); }
+    }
+
+    // Evolving detune — slow drift
+    sig.oscs.forEach((osc, oi) => {
+      if(!osc.frequency || sig.baseFreqs[oi]===0) return;
+      const base = sig.baseFreqs[oi];
+      const drift = Math.sin(tSec * (0.013 + oi*0.007 + gi*0.003)) * (base * 0.004)
+                  + Math.sin(tSec * (0.029 + oi*0.011)) * (base * 0.002);
+      osc.frequency.linearRampToValueAtTime(base + drift, now+0.1);
+    });
+
+    // God-specific behaviors
+    if(sig.key==='DRD2'){
+      sig.filter.frequency.linearRampToValueAtTime(600 + Math.sin(tSec*2.3)*300 + Math.sin(tSec*3.7)*200, now+0.08);
+    } else if(sig.key==='FKBP5'){
+      sig.filter.frequency.linearRampToValueAtTime(400 + Math.sin(tSec*0.15)*200, now+0.1);
+    } else if(sig.key==='SLC6A4'){
+      sig.filter.frequency.linearRampToValueAtTime(800 + Math.sin(tSec*0.23)*500 + Math.sin(tSec*0.37)*300, now+0.1);
+    } else if(sig.key==='NF-κB'){
+      const spiralPhase = (tSec % 8) / 8;
+      const spiralPitch = spiralPhase < 0.7 ? spiralPhase / 0.7 : (1 - spiralPhase) / 0.3;
+      const pitchMult = 1 + spiralPitch * 0.15;
+      sig.oscs.forEach((osc, oi) => {
+        if(osc.frequency && sig.baseFreqs[oi]>0)
+          osc.frequency.linearRampToValueAtTime(sig.baseFreqs[oi]*pitchMult, now+0.08);
+      });
+      sig.filter.frequency.linearRampToValueAtTime(300 + spiralPitch*600, now+0.08);
+    } else if(sig.key==='OPRM1'){
+      sig.filter.frequency.linearRampToValueAtTime(250 + breath*200, now+0.1);
+    }
+
+    // Gods volume: louder when camera is near their stratum (smooth transition)
+    const godY = GODS[gi].y;
+    const yDist = Math.abs(camY - godY);
+    const proxVol = 0.05 + Math.max(0, 1 - yDist/12) * 0.18;
+    sig.gain.gain.linearRampToValueAtTime(proxVol, now + TRANSITION_TIME);
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // PROXIMITY-BASED AMBIENT ENTITY SOUNDS
+  // Sparse, occasional tones triggered by nearness to entity groups
+  // Each type emits quiet ambient sounds at different rates
+  // ═══════════════════════════════════════════════════════
+  if (!audioN._lastAmbientCheck) audioN._lastAmbientCheck = {};
+  if (!audioN._ambientCooldowns) audioN._ambientCooldowns = {};
+
+  const ambientConfigs = [
+    { type: 'demigod', meshes: demigodMeshes, range: 25, cooldown: 4000, rate: 0.15 },
+    { type: 'tension', meshes: tensionMeshes, range: 18, cooldown: 5000, rate: 0.12 },
+    { type: 'narrative', meshes: narrativeMeshes, range: 20, cooldown: 6000, rate: 0.1 },
+    { type: 'crystal', meshes: crystalMeshes, range: 15, cooldown: 7000, rate: 0.08 },
+    { type: 'blind', meshes: blindMeshes, range: 20, cooldown: 8000, rate: 0.06 },
+    { type: 'spirit', meshes: spiritMeshes, range: 22, cooldown: 9000, rate: 0.05 },
+    { type: 'growth', meshes: growthMeshes, range: 15, cooldown: 5000, rate: 0.1 },
+    { type: 'value', meshes: valueMeshes, range: 18, cooldown: 6000, rate: 0.07 },
+    { type: 'trail', meshes: trailMeshes, range: 18, cooldown: 7000, rate: 0.06 },
+  ];
+
+  const camPos = camera.position;
+  ambientConfigs.forEach(cfg => {
+    const lastTime = audioN._ambientCooldowns[cfg.type] || 0;
+    if (t - lastTime < cfg.cooldown) return;
+
+    // Find closest entity of this type
+    let minDist = 999;
+    cfg.meshes.forEach(m => {
+      const wp = m.getWorldPosition(new THREE.Vector3());
+      const d = camPos.distanceTo(wp);
+      if (d < minDist) minDist = d;
+    });
+
+    if (minDist > cfg.range) return;
+    if (Math.random() > cfg.rate) return;
+
+    audioN._ambientCooldowns[cfg.type] = t;
+    const proximity = 1 - minDist / cfg.range; // 0-1
+    const vol = proximity * 0.4; // scale factor for ambient volume
+
+    switch(cfg.type) {
+      case 'demigod': {
+        // Gentle mid-range harmonic ping
+        const f = 165 * SCALE[Math.floor(Math.random() * SCALE.length)];
+        const o = audioCtx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+        const g = audioCtx.createGain(); g.gain.value = 0;
+        g.gain.linearRampToValueAtTime(0.008 * vol, now + 0.3);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 3);
+        o.connect(g); g.connect(audioN.reverb);
+        o.start(); o.stop(now + 3.5);
+        break;
+      }
+      case 'tension': {
+        // Quiet dissonant beating
+        const f1 = 65 + Math.random() * 30;
+        const o1 = audioCtx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = f1;
+        const o2 = audioCtx.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = f1 * 1.414;
+        const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f1 * 2; bp.Q.value = 8;
+        const g = audioCtx.createGain(); g.gain.value = 0;
+        g.gain.linearRampToValueAtTime(0.005 * vol, now + 0.5);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 4);
+        o1.connect(bp); o2.connect(bp); bp.connect(g); g.connect(audioN.reverb);
+        o1.start(); o2.start(); o1.stop(now + 4.5); o2.stop(now + 4.5);
+        break;
+      }
+      case 'narrative': {
+        // Single melodic note with long tail
+        const f = 196 * SCALE[Math.floor(Math.random() * SCALE.length)] * (Math.random() > 0.5 ? 2 : 1);
+        const o = audioCtx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+        o.frequency.linearRampToValueAtTime(f * 0.97, now + 4);
+        const g = audioCtx.createGain(); g.gain.value = 0;
+        g.gain.linearRampToValueAtTime(0.006 * vol, now + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 5);
+        o.connect(g); g.connect(audioN.reverb); g.connect(audioN.delay);
+        o.start(); o.stop(now + 5.5);
+        break;
+      }
+      case 'crystal': {
+        // Tiny crystalline ping — very high, very short
+        const f = 2000 + Math.random() * 3000;
+        const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+        const g = audioCtx.createGain(); g.gain.value = 0.01 * vol;
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+        o.connect(g); g.connect(audioN.reverb);
+        o.start(); o.stop(now + 1);
+        break;
+      }
+      case 'blind': {
+        // Whisper noise puff
+        playNoiseBurst(audioCtx, 4500 + Math.random() * 2000, 600, 1.5, 0.003 * vol, audioN.reverb);
+        break;
+      }
+      case 'spirit': {
+        // Ascending pitch glide — ethereal
+        const f = 2500 + Math.random() * 1500;
+        playGlide(audioCtx, f, f * 1.5, 3, 'sine', 0.005 * vol, audioN.reverb);
+        break;
+      }
+      case 'growth': {
+        // Bell ping with ring mod character
+        const f = 800 + Math.random() * 800;
+        const ring = createRingMod(audioCtx, f, f * 1.618);
+        const g = audioCtx.createGain(); g.gain.value = 0.008 * vol;
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+        ring.output.connect(g); g.connect(audioN.reverb);
+        ring.carrier.stop(now + 1.5); ring.modulator.stop(now + 1.5);
+        break;
+      }
+      case 'value': {
+        // Warm chord fragment
+        const f = 220 * SCALE[Math.floor(Math.random() * SCALE.length)];
+        const o1 = audioCtx.createOscillator(); o1.type = 'sine'; o1.frequency.value = f;
+        const o2 = audioCtx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 5/4;
+        const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = f * 3; lp.Q.value = 0.5;
+        const g = audioCtx.createGain(); g.gain.value = 0;
+        g.gain.linearRampToValueAtTime(0.006 * vol, now + 0.5);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 3.5);
+        o1.connect(lp); o2.connect(lp); lp.connect(g); g.connect(audioN.reverb);
+        o1.start(); o2.start(); o1.stop(now + 4); o2.stop(now + 4);
+        break;
+      }
+      case 'trail': {
+        // Gentle rising fifth
+        const f = 130 * SCALE[Math.floor(Math.random() * SCALE.length)];
+        const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+        o.frequency.linearRampToValueAtTime(f * 1.03, now + 3);
+        const g = audioCtx.createGain(); g.gain.value = 0;
+        g.gain.linearRampToValueAtTime(0.005 * vol, now + 0.4);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 3.5);
+        o.connect(g); g.connect(audioN.reverb);
+        o.start(); o.stop(now + 4);
+        break;
+      }
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // LAYER TRANSITION HARMONIC SHIFT
+  // When crossing between rings, briefly shift the ambient harmonic palette
+  // ═══════════════════════════════════════════════════════
+  if (!audioN._lastLayerZone) audioN._lastLayerZone = -1;
+  const layerZones = [-18, -10, -3, 5, 12, 18]; // approximate Y thresholds for rings
+  let currentZone = 0;
+  for (let i = 0; i < layerZones.length; i++) {
+    if (camY > layerZones[i]) currentZone = i + 1;
+  }
+  if (currentZone !== audioN._lastLayerZone && audioN._lastLayerZone >= 0) {
+    // Layer crossing — play a transition shimmer
+    const transFreq = 100 + currentZone * 80;
+    const o1 = audioCtx.createOscillator(); o1.type = 'sine'; o1.frequency.value = transFreq;
+    const o2 = audioCtx.createOscillator(); o2.type = 'sine'; o2.frequency.value = transFreq * 3/2;
+    const o3 = audioCtx.createOscillator(); o3.type = 'sine'; o3.frequency.value = transFreq * 2;
+    // Ascending or descending?
+    const dir = currentZone > audioN._lastLayerZone ? 1.05 : 0.95;
+    o1.frequency.linearRampToValueAtTime(transFreq * dir, now + 3);
+    o2.frequency.linearRampToValueAtTime(transFreq * 3/2 * dir, now + 3);
+    const tg = audioCtx.createGain(); tg.gain.value = 0;
+    tg.gain.linearRampToValueAtTime(0.015, now + 0.3);
+    tg.gain.exponentialRampToValueAtTime(0.0001, now + 4);
+    o1.connect(tg); o2.connect(tg); o3.connect(tg);
+    tg.connect(audioN.reverb); tg.connect(audioN.delay);
+    o1.start(); o2.start(); o3.start();
+    o1.stop(now + 4.5); o2.stop(now + 4.5); o3.stop(now + 4.5);
+  }
+  audioN._lastLayerZone = currentZone;
+}
+
+// ─────────────────────────────────────────
+// THE LOAD FLOOR EVENT — 9 seconds of darkness
+// ─────────────────────────────────────────
+let floorDarknessActive = false;
+let floorDarknessStart = 0;
+
+function triggerFloorDarkness() {
+  if (floorDarknessActive) return;
+  floorDarknessActive = true;
+  floorDarknessStart = performance.now();
+  // Stop auto-rotate during the event
+  controls.autoRotateSpeed = 0;
+}
+
+function updateFloorDarkness(t) {
+  if (!floorDarknessActive) return;
+  const elapsed = (t - floorDarknessStart) / 1000;
+  const ambLight = scene.children.find(c => c.isAmbientLight);
+
+  if (elapsed < 3) {
+    // Phase 1: darken over 3 seconds
+    const p = elapsed / 3;
+    if (ambLight) ambLight.intensity = 0.5 * (1 - p * 0.9); // → 0.05
+    pLight.intensity = Math.max(0.05, pLight.intensity * 0.95);
+    scene.fog.density = 0.005 + p * 0.02; // fog thickens
+  } else if (elapsed < 6) {
+    // Phase 2: hold darkness — only floor faintly visible
+    if (ambLight) ambLight.intensity = 0.05;
+    pLight.intensity = 0.05;
+  } else if (elapsed < 9) {
+    // Phase 3: slowly return
+    const p = (elapsed - 6) / 3;
+    if (ambLight) ambLight.intensity = 0.05 + p * 0.45;
+    pLight.intensity = 0.05 + p * 0.45;
+    scene.fog.density = 0.026 - p * 0.02;
+  } else {
+    // Done
+    if (ambLight) ambLight.intensity = 0.5;
+    pLight.intensity = 0.5;
+    scene.fog.density = 0.005;
+    controls.autoRotateSpeed = 0.12;
+    floorDarknessActive = false;
+  }
+}
+
+// ─────────────────────────────────────────
+// CARD SYSTEM
+// ─────────────────────────────────────────
+const raycaster=new THREE.Raycaster(), pointer=new THREE.Vector2();
+
+function showCard(type,title,body,lore,secret){
+  const c=document.getElementById('card');
+  c.classList.remove('visible');
+  // Force animation restart
+  c.querySelectorAll('.c-type,.c-title,.c-body,.c-lore,.c-secret,.c-close').forEach(el => {
+    el.style.animation = 'none';
+    el.offsetHeight; // trigger reflow
+    el.style.animation = '';
+  });
+  c.querySelector('.c-type').textContent=type;
+  c.querySelector('.c-title').textContent=title;
+  c.querySelector('.c-body').textContent=body;
+  c.querySelector('.c-lore').textContent=lore||'';
+  c.querySelector('.c-lore').style.display=lore?'block':'none';
+  c.querySelector('.c-secret').textContent=secret||'';
+  c.querySelector('.c-secret').style.display=secret?'block':'none';
+  requestAnimationFrame(() => c.classList.add('visible'));
+}
+
+function closeCard(){document.getElementById('card').classList.remove('visible');if(!flyState.active)activeTarget=null;}
+window.closeCard=closeCard;
+document.getElementById('cardClose').addEventListener('click',closeCard);
+
+function presentCard(m){
+  if(!m)return;
+  const u=m.userData, d=u.data;
+  discovered.add(u.key);
+  heatmap[u.key] = (heatmap[u.key] || 0) + 1;
+  nodeClicks++;
+  checkSecrets(u.key);
+  saveState();
+
+  if(u.type==='god'){
+    showCard('deity · '+d.domain, d.name+' — '+d.epithet, '', d.lore, '');
+    playGodSound([110,82.5,73.4,65.4,55][GODS.indexOf(d)%5]);
+  } else if(u.type==='demigod'){
+    showCard('lesser deity · genetic', d.name+' — '+d.epithet, '', d.lore, '');
+    playDemigodSound(165);
+  } else if(u.type==='crystal'){
+    if(!u.cracked){u.cracked=true;u.crackT=performance.now();playCrystalSound();}
+    showCard('crystallized narrative', d.n, d.d, '', d.g);
+  } else if(u.type==='tension'){
+    showCard('tension · fault line', d.n, '', `${d.a} pulls against ${d.b}. ${d.deep?'This one runs to the bottom.':'Contained within the upper strata.'}`, '');
+    playTensionSound();
+  } else if(u.type==='blind'){
+    u.revealed=true;
+    showCard('blind spot · revealed', d.n, d.d, '', d.g);
+    playBlindSpotSound();
+  } else if(u.type==='floor'){
+    playFloorSound();
+    showCard('the load floor', d.n, d.d, '', d.g);
+    // THE LOAD FLOOR EVENT — all three curators agreed: break the frame
+    triggerFloorDarkness();
+  } else if(u.type==='research'){
+    showCard('research · '+d.d.toLowerCase(), d.n, d.desc||'', '', '');
+    playResearchSound();
+  } else if(u.type==='question'){
+    showCard('open question', d.text, d.ctx||'', '', '');
+    playResearchSound(); // questions share the granular research texture
+  } else if(u.type==='growth'){
+    presentGrowthCard(d);
+    playGrowthSound();
+  } else if(u.type==='spirit'){
+    showCard('spirit · pattern', d.name, d.desc, d.secret, '');
+    playSpiritSound();
+  } else if(u.type==='value'){
+    showCard('operating rule', d.name, d.rule, '', '');
+    playValueSound(440);
+  } else if(u.type==='trail'){
+    const velLabel = d.velocity === 'high' ? '▲ high' : d.velocity === 'medium' ? '■ medium' : '▼ low';
+    showCard(`trail · ${d.status}`, d.name, d.desc, `velocity: ${velLabel}`, '');
+    playTrailSound(261.6);
+  } else if(u.type==='narrative'){
+    const statusLabel = {'hardening':'▲','crystallizing':'▲','crystallized':'■','stressed':'⚡','intensifying':'⚡','fluid':'~','unresolved':'~','acknowledged':'○','unprocessed':'·','emerging':'·','core':'★'}[d.status]||'';
+    showCard('narrative · '+d.status+' '+statusLabel, d.name, d.desc, '', '');
+    playNarrativeSound(196);
+  } else if(u.type==='depth'){
+    const typeLabel = {'ifs':'internal part','state':'nervous system state','attachment':'relational pattern','existential':'existential theme','shadow':'shadow material','generative':'creative capacity'}[d.type]||d.type;
+    showCard('depth \u00b7 '+typeLabel, d.name, d.desc, '', '');
+    playDepthSound(73.4);
+  } else if(u.type==='domain'){
+    const domainDescs = {
+      'Pharmacogenomics': 'The genetic substrate. SNPs that shape what medications work, what substances harm, and what the nervous system defaults to.',
+      'Embodied': 'Perception as action. The body knows before the mind decides. Skateboarding, interoception, the rubber hand.',
+      'Anxiety': 'Three layers deep: cognitive worry on top, neuroendocrine cortisol in the middle, neuroimmune inflammation at the base.',
+      'Neuroimmunology': 'Where inflammation meets cognition. Microglia, cytokines, the kynurenine pathway. The body\'s immune system editing the brain.',
+      'Protocols': 'The intervention toolkit. Breathing, cold, sleep, exercise. Each mapped to a genetic variant that predicts response.',
+      'Psychotherapy': 'The talking layer. ACT, MCT, CBT, coaching. Where the Mirror Spirit operates — giving advice that mirrors its own need.',
+    };
+    showCard('domain nebula', u.key, domainDescs[u.key]||'', '', '');
+  }
+}
+
+// Resolve raycast hit — proxy children point back to parent entity
+function resolveHit(obj){
+  if(obj.userData.proxy) return obj.userData.proxy;
+  if(obj.userData.type) return obj;
+  // Walk up to find entity parent
+  let p=obj.parent;
+  while(p){if(p.userData&&p.userData.type)return p;p=p.parent;}
+  return obj;
+}
+
+let lastHoverKey=null, hoverThrottleT=0;
+renderer.domElement.addEventListener('pointermove', e=>{
+  pointer.x=(e.clientX/innerWidth)*2-1; pointer.y=-(e.clientY/innerHeight)*2+1;
+  lastMouseMove=performance.now();
+  const now=performance.now();
+  if(now-hoverThrottleT<100)return;
+  hoverThrottleT=now;
+  raycaster.setFromCamera(pointer,camera);
+  const h=raycaster.intersectObjects(interactables,true); // true = recursive into children
+  renderer.domElement.style.cursor=connectMode?'cell':h.length?'pointer':'crosshair';
+  if(!activeTarget&&h.length){
+    const resolved=resolveHit(h[0].object);
+    const k=resolved.userData.key;
+    if(k&&k!==lastHoverKey){lastHoverKey=k;drawConn(resolved);}
+  } else if(!activeTarget&&!h.length&&lastHoverKey){lastHoverKey=null;clearConn();}
+});
+
+renderer.domElement.addEventListener('click',()=>{
+  raycaster.setFromCamera(pointer,camera);
+  const h=raycaster.intersectObjects(interactables,true);
+
+  // ── Connect mode click handling ──
+  if(connectMode && h.length){
+    const hit=resolveHit(h[0].object);
+    const key=hit.userData.key;
+    if(!key) return;
+    if(connectFirst===null){
+      // First node selected
+      connectFirst=key;
+      hit.scale.multiplyScalar(1.3);
+      setTimeout(()=>hit.scale.multiplyScalar(1/1.3),400);
+      const fl=document.getElementById('filter-label');
+      fl.textContent='CONNECT: '+key+' \u2192 click second node';
+      fl.style.opacity='1';
+    } else {
+      // Second node selected — create connection
+      const secondKey=key;
+      if(secondKey===connectFirst){connectFirst=null;return;}
+      addC(connectFirst,secondKey);
+      userConnections.push([connectFirst,secondKey]);
+      saveState();
+      addAmbientThread(connectFirst,secondKey);
+      drawConn(hit);
+      playGrowthSound();
+      playValueSound(330);
+      showCard('connection created',connectFirst+' \u2194 '+secondKey,'A new thread joins the web.','','');
+      connectFirst=null;
+      const fl=document.getElementById('filter-label');
+      fl.textContent='CONNECT MODE \u2014 click two nodes';
+    }
+    return;
+  }
+
+  if(h.length){
+    activeTarget=resolveHit(h[0].object);
+    presentCard(activeTarget);
+    drawConn(activeTarget);
+    if(flyState.active)stopFly();
+  } else { closeCard(); activeTarget=null; clearConn(); }
+});
+
+// ─────────────────────────────────────────
+// DOUBLE-CLICK LIGHT BEAM
+// ─────────────────────────────────────────
+const lightBeams = []; // active beams
+
+renderer.domElement.addEventListener('dblclick', () => {
+  raycaster.setFromCamera(pointer, camera);
+  const h = raycaster.intersectObjects(interactables, true);
+  if (!h.length) return;
+  const obj = resolveHit(h[0].object);
+  // Only gods, crystals, blind spots, and floor emit beams
+  const beamTypes = ['god','crystal','blind','floor'];
+  if (!beamTypes.includes(obj.userData.type)) return;
+  const pos = obj.getWorldPosition(new THREE.Vector3());
+
+  // Create vertical beam — extends far up and down
+  const beamHeight = 200;
+  const beamGeo = new THREE.CylinderGeometry(0.15, 0.15, beamHeight, 8, 1, true);
+  const beamColor = obj.material.color ? obj.material.color.clone() : new THREE.Color(0xffd60a);
+  const beamMat = new THREE.MeshBasicMaterial({
+    color: beamColor, transparent: true, opacity: 0.7,
+    blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide
+  });
+  const beam = new THREE.Mesh(beamGeo, beamMat);
+  beam.position.copy(pos);
+  scene.add(beam);
+
+  // Wide glow halo around beam
+  const haloGeo = new THREE.CylinderGeometry(1.5, 1.5, beamHeight, 8, 1, true);
+  const haloMat = new THREE.MeshBasicMaterial({
+    color: beamColor, transparent: true, opacity: 0.12,
+    blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide
+  });
+  const halo = new THREE.Mesh(haloGeo, haloMat);
+  beam.add(halo);
+
+  // Wider outer glow
+  const outerGeo = new THREE.CylinderGeometry(4, 4, beamHeight, 8, 1, true);
+  const outerMat = new THREE.MeshBasicMaterial({
+    color: beamColor, transparent: true, opacity: 0.03,
+    blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide
+  });
+  beam.add(new THREE.Mesh(outerGeo, outerMat));
+
+  lightBeams.push({ mesh: beam, startTime: performance.now(), x: pos.x, z: pos.z });
+
+  // Gravity wave: all entities briefly pulled toward clicked node
+  const waveCenter = pos.clone();
+  const waveStart = performance.now();
+  if (!window.gravityWaves) window.gravityWaves = [];
+  window.gravityWaves.push({ center: waveCenter, startTime: waveStart, duration: 3000 });
+
+  // Play resonant beam tones — deep FM drone
+  playGodSound(55);
+  playDepthSound(41.2);
+});
+
+function updateLightBeams(t) {
+  for (let i = lightBeams.length - 1; i >= 0; i--) {
+    const lb = lightBeams[i];
+    const elapsed = (t - lb.startTime) / 1000;
+    // Beam pulses slowly and persists
+    lb.mesh.material.opacity = 0.4 + Math.sin(elapsed * 0.8) * 0.3;
+    lb.mesh.rotation.y = elapsed * 0.1; // slow rotation
+    // After 30 seconds, fade out
+    if (elapsed > 30) {
+      const fadeT = (elapsed - 30) / 5;
+      lb.mesh.material.opacity *= Math.max(0, 1 - fadeT);
+      if (fadeT >= 1) {
+        scene.remove(lb.mesh);
+        lb.mesh.geometry.dispose();
+        lb.mesh.material.dispose();
+        lightBeams.splice(i, 1);
+      }
+    }
+  }
+}
+
+// Touch support
+renderer.domElement.addEventListener('touchstart', e=>{
+  if(e.touches.length!==1)return;
+  const t=e.touches[0];
+  pointer.x=(t.clientX/innerWidth)*2-1; pointer.y=-(t.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(pointer,camera);
+  const h=raycaster.intersectObjects(interactables);
+  if(h.length){activeTarget=h[0].object;presentCard(activeTarget);drawConn(activeTarget);}
+}, {passive:true});
+
+// Keyboard navigation
+let kbIndex=-1;
+
+// ── Ordered entity list for arrow key navigation ──
+// Logical order: gods, demigods, values, trails, research, tensions, narratives, spirits, crystals, blind spots, depths, growth, floor
+const navEntities = [
+  ...godMeshes,
+  ...demigodMeshes,
+  ...valueMeshes,
+  ...trailMeshes,
+  ...interactables.filter(m => m.userData.type === 'research'),
+  ...tensionMeshes,
+  ...narrativeMeshes,
+  ...spiritMeshes,
+  ...crystalMeshes,
+  ...blindMeshes,
+  ...depthMeshes,
+  ...growthMeshes,
+  ...interactables.filter(m => m.userData.type === 'question'),
+  ...interactables.filter(m => m.userData.type === 'floor'),
+];
+
+// ── Arrow key smooth navigation state ──
+let navIndex = -1;
+let navLastArrowTime = 0;   // timestamp of last arrow press
+let navLastArrowKey = '';    // which arrow was last pressed
+const NAV_DOUBLE_PRESS_MS = 300; // double-press detection window
+let navTransitionActive = false; // true while camera is flying to entity
+
+function navFlyToEntity(mesh, instant) {
+  const pos = mesh.getWorldPosition(new THREE.Vector3());
+  const dir = pos.clone().normalize();
+  if (dir.length() < 0.01) dir.set(1, 0.3, 1).normalize();
+  const camTarget = pos.clone().add(dir.multiplyScalar(8)).add(new THREE.Vector3(0, 2, 0));
+
+  if (instant) {
+    // Double-press: jump immediately
+    camera.position.copy(camTarget);
+    controls.target.copy(pos);
+    navTransitionActive = false;
+  } else {
+    // Smooth fly using latestFly (same mechanism as latest mode)
+    latestFly = {
+      active: true,
+      startTime: performance.now(),
+      duration: 1500,
+      fromPos: camera.position.clone(),
+      toPos: camTarget,
+      fromTarget: controls.target.clone(),
+      toTarget: pos,
+    };
+    navTransitionActive = true;
+    // Mark transition as done when flight completes (checked in animate loop)
+  }
+
+  activeTarget = mesh;
+  presentCard(mesh);
+  drawConn(mesh);
+  kbIndex = interactables.indexOf(mesh);
+}
+
+function navArrow(delta, key) {
+  const now = performance.now();
+  const isDoublePress = (key === navLastArrowKey && now - navLastArrowTime < NAV_DOUBLE_PRESS_MS);
+  navLastArrowTime = now;
+  navLastArrowKey = key;
+
+  if (isDoublePress) {
+    // Double-press: skip smooth transition, jump to entity that is ALREADY the target
+    // (navIndex was already advanced on the first press)
+    const m = navEntities[navIndex];
+    navFlyToEntity(m, true);
+  } else {
+    // Single press: advance index and start smooth transition
+    navIndex = (navIndex + delta + navEntities.length) % navEntities.length;
+    const m = navEntities[navIndex];
+    navFlyToEntity(m, false);
+  }
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){e.preventDefault();applyFilter((filterIdx+1)%FILTER_MODES.length);return;}
+  if(e.key>='1'&&e.key<='9'){applyFilter(parseInt(e.key));return;}
+  if(e.key==='0'){applyFilter(0);return;}
+  if(e.key==='g'||e.key==='G'){gravityActive=true;return;}
+  if(e.key==='c'||e.key==='C'){
+    if(e.key==='C'&&e.shiftKey)return; // ignore Shift+C for other uses
+    connectMode=!connectMode;
+    connectFirst=null;
+    const fl=document.getElementById('filter-label');
+    if(connectMode){
+      fl.textContent='CONNECT MODE \u2014 click two nodes';
+      fl.style.opacity='1';
+      document.body.style.cursor='cell';
+    } else {
+      fl.textContent='';
+      fl.style.opacity='0';
+      document.body.style.cursor='';
+    }
+    return;
+  }
+  if(e.key==='l'||e.key==='L'){
+    if(latestMode){exitLatestMode();}else{enterLatestMode();}
+    return;
+  }
+  if(e.key==='Escape'){
+    if(latestMode){exitLatestMode();return;}
+    if(connectMode){connectMode=false;connectFirst=null;const fl=document.getElementById('filter-label');fl.textContent='';fl.style.opacity='0';document.body.style.cursor='';return;}
+    closeCard();activeTarget=null;clearConn();kbIndex=-1;navIndex=-1;navTransitionActive=false;
+    // Clear all light beams
+    lightBeams.forEach(lb=>{scene.remove(lb.mesh);lb.mesh.geometry.dispose();lb.mesh.material.dispose();});
+    lightBeams.length=0;
+    return;
+  }
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){
+    e.preventDefault();
+    if(latestMode){latestNav(1);return;}
+    navArrow(1, e.key);
+    return;
+  }
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(latestMode){latestNav(-1);return;}
+    navArrow(-1, e.key);
+    return;
+  }
+  if(e.key==='Enter'&&kbIndex>=0){const m=interactables[kbIndex];presentCard(m);drawConn(m);}
+});
+
+document.addEventListener('keyup', e => {
+  if(e.key==='g'||e.key==='G'){gravityActive=false;}
+});
+
+// ─────────────────────────────────────────
+// FLYTHROUGH (Journey through gods → crystals → blinds → floor)
+// ─────────────────────────────────────────
+const flyBtn=document.getElementById('flyBtn');
+const flyStops=[];
+const flyState={active:false,idx:0,phase:'idle',st:0,dur:3200,pause:0,fp:new THREE.Vector3(),tp:new THREE.Vector3(),ft:new THREE.Vector3(),tt:new THREE.Vector3(),cm:null};
+
+function buildStops(){
+  if(flyStops.length)return;
+  const add=(m,p,off)=>{const c=m.getWorldPosition(new THREE.Vector3()),d=c.clone().normalize();if(d.length()<.01)d.set(1,.3,1).normalize();flyStops.push({m,cam:c.clone().add(d.multiplyScalar(off)).add(new THREE.Vector3(0,2+Math.random()*2,0)),look:c,p});};
+  godMeshes.forEach(m=>add(m,6000,10));
+  crystalMeshes.forEach(m=>add(m,5500,9));
+  narrativeMeshes.forEach(m=>add(m,5000,8));
+  blindMeshes.forEach(m=>add(m,5500,11));
+  depthMeshes.forEach(m=>add(m,5500,9));
+  flyStops.push({m:floor,cam:floor.getWorldPosition(new THREE.Vector3()).clone().add(new THREE.Vector3(0,12,20)),look:floor.getWorldPosition(new THREE.Vector3()),p:7000});
+}
+function ease3(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+function startFly(){buildStops();flyState.active=true;flyState.idx=0;flyState.phase='moving';flyBtn.classList.add('active');flyBtn.textContent='❚❚ pause';controls.enabled=false;controls.autoRotate=false;prepStop(performance.now());}
+function stopFly(){flyState.active=false;flyState.phase='idle';flyBtn.classList.remove('active');flyBtn.textContent='▶ journey';controls.enabled=true;controls.autoRotate=true;}
+flyBtn.addEventListener('click',()=>{flyState.active?stopFly():startFly();});
+function prepStop(t){const s=flyStops[flyState.idx];flyState.cm=s.m;flyState.fp.copy(camera.position);flyState.tp.copy(s.cam);flyState.ft.copy(controls.target);flyState.tt.copy(s.look);flyState.st=t;flyState.dur=3200+Math.random()*800;flyState.phase='moving';}
+function updateFly(t){
+  if(!flyState.active)return;
+  if(flyState.phase==='moving'){
+    const p=THREE.MathUtils.clamp((t-flyState.st)/flyState.dur,0,1),e=ease3(p);
+    camera.position.lerpVectors(flyState.fp,flyState.tp,e);
+    controls.target.lerpVectors(flyState.ft,flyState.tt,e);
+    if(p>=1){flyState.phase='pause';flyState.pause=t+flyStops[flyState.idx].p;presentCard(flyState.cm);activeTarget=flyState.cm;drawConn(flyState.cm);}
+  } else if(flyState.phase==='pause'&&t>=flyState.pause){
+    closeCard();flyState.idx=(flyState.idx+1)%flyStops.length;prepStop(t);
+  }
+}
+
+// ─────────────────────────────────────────
+// BREATHING + WHISPERS
+// ─────────────────────────────────────────
+const BC=11000,IR=5/11;
+function getB(t){const p=(t%BC)/BC;if(p<IR){const s=p/IR;return s*s*(3-2*s);}else{const s=(p-IR)/(1-IR);return 1-s*s*(3-2*s);}}
+
+const whisperEl=document.getElementById('whisper');
+let whisperCooldown=0, stillTimer=0, lastMouseMove=0;
+
+function updateWhisper(t, camY){
+  // Only whisper when mouse is still for 4+ seconds
+  if(t-lastMouseMove < 9000) { whisperEl.style.color='rgba(255,214,10,0)'; return; }
+  const w = WHISPERS.find(w=>camY>=w.y[0]&&camY<=w.y[1]);
+  if(w && w.text && t>whisperCooldown){
+    whisperEl.textContent=w.text;
+    whisperEl.style.color='rgba(255,214,10,0.4)';
+    whisperCooldown=t+15000;
+  }
+}
+
+// lastMouseMove updated in main pointermove handler above
+
+// ─────────────────────────────────────────
+// IDLE / ATTRACT MODE
+// ─────────────────────────────────────────
+let lastInteraction = 0;
+let idleActive = false;
+
+// ─────────────────────────────────────────
+// PROGRESSIVE REVELATION — 5-act depth constraint
+// ─────────────────────────────────────────
+let depthFloor = 2;       // y >= 2 (surface only)
+let currentAct = 0;       // 0-4: surface, tension, crystals, blind spots, full depth
+let nodeClicks = 0;       // total node interactions
+let sessionStart = 0;     // set when user enters
+const ACT_LAYERS = [
+  { floor:  2,  name: 'The Surface',       whisper: 'The surface is all you can reach. Stay a while.' },
+  { floor: -4,  name: 'The Tension Band',  whisper: 'Something gives way beneath you. The fault lines are accessible now.' },
+  { floor: -9,  name: 'The Crystal Layer', whisper: 'Deeper still. Crystallized narratives wait below.' },
+  { floor: -14, name: 'The Blind Spots',   whisper: 'The temple trusts you now. Blind spots are within reach.' },
+  { floor: -22, name: 'The Load Floor',    whisper: 'Full depth. The foundation is exposed.' },
+];
+
+function getCrackedCrystalCount() {
+  return crystalMeshes.filter(m => m.userData.cracked).length;
+}
+function getRevealedBlindCount() {
+  return blindMeshes.filter(m => m.userData.revealed).length;
+}
+
+function checkActProgression(t) {
+  if (currentAct >= 4) return;
+  const elapsed = sessionStart > 0 ? (t - sessionStart) / 1000 : 0;
+  let newAct = currentAct;
+
+  // Act 0→1: 60s OR 5 nodes clicked
+  if (currentAct === 0 && (elapsed >= 60 || nodeClicks >= 5)) newAct = 1;
+  // Act 1→2: 120s OR 10 nodes clicked
+  if (currentAct === 1 && (elapsed >= 120 || nodeClicks >= 10)) newAct = 2;
+  // Act 2→3: 180s OR 2 crystals cracked
+  if (currentAct === 2 && (elapsed >= 180 || getCrackedCrystalCount() >= 2)) newAct = 3;
+  // Act 3→4: 240s OR 1 blind spot revealed
+  if (currentAct === 3 && (elapsed >= 240 || getRevealedBlindCount() >= 1)) newAct = 4;
+
+  if (newAct !== currentAct) {
+    currentAct = newAct;
+    depthFloor = ACT_LAYERS[currentAct].floor;
+    // Whisper the new layer name
+    whisperEl.textContent = ACT_LAYERS[currentAct].whisper;
+    whisperEl.style.color = 'rgba(255,214,10,0.5)';
+    whisperCooldown = t + 8000;
+    setTimeout(() => { whisperEl.style.color = 'rgba(255,214,10,0)'; }, 5000);
+
+    // Flash layer label with new act name
+    layerLabel.textContent = ACT_LAYERS[currentAct].name;
+    layerLabel.style.color = 'rgba(255,214,10,0.9)';
+    layerLabel.style.textShadow = '0 0 30px rgba(255,214,10,0.4)';
+    setTimeout(() => {
+      layerLabel.style.color = 'rgba(255,214,10,0.6)';
+      layerLabel.style.textShadow = '0 0 15px rgba(255,214,10,0.1)';
+    }, 2000);
+
+    // Pulse depth dot
+    const depthDot = document.getElementById('depth-dot');
+    depthDot.style.transform = 'scale(2)';
+    depthDot.style.boxShadow = '0 0 20px rgba(232,93,4,0.8)';
+    setTimeout(() => {
+      depthDot.style.transform = 'scale(1)';
+      depthDot.style.boxShadow = '0 0 10px rgba(232,93,4,0.4)';
+    }, 1500);
+  }
+}
+let idlePhase = 0; // 0=gods orbit, 1=descent, 2=secrets surface, 3=return
+let idleT = 0;
+const IDLE_TIMEOUT = 90000; // 90s no interaction → idle
+
+function markInteraction() { lastInteraction = performance.now(); if(idleActive){ idleActive=false; } }
+// Hook into existing event handlers
+renderer.domElement.addEventListener('pointerdown', markInteraction);
+renderer.domElement.addEventListener('wheel', markInteraction);
+
+function updateIdle(t) {
+  if(flyState.active) return;
+  if(!idleActive && t - lastInteraction > IDLE_TIMEOUT && lastInteraction > 0) {
+    idleActive = true; idlePhase = 0; idleT = t;
+    controls.autoRotate = true; controls.autoRotateSpeed = 0.2;
+    closeCard(); clearConn();
+  }
+  if(!idleActive) return;
+
+  const elapsed = (t - idleT) / 1000;
+  const cycle = elapsed % 240; // 4-min cycle
+
+  if(cycle < 45) {
+    // Chapter 1: slow rise from depth
+    controls.autoRotateSpeed = 0.15;
+    const targetY = -20 + (cycle/45) * 35;
+    camera.position.y += (targetY - camera.position.y) * 0.005;
+  } else if(cycle < 120) {
+    // Chapter 2: orbit at mid-level, gods announce
+    controls.autoRotateSpeed = 0.25;
+    camera.position.y += (5 - camera.position.y) * 0.003;
+    // Briefly highlight a god every 15s
+    const godIdx = Math.floor((cycle-45)/15) % godMeshes.length;
+    godMeshes.forEach((m,i) => { m.material.opacity = i===godIdx ? 0.8 : 0.5; });
+  } else if(cycle < 210) {
+    // Chapter 3: slow descent, surface secrets
+    controls.autoRotateSpeed = 0.12;
+    const targetY = 5 - ((cycle-120)/90) * 25;
+    camera.position.y += (targetY - camera.position.y) * 0.003;
+    // Show a random secret connection briefly
+    if(Math.floor(cycle)%20===0 && connGroup.children.length===0) {
+      const s = SECRETS[Math.floor(Math.random()*SECRETS.length)];
+      const m = meshIndex.get(s.trigger[0]);
+      if(m) drawConn(m);
+      setTimeout(clearConn, 8000);
+    }
+  } else {
+    // Chapter 4: return to stillness
+    controls.autoRotateSpeed = 0.08;
+    camera.position.y += (15 - camera.position.y) * 0.005;
+    godMeshes.forEach(m => { m.material.opacity = 0.6; });
+  }
+}
+
+// ─────────────────────────────────────────
+// ANIMATION
+// ─────────────────────────────────────────
+const clock=new THREE.Clock();
+const breathEl=document.getElementById('breath');
+const layerLabel=document.getElementById('layer-label');
+const depthDot=document.getElementById('depth-dot');
+const discEl=document.getElementById('discovery');
+
+const _godWorldPos = new THREE.Vector3();
+function animate(){
+  requestAnimationFrame(animate);
+  const t=performance.now(),dt=clock.getDelta(),b=getB(t);
+  breathU.value=b; timeU.value=t*.001;
+
+  breathEl.style.transform=`scale(${.6+b*.8})`;
+  breathEl.style.background=`rgba(232,93,4,${.08+b*.12})`;
+
+  // Progressive revelation: check act transitions and enforce depth floor
+  checkActProgression(t);
+  if (!idleActive && !flyState.active && camera.position.y < depthFloor) {
+    camera.position.y += (depthFloor - camera.position.y) * 0.03;
+  }
+
+  const cy=camera.position.y;
+  depthDot.style.top=`${(1-THREE.MathUtils.clamp((cy+22)/40,0,1))*100}%`;
+
+  let cl='';
+  for(const l of LAYERS)if(cy>=l.y-l.h/2&&cy<=l.y+l.h/2){cl=l.name;break;}
+  layerLabel.textContent=cl||'';
+  layerLabel.style.color=cl?'rgba(255,214,10,0.6)':'rgba(255,214,10,0)';
+
+  // Particles — organic noise-driven flow (biological substrate)
+  const tSlow = t * 0.00008; // very slow time for noise field drift
+  const tMed = t * 0.0003;
+  const pa=surfGeo.attributes.position.array;
+  for(let i=0;i<surfN;i++){
+    const v=sv[i];
+    const x=pa[i*3], y=pa[i*3+1], z=pa[i*3+2];
+    // 3D noise field drives velocity — like cytoplasmic streaming
+    const nx = simplex3(x*0.06+tSlow, y*0.06, z*0.06+tSlow*0.7);
+    const ny = simplex3(x*0.06+100, y*0.06+tSlow*0.5, z*0.06+100);
+    const nz = simplex3(x*0.06+200, y*0.06+200, z*0.06+tSlow*0.9);
+    // Blend noise into velocity (organic drift)
+    v.vx = v.vx*0.92 + nx*0.004;
+    v.vy = v.vy*0.92 + ny*0.002 + (b-0.5)*0.003; // breathing lifts/lowers
+    v.vz = v.vz*0.92 + nz*0.004;
+    pa[i*3]+=v.vx; pa[i*3+1]+=v.vy; pa[i*3+2]+=v.vz;
+    // Soft containment (membrane, not wall)
+    const d2=Math.sqrt(x*x+z*z);
+    if(d2>18){const pushBack=0.98+0.02*(18/d2);pa[i*3]*=pushBack;pa[i*3+2]*=pushBack;}
+    if(pa[i*3+1]>28)pa[i*3+1]=8; if(pa[i*3+1]<7)pa[i*3+1]=28;
+  }
+  surfGeo.attributes.position.needsUpdate=true;
+
+  // Gods — organic breathing + noise-driven drift
+  godMeshes.forEach((m,gi)=>{
+    const bf = m.userData.breathFreq || 0.0018;
+    const breathScale = 0.95 + 0.1 * (0.5 + 0.5 * Math.sin(t * bf));
+    m.scale.setScalar(breathScale);
+    // Noise-modulated rotation (not constant speed)
+    const rotNoise = simplex3(gi*10, tSlow*8, 0);
+    m.rotation.y += 0.0008 + rotNoise * 0.0005;
+    m.rotation.x = simplex3(gi*10+50, tSlow*6, 0) * 0.08;
+    // Subtle position drift (gods sway like deep-sea organisms)
+    if(m.userData.homePos){
+      const hp=m.userData.homePos;
+      const dx = simplex3(hp.x*0.1+tSlow*3, hp.y*0.1, hp.z*0.1) * 0.8;
+      const dy = simplex3(hp.x*0.1, hp.y*0.1+tSlow*2, hp.z*0.1) * 0.4;
+      const dz = simplex3(hp.x*0.1, hp.y*0.1, hp.z*0.1+tSlow*3) * 0.8;
+      if(gravityStrength===0){
+        m.position.x = hp.x + dx;
+        m.position.y = hp.y + dy;
+        m.position.z = hp.z + dz;
+      }
+    }
+  });
+
+  // Lesser deities — gentle orbit and breathing
+  demigodMeshes.forEach((m, i) => {
+    const bf = m.userData.breathFreq || 0.002;
+    m.scale.setScalar(0.95 + 0.1 * (0.5 + 0.5 * Math.sin(t * bf)));
+    m.rotation.y += 0.0006 + simplex3(i * 15, tSlow * 6, 0) * 0.0003;
+    m.rotation.x = simplex3(i * 15 + 50, tSlow * 4, 0) * 0.06;
+  });
+
+  // God orbiting particles
+  godParticleSystems.forEach(sys => {
+    const godPos = sys.godMesh.getWorldPosition(_godWorldPos);
+    const tSec = t * 0.001;
+    const arr = sys.mesh.geometry.attributes.position.array;
+
+    for (let p = 0; p < sys.pCount; p++) {
+      const o = sys.orbits[p];
+      // Advance phase with precession
+      o.phase += o.speed * 0.016; // ~per-frame at 60fps
+      o.precession += 0.00001;
+
+      let localX, localY, localZ;
+
+      if (sys.godKey === 'NF-\u03BAB') {
+        // The Spiral: radius oscillates inward/outward over time
+        const spiralT = Math.sin(tSec * 0.3 + p * 0.1) * 0.5 + 0.5; // 0-1
+        const radiusMod = 0.3 + spiralT * 0.7; // shrink to 30%, expand to 100%
+        localX = Math.cos(o.phase + o.precession) * o.semiA * radiusMod;
+        localZ = Math.sin(o.phase + o.precession) * o.semiB * radiusMod;
+        localY = o.yOff + Math.sin(o.phase * 0.5) * 1.5;
+      } else {
+        // Standard elliptical orbit
+        localX = Math.cos(o.phase + o.precession) * o.semiA;
+        localZ = Math.sin(o.phase + o.precession) * o.semiB;
+        localY = o.yOff + Math.sin(o.phase * 0.7) * 0.8;
+      }
+
+      // Apply per-god tilt to orbit plane
+      const tiltedY = localY * Math.cos(sys.tiltX) - localZ * Math.sin(sys.tiltX);
+      const tiltedZ = localY * Math.sin(sys.tiltX) + localZ * Math.cos(sys.tiltX);
+      const finalX = localX * Math.cos(sys.tiltZ) - tiltedY * Math.sin(sys.tiltZ);
+      const finalY = localX * Math.sin(sys.tiltZ) + tiltedY * Math.cos(sys.tiltZ);
+
+      if (sys.isTrail) {
+        // The Painter: line segments — current pos and a trailing pos
+        const idx = p * 6;
+        arr[idx]     = godPos.x + finalX;
+        arr[idx + 1] = godPos.y + finalY;
+        arr[idx + 2] = godPos.z + tiltedZ;
+        // Trail point: slightly behind in phase
+        const trailPhase = o.phase - 0.15;
+        const tX = Math.cos(trailPhase + o.precession) * o.semiA;
+        const tZ2 = Math.sin(trailPhase + o.precession) * o.semiB;
+        const tY = o.yOff + Math.sin(trailPhase * 0.7) * 0.8;
+        const ttY = tY * Math.cos(sys.tiltX) - tZ2 * Math.sin(sys.tiltX);
+        const ttZ = tY * Math.sin(sys.tiltX) + tZ2 * Math.cos(sys.tiltX);
+        const tfX = tX * Math.cos(sys.tiltZ) - ttY * Math.sin(sys.tiltZ);
+        const tfY = tX * Math.sin(sys.tiltZ) + ttY * Math.cos(sys.tiltZ);
+        arr[idx + 3] = godPos.x + tfX;
+        arr[idx + 4] = godPos.y + tfY;
+        arr[idx + 5] = godPos.z + ttZ;
+      } else {
+        const idx = p * 3;
+        arr[idx]     = godPos.x + finalX;
+        arr[idx + 1] = godPos.y + finalY;
+        arr[idx + 2] = godPos.z + tiltedZ;
+      }
+    }
+    sys.mesh.geometry.attributes.position.needsUpdate = true;
+  });
+
+  // Research orbs — noise-modulated orbits (not perfect circles)
+  interactables.forEach(m=>{
+    if(m.userData.type==='research'){
+      const o=m.userData.orbit;
+      // Noise-modulated speed (some moments faster, some slower — like peristalsis)
+      const speedNoise = simplex3(o.a*2, tSlow*12, 0);
+      o.a += (o.s*16) * (0.6 + speedNoise * 0.8);
+      // Noise-modulated radius (orbit breathes)
+      const rNoise = simplex3(o.a, tSlow*5, 50);
+      const r = o.r + rNoise * 2;
+      m.position.x=Math.cos(o.a)*r;
+      m.position.z=Math.sin(o.a)*r;
+      // Vertical drift with noise
+      const yNoise = simplex3(o.a+100, tSlow*8, 100);
+      m.position.y=o.y + yNoise*1.5 + (b-0.5)*0.3;
+    }
+  });
+
+  // Filter opacity transitions
+  interactables.forEach(m => {
+    if(m.userData.targetOpacity!==undefined){
+      const curr=m.material.opacity;
+      const tgt=m.userData.targetOpacity;
+      if(Math.abs(curr-tgt)>0.001) m.material.opacity+=(tgt-curr)*0.04;
+    }
+  });
+
+  // Crystals
+  crystalMeshes.forEach(m=>{m.rotation.y+=.002;m.rotation.x=Math.sin(t*.0003)*.1;if(m.userData.cracked){const e=(t-m.userData.crackT)/1000;m.scale.setScalar(1+Math.sin(e*2)*.05*Math.max(0,1-e*.2));m.material.color.lerp(new THREE.Color(0xffd60a),.001);}});
+
+  // Narratives — slow rotation, pulse for stressed/intensifying
+  narrativeMeshes.forEach((m,ni)=>{m.rotation.y+=.003;m.rotation.z=Math.sin(t*.0004+ni)*.08;if(m.userData.pulse){m.material.opacity=m.userData.baseOpacity+Math.sin(t*.002+ni*1.5)*.1;}});
+
+  // Depths — slow rotation, breathing scale, shadow nodes low opacity
+  depthMeshes.forEach((m,di)=>{
+    m.rotation.y+=.0015;m.rotation.x=Math.sin(t*.0003+di*0.7)*.06;
+    const breath=0.95+0.08*Math.sin(t*.0012+di*1.1);
+    m.scale.setScalar(breath);
+    if(m.userData.isShadow){
+      const isHovered=m===activeTarget;
+      const targetOp=isHovered?0.45:0.15;
+      m.material.opacity+=(targetOp-m.material.opacity)*0.05;
+    }
+  });
+
+  // Spirits — noise-driven wandering (patterns that can't settle)
+  spiritMeshes.forEach((m,si)=>{
+    const o=m.userData.orbit;
+    const sNoise = simplex3(si*20, tSlow*10, 0);
+    o.angle += (o.speed*8) * (0.5 + sNoise * 1.0);
+    const rNoise = simplex3(si*20+100, tSlow*7, 0);
+    m.position.x = Math.cos(o.angle) * (o.r + rNoise*3);
+    m.position.z = Math.sin(o.angle) * (o.r + rNoise*3);
+    m.position.y = o.baseY + simplex3(si*20, tSlow*6, 200)*3 + (b-0.5)*0.5;
+    m.rotation.x += 0.002 + sNoise*0.002;
+    m.rotation.z += 0.001 + rNoise*0.001;
+    m.material.opacity = 0.12 + simplex3(si*20+300, tSlow*15, 0)*0.1;
+  });
+
+  // Growth items — organic grow-in animation
+  growthMeshes.forEach(m => {
+    const ud = m.userData;
+    const age = (t - ud.birthTime) / 1000; // seconds since birth
+    if (age < 0) return; // not born yet
+
+    if (!ud.grown && age < 4) {
+      // Phase 1: grow in over 4 seconds (ease-out cubic)
+      const p = Math.min(age / 4, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      const s = ease * (0.8 + simplex3(m.position.x, t * 0.0001, 0) * 0.2);
+      m.scale.setScalar(s);
+      m.material.opacity = ease * ud.targetOpacity;
+      if (ud.labelSprite) ud.labelSprite.material.opacity = ease * 0.8;
+      if (ud.glowSprite) ud.glowSprite.material.opacity = ease * 0.3;
+    } else {
+      ud.grown = true;
+      // Phase 2: alive — gentle organic pulsing
+      const pulse = 1 + simplex3(m.position.x * 0.5, t * 0.0002, m.position.z * 0.5) * 0.08;
+      m.scale.setScalar(pulse);
+      m.material.opacity = ud.targetOpacity + simplex3(m.position.x, t * 0.0003, 0) * 0.1;
+      // Slow organic drift
+      if (ud.homePos) {
+        const drift = simplex3(ud.homePos.x * 0.3, t * 0.00005, ud.homePos.z * 0.3) * 0.5;
+        m.position.x = ud.homePos.x + drift;
+        m.position.z = ud.homePos.z + simplex3(ud.homePos.z * 0.3, t * 0.00005, 0) * 0.5;
+      }
+      // Slow rotation
+      m.rotation.x += 0.001;
+      m.rotation.y += 0.0015;
+    }
+  });
+
+  // Growth tendrils — fade in with their growth items
+  growthTendrils.forEach(gt => {
+    const ud = gt.growthMesh.userData;
+    const age = (t - ud.birthTime) / 1000;
+    if (age < 0) { gt.mesh.material.opacity = 0; return; }
+    const fadeIn = Math.min(age / 5, 1); // slightly slower than the node
+    gt.mesh.material.opacity = fadeIn * gt.targetOpacity;
+  });
+
+  // Fireflies — erratic biological drift (like actual fireflies)
+  qMeshes.forEach((m,qi)=>{
+    const o=m.userData.orbit;
+    // Noise-modulated speed bursts (rest → sudden move → rest)
+    const burstNoise = simplex3(qi*30, tSlow*20, 0);
+    const speedMult = burstNoise > 0.3 ? 2.5 : (burstNoise < -0.3 ? 0.2 : 1.0);
+    o.aH += o.sH*16*speedMult;
+    o.aV += o.sV*16*speedMult;
+    const rNoise = simplex3(qi*30+50, tSlow*8, 0);
+    m.position.x = Math.cos(o.aH) * (o.r + rNoise*3);
+    m.position.z = Math.sin(o.aH) * (o.r + rNoise*3);
+    m.position.y = o.y + Math.sin(o.aV)*5 + simplex3(qi*30+100, tSlow*12, 0)*2;
+    // Bioluminescent flicker
+    const flicker = simplex3(qi*30+200, tSlow*40, 0);
+    m.material.opacity = 0.3 + flicker*0.35;
+  });
+
+  // Canopy breathing — branches sway with noise
+  canopyGroup.children.forEach((m, i) => {
+    if (m.isMesh && m.geometry.type === 'TubeGeometry') {
+      m.rotation.y = simplex3(i * 5, t * 0.00004, 0) * 0.03;
+      m.rotation.x = simplex3(i * 5 + 100, t * 0.00003, 0) * 0.02;
+    }
+  });
+
+  // Energy fields — slow drift and rotation
+  fieldMeshes.forEach((m, i) => {
+    m.rotation.y += 0.0003 + i * 0.0001;
+    m.rotation.x = Math.sin(t * 0.00008 + i) * 0.1;
+    const home = FIELDS[i];
+    m.position.x = home.x + simplex3(i * 20, t * 0.00003, 0) * 2;
+    m.position.z = home.z + simplex3(0, i * 20, t * 0.00003) * 2;
+    m.position.y = home.y + simplex3(i * 20, 0, t * 0.00003) * 1.5;
+  });
+
+  pLight.intensity=.3+b*.3;
+
+  updateAudio(t, cy, b);
+  updateConnections(t);
+  updateLightBeams(t);
+  updateFly(t);
+  // Latest mode camera transition
+  if (latestFly && latestFly.active) {
+    const p = Math.min((performance.now() - latestFly.startTime) / latestFly.duration, 1);
+    const e = ease3(p);
+    camera.position.lerpVectors(latestFly.fromPos, latestFly.toPos, e);
+    controls.target.lerpVectors(latestFly.fromTarget, latestFly.toTarget, e);
+    if (p >= 1) { latestFly.active = false; navTransitionActive = false; }
+  }
+  updateIdle(t);
+  updateFloorDarkness(t);
+  updateWhisper(t, cy);
+
+  // Gravity waves from double-click
+  if (window.gravityWaves) {
+    for (let wi = window.gravityWaves.length - 1; wi >= 0; wi--) {
+      const wave = window.gravityWaves[wi];
+      const elapsed = (t - wave.startTime) / wave.duration;
+      if (elapsed > 1) { window.gravityWaves.splice(wi, 1); continue; }
+      // Pull then release: peaks at 0.3, fades by 1.0
+      const pull = elapsed < 0.3 ? elapsed / 0.3 : Math.max(0, 1 - (elapsed - 0.3) / 0.7);
+      const strength = pull * 0.15;
+      interactables.forEach(m => {
+        if (!m.userData.homePos) return;
+        const dx = wave.center.x - m.position.x;
+        const dz = wave.center.z - m.position.z;
+        const dy = wave.center.y - m.position.y;
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if (dist > 0.5) {
+          m.position.x += dx / dist * strength;
+          m.position.y += dy / dist * strength * 0.3;
+          m.position.z += dz / dist * strength;
+        }
+      });
+      // Also add noise twitch to all entities
+      const twitch = pull * 0.4;
+      interactables.forEach(m => {
+        m.position.x += simplex3(m.position.x + t * 0.01, 0, 0) * twitch;
+        m.position.z += simplex3(0, m.position.z + t * 0.01, 0) * twitch;
+      });
+    }
+  }
+
+  // Gravity attractor
+  if(gravityActive && activeTarget){
+    gravityStrength=Math.min(gravityStrength+0.015,0.7);
+  } else {
+    gravityStrength=Math.max(gravityStrength-0.02,0);
+  }
+  if(gravityStrength>0 && activeTarget){
+    const center=activeTarget.getWorldPosition(_gravLerpTarget);
+    const connections=connMap.get(activeTarget.userData.key)||new Set();
+    interactables.forEach(m=>{
+      if(m===activeTarget||!m.userData.homePos)return;
+      if(m.userData.orbit) return; // skip orbiting entities
+      const weight=connections.has(m.userData.key)?1.0:0.15;
+      const pull=gravityStrength*weight;
+      const target=new THREE.Vector3().lerpVectors(m.userData.homePos,center,pull*0.6);
+      m.position.lerp(target,0.03);
+    });
+  } else if(gravityStrength===0){
+    interactables.forEach(m=>{
+      if(m.userData.orbit) return; // skip orbiting entities
+      if(m.userData.homePos) m.position.lerp(m.userData.homePos,0.02);
+    });
+  }
+
+  discEl.textContent = secretsFound.size > 0 ? `${secretsFound.size} of 20` : '';
+
+  // Hand tracking
+  if (handTrackingActive) processHandFrame(t);
+
+  controls.update();
+  composer.render();
+}
+
+// ─────────────────────────────────────────
+// HAND TRACKING (MediaPipe HandLandmarker)
+// ─────────────────────────────────────────
+let handTrackingActive = false;
+let handLandmarker = null;
+let handVideo = null;
+let lastHandCentroid = null;
+let handSmoothed = { x: 0, y: 0, area: 0 };
+const HAND_SMOOTH = 0.15; // smoothing factor
+const HAND_DEAD_ZONE = 0.02; // 2% of frame = dead zone
+let handStableFrames = 0;
+const HAND_STABILITY_THRESHOLD = 12; // frames before gesture fires
+
+async function initHandTracking() {
+  try {
+    // Dynamic import of MediaPipe
+    const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs');
+    const { HandLandmarker, FilesetResolver } = vision;
+
+    const wasmFiles = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+    );
+
+    handLandmarker = await HandLandmarker.createFromOptions(wasmFiles, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task',
+        delegate: 'GPU'
+      },
+      runningMode: 'VIDEO',
+      numHands: 2,
+      minHandDetectionConfidence: 0.5,
+      minHandPresenceConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+
+    handVideo = document.getElementById('handCam');
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 480, facingMode: 'user' }
+    });
+    handVideo.srcObject = stream;
+    handVideo.style.display = 'block';
+    document.getElementById('handStatus').style.display = 'block';
+
+    console.log('Hand tracking initialized');
+    return true;
+  } catch (e) {
+    console.error('Hand tracking failed:', e);
+    return false;
+  }
+}
+
+function processHandFrame(timestamp) {
+  if (!handLandmarker || !handVideo || handVideo.readyState < 2) return;
+
+  const results = handLandmarker.detectForVideo(handVideo, timestamp);
+
+  if (!results.landmarks || results.landmarks.length === 0) {
+    handStableFrames = 0;
+    lastHandCentroid = null;
+    document.getElementById('handStatus').textContent = 'SCANNING';
+    document.getElementById('handStatus').style.color = 'rgba(232,93,4,0.3)';
+    // After 3 seconds of no hands, re-enable auto-rotate
+    return;
+  }
+
+  document.getElementById('handStatus').textContent = 'TRACKING';
+  document.getElementById('handStatus').style.color = 'rgba(46,196,182,0.5)';
+
+  // Use first hand's landmarks
+  const landmarks = results.landmarks[0];
+
+  // Calculate centroid (average of all 21 landmarks)
+  let cx = 0, cy = 0;
+  let minX = 1, maxX = 0, minY = 1, maxY = 0;
+  for (const lm of landmarks) {
+    cx += lm.x; cy += lm.y;
+    minX = Math.min(minX, lm.x); maxX = Math.max(maxX, lm.x);
+    minY = Math.min(minY, lm.y); maxY = Math.max(maxY, lm.y);
+  }
+  cx /= landmarks.length;
+  cy /= landmarks.length;
+  const area = (maxX - minX) * (maxY - minY);
+
+  // Mirror X (camera is mirrored)
+  cx = 1 - cx;
+
+  // Smooth
+  handSmoothed.x += (cx - handSmoothed.x) * HAND_SMOOTH;
+  handSmoothed.y += (cy - handSmoothed.y) * HAND_SMOOTH;
+  handSmoothed.area += (area - handSmoothed.area) * HAND_SMOOTH;
+
+  handStableFrames++;
+  if (handStableFrames < HAND_STABILITY_THRESHOLD) return;
+
+  if (lastHandCentroid) {
+    const dx = handSmoothed.x - lastHandCentroid.x;
+    const dy = handSmoothed.y - lastHandCentroid.y;
+    const dArea = handSmoothed.area - lastHandCentroid.area;
+
+    // Orbit: horizontal sweep
+    if (Math.abs(dx) > HAND_DEAD_ZONE) {
+      const azimuth = controls.getAzimuthalAngle();
+      const newAzimuth = azimuth - dx * 3.0; // sensitivity
+      const spherical = new THREE.Spherical().setFromVector3(
+        camera.position.clone().sub(controls.target)
+      );
+      spherical.theta = newAzimuth;
+      camera.position.copy(controls.target).add(
+        new THREE.Vector3().setFromSpherical(spherical)
+      );
+    }
+
+    // Elevation: vertical sweep
+    if (Math.abs(dy) > HAND_DEAD_ZONE) {
+      const spherical = new THREE.Spherical().setFromVector3(
+        camera.position.clone().sub(controls.target)
+      );
+      spherical.phi = THREE.MathUtils.clamp(
+        spherical.phi + dy * 2.0,
+        controls.minPolarAngle,
+        controls.maxPolarAngle
+      );
+      camera.position.copy(controls.target).add(
+        new THREE.Vector3().setFromSpherical(spherical)
+      );
+    }
+
+    // Zoom: hand area change
+    if (Math.abs(dArea) > 0.002) {
+      const dist = camera.position.distanceTo(controls.target);
+      const newDist = THREE.MathUtils.clamp(
+        dist - dArea * 200,
+        controls.minDistance,
+        controls.maxDistance
+      );
+      const dir = camera.position.clone().sub(controls.target).normalize();
+      camera.position.copy(controls.target).add(dir.multiplyScalar(newDist));
+    }
+  }
+
+  lastHandCentroid = { x: handSmoothed.x, y: handSmoothed.y, area: handSmoothed.area };
+}
+
+// Audio mute toggle
+let audioMuted = false;
+document.getElementById('audioBtn').addEventListener('click', () => {
+  audioMuted = !audioMuted;
+  if (audioCtx) {
+    audioN.mg.gain.linearRampToValueAtTime(audioMuted ? 0 : 0.08, audioCtx.currentTime + 1);
+  }
+  const btn = document.getElementById('audioBtn');
+  btn.textContent = audioMuted ? 'UNMUTE' : 'AUDIO';
+  btn.classList.toggle('active', audioMuted);
+});
+
+// Toggle button
+document.getElementById('handBtn').addEventListener('click', async () => {
+  if (!handTrackingActive) {
+    const ok = await initHandTracking();
+    if (ok) {
+      handTrackingActive = true;
+      document.getElementById('handBtn').classList.add('active');
+      controls.autoRotate = false;
+    }
+  } else {
+    handTrackingActive = false;
+    document.getElementById('handBtn').classList.remove('active');
+    if (handVideo && handVideo.srcObject) {
+      handVideo.srcObject.getTracks().forEach(t => t.stop());
+      handVideo.style.display = 'none';
+    }
+    document.getElementById('handStatus').style.display = 'none';
+    controls.autoRotate = true;
+  }
+});
+
+// ─────────────────────────────────────────
+// INTRO
+// ─────────────────────────────────────────
+document.getElementById('enterBtn').addEventListener('click',()=>{
+  const intro=document.getElementById('intro');
+  intro.classList.add('out');
+  controls.enabled=true;
+  sessionStart=performance.now();
+  initAudio();
+  const s={x:3,y:-5,z:3},e={x:22,y:8,z:22};
+  camera.position.set(s.x,s.y,s.z);controls.target.set(0,-5,0);
+  const dur=5000,st=performance.now();
+  (function ia(t){const p=Math.min((t-st)/dur,1),ease=p*p*(3-2*p);camera.position.set(s.x+(e.x-s.x)*ease,s.y+(e.y-s.y)*ease,s.z+(e.z-s.z)*ease);if(p<1)requestAnimationFrame(ia);})(st);
+  setTimeout(()=>intro.remove(),4000);
+  // Starting point: dim everything, spotlight first god
+  setTimeout(() => {
+    interactables.forEach(m => {
+      if (!m.userData.baseOpacity) m.userData.baseOpacity = m.material.opacity;
+      m.material.opacity = 0.03;
+    });
+    godMeshes[0].material.opacity = 0.7;
+    // Fade in after 3 seconds
+    setTimeout(() => {
+      let fadeStart = performance.now();
+      function fadeIn(t) {
+        const p = Math.min((t - fadeStart) / 2000, 1);
+        interactables.forEach(m => {
+          const base = m.userData.baseOpacity || 0.5;
+          m.material.opacity = 0.03 + (base - 0.03) * p;
+        });
+        if (p < 1) requestAnimationFrame(fadeIn);
+      }
+      requestAnimationFrame(fadeIn);
+      // After fade-in completes, fly to newest growth item
+      setTimeout(() => {
+        if (growthMeshes.length > 0) {
+          const sorted = [...growthMeshes].sort((a,b) => {
+            const da = a.userData.data?.date || ''; const db = b.userData.data?.date || '';
+            return db.localeCompare(da);
+          });
+          const newest = sorted[0];
+          if (newest) {
+            const pos = newest.getWorldPosition(new THREE.Vector3());
+            const dir = pos.clone().normalize();
+            if (dir.length() < 0.01) dir.set(1,0.3,1).normalize();
+            const camTarget = pos.clone().add(dir.multiplyScalar(8)).add(new THREE.Vector3(0,2,0));
+            latestFly = { active:true, startTime:performance.now(), duration:2500,
+              fromPos:camera.position.clone(), toPos:camTarget,
+              fromTarget:controls.target.clone(), toTarget:pos };
+            presentCard(newest);
+            drawConn(newest);
+            activeTarget = newest;
+          }
+        }
+      }, 2500);
+    }, 3000);
+  }, 4000);
+});
+
+if (INSTALL_MODE) {
+  document.getElementById('intro').remove();
+  document.body.style.cursor = 'none';
+  document.getElementById('handBtn').style.display = 'none';
+  controls.enabled = true;
+  initAudio();
+  camera.position.set(22, 8, 22);
+  controls.target.set(0, -5, 0);
+  // Auto-start journey after 5 seconds
+  setTimeout(() => { startFly(); }, 5000);
+}
+
+// ─────────────────────────────────────────
+// IMMERSIVE MODE (Shift+.)
+// ─────────────────────────────────────────
+let immersiveActive = false;
+document.addEventListener('keydown', (e) => {
+  if (e.key === '>' && e.shiftKey) {
+    e.preventDefault();
+    immersiveActive = !immersiveActive;
+    if (immersiveActive) {
+      document.body.classList.add('immersive-active');
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.body.classList.remove('immersive-active');
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  }
+});
+// Exit immersive if user exits fullscreen via Escape
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && immersiveActive) {
+    immersiveActive = false;
+    document.body.classList.remove('immersive-active');
+  }
+});
+
+animate();
+</script>
+</body>
+</html>
