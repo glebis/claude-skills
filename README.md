@@ -69,6 +69,42 @@ cp -r tdd ~/.claude/skills/
 
 ---
 
+### [Temple Generator](./temple-generator/) ⭐ NEW
+Generate a 3D interactive knowledge map (Inner Temple) from any Obsidian vault. Maps vault structure into a spatial mythology with concentric entity rings, synthesized audio, discovery mechanics, and multi-scale semantic zoom.
+
+![Temple Generator Screenshot](./temple-generator/screenshot.png)
+
+**Features:**
+- Vault scanner extracts 10K+ notes, 39K+ link edges, computes centrality and clusters
+- 15 entity types: gods, demigods, tensions, narratives, blind spots, spirits, crystals, values, trails, research, questions, depths, whispers, secrets, fields
+- Dual vocabulary: canonical (portable) + poetic (mythic) naming
+- Confidence-gated abstraction levels: entities → domains → tension axes → comparison
+- Dual-graph common map: shared scaffold with divergence offsets for comparing two vaults
+- Data-driven HTML template (Three.js) with Web Audio API soundtrack
+- Electroacoustic audio: FM synthesis, ring modulation, filtered noise, arpeggios per entity type
+- Arrow key navigation, immersive mode (Shift+.), install mode (?install)
+- Hand tracking (MediaPipe), secret discovery engine, flythrough journey
+
+**Architecture:**
+```
+Generation Pipeline (Claude)          Runtime Renderer (Template)
+├─ extract_entities.py → vault-scan   ├─ Three.js scene from JSON
+├─ Claude classifies entities         ├─ Concentric ring layout
+├─ Builds abstraction levels          ├─ Audio per entity type
+├─ Writes temple-data.json            ├─ Discovery mechanics
+└─ Inlines into template              └─ Semantic zoom transitions
+```
+
+**Quick Start:**
+```bash
+cp -r temple-generator ~/.claude/skills/
+/temple-generate ~/my-vault --inline
+```
+
+**Use when:** Visualizing any Obsidian vault as a 3D spatial mythology, comparing two knowledge graphs, or creating an art installation from structured knowledge.
+
+---
+
 ### [Granola Meeting Importer](./granola/) ⭐ NEW
 Query Granola's local cache and API to list meetings, view transcripts, and export to Obsidian vault in Fathom-compatible format. Includes auto-sync via macOS LaunchAgent.
 
