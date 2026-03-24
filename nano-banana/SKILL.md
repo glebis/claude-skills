@@ -1,0 +1,83 @@
+---
+name: nano-banana
+description: This skill generates images using Google's Gemini image generation models (Nano Banana). It should be used when the user needs to create, generate, or produce images from text prompts -- for presentations, articles, concepts, illustrations, or any visual content. Supports fast generation (Gemini 2.5 Flash Image) and high-quality generation (Gemini 3 Pro Image).
+---
+
+# Nano Banana - Gemini Image Generation
+
+Generate images from text prompts via Google's Gemini image generation API.
+
+## When to Use
+
+- User requests image generation, creation, or production from a text description
+- Creating illustrations or visuals for presentations, articles, or documents
+- Generating concept art, mockups, diagrams, or placeholder images
+- Editing existing images with text instructions
+
+## Requirements
+
+- `GEMINI_API_KEY` environment variable (get from https://ai.google.dev/)
+
+## Quick Start
+
+Generate an image using the bundled script:
+
+```bash
+scripts/generate_image.sh "a minimalist flat illustration of a rocket" ./output.png
+```
+
+The script accepts three arguments:
+1. **Prompt** (required) -- text description of the image
+2. **Output path** (optional, default: `./generated_image.png`)
+3. **Model** (optional, default: `gemini-2.5-flash-image`)
+
+## Models
+
+| Model | Use When |
+|-------|----------|
+| `gemini-2.5-flash-image` (default) | Fast iteration, bulk generation, most tasks |
+| `gemini-3-pro-image-preview` | Text in images, final polished assets, complex scenes |
+
+## Workflow
+
+### Basic Generation
+
+1. Craft a descriptive prompt (style + subject + composition + colors)
+2. Run: `scripts/generate_image.sh "prompt" ./path/to/output.png`
+3. Open result: `open ./path/to/output.png`
+
+### High-Quality Generation
+
+For important or text-heavy images, specify the Pro model:
+
+```bash
+scripts/generate_image.sh "diagram showing..." ./diagram.png gemini-3-pro-image-preview
+```
+
+### Image Editing
+
+To edit an existing image, use the API directly with an input image. See `references/api_reference.md` for the request format including `inlineData` with base64-encoded source image.
+
+### Batch Generation
+
+To generate multiple images, run the script in a loop:
+
+```bash
+for prompt in "prompt one" "prompt two" "prompt three"; do
+  scripts/generate_image.sh "$prompt" "./output_$(date +%s).png"
+done
+```
+
+## Prompt Tips
+
+- Specify visual style: "photograph", "flat illustration", "watercolor", "3D render"
+- Include composition: "centered", "wide shot", "white background"
+- Name colors: "blue and white color scheme", "warm earth tones"
+- For text rendering, use Pro model and quote exact text: 'with the text "Hello"'
+
+See `references/api_reference.md` for comprehensive prompt engineering guidance.
+
+## Resources
+
+- `scripts/generate_image.sh` -- Main generation script. Handles API call, error reporting, base64 decoding, and file output.
+- `references/api_reference.md` -- Full API documentation: endpoints, request/response formats, models, prompt tips, error codes.
