@@ -69,7 +69,38 @@ cp -r tdd ~/.claude/skills/
 
 ---
 
-### [Temple Generator](./temple-generator/) ⭐ NEW
+### [NotebookLM](./notebooklm/) ⭐ NEW
+Full CLI and Python API wrapper for Google NotebookLM. Lets you manage notebooks, sources, chat, artifacts (podcasts, videos, slides, quizzes, flashcards), notes, sharing, and research entirely from the terminal via natural language.
+
+**Features:**
+- Complete command coverage: notebooks, sources, chat, artifacts, notes, sharing, research, language
+- Natural language mapping: "upload this folder and ask about X" → create + add sources + ask
+- Artifact generation: audio (podcast), video, cinematic-video, slide-deck, quiz, flashcards, infographic, mind-map, data-table, report
+- Batch operations: upload folders of .md files, multiple URLs, parallel research queries
+- Python API reference: direct access to `notebooklm-py` async library for programmatic use
+- Common workflows: create-add-ask, folder upload with summary, deep research, podcast generation
+- Error handling: authentication, source processing, rate limiting, timeouts
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r notebooklm ~/.claude/skills/
+
+# Then just talk naturally:
+# "create a notebook called My Research"
+# "upload all markdown files from ./notes/"
+# "ask the notebook about key themes"
+# "generate a podcast about the findings"
+# "download the podcast"
+```
+
+**Depends on:** [notebooklm-py](https://github.com/teng-lin/notebooklm-py) (v0.3.4+) — `pip install notebooklm-py`
+
+**Use when:** Interacting with Google NotebookLM from Claude Code. Covers all CLI commands and the underlying Python API for advanced automation.
+
+---
+
+### [Temple Generator](./temple-generator/) ⭐
 Generate a 3D interactive knowledge map (Inner Temple) from any Obsidian vault. Maps vault structure into a spatial mythology with concentric entity rings, synthesized audio, discovery mechanics, and multi-scale semantic zoom.
 
 ![Temple Generator Screenshot](./temple-generator/screenshot.png)
