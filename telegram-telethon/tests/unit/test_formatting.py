@@ -105,6 +105,75 @@ class TestFormatMessagesMarkdown:
         assert "**Transcript:**" in result
         assert "This is the transcribed text" in result
 
+    def test_link_public_channel(self):
+        """Generates link for public channel with username."""
+        messages = [{
+            "chat": "Public Channel",
+            "chat_type": "channel",
+            "sender": "Admin",
+            "text": "Hello",
+            "date": "2024-01-15T10:00:00",
+            "has_media": False,
+            "id": 42,
+            "chat_username": "mychannel",
+        }]
+
+        result = format_messages_markdown(messages)
+
+        assert "[42](https://t.me/mychannel/42)" in result
+
+    def test_link_private_channel(self):
+        """Generates link for private channel with -100 ID prefix."""
+        messages = [{
+            "chat": "Private Group",
+            "chat_type": "group",
+            "sender": "User",
+            "text": "Hi",
+            "date": "2024-01-15T10:00:00",
+            "has_media": False,
+            "id": 99,
+            "chat_id": -1001524912570,
+        }]
+
+        result = format_messages_markdown(messages)
+
+        assert "[99](https://t.me/c/1524912570/99)" in result
+
+    def test_link_forum_topic(self):
+        """Generates link with topic ID for forum groups."""
+        messages = [{
+            "chat": "Forum Group",
+            "chat_type": "group",
+            "sender": "User",
+            "text": "Topic message",
+            "date": "2024-01-15T10:00:00",
+            "has_media": False,
+            "id": 500,
+            "chat_id": -1001524912570,
+            "topic_id": 22122,
+        }]
+
+        result = format_messages_markdown(messages)
+
+        assert "[500](https://t.me/c/1524912570/22122/500)" in result
+
+    def test_no_link_without_metadata(self):
+        """No link when chat metadata is missing."""
+        messages = [{
+            "chat": "Unknown",
+            "chat_type": "private",
+            "sender": "User",
+            "text": "No link here",
+            "date": "2024-01-15T10:00:00",
+            "has_media": False,
+            "id": 1,
+        }]
+
+        result = format_messages_markdown(messages)
+
+        assert "https://t.me" not in result
+        assert "User:" in result
+
 
 class TestFormatMessagesJson:
     """Tests for JSON message formatting."""
