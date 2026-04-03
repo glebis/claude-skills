@@ -1,0 +1,32 @@
+{
+  "name": "meeting-processor",
+  "version": "0.1.0",
+  "description": "Intelligent meeting transcript processor with auto-detection and type-specific analysis",
+  "trigger": {
+    "keywords": ["process meeting", "analyze meeting", "meeting summary", "process transcript"],
+    "patterns": ["after.*sync", "new.*meeting", "analyze.*call"]
+  },
+  "capabilities": [
+    "Auto-detects meeting type (leadgen, partnership, coaching, internal)",
+    "Extracts commitments with deadlines",
+    "Identifies follow-up actions",
+    "Assesses opportunities and fit",
+    "Interactive mode for clarifications",
+    "Batch mode for automated processing"
+  ],
+  "meeting_types": {
+    "leadgen": {
+      "description": "Sales/business development calls",
+      "extracts": ["commitments", "client_pain_points", "budget", "timeline", "decision_makers", "deal_stage"]
+    },
+    "partnership": {
+      "description": "Collaboration and partnership exploration",
+      "extracts": ["opportunity_overview", "value_proposition", "strategic_alignment", "technical_needs", "fit_assessment"]
+    }
+  },
+  "requirements": {
+    "python": "3.8+",
+    "packages": ["openai", "pyyaml"],
+    "api_keys": ["CEREBRAS_API_KEY"]
+  }
+}

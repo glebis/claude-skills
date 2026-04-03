@@ -1171,6 +1171,39 @@ cd sketch-mcp-server && npm install && npm run build
 
 **Use when:** Visual prototyping, creating diagrams, building reusable canvas templates, before/after comparisons, or any task where Claude and the user need a shared visual workspace.
 
+### [Meeting Processor](./meeting-processor/)
+Intelligent meeting transcript processor that auto-detects meeting type (leadgen, partnership, coaching, internal) and applies type-specific structured extraction with optional interactive clarification.
+
+**Features:**
+- Auto-detection of meeting type from transcript content
+- Interactive mode with AskUserQuestion for ambiguous details
+- Batch mode for high-confidence extraction without interaction
+- Type-specific extractors: leadgen (deal stage, commitments, budget), partnership (strategic alignment, fit assessment), coaching (delegates to coaching-session-summarizer)
+- Appends structured `## Meeting Analysis` section to transcript files
+- Updates frontmatter with `meeting_type`, `processed_date`, `processing_mode`
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r meeting-processor ~/.claude/skills/
+
+# Install dependencies
+pip install openai pyyaml
+
+# Process a transcript interactively
+python3 ~/.claude/skills/meeting-processor/scripts/process.py <transcript-file> --mode interactive
+
+# Batch mode (no interaction)
+python3 ~/.claude/skills/meeting-processor/scripts/process.py <transcript-file> --mode batch
+
+# Force meeting type
+python3 ~/.claude/skills/meeting-processor/scripts/process.py <transcript-file> --type leadgen
+```
+
+**Use when:** Processing meeting transcripts after Fathom/Granola sync, or when asked to analyze/summarize a meeting. Requires `CEREBRAS_API_KEY` environment variable.
+
+---
+
 ## 🚀 Installation
 
 ### Using Claude Code
@@ -1217,6 +1250,8 @@ cp -r claude-skills/tdd ~/.claude/skills/
 cp -r claude-skills/daydream ~/.claude/skills/
 # or
 cp -r claude-skills/thinking-patterns ~/.claude/skills/
+# or
+cp -r claude-skills/meeting-processor ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
