@@ -1204,6 +1204,33 @@ python3 ~/.claude/skills/meeting-processor/scripts/process.py <transcript-file> 
 
 ---
 
+### [Session Search](./session-search/)
+Semantic search across Claude Code session transcripts. Combines keyword pre-filtering with LLM-powered relevance evaluation to find previous sessions about specific topics, debugging conversations, research tasks, or past work.
+
+**Features:**
+- Keyword pre-filtering for fast candidate selection across thousands of sessions
+- Meaningful excerpt extraction prioritizing keyword-matching content over boilerplate
+- Smart project name parsing from session paths
+- Filters out system reminders and skill descriptions from results
+- Configurable lookback period (default 90 days) and result count
+- Outputs structured data for Claude's semantic relevance scoring
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r session-search ~/.claude/skills/
+
+# Search for sessions about a topic
+/session-search "debugging auth flow"
+
+# With custom parameters (20 results, 180 days lookback)
+/session-search "obsidian vault" 20 180
+```
+
+**Use when:** Finding previous Claude Code sessions about specific topics, locating past debugging conversations, or searching for research/planning sessions.
+
+---
+
 ## 🚀 Installation
 
 ### Using Claude Code
