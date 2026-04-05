@@ -1229,6 +1229,50 @@ cp -r session-search ~/.claude/skills/
 
 **Use when:** Finding previous Claude Code sessions about specific topics, locating past debugging conversations, or searching for research/planning sessions.
 
+### [Balanced Dialog](./balanced/) ⭐ NEW
+Evidence-based dialogue mode that replaces sycophantic AI responses with structured, critical analysis. Five modes for different contexts — from quick gut-checks to deep Socratic dialogue.
+
+**Modes:**
+- **FULL** — 4-move structured analysis: Surface Merits → Rigorous Challenge → Expansion → Refinement
+- **INTERACTIVE** — Socratic Q&A, one move at a time with user input at each step
+- **TLDR** — 3-5 line insight box: one fact, one challenge, one action
+- **STEELMAN** — strongest argument + strongest counter-argument. For debate prep
+- **DECISION** — tradeoff table + the call. For when analysis is done
+
+**Output Modifiers:**
+- `--table` — ASCII pro/contra table
+- `--refs` — full academic citations with DOI validation
+
+**Meta-Rules:**
+- No flattery, no filler phrases, no opinion statements
+- Quantified confidence levels (~70% confident...)
+- Scientific citation format with DOI web-search validation
+- Explicit uncertainty flagging
+- Subjective vs objective separation
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r balanced ~/.claude/skills/
+
+# Quick analysis
+/balanced "AI agents will replace most knowledge work within 5 years"
+
+# Steelman mode for debate prep
+/balanced steelman "remote work is more productive than office work"
+
+# TLDR with table
+/balanced tldr --table "should I migrate from REST to GraphQL?"
+
+# Interactive Socratic dialogue
+/balanced i "consciousness is an illusion"
+
+# Onboarding — pick your default mode
+/balanced onboard
+```
+
+**Use when:** You need honest, structured feedback instead of agreement — testing assumptions, evaluating claims, preparing arguments, making decisions.
+
 ---
 
 ## 🚀 Installation
@@ -1279,6 +1323,8 @@ cp -r claude-skills/daydream ~/.claude/skills/
 cp -r claude-skills/thinking-patterns ~/.claude/skills/
 # or
 cp -r claude-skills/meeting-processor ~/.claude/skills/
+# or
+cp -r claude-skills/balanced ~/.claude/skills/
 
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
