@@ -1280,11 +1280,27 @@ cp -r balanced ~/.claude/skills/
 
 ## 🚀 Installation
 
-### Using Claude Code
+### Plugin Marketplace (Claude Code)
 
-1. Download the skill zip file from the [releases](../../releases) or clone this repo
-2. Extract to your Claude Code skills directory (usually `~/.claude/skills/`)
-3. The skill will be automatically available in Claude Code
+Register the repo as a skill source, then install individual skills:
+
+```bash
+# One-time: add the marketplace
+claude plugin marketplace add glebis/claude-skills
+
+# Install any skill
+claude plugin install tdd@glebis-skills
+claude plugin install doctorg@glebis-skills
+claude plugin install deep-research@glebis-skills
+```
+
+### Using the `skills` CLI
+
+```bash
+npx skills add glebis/claude-skills --skill tdd
+npx skills add glebis/claude-skills --skill doctorg
+npx skills add glebis/claude-skills --skill deep-research
+```
 
 ### Manual Installation
 
@@ -1293,42 +1309,12 @@ cp -r balanced ~/.claude/skills/
 git clone https://github.com/glebis/claude-skills.git
 
 # Copy desired skill to Claude Code skills directory
-cp -r claude-skills/doctorg ~/.claude/skills/
-# or
-cp -r claude-skills/llm-cli ~/.claude/skills/
-# or
-cp -r claude-skills/deep-research ~/.claude/skills/
-# or
-cp -r claude-skills/youtube-transcript ~/.claude/skills/
-# or
-cp -r claude-skills/telegram ~/.claude/skills/
-# or
-cp -r claude-skills/gmail ~/.claude/skills/
-# or
-cp -r claude-skills/brand-agency ~/.claude/skills/
-# or
-cp -r claude-skills/health-data ~/.claude/skills/
-# or
-cp -r claude-skills/firecrawl-research ~/.claude/skills/
-# or
-cp -r claude-skills/transcript-analyzer ~/.claude/skills/
-# or
-cp -r claude-skills/retrospective ~/.claude/skills/
-# or
-cp -r claude-skills/github-gist ~/.claude/skills/
-# or
-cp -r claude-skills/decision-toolkit ~/.claude/skills/
-# or
-cp -r claude-skills/tdd ~/.claude/skills/
-# or
-cp -r claude-skills/daydream ~/.claude/skills/
-# or
-cp -r claude-skills/thinking-patterns ~/.claude/skills/
-# or
-cp -r claude-skills/meeting-processor ~/.claude/skills/
-# or
-cp -r claude-skills/balanced ~/.claude/skills/
+cp -r claude-skills/<skill-name> ~/.claude/skills/
+```
 
+Some skills require additional setup after installation:
+
+```bash
 # For llm-cli: Install Python dependencies
 cd ~/.claude/skills/llm-cli
 pip install -r requirements.txt
