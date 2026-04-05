@@ -1252,7 +1252,10 @@ Evidence-based dialogue mode that replaces sycophantic AI responses with structu
 
 **Quick Start:**
 ```bash
-# Copy to skills directory
+# Install via npx
+npx skills add glebis/claude-skills -s balanced
+
+# Or copy manually
 cp -r balanced ~/.claude/skills/
 
 # Quick analysis
