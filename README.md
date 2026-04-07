@@ -508,6 +508,30 @@ python3 scripts/fetch.py --today --analyze
 
 ---
 
+### [Recording](./recording/) ⭐ NEW
+Demo/recording mode that redacts personally identifiable and sensitive information from Claude Code's outputs in real time.
+
+**Features:**
+- 🎬 Toggle on/off with `/recording` — single command flips state
+- 🕵️ Redacts names, locations, dates, financials, medical, emotional, business, and credentials
+- 🎭 Uses obviously dummy placeholders (e.g. `Alex Doe`, `Acme Co`) — never plausible fakes
+- 🔁 Consistent mapping within a session so the demo stays coherent
+- 🛡️ Pre-send self-check before any output
+
+**Quick Start:**
+```bash
+cp -r recording ~/.claude/skills/
+
+# Before your demo
+/recording
+# When done
+/recording
+```
+
+**Use when:** Screen-sharing, recording videos, or live-demoing Claude Code and you don't want personal vault content leaking on stream.
+
+---
+
 ### [Retrospective](./retrospective/) ⭐ NEW
 Session retrospective for continual learning. Reviews conversations, extracts learnings, updates skills.
 
