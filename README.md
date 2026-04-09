@@ -744,6 +744,8 @@ Fetch, search, download, and send Telegram messages with flexible filtering and 
 - ↩️ Reply to specific messages
 - 💬 Send to forum topics (groups with topics)
 - 📎 Send and download media files
+- ⏰ Schedule messages for future delivery (`--schedule`)
+- ✨ Markdown-to-Telegram formatting (`--markdown`)
 - 💾 Save to file (token-efficient archiving with --with-media)
 - 📝 Output to Obsidian daily/person notes
 
@@ -760,6 +762,16 @@ python scripts/telegram_fetch.py recent --limit 20
 
 # Send message
 python scripts/telegram_fetch.py send --chat "@username" --text "Hello!"
+
+# Send with markdown formatting
+python scripts/telegram_fetch.py send --chat "@channel" --markdown --text "**Bold** and [links](https://example.com)"
+
+# Schedule for tomorrow
+python scripts/telegram_fetch.py send --chat "@channel" --markdown --schedule "tomorrow 10:00" --text "Scheduled post"
+
+# Schedule with relative time or ISO format
+python scripts/telegram_fetch.py send --chat "@username" --schedule "+2h" --text "In 2 hours"
+python scripts/telegram_fetch.py send --chat "@username" --schedule "2026-04-10T14:00" --text "At specific time"
 ```
 
 **Use when:** You need to read, search, or send Telegram messages from Claude Code.
