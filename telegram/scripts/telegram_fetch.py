@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 
+import zoneinfo
+
 from telethon import TelegramClient
 from telethon.tl.types import User, Chat, Channel
 from telethon.tl.functions.messages import SearchGlobalRequest
@@ -389,10 +391,47 @@ async def edit_message(client: TelegramClient, chat_id: Optional[int] = None,
         return {"edited": False, "error": str(e), "message_id": message_id}
 
 
+def parse_schedule(value: str) -> datetime:
+    """Parse schedule string into a datetime object.
+
+    Supports:
+    - ISO format: 2026-04-10T10:00
+    - Relative: +1h, +30m, +2h30m
+    - Natural: "tomorrow 10:00", "tomorrow 14:30"
+    """
+    value = value.strip()
+    local_tz = zoneinfo.ZoneInfo("Europe/Berlin")
+
+    # Relative: +1h, +30m, +2h30m
+    rel_match = re.match(r'^\+(?:(\d+)h)?(?:(\d+)m)?$', value)
+    if rel_match:
+        hours = int(rel_match.group(1) or 0)
+        minutes = int(rel_match.group(2) or 0)
+        return datetime.now(local_tz) + timedelta(hours=hours, minutes=minutes)
+
+    # "tomorrow HH:MM"
+    tom_match = re.match(r'^tomorrow\s+(\d{1,2}):(\d{2})$', value, re.IGNORECASE)
+    if tom_match:
+        tomorrow = datetime.now(local_tz) + timedelta(days=1)
+        return tomorrow.replace(hour=int(tom_match.group(1)), minute=int(tom_match.group(2)), second=0, microsecond=0)
+
+    # ISO format: 2026-04-10T10:00 or 2026-04-10 10:00
+    try:
+        dt = datetime.fromisoformat(value)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=local_tz)
+        return dt
+    except ValueError:
+        pass
+
+    raise ValueError(f"Cannot parse schedule: '{value}'. Use ISO (2026-04-10T10:00), relative (+1h, +30m), or 'tomorrow HH:MM'")
+
+
 async def send_message(client: TelegramClient, chat_name: str, text: str,
                        reply_to: Optional[int] = None,
                        file_path: Optional[str] = None,
-                       parse_mode: Optional[str] = None) -> Dict:
+                       parse_mode: Optional[str] = None,
+                       schedule: Optional['datetime'] = None) -> Dict:
     """Send a message or file to a chat, optionally as a reply.
 
     Supports:
@@ -442,7 +481,8 @@ async def send_message(client: TelegramClient, chat_name: str, text: str,
                 file_path,
                 caption=text if text else None,
                 reply_to=reply_to,
-                parse_mode=parse_mode
+                parse_mode=parse_mode,
+                schedule=schedule
             )
             return {
                 "sent": True,
@@ -461,7 +501,8 @@ async def send_message(client: TelegramClient, chat_name: str, text: str,
                 entity,
                 text,
                 reply_to=reply_to,
-                parse_mode=parse_mode
+                parse_mode=parse_mode,
+                schedule=schedule
             )
             return {
                 "sent": True,
@@ -1223,6 +1264,7 @@ async def main():
     send_parser.add_argument("--reply-to", type=int, help="Message ID to reply to")
     send_parser.add_argument("--topic", type=int, help="Forum topic ID to send to (for groups with topics)")
     send_parser.add_argument("--markdown", action="store_true", help="Convert markdown formatting to Telegram HTML before sending")
+    send_parser.add_argument("--schedule", help="Schedule message for future delivery (ISO format: 2026-04-10T10:00 or relative: +1h, +30m, tomorrow 10:00)")
 
     # Pin message
     pin_parser = subparsers.add_parser("pin", help="Pin a message in a chat")
@@ -1364,14 +1406,24 @@ async def main():
                 if args.markdown and text:
                     text = convert_markdown_to_telegram_html(text)
                     parse_mode = 'html'
+                schedule = None
+                if args.schedule:
+                    try:
+                        schedule = parse_schedule(args.schedule)
+                    except ValueError as e:
+                        print(json.dumps({"sent": False, "error": str(e)}))
+                        return
                 result = await send_message(
                     client,
                     chat_name=args.chat,
                     text=text,
                     reply_to=reply_to,
                     file_path=args.file,
-                    parse_mode=parse_mode
+                    parse_mode=parse_mode,
+                    schedule=schedule
                 )
+                if schedule and result.get("sent"):
+                    result["scheduled_for"] = schedule.isoformat()
                 print(json.dumps(result, indent=2))
 
         elif args.command == "pin":
