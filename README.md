@@ -69,6 +69,35 @@ cp -r tdd ~/.claude/skills/
 
 ---
 
+### [GWS (Google Workspace CLI)](./gws/) ⭐ NEW
+Comprehensive reference skill for the `gws` CLI tool — interact with Gmail, Calendar, Drive, Tasks, Docs, People, and cross-service workflows directly from Claude Code.
+
+**Features:**
+- Quick reference table for all 12 helper commands (`+triage`, `+send`, `+agenda`, `+insert`, `+upload`, etc.)
+- Full raw API reference for Gmail (messages, labels, threads, drafts, filters), Calendar, Drive, Tasks, Docs, People
+- Cross-service workflow helpers: standup report, meeting prep, email-to-task, weekly digest
+- Schema introspection guide (`gws schema`) for discovering any API method's parameters
+- OAuth setup and scope documentation
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r gws ~/.claude/skills/
+
+# Then use naturally:
+# "check my unread email"
+# "search Gmail for Amazon S3"
+# "show today's calendar"
+# "upload report.pdf to Drive"
+# "send an email to alice@example.com"
+```
+
+**Depends on:** [gws](https://github.com/googleworkspace/cli) — `npm install -g @googleworkspace/cli`
+
+**Use when:** Interacting with any Google Workspace service from Claude Code — email triage, sending emails, calendar management, file uploads, contact lookup, or cross-service workflows.
+
+---
+
 ### [NotebookLM](./notebooklm/) ⭐ NEW
 Full CLI and Python API wrapper for Google NotebookLM. Lets you manage notebooks, sources, chat, artifacts (podcasts, videos, slides, quizzes, flashcards), notes, sharing, and research entirely from the terminal via natural language.
 
