@@ -8,8 +8,10 @@
 # Arguments:
 #   prompt      - Text description of the image to generate (required)
 #   output_path - Where to save the image (default: ./generated_image.png)
-#   model       - Model to use (default: gemini-2.5-flash-image)
-#                 Options: gemini-2.5-flash-image, gemini-3-pro-image-preview
+#   model       - Model to use (default: gemini-3.1-flash-image-preview)
+#                 Options: gemini-3.1-flash-image-preview (Nano Banana 2 - fastest, best instruction following)
+#                          gemini-3-pro-image-preview     (Nano Banana Pro - highest quality, text in images)
+#                          gemini-2.5-flash-image         (Nano Banana - original, fast)
 #
 # Environment:
 #   GEMINI_API_KEY - Required. Google AI API key from https://ai.google.dev/
@@ -23,12 +25,25 @@ set -euo pipefail
 
 PROMPT="${1:?Error: prompt is required. Usage: $0 \"prompt\" [output_path] [model]}"
 OUTPUT="${2:-./generated_image.png}"
-MODEL="${3:-gemini-2.5-flash-image}"
+MODEL="${3:-gemini-3.1-flash-image-preview}"
 
 if [ -z "${GEMINI_API_KEY:-}" ]; then
-  echo "Error: GEMINI_API_KEY environment variable is not set." >&2
-  echo "Get a key from https://ai.google.dev/" >&2
-  exit 1
+  SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+  CENTRAL_SECRETS="${SCRIPT_DIR}/../secrets.enc.yaml"
+  LOCAL_SECRETS="${SCRIPT_DIR}/secrets.enc.yaml"
+  if command -v sops >/dev/null 2>&1; then
+    for f in "$LOCAL_SECRETS" "$CENTRAL_SECRETS"; do
+      if [ -f "$f" ]; then
+        GEMINI_API_KEY=$(sops --decrypt --extract '["GEMINI_API_KEY"]' "$f" 2>/dev/null)
+        [ -n "$GEMINI_API_KEY" ] && break
+      fi
+    done
+  fi
+  if [ -z "${GEMINI_API_KEY:-}" ]; then
+    echo "Error: GEMINI_API_KEY not set and could not decrypt from secrets.enc.yaml" >&2
+    echo "Either: export GEMINI_API_KEY=... or ensure sops + age key are configured" >&2
+    exit 1
+  fi
 fi
 
 API_URL="https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent"
