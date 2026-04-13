@@ -39,6 +39,29 @@ The script accepts three arguments:
 | `gemini-3-pro-image-preview` | **Nano Banana Pro** | Highest quality, text in images, complex scenes |
 | `gemini-2.5-flash-image` | **Nano Banana** (original) | Legacy, fast iteration |
 
+## Presets
+
+Style presets wrap your subject in a curated prompt template for consistent visual output.
+
+```bash
+scripts/generate_image.sh --list-presets           # show available presets
+scripts/generate_image.sh --preset editorial "network of nodes" ./out.png
+scripts/generate_image.sh --preset ink "a mountain" ./mountain.png
+```
+
+| Preset | Style |
+|--------|-------|
+| `editorial` | Thin lines on black, muted palette, technical diagram feel |
+| `blueprint` | White/cyan lines on dark navy, engineering drawing |
+| `ink` | Japanese sumi-e ink wash, organic brushstrokes, monochrome |
+| `risograph` | Flat colors, grain, terracotta + sage, zine aesthetic |
+| `wireframe` | 3D wireframe mesh, glowing edges on black |
+| `constellation` | Star map dots connected by faint lines, celestial |
+| `brutalist` | Bold shapes, thick borders, hard shadows, flat colors |
+| `grain` | Film grain photo, high ISO, warm cinematic tones |
+
+Presets are defined in `presets.yaml` -- add your own by copying the pattern.
+
 ## Workflow
 
 ### Basic Generation
