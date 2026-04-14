@@ -69,15 +69,17 @@ cp -r tdd ~/.claude/skills/
 
 ---
 
-### [GWS (Google Workspace CLI)](./gws/) ⭐ NEW
-Comprehensive reference skill for the `gws` CLI tool — interact with Gmail, Calendar, Drive, Tasks, Docs, People, and cross-service workflows directly from Claude Code.
+### [GWS (Google Workspace CLI)](./gws/)
+Comprehensive reference skill for the `gws` CLI — Gmail, Calendar, Drive, Sheets, Docs, Tasks, Chat, People, Meet, and cross-service workflows from Claude Code.
 
 **Features:**
-- Quick reference table for all 12 helper commands (`+triage`, `+send`, `+agenda`, `+insert`, `+upload`, etc.)
-- Full raw API reference for Gmail (messages, labels, threads, drafts, filters), Calendar, Drive, Tasks, Docs, People
-- Cross-service workflow helpers: standup report, meeting prep, email-to-task, weekly digest
+- Quick-reference table for all 15 helper commands across 7 services (`+triage`, `+send`, `+agenda`, `+insert`, `+upload`, `+read`, `+append`, `+write`, `+send` for Chat, workflow helpers)
+- Raw-API recipes for: Gmail (messages, labels, threads, drafts, filters, batchModify, archive/trash), Calendar (events, **Google Meet conferencing via `conferenceDataVersion`**, recurring events, attendees with `sendUpdates`, freebusy), Drive (upload, download, search, share, folders), Sheets (values read/update/clear, batchUpdate), Docs (batchUpdate), Tasks, Chat (spaces, threaded/card messages), People, Meet (spaces)
+- Cross-service workflow helpers: standup report, meeting prep, email-to-task, weekly digest, file-announce
 - Schema introspection guide (`gws schema`) for discovering any API method's parameters
-- OAuth setup and scope documentation
+- Global flag reference: `--params`, `--json`, `--upload`, `--output`, `--format`, `--page-all`, `--page-limit`, `--dry-run`
+- OAuth setup, scopes, and `gmail.settings.basic` manual-OAuth workaround
+- Write-command confirmation policy
 
 **Quick Start:**
 ```bash
@@ -88,13 +90,17 @@ cp -r gws ~/.claude/skills/
 # "check my unread email"
 # "search Gmail for Amazon S3"
 # "show today's calendar"
+# "create a calendar event today 18:00 AGENCY Meetup"
+# "create a meeting with Google Meet link tomorrow 14:00"
+# "read Sheet1!A1:D10 from spreadsheet SID"
 # "upload report.pdf to Drive"
+# "post to Chat space spaces/XYZ: ship today"
 # "send an email to alice@example.com"
 ```
 
 **Depends on:** [gws](https://github.com/googleworkspace/cli) — `npm install -g @googleworkspace/cli`
 
-**Use when:** Interacting with any Google Workspace service from Claude Code — email triage, sending emails, calendar management, file uploads, contact lookup, or cross-service workflows.
+**Use when:** Interacting with any Google Workspace service from Claude Code — email triage, sending email, calendar management (including Meet links), spreadsheet read/write, file uploads, Chat posts, contact lookup, or cross-service workflows.
 
 ---
 

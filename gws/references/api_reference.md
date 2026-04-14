@@ -141,9 +141,18 @@ For recurring events or conference links, use the raw API.
 - **List events**: `gws calendar events list --params '{"calendarId": "primary", "timeMin": "2026-04-10T00:00:00Z", "maxResults": 10, "singleEvents": true, "orderBy": "startTime"}'`
 - **Get event**: `gws calendar events get --params '{"calendarId": "primary", "eventId": "EVENT_ID"}'`
 - **Insert event**: `gws calendar events insert --params '{"calendarId": "primary"}' --json '{"summary": "...", "start": {"dateTime": "..."}, "end": {"dateTime": "..."}}'`
+- **Insert event with Google Meet link** (helper doesn't support this):
+  ```bash
+  gws calendar events insert \
+    --params '{"calendarId":"primary","conferenceDataVersion":1}' \
+    --json '{"summary":"Sync","start":{"dateTime":"2026-04-15T14:00:00+02:00"},"end":{"dateTime":"2026-04-15T15:00:00+02:00"},"conferenceData":{"createRequest":{"requestId":"unique-id-123","conferenceSolutionKey":{"type":"hangoutsMeet"}}}}'
+  ```
+- **Recurring event**: add `"recurrence":["RRULE:FREQ=WEEKLY;BYDAY=MO;COUNT=10"]` to event body
+- **Add attendees and send invites**: `--params '{"calendarId":"primary","sendUpdates":"all"}'` with `"attendees":[{"email":"a@b.com"}]` in body
 - **Update event**: `gws calendar events patch --params '{"calendarId": "primary", "eventId": "EVENT_ID"}' --json '{"summary": "Updated"}'`
 - **Delete event**: `gws calendar events delete --params '{"calendarId": "primary", "eventId": "EVENT_ID"}'`
 - **List calendars**: `gws calendar calendarList list`
+- **Free/busy lookup**: `gws calendar freebusy query --json '{"timeMin":"...","timeMax":"...","items":[{"id":"primary"}]}'`
 
 ## Drive
 
@@ -170,6 +179,62 @@ gws drive +upload ./data.csv --name 'Sales Data.csv'
 - **Create folder**: `gws drive files create --json '{"name": "MyFolder", "mimeType": "application/vnd.google-apps.folder"}'`
 - **Delete file**: `gws drive files delete --params '{"fileId": "FILE_ID"}'`
 - **Share file**: `gws drive permissions create --params '{"fileId": "FILE_ID"}' --json '{"role": "reader", "type": "user", "emailAddress": "user@example.com"}'`
+
+## Sheets
+
+### Helper Commands
+#### `gws sheets +read`
+Read values from a range. Read-only.
+```
+--spreadsheet <ID>   Spreadsheet ID (required)
+--range <RANGE>      A1 notation (e.g. 'Sheet1!A1:D10')
+```
+Examples:
+```bash
+gws sheets +read --spreadsheet SID --range 'Sheet1!A1:D10' --format table
+gws sheets +read --spreadsheet SID --range Sheet1
+```
+
+#### `gws sheets +append`
+Append row(s). Simple strings via `--values` or structured via `--json-values`.
+```
+--spreadsheet <ID>        Spreadsheet ID (required)
+--values <CSV>            Comma-separated single row
+--json-values <JSON>      2D array of rows
+```
+Examples:
+```bash
+gws sheets +append --spreadsheet SID --values 'Alice,100,true'
+gws sheets +append --spreadsheet SID --json-values '[["a","b"],["c","d"]]'
+```
+
+### Raw API
+- **Get spreadsheet metadata**: `gws sheets spreadsheets get --params '{"spreadsheetId":"SID"}'`
+- **Create spreadsheet**: `gws sheets spreadsheets create --json '{"properties":{"title":"My Sheet"}}'`
+- **Read values**: `gws sheets spreadsheets values get --params '{"spreadsheetId":"SID","range":"Sheet1!A1:D10"}'`
+- **Write values (overwrite)**: `gws sheets spreadsheets values update --params '{"spreadsheetId":"SID","range":"Sheet1!A1","valueInputOption":"USER_ENTERED"}' --json '{"values":[["a","b"]]}'`
+- **Clear range**: `gws sheets spreadsheets values clear --params '{"spreadsheetId":"SID","range":"Sheet1!A1:Z1000"}'`
+- **Batch update (formatting, formulas)**: `gws sheets spreadsheets batchUpdate --params '{"spreadsheetId":"SID"}' --json '{"requests":[...]}'`
+
+## Chat
+
+### Helper Commands
+#### `gws chat +send`
+Send plaintext message to a Chat space.
+```
+--space <NAME>   e.g. spaces/AAAAxxxx
+--text <TEXT>    Message body
+```
+
+### Raw API
+- **List spaces**: `gws chat spaces list`
+- **Get space**: `gws chat spaces get --params '{"name":"spaces/AAAA"}'`
+- **Send card / threaded reply**: `gws chat spaces messages create --params '{"parent":"spaces/AAAA"}' --json '{"text":"hi","thread":{"threadKey":"mykey"}}'`
+- **List messages**: `gws chat spaces messages list --params '{"parent":"spaces/AAAA"}'`
+
+## Meet
+- **List conferences**: `gws meet spaces get --params '{"name":"spaces/SID"}'`
+- **Create meeting**: `gws meet spaces create --json '{}'` (returns a new Meet space with join URL)
 
 ## Tasks
 
