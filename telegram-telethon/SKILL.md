@@ -149,7 +149,7 @@ python3 scripts/tg.py unread [--chat "Chat Name"] [--format markdown|json]
 python3 scripts/tg.py thread CHAT_ID THREAD_ID [--limit 100]
 
 # Send message
-python3 scripts/tg.py send --chat "Chat Name" --text "Message text" [--reply-to MSG_ID] [--file path] [--topic TOPIC_ID] [--markdown]
+python3 scripts/tg.py send --chat "Chat Name" --text "Message text" [--reply-to MSG_ID] [--file path] [--topic TOPIC_ID] [--markdown] [--schedule "+1h" | "tomorrow 10:00" | "2026-04-10T09:30"]
 
 # Edit message
 python3 scripts/tg.py edit --chat "Chat Name" --message-id MESSAGE_ID --text "New text"
@@ -210,6 +210,23 @@ python3 scripts/tg.py send --chat "@mychannel" --markdown \
 Rules (applied in order): `## Header` → bold line; `* item` / `- item` at line start → `→ item`; `**bold**` → `<b>`; `_italic_` → `<i>`; `[text](url)` → `<a href>`. Pre-existing HTML passes through unchanged, so the flag is safe to add to content that was already authored as HTML.
 
 Pair with `lint-channel` below to catch cases where `--markdown` was forgotten.
+
+### Scheduled Delivery
+
+Pass `--schedule` with one of three formats (naive times default to Europe/Berlin):
+
+```bash
+# Relative: send in one hour
+python3 scripts/tg.py send --chat "@mychannel" --text "..." --schedule "+1h"
+
+# Natural: send tomorrow morning
+python3 scripts/tg.py send --chat "@mychannel" --text "..." --schedule "tomorrow 09:30"
+
+# Absolute: send at a specific time
+python3 scripts/tg.py send --chat "@mychannel" --text "..." --schedule "2026-04-20T15:00"
+```
+
+The response includes ``"scheduled_for": "<iso datetime>"`` when the message is queued for later. Telegram displays scheduled messages in the chat's scheduled-messages view.
 
 ### Lint Published Messages
 
@@ -430,6 +447,8 @@ Mapping natural-language asks to commands:
 | "Get thread 174 in Lab" | `thread <chat_id> 174 --limit 100` |
 | "Send 'hi' to John" / "отправь John: hi" | `send --chat "John" --text "hi"` |
 | "Post a markdown-formatted note to @channel" | `send --chat "@channel" --markdown --text "..."` |
+| "Schedule this for tomorrow at 10am" | `send --chat "..." --text "..." --schedule "tomorrow 10:00"` |
+| "Send this in an hour" | `send --chat "..." --text "..." --schedule "+1h"` |
 | "Reply thanks to message 12345" | `send --chat "..." --text "thanks" --reply-to 12345` |
 | "Send image.jpg to John" | `send --chat "John" --file image.jpg` |
 | "Save a draft for John: hi" / "сделай драфт" | `draft --chat "John" --text "hi"` |

@@ -306,6 +306,27 @@ class TestSendMessage:
         sent_text = client.send_message.await_args.args[1]
         assert sent_text == "Hello **world**"
 
+    async def test_send_with_schedule_forwards_datetime(self):
+        """schedule=<datetime> is passed to client.send_message as 'schedule' kwarg."""
+        from datetime import datetime, timezone
+        client = AsyncMock()
+        entity = MagicMock()
+        when = datetime(2027, 1, 1, 9, 0, tzinfo=timezone.utc)
+
+        with patch('telegram_telethon.modules.messages.resolve_entity',
+                   return_value=(entity, "John Doe")):
+            with patch('telegram_telethon.modules.messages.get_chat_type',
+                       return_value="private"):
+                msg = MagicMock(id=888)
+                client.send_message = AsyncMock(return_value=msg)
+
+                result = await send_message(client, "John", "later", schedule=when)
+
+        assert result["sent"]
+        kwargs = client.send_message.await_args.kwargs
+        assert kwargs["schedule"] == when
+        assert result.get("scheduled_for") == when.isoformat()
+
     async def test_send_to_group_requires_whitelist(self):
         """Sending to group requires whitelist."""
         client = AsyncMock()

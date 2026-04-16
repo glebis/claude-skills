@@ -318,13 +318,18 @@ async def send_message(
     file_path: Optional[str] = None,
     allowed_groups: Optional[List[str]] = None,
     markdown: bool = False,
+    schedule: Optional[datetime] = None,
 ) -> Dict:
     """Send a message or file to a chat.
 
     When ``markdown`` is True, ``text`` is converted to Telegram-flavored
     HTML via ``modules.markdown.convert_markdown_to_telegram_html`` and
-    sent with ``parse_mode='html'``. When False (the default), the text
-    is sent as-is with no parse mode — Telegram renders it literally.
+    sent with ``parse_mode='html'``.
+
+    When ``schedule`` is a datetime, the message is handed to Telegram's
+    scheduled-delivery queue instead of being sent immediately. The
+    result dict carries ``scheduled_for`` (ISO string) so callers can
+    surface the booking time to the user.
     """
     import os
 
@@ -364,8 +369,9 @@ async def send_message(
                 caption=body if body else None,
                 reply_to=reply_to,
                 parse_mode=parse_mode,
+                schedule=schedule,
             )
-            return {
+            result = {
                 "sent": True,
                 "chat": resolved_name,
                 "message_id": msg.id,
@@ -378,13 +384,18 @@ async def send_message(
         else:
             msg = await client.send_message(
                 entity, body, reply_to=reply_to, parse_mode=parse_mode,
+                schedule=schedule,
             )
-            return {
+            result = {
                 "sent": True,
                 "chat": resolved_name,
                 "message_id": msg.id,
                 "reply_to": reply_to
             }
+
+        if schedule is not None:
+            result["scheduled_for"] = schedule.isoformat()
+        return result
     except Exception as e:
         return {"sent": False, "error": str(e)}
 

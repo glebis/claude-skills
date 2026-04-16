@@ -516,17 +516,26 @@ async def cmd_thread(args):
 async def cmd_send(args):
     """Send a message."""
     from telegram_telethon.modules.messages import send_message
+    from telegram_telethon.modules.schedule import parse_schedule
 
     client = await get_client()
     try:
         config = Config.load(DEFAULT_CONFIG_DIR / "config.yaml")
         allowed_groups = config.allowed_send_groups
 
+        schedule_dt = None
+        if args.schedule:
+            try:
+                schedule_dt = parse_schedule(args.schedule)
+            except ValueError as exc:
+                print(json.dumps({"sent": False, "error": str(exc)}, indent=2, ensure_ascii=False))
+                return
+
         reply_to = args.topic if args.topic else args.reply_to
         result = await send_message(
             client, chat_name=args.chat, text=args.text or "",
             reply_to=reply_to, file_path=args.file, allowed_groups=allowed_groups,
-            markdown=args.markdown,
+            markdown=args.markdown, schedule=schedule_dt,
         )
         print(json.dumps(result, indent=2, ensure_ascii=False))
     finally:
@@ -813,6 +822,10 @@ def main():
         "--markdown",
         action="store_true",
         help="Convert markdown (**bold**, _italic_, [text](url), ## Header, * bullet) to Telegram HTML before sending",
+    )
+    send_p.add_argument(
+        "--schedule",
+        help="Schedule for future delivery. Accepts ISO (2026-04-10T10:00), relative (+1h, +30m, +2h30m), or 'tomorrow HH:MM' — times without a tz default to Europe/Berlin",
     )
 
     # Edit
