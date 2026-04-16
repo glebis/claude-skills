@@ -165,6 +165,7 @@ class TestMessageHandler:
         handler.claude_bridge.send.assert_called_once_with(
             "test prompt",
             chat_id=123,
+            system_prompt=None,
         )
 
     async def test_handle_reply_action(self, handler):
