@@ -198,6 +198,26 @@ python3 scripts/tg.py transcribe "Chat Name" MESSAGE_ID [--method telegram|groq|
 python3 scripts/tg.py transcribe "Chat Name" --batch [--limit 10] [--method telegram|groq|whisper]
 ```
 
+### Lint Published Messages
+
+Scan a channel (or a single message) for unrendered markdown/HTML that leaked into the raw message text — i.e. the sender forgot `--markdown` or the HTML conversion failed, so readers see literal `**bold**`, `<b>…</b>`, `[text](url)`, or `## Header` in the post.
+
+```bash
+# Scan last 50 messages in @mychannel
+python3 scripts/tg.py lint-channel --chat "@mychannel"
+
+# Scan last 200 messages
+python3 scripts/tg.py lint-channel --chat "@mychannel" --limit 200
+
+# Lint a single message by ID
+python3 scripts/tg.py lint-channel --chat "@mychannel" --message-id 1234
+
+# Machine-readable output for pipelines / CI
+python3 scripts/tg.py lint-channel --chat "@mychannel" --json
+```
+
+The detector lives in `modules/lint.py` as a pure function (`detect_unrendered_markup(text, entities)`), so it can also be called directly on drafts or wired into a post-flight check after publishing. Content inside `MessageEntityCode`/`MessageEntityPre` spans is ignored (inline code / code blocks are expected to contain raw characters).
+
 ### Obsidian Integration
 
 `--to-daily` and `--to-person` are flags on the read commands (`recent`, `search`, `unread`), not standalone subcommands:
@@ -409,6 +429,8 @@ Mapping natural-language asks to commands:
 | "Batch-transcribe recent voices from John" | `transcribe "John" --batch --limit 10` |
 | "Add John's messages to daily note" | `recent "John" --to-daily` |
 | "Add messages to a person's note" | `recent "Chat" --to-person "Person Name"` |
+| "Check if @mychannel has unrendered markup" | `lint-channel --chat "@mychannel"` |
+| "Lint message 1234 in @mychannel" | `lint-channel --chat "@mychannel" --message-id 1234` |
 | "Start the Telegram daemon" | `python3 scripts/tgd.py start` (or `--foreground`) |
 | "Show daemon logs" | `python3 scripts/tgd.py logs` |
 | "Configure daemon triggers" | `daemon-config` |

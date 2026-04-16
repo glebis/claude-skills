@@ -685,6 +685,65 @@ async def cmd_draft_send(args):
         await client.disconnect()
 
 
+async def cmd_lint_channel(args):
+    """Scan recent messages in a channel for unrendered markdown/HTML markup."""
+    from telegram_telethon.modules.lint import detect_unrendered_markup
+    from telegram_telethon.modules.messages import resolve_entity
+
+    client = await get_client()
+    try:
+        entity, resolved_name = await resolve_entity(client, args.chat)
+        if entity is None:
+            print(json.dumps({"error": f"Chat '{args.chat}' not found"}, indent=2))
+            return
+
+        if args.message_id:
+            msg = await client.get_messages(entity, ids=args.message_id)
+            messages = [msg] if msg else []
+        else:
+            messages = [m async for m in client.iter_messages(entity, limit=args.limit)]
+
+        report = []
+        for msg in messages:
+            if msg is None:
+                continue
+            text = getattr(msg, "raw_text", None) or getattr(msg, "text", None) or ""
+            entities = getattr(msg, "entities", None) or []
+            findings = detect_unrendered_markup(text, entities)
+            if findings:
+                report.append({
+                    "message_id": msg.id,
+                    "date": msg.date.isoformat() if getattr(msg, "date", None) else None,
+                    "preview": (text[:120] + "…") if len(text) > 120 else text,
+                    "findings": [f.to_dict() for f in findings],
+                })
+
+        summary = {
+            "chat": resolved_name,
+            "scanned": sum(1 for m in messages if m is not None),
+            "flagged": len(report),
+            "findings": report,
+        }
+
+        if args.json:
+            print(json.dumps(summary, indent=2, ensure_ascii=False))
+            return
+
+        print(f"Scanned {summary['scanned']} messages in '{resolved_name}'")
+        if not report:
+            print("Clean — no unrendered markup detected.")
+            return
+        print(f"Flagged {len(report)} message(s):\n")
+        for item in report:
+            print(f"  msg {item['message_id']} ({item['date']})")
+            print(f"    preview: {item['preview']}")
+            for f in item["findings"]:
+                print(f"    - [{f['kind']}] {f['match']!r} @ offset {f['offset']}")
+            print()
+    finally:
+        await client.disconnect()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Telegram Telethon CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -806,6 +865,16 @@ def main():
     draft_send_p = subparsers.add_parser("draft-send", help="Send draft as message")
     draft_send_p.add_argument("--chat", required=True, help="Chat to send draft from")
 
+    # Lint channel - scan published messages for unrendered markup
+    lint_p = subparsers.add_parser(
+        "lint-channel",
+        help="Scan recent messages in a channel for unrendered markdown/HTML",
+    )
+    lint_p.add_argument("--chat", required=True, help="Chat/channel to scan")
+    lint_p.add_argument("--limit", type=int, default=50, help="Max messages to scan")
+    lint_p.add_argument("--message-id", type=int, help="Scan a single message by ID instead of recent N")
+    lint_p.add_argument("--json", action="store_true", help="JSON output")
+
     args = parser.parse_args()
 
     if args.command == "setup":
@@ -851,6 +920,8 @@ def main():
         asyncio.run(cmd_drafts(args))
     elif args.command == "draft-send":
         asyncio.run(cmd_draft_send(args))
+    elif args.command == "lint-channel":
+        asyncio.run(cmd_lint_channel(args))
 
 
 if __name__ == "__main__":
