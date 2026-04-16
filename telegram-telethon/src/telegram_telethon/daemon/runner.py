@@ -67,9 +67,9 @@ class Daemon:
             config.api_hash,
         )
 
-        # Register event handler (incoming=True filters to only messages from others)
-        # Remove filter to also catch own messages for testing
-        @self._client.on(events.NewMessage())
+        # Only handle incoming messages — own sent messages (e.g. our
+        # own replies) must not retrigger the daemon or we get loops.
+        @self._client.on(events.NewMessage(incoming=True))
         async def on_new_message(event):
             await self._handle_message(event)
 
@@ -112,12 +112,23 @@ class Daemon:
 
             message_text = event.message.text or ""
 
-            logger.debug(f"Message from {chat_name}: {message_text[:50]}...")
+            # Derive chat_type so triggers can opt into DMs-only etc.
+            if event.is_private:
+                chat_type = "private"
+            elif event.is_channel:
+                chat_type = "channel"
+            elif event.is_group:
+                chat_type = "group"
+            else:
+                chat_type = None
+
+            logger.debug(f"Message from {chat_name} ({chat_type}): {message_text[:50]}...")
 
             # Route to trigger
             match = self._router.match(
                 chat_name=chat_name,
                 message_text=message_text,
+                chat_type=chat_type,
             )
 
             if not match:

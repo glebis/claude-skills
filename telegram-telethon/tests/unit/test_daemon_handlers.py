@@ -100,6 +100,37 @@ class TestEventRouter:
         )
         assert result is not None
 
+    def test_chat_type_filter_matches_private(self):
+        """Trigger with chat_type='private' matches DMs only."""
+        trigger = TriggerConfig(
+            chat="*",
+            pattern=r"(.+)",
+            action="ignore",
+            chat_type="private",
+        )
+        router = EventRouter(triggers=[trigger])
+
+        dm = router.match(chat_name="@friend", message_text="hi", chat_type="private")
+        grp = router.match(chat_name="Team", message_text="hi", chat_type="group")
+
+        assert dm is not None
+        assert grp is None
+
+    def test_chat_type_unset_matches_anything(self):
+        """Trigger without chat_type matches any chat_type (backwards compat)."""
+        trigger = TriggerConfig(chat="*", pattern=r"(.+)", action="ignore")
+        router = EventRouter(triggers=[trigger])
+
+        assert router.match(chat_name="x", message_text="hi", chat_type="private") is not None
+        assert router.match(chat_name="x", message_text="hi", chat_type="group") is not None
+        assert router.match(chat_name="x", message_text="hi", chat_type=None) is not None
+
+    def test_match_without_chat_type_kwarg_still_works(self):
+        """Existing callers that don't pass chat_type must keep working."""
+        trigger = TriggerConfig(chat="*", pattern=r"(.+)", action="ignore")
+        router = EventRouter(triggers=[trigger])
+        assert router.match(chat_name="x", message_text="hi") is not None
+
 
 class TestMessageHandler:
     """Tests for message handling logic."""

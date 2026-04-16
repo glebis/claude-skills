@@ -44,12 +44,18 @@ class EventRouter:
         self,
         chat_name: str,
         message_text: str,
+        chat_type: Optional[str] = None,
     ) -> Optional[RouteMatch]:
         """Find matching trigger for event.
 
         Args:
             chat_name: Name of the chat (or @username)
             message_text: Text of the message
+            chat_type: "private" | "group" | "channel" — used to filter
+                triggers that opted into a specific chat_type. None means
+                the caller doesn't know the type; triggers that specify
+                a chat_type are skipped in that case to avoid false
+                positives.
 
         Returns:
             RouteMatch if found, None otherwise
@@ -57,6 +63,10 @@ class EventRouter:
         for trigger in self.triggers:
             # Check chat match
             if not trigger.matches_chat(chat_name):
+                continue
+
+            # Check chat_type match
+            if not trigger.matches_chat_type(chat_type):
                 continue
 
             # Check pattern match

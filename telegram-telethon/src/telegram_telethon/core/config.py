@@ -131,6 +131,7 @@ class TriggerConfig:
     reply_text: Optional[str] = None  # For action="reply"
     debounce_seconds: int = 0  # Wait this long after last message before responding
     system_prompt: Optional[str] = None  # Custom system prompt for claude action
+    chat_type: Optional[str] = None  # "private"|"group"|"channel" — None matches any
 
     _compiled: Optional[re.Pattern] = field(default=None, repr=False)
 
@@ -154,6 +155,19 @@ class TriggerConfig:
             return True
         return self.chat.lower() == chat_name.lower()
 
+    def matches_chat_type(self, chat_type: Optional[str]) -> bool:
+        """Check if trigger matches a chat type.
+
+        Returns True when the trigger has no chat_type constraint
+        (backwards-compatible default) or when the constraint matches
+        the caller-provided chat_type.
+        """
+        if self.chat_type is None:
+            return True
+        if chat_type is None:
+            return False
+        return self.chat_type == chat_type
+
     def match_message(self, text: str) -> Optional[re.Match]:
         """Match message text against pattern."""
         return self.compiled_pattern.match(text)
@@ -169,6 +183,7 @@ class TriggerConfig:
             reply_text=data.get("reply_text"),
             debounce_seconds=data.get("debounce_seconds", 0),
             system_prompt=data.get("system_prompt"),
+            chat_type=data.get("chat_type"),
         )
 
 
