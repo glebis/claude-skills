@@ -423,8 +423,14 @@ async def forward_messages(
     from_chat: str,
     to_chat: str,
     message_ids: List[int],
+    allowed_groups: Optional[List[str]] = None,
 ) -> Dict:
-    """Forward messages to another chat."""
+    """Forward messages to another chat.
+
+    allowed_groups gates forwarding to destination groups/channels — mirrors
+    the whitelist on send_message/send_draft so forward can't be used as a
+    bypass for the same protection.
+    """
     from_entity, from_name = await resolve_entity(client, from_chat)
     to_entity, to_name = await resolve_entity(client, to_chat)
 
@@ -432,6 +438,19 @@ async def forward_messages(
         return {"forwarded": False, "error": f"Source chat '{from_chat}' not found"}
     if to_entity is None:
         return {"forwarded": False, "error": f"Destination chat '{to_chat}' not found"}
+
+    to_type = get_chat_type(to_entity)
+    if to_type in ["group", "channel"]:
+        allowed = allowed_groups or []
+        to_id = getattr(to_entity, 'id', None)
+        if to_name not in allowed and str(to_id) not in allowed:
+            return {
+                "forwarded": False,
+                "error": f"Forwarding to groups/channels requires whitelist. Add '{to_name}' to allowed_send_groups.",
+                "to_chat_type": to_type,
+                "to_chat": to_name,
+                "to_chat_id": to_id,
+            }
 
     try:
         result = await client.forward_messages(to_entity, message_ids, from_entity)

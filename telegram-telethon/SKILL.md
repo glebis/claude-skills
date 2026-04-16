@@ -200,13 +200,20 @@ python3 scripts/tg.py transcribe "Chat Name" --batch [--limit 10] [--method tele
 
 ### Obsidian Integration
 
-```bash
-# Append messages to today's daily note
-python3 scripts/tg.py to-daily "Chat Name" [--vault ~/Brains/brain] [--section "Telegram"]
+`--to-daily` and `--to-person` are flags on the read commands (`recent`, `search`, `unread`), not standalone subcommands:
 
-# Append messages to a person's note
-python3 scripts/tg.py to-person "Chat Name" "Person Name" [--vault ~/Brains/brain]
+```bash
+# Append recent messages to today's daily note (Daily/YYYYMMDD.md in the active vault)
+python3 scripts/tg.py recent "Chat Name" --to-daily
+
+# Append search results to today's daily note
+python3 scripts/tg.py search "query" --to-daily
+
+# Append recent messages to a person's note
+python3 scripts/tg.py recent "Chat Name" --to-person "Person Name"
 ```
+
+The target vault path is resolved by the formatting helpers in `utils/formatting.py`; there are currently no `--vault` or `--section` overrides on the CLI.
 
 ### Voice Transcription
 
@@ -400,8 +407,8 @@ Mapping natural-language asks to commands:
 | "Download last 5 voice notes from John" | `download "John" --type voice --limit 5` |
 | "Transcribe voice message 512 from John" | `transcribe "John" 512` |
 | "Batch-transcribe recent voices from John" | `transcribe "John" --batch --limit 10` |
-| "Add John's messages to daily note" | `to-daily "John"` |
-| "Add thread to @name's person note" | `to-person "Chat" "Person Name"` |
+| "Add John's messages to daily note" | `recent "John" --to-daily` |
+| "Add messages to a person's note" | `recent "Chat" --to-person "Person Name"` |
 | "Start the Telegram daemon" | `python3 scripts/tgd.py start` (or `--foreground`) |
 | "Show daemon logs" | `python3 scripts/tgd.py logs` |
 | "Configure daemon triggers" | `daemon-config` |

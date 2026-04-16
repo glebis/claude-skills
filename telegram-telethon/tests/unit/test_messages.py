@@ -377,6 +377,41 @@ class TestForwardMessages:
 
         assert not result["forwarded"]
 
+    async def test_forward_to_group_requires_whitelist(self):
+        """Forwarding to a group/channel without whitelist is refused."""
+        client = AsyncMock()
+        from_entity = MagicMock()
+        to_entity = MagicMock(id=999)
+
+        with patch('telegram_telethon.modules.messages.resolve_entity',
+                   side_effect=[(from_entity, "Source"), (to_entity, "Dest Group")]):
+            with patch('telegram_telethon.modules.messages.get_chat_type',
+                       return_value="group"):
+                result = await forward_messages(client, "Source", "Dest Group", [1])
+
+        assert not result["forwarded"]
+        assert "whitelist" in result["error"].lower()
+        client.forward_messages.assert_not_called()
+
+    async def test_forward_to_whitelisted_group(self):
+        """Forwarding to a whitelisted group succeeds."""
+        client = AsyncMock()
+        from_entity = MagicMock()
+        to_entity = MagicMock(id=999)
+        client.forward_messages = AsyncMock()
+
+        with patch('telegram_telethon.modules.messages.resolve_entity',
+                   side_effect=[(from_entity, "Source"), (to_entity, "Dest Group")]):
+            with patch('telegram_telethon.modules.messages.get_chat_type',
+                       return_value="group"):
+                result = await forward_messages(
+                    client, "Source", "Dest Group", [1, 2],
+                    allowed_groups=["Dest Group"],
+                )
+
+        assert result["forwarded"]
+        assert result["message_count"] == 2
+
 
 class TestMarkRead:
     """Tests for marking messages as read."""

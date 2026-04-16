@@ -551,11 +551,13 @@ async def cmd_forward(args):
     """Forward messages."""
     from telegram_telethon.modules.messages import forward_messages
 
+    config = Config.load()
+    allowed_groups = config.allowed_send_groups
     client = await get_client()
     try:
         result = await forward_messages(
             client, from_chat=args.from_chat, to_chat=args.to_chat,
-            message_ids=args.message_ids,
+            message_ids=args.message_ids, allowed_groups=allowed_groups,
         )
         print(json.dumps(result, indent=2, ensure_ascii=False))
     finally:
