@@ -34,6 +34,39 @@ description: This skill should be used for comprehensive Telegram automation via
 
 Full Telethon API wrapper with daemon mode and Claude Code integration. Supports interactive setup, background message monitoring, and automatic Claude session spawning per chat.
 
+## Package Layout
+
+```
+telegram-telethon/
+├── SKILL.md                          # This file
+├── pyproject.toml                    # Installable Python package
+├── scripts/
+│   ├── tg.py                         # Main CLI (messages, media, drafts, etc.)
+│   └── tgd.py                        # Daemon controller
+├── src/telegram_telethon/            # Importable package
+│   ├── core/                         # auth, config
+│   ├── modules/                      # messages, media
+│   ├── daemon/                       # runner, handlers, claude_bridge
+│   └── utils/                        # formatting
+└── tests/                            # pytest unit + integration tests
+```
+
+Scripts import from `src/telegram_telethon`. Install the package in editable mode so `tg.py`/`tgd.py` can resolve imports:
+
+```bash
+cd telegram-telethon
+pip install -e .
+# or with dev tools (pytest, coverage):
+pip install -e ".[dev]"
+```
+
+## Relationship to `telegram` Skill
+
+The separate `telegram` skill (single-script `telegram_fetch.py` backed by `telegram_dl`) overlaps on list/recent/search/send/edit/download/thread but differs:
+
+- **Use `telegram`** for publishing drafts to the `@klodkot` channel (`publish` command with frontmatter parsing, media albums, draft→published workflow) and `--markdown` → Telegram HTML conversion.
+- **Use `telegram-telethon` (this skill)** for: daemon mode + Claude Code spawning, voice transcription (Telegram/Groq/Whisper), `delete`/`forward`/`mark-read`, local `draft`/`drafts`/`draft-send`, and non-interactive auth setup.
+
 ## Prerequisites
 
 ### Interactive Setup (Terminal)
@@ -158,11 +191,11 @@ python3 scripts/tg.py draft-send --chat "Chat Name"
 # Download media from chat
 python3 scripts/tg.py download "Chat Name" [--limit 5] [--output-dir ~/Downloads] [--message-id ID] [--type voice|video|photo]
 
-# Transcribe voice messages
+# Transcribe a single voice message (MESSAGE_ID required)
 python3 scripts/tg.py transcribe "Chat Name" MESSAGE_ID [--method telegram|groq|whisper]
 
-# Batch transcribe voice messages
-python3 scripts/tg.py transcribe "Chat Name" --batch [--limit 10]
+# Batch-transcribe recent voice messages (omit MESSAGE_ID, use --batch)
+python3 scripts/tg.py transcribe "Chat Name" --batch [--limit 10] [--method telegram|groq|whisper]
 ```
 
 ### Obsidian Integration
@@ -340,12 +373,49 @@ pytest --cov=telegram_telethon
 pytest tests/unit/test_claude_bridge.py -v
 ```
 
+## Example User Requests
+
+Mapping natural-language asks to commands:
+
+| User says | Command |
+|-----------|---------|
+| "Is Telegram connected?" | `status` |
+| "What chats do I have?" | `list` |
+| "Find chat named X exactly" | `list --search "X"` (increase `--limit` if not found) |
+| "Show recent messages from John" | `recent "John" --limit 20` |
+| "Messages from the last week in Group Y" | `recent "Group Y" --days 7` |
+| "Search Telegram for 'deadline'" | `search "deadline"` |
+| "Unread messages from Group Z" | `unread --chat "Group Z"` |
+| "Mark Group Z as read" | `mark-read --chat "Group Z"` |
+| "Get thread 174 in Lab" | `thread <chat_id> 174 --limit 100` |
+| "Send 'hi' to John" / "отправь John: hi" | `send --chat "John" --text "hi"` |
+| "Reply thanks to message 12345" | `send --chat "..." --text "thanks" --reply-to 12345` |
+| "Send image.jpg to John" | `send --chat "John" --file image.jpg` |
+| "Save a draft for John: hi" / "сделай драфт" | `draft --chat "John" --text "hi"` |
+| "List my drafts" | `drafts` |
+| "Send the draft for John" | `draft-send --chat "John"` |
+| "Delete messages 123, 456 from John" | `delete --chat "John" --message-ids 123 456` |
+| "Forward msg 789 from John to Maria" | `forward --from "John" --to "Maria" --message-ids 789` |
+| "Edit message 76 in @channel" | `edit --chat "@channel" --message-id 76 --text "..."` |
+| "Download last 5 voice notes from John" | `download "John" --type voice --limit 5` |
+| "Transcribe voice message 512 from John" | `transcribe "John" 512` |
+| "Batch-transcribe recent voices from John" | `transcribe "John" --batch --limit 10` |
+| "Add John's messages to daily note" | `to-daily "John"` |
+| "Add thread to @name's person note" | `to-person "Chat" "Person Name"` |
+| "Start the Telegram daemon" | `python3 scripts/tgd.py start` (or `--foreground`) |
+| "Show daemon logs" | `python3 scripts/tgd.py logs` |
+| "Configure daemon triggers" | `daemon-config` |
+
+**Saved Messages:** Use `"me"` (not "Saved Messages") — the label is localized per user.
+
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
 | "Config not found" | Run `python3 scripts/tg.py setup` |
 | "Session expired" | Delete `session.session` and re-run setup |
+| `ModuleNotFoundError: telegram_telethon` | Run `pip install -e .` from the skill directory |
 | "Claude timeout" | Increase `timeout` in `daemon.yaml` |
 | "Queue full" | Reduce request rate or wait |
 | "No trigger matched" | Check `pattern` regex and `chat` name match |
+| Chat not found by name | Increase `--limit` on `list` (default 30); may not be in recent dialogs |
