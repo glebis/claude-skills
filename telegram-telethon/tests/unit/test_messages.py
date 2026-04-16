@@ -261,6 +261,51 @@ class TestSendMessage:
         assert result["sent"]
         assert result["message_id"] == 123
 
+    async def test_send_with_markdown_converts_and_sets_html_parse_mode(self):
+        """With markdown=True, text is converted and parse_mode='html' is set."""
+        client = AsyncMock()
+        entity = MagicMock()
+
+        with patch('telegram_telethon.modules.messages.resolve_entity',
+                   return_value=(entity, "John Doe")):
+            with patch('telegram_telethon.modules.messages.get_chat_type',
+                       return_value="private"):
+                msg = MagicMock(id=777)
+                client.send_message = AsyncMock(return_value=msg)
+
+                result = await send_message(
+                    client, "John", "Hello **world**", markdown=True,
+                )
+
+        assert result["sent"]
+        client.send_message.assert_awaited_once()
+        kwargs = client.send_message.await_args.kwargs
+        # Body was converted and handed off as HTML
+        assert kwargs["parse_mode"] == "html"
+        # Positional text arg (index 1) after entity
+        sent_text = client.send_message.await_args.args[1]
+        assert sent_text == "Hello <b>world</b>"
+
+    async def test_send_without_markdown_sends_plain_text(self):
+        """Default (markdown=False) preserves raw text and skips parse_mode."""
+        client = AsyncMock()
+        entity = MagicMock()
+
+        with patch('telegram_telethon.modules.messages.resolve_entity',
+                   return_value=(entity, "John Doe")):
+            with patch('telegram_telethon.modules.messages.get_chat_type',
+                       return_value="private"):
+                msg = MagicMock(id=778)
+                client.send_message = AsyncMock(return_value=msg)
+
+                await send_message(client, "John", "Hello **world**")
+
+        client.send_message.assert_awaited_once()
+        kwargs = client.send_message.await_args.kwargs
+        assert kwargs.get("parse_mode") is None
+        sent_text = client.send_message.await_args.args[1]
+        assert sent_text == "Hello **world**"
+
     async def test_send_to_group_requires_whitelist(self):
         """Sending to group requires whitelist."""
         client = AsyncMock()

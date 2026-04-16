@@ -64,8 +64,8 @@ pip install -e ".[dev]"
 
 The separate `telegram` skill (single-script `telegram_fetch.py` backed by `telegram_dl`) overlaps on list/recent/search/send/edit/download/thread but differs:
 
-- **Use `telegram`** for publishing drafts to the `@klodkot` channel (`publish` command with frontmatter parsing, media albums, draft→published workflow) and `--markdown` → Telegram HTML conversion.
-- **Use `telegram-telethon` (this skill)** for: daemon mode + Claude Code spawning, voice transcription (Telegram/Groq/Whisper), `delete`/`forward`/`mark-read`, local `draft`/`drafts`/`draft-send`, and non-interactive auth setup.
+- **Use `telegram`** for publishing drafts to the `@klodkot` channel (`publish` command with frontmatter parsing, media albums, draft→published workflow). Also supports scheduled sends (`--schedule`).
+- **Use `telegram-telethon` (this skill)** for: daemon mode + Claude Code spawning, voice transcription (Telegram/Groq/Whisper), `delete`/`forward`/`mark-read`, local `draft`/`drafts`/`draft-send`, `lint-channel` to catch unrendered markup, `--markdown` on `send` for markdown→Telegram-HTML conversion, and non-interactive auth setup.
 
 ## Prerequisites
 
@@ -149,7 +149,7 @@ python3 scripts/tg.py unread [--chat "Chat Name"] [--format markdown|json]
 python3 scripts/tg.py thread CHAT_ID THREAD_ID [--limit 100]
 
 # Send message
-python3 scripts/tg.py send --chat "Chat Name" --text "Message text" [--reply-to MSG_ID] [--file path] [--topic TOPIC_ID]
+python3 scripts/tg.py send --chat "Chat Name" --text "Message text" [--reply-to MSG_ID] [--file path] [--topic TOPIC_ID] [--markdown]
 
 # Edit message
 python3 scripts/tg.py edit --chat "Chat Name" --message-id MESSAGE_ID --text "New text"
@@ -197,6 +197,19 @@ python3 scripts/tg.py transcribe "Chat Name" MESSAGE_ID [--method telegram|groq|
 # Batch-transcribe recent voice messages (omit MESSAGE_ID, use --batch)
 python3 scripts/tg.py transcribe "Chat Name" --batch [--limit 10] [--method telegram|groq|whisper]
 ```
+
+### Markdown Formatting on Send
+
+Pass `--markdown` to convert a markdown-flavored message into Telegram HTML before sending:
+
+```bash
+python3 scripts/tg.py send --chat "@mychannel" --markdown \
+  --text $'## Release\n\n**v2** ships _today_. See [docs](https://example.com).\n\n* fast\n* stable'
+```
+
+Rules (applied in order): `## Header` → bold line; `* item` / `- item` at line start → `→ item`; `**bold**` → `<b>`; `_italic_` → `<i>`; `[text](url)` → `<a href>`. Pre-existing HTML passes through unchanged, so the flag is safe to add to content that was already authored as HTML.
+
+Pair with `lint-channel` below to catch cases where `--markdown` was forgotten.
 
 ### Lint Published Messages
 
@@ -416,6 +429,7 @@ Mapping natural-language asks to commands:
 | "Mark Group Z as read" | `mark-read --chat "Group Z"` |
 | "Get thread 174 in Lab" | `thread <chat_id> 174 --limit 100` |
 | "Send 'hi' to John" / "отправь John: hi" | `send --chat "John" --text "hi"` |
+| "Post a markdown-formatted note to @channel" | `send --chat "@channel" --markdown --text "..."` |
 | "Reply thanks to message 12345" | `send --chat "..." --text "thanks" --reply-to 12345` |
 | "Send image.jpg to John" | `send --chat "John" --file image.jpg` |
 | "Save a draft for John: hi" / "сделай драфт" | `draft --chat "John" --text "hi"` |

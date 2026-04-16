@@ -526,6 +526,7 @@ async def cmd_send(args):
         result = await send_message(
             client, chat_name=args.chat, text=args.text or "",
             reply_to=reply_to, file_path=args.file, allowed_groups=allowed_groups,
+            markdown=args.markdown,
         )
         print(json.dumps(result, indent=2, ensure_ascii=False))
     finally:
@@ -808,6 +809,11 @@ def main():
     send_p.add_argument("--file", help="File to send")
     send_p.add_argument("--reply-to", type=int, help="Reply to message ID")
     send_p.add_argument("--topic", type=int, help="Forum topic ID")
+    send_p.add_argument(
+        "--markdown",
+        action="store_true",
+        help="Convert markdown (**bold**, _italic_, [text](url), ## Header, * bullet) to Telegram HTML before sending",
+    )
 
     # Edit
     edit_p = subparsers.add_parser("edit", help="Edit message")

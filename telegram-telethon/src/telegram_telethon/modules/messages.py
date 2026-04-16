@@ -13,6 +13,8 @@ from telethon import TelegramClient, functions, types
 from telethon.tl.types import User, Chat, Channel
 from telethon.errors import FloodWaitError
 
+from telegram_telethon.modules.markdown import convert_markdown_to_telegram_html
+
 logger = logging.getLogger(__name__)
 
 
@@ -315,8 +317,15 @@ async def send_message(
     reply_to: Optional[int] = None,
     file_path: Optional[str] = None,
     allowed_groups: Optional[List[str]] = None,
+    markdown: bool = False,
 ) -> Dict:
-    """Send a message or file to a chat."""
+    """Send a message or file to a chat.
+
+    When ``markdown`` is True, ``text`` is converted to Telegram-flavored
+    HTML via ``modules.markdown.convert_markdown_to_telegram_html`` and
+    sent with ``parse_mode='html'``. When False (the default), the text
+    is sent as-is with no parse mode — Telegram renders it literally.
+    """
     import os
 
     entity, resolved_name = await resolve_entity(client, chat_name)
@@ -338,6 +347,12 @@ async def send_message(
                 "chat_id": entity_id
             }
 
+    body = text
+    parse_mode: Optional[str] = None
+    if markdown and text:
+        body = convert_markdown_to_telegram_html(text)
+        parse_mode = "html"
+
     try:
         if file_path:
             if not os.path.exists(file_path):
@@ -346,8 +361,9 @@ async def send_message(
             msg = await client.send_file(
                 entity,
                 file_path,
-                caption=text if text else None,
-                reply_to=reply_to
+                caption=body if body else None,
+                reply_to=reply_to,
+                parse_mode=parse_mode,
             )
             return {
                 "sent": True,
@@ -360,7 +376,9 @@ async def send_message(
                 }
             }
         else:
-            msg = await client.send_message(entity, text, reply_to=reply_to)
+            msg = await client.send_message(
+                entity, body, reply_to=reply_to, parse_mode=parse_mode,
+            )
             return {
                 "sent": True,
                 "chat": resolved_name,
