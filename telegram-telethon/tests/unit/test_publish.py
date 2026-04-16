@@ -5,7 +5,9 @@ in the channel-config helpers (tested with tmp_path).
 """
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -19,6 +21,11 @@ from telegram_telethon.modules.publish import (
     append_footer,
     load_channel_config,
     resolve_channel_from_draft,
+    update_frontmatter,
+    extract_first_line,
+    update_channel_index,
+    resolve_draft_path,
+    publish_draft,
 )
 
 
@@ -245,3 +252,311 @@ class TestResolveChannelFromDraft:
         draft = tmp_path / "x.md"
         draft.write_text("---\n---\nBody")
         assert resolve_channel_from_draft(draft, {}, vault_path=tmp_path) is None
+
+
+# ---------- post-publish helpers ----------
+
+class TestUpdateFrontmatter:
+    def test_adds_published_fields(self, tmp_path):
+        f = tmp_path / "draft.md"
+        f.write_text("---\ntitle: Hi\n---\n\nBody text", encoding="utf-8")
+
+        update_frontmatter(f, message_id=42)
+
+        fm, body = parse_draft_frontmatter(f.read_text(encoding="utf-8"))
+        assert fm["type"] == "published"
+        assert fm["telegram_message_id"] == 42
+        today = datetime.now().strftime("%Y%m%d")
+        assert fm["published_date"] == f"[[{today}]]"
+        assert "Body text" in body
+
+
+class TestExtractFirstLine:
+    def test_skips_headers_and_empty_lines(self):
+        body = "\n\n# Header\n\nFirst real line of content"
+        assert extract_first_line(body) == "First real line of content"
+
+    def test_strips_markdown_formatting(self):
+        body = "**bold** text and _italic_ and [link](https://x.io)"
+        assert extract_first_line(body) == "bold text and italic and link"
+
+    def test_truncates_long_lines(self):
+        body = "x" * 200
+        out = extract_first_line(body)
+        assert out.endswith("...")
+        assert len(out) == 80
+
+    def test_empty_body_returns_fallback(self):
+        assert extract_first_line("") == "New post"
+        assert extract_first_line("\n\n# Only a header\n\n") == "New post"
+
+
+class TestUpdateChannelIndex:
+    def test_inserts_new_entry_at_top_of_published_section(self, tmp_path):
+        idx = tmp_path / "klodkot.md"
+        idx.write_text(
+            "# Klodkot\n\n**Published**: `published/`\n- [[older-post]] — older summary\n",
+            encoding="utf-8",
+        )
+        update_channel_index(idx, "new-post.md", "New summary")
+
+        content = idx.read_text(encoding="utf-8")
+        lines = content.split("\n")
+        pub_idx = next(i for i, l in enumerate(lines) if "**Published**:" in l)
+        # New entry immediately after the marker line
+        assert lines[pub_idx + 1] == "- [[new-post]] — New summary"
+        # Older entry still present
+        assert "older-post" in content
+
+    def test_missing_published_section_raises(self, tmp_path):
+        idx = tmp_path / "nopub.md"
+        idx.write_text("# A channel without a published section\n", encoding="utf-8")
+        with pytest.raises(ValueError) as exc:
+            update_channel_index(idx, "post.md", "x")
+        assert "Published" in str(exc.value)
+
+
+class TestResolveDraftPath:
+    def test_absolute_path_returned_verbatim(self, tmp_path):
+        draft = tmp_path / "a.md"
+        draft.write_text("x")
+        assert resolve_draft_path(str(draft), vault_path=tmp_path) == draft
+
+    def test_relative_under_channels(self, tmp_path):
+        d = tmp_path / "Channels" / "klodkot" / "drafts"
+        d.mkdir(parents=True)
+        (d / "post.md").write_text("x")
+        got = resolve_draft_path("Channels/klodkot/drafts/post.md", vault_path=tmp_path)
+        assert got == d / "post.md"
+
+    def test_filename_only_found_by_glob(self, tmp_path):
+        d = tmp_path / "Channels" / "klodkot" / "drafts"
+        d.mkdir(parents=True)
+        (d / "post.md").write_text("x")
+        assert resolve_draft_path("post.md", vault_path=tmp_path) == d / "post.md"
+
+    def test_slug_without_extension(self, tmp_path):
+        d = tmp_path / "Channels" / "klodkot" / "drafts"
+        d.mkdir(parents=True)
+        (d / "post.md").write_text("x")
+        assert resolve_draft_path("post", vault_path=tmp_path) == d / "post.md"
+
+    def test_ambiguous_match_returns_none(self, tmp_path):
+        for folder in ("klodkot", "mht"):
+            d = tmp_path / "Channels" / folder / "drafts"
+            d.mkdir(parents=True)
+            (d / "same.md").write_text("x")
+        # Caller is expected to report ambiguity separately.
+        assert resolve_draft_path("same.md", vault_path=tmp_path) is None
+
+    def test_not_found_returns_none(self, tmp_path):
+        assert resolve_draft_path("ghost.md", vault_path=tmp_path) is None
+
+
+# ---------- publish_draft orchestrator ----------
+
+def _setup_klodkot_vault(tmp_path, footer="**[KLODKOT](https://t.me/klodkot)** — tagline"):
+    """Build a minimal vault with klodkot channel + index + published section."""
+    chan = tmp_path / "Channels" / "klodkot"
+    chan.mkdir(parents=True)
+    (chan / "klodkot.md").write_text(
+        f'---\ntelegram_channel: "@klodkot"\n---\n\n'
+        f"# Klodkot channel\n\n**Published**: `published/`\n",
+        encoding="utf-8",
+    )
+    # Seed a published post so the footer extractor finds the signature.
+    pub = chan / "published"
+    pub.mkdir()
+    (pub / "seed.md").write_text(f"Body\n\n{footer}\n", encoding="utf-8")
+    (chan / "drafts").mkdir()
+    return chan
+
+
+class TestPublishDraft:
+    @pytest.mark.asyncio
+    async def test_dry_run_returns_preview_without_sending(self, tmp_path):
+        chan = _setup_klodkot_vault(tmp_path)
+        draft = chan / "drafts" / "hello.md"
+        draft.write_text(
+            '---\ntitle: Hi\n---\n\n# Hi — Draft\n\n**Hello** world',
+            encoding="utf-8",
+        )
+        client = AsyncMock()
+
+        result = await publish_draft(
+            client, str(draft), dry_run=True, vault_path=tmp_path,
+        )
+
+        assert result.get("dry_run") is True
+        assert result["channel"] == "@klodkot"
+        assert "body_preview" in result
+        client.send_message.assert_not_called()
+        client.send_file.assert_not_called()
+        # Draft not moved
+        assert draft.exists()
+
+    @pytest.mark.asyncio
+    async def test_already_published_returns_error(self, tmp_path):
+        chan = _setup_klodkot_vault(tmp_path)
+        draft = chan / "drafts" / "p.md"
+        draft.write_text(
+            '---\ntelegram_message_id: 77\n---\n\nBody',
+            encoding="utf-8",
+        )
+        result = await publish_draft(
+            AsyncMock(), str(draft), dry_run=True, vault_path=tmp_path,
+        )
+        assert result.get("already_published") is True
+        assert result["published"] is False
+
+    @pytest.mark.asyncio
+    async def test_unresolvable_channel_returns_error(self, tmp_path):
+        # Draft outside Channels/ and with no channel frontmatter
+        (tmp_path / "Channels").mkdir()
+        draft = tmp_path / "orphan.md"
+        draft.write_text("---\n---\nBody", encoding="utf-8")
+        result = await publish_draft(
+            AsyncMock(), str(draft), dry_run=True, vault_path=tmp_path,
+        )
+        assert result["published"] is False
+        assert "channel" in result["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_sends_text_only_and_updates_metadata(self, tmp_path):
+        chan = _setup_klodkot_vault(tmp_path)
+        draft = chan / "drafts" / "post.md"
+        draft.write_text(
+            '---\ntitle: Hi\n---\n\nHello **world**',
+            encoding="utf-8",
+        )
+
+        # Mock Telethon client: send_message returns object with .id
+        client = AsyncMock()
+        entity = MagicMock()
+        sent = MagicMock(id=5050)
+        client.send_message = AsyncMock(return_value=sent)
+
+        with patch(
+            "telegram_telethon.modules.publish.resolve_entity",
+            new=AsyncMock(return_value=(entity, "@klodkot")),
+        ):
+            result = await publish_draft(
+                client, str(draft), dry_run=False, vault_path=tmp_path,
+            )
+
+        assert result["published"] is True
+        assert result["message_id"] == 5050
+        client.send_message.assert_awaited_once()
+        kwargs = client.send_message.await_args.kwargs
+        # Body was converted to HTML (<b>world</b>)
+        sent_text = client.send_message.await_args.args[1]
+        assert "<b>world</b>" in sent_text
+        assert kwargs["parse_mode"] == "html"
+
+        # File moved
+        moved = chan / "published" / "post.md"
+        assert moved.exists()
+        assert not draft.exists()
+
+        # Frontmatter updated
+        fm, _ = parse_draft_frontmatter(moved.read_text(encoding="utf-8"))
+        assert fm["type"] == "published"
+        assert fm["telegram_message_id"] == 5050
+
+    @pytest.mark.asyncio
+    async def test_sends_album_when_media_present(self, tmp_path):
+        chan = _setup_klodkot_vault(tmp_path)
+        attach = chan / "attachments"
+        attach.mkdir()
+        (attach / "pic.png").write_bytes(b"x")
+        (attach / "vid.mp4").write_bytes(b"x")
+
+        draft = chan / "drafts" / "media-post.md"
+        draft.write_text(
+            '---\nvideo: vid.mp4\n---\n\nIntro\n\n![[pic.png]]',
+            encoding="utf-8",
+        )
+
+        client = AsyncMock()
+        client.send_file = AsyncMock(return_value=[MagicMock(id=1), MagicMock(id=2)])
+
+        with patch(
+            "telegram_telethon.modules.publish.resolve_entity",
+            new=AsyncMock(return_value=(MagicMock(), "@klodkot")),
+        ):
+            result = await publish_draft(
+                client, str(draft), dry_run=False, vault_path=tmp_path,
+            )
+
+        assert result["published"] is True
+        assert result["message_id"] == 1
+        assert result["media_count"] == 2
+        client.send_file.assert_awaited_once()
+        # First positional is the entity, second is the list of paths
+        paths = client.send_file.await_args.args[1]
+        assert len(paths) == 2
+
+    @pytest.mark.asyncio
+    async def test_missing_media_returns_error(self, tmp_path):
+        chan = _setup_klodkot_vault(tmp_path)
+        draft = chan / "drafts" / "x.md"
+        draft.write_text(
+            '---\nvideo: missing.mp4\n---\n\nBody',
+            encoding="utf-8",
+        )
+        result = await publish_draft(
+            AsyncMock(), str(draft), dry_run=True, vault_path=tmp_path,
+        )
+        assert result["published"] is False
+        assert "missing.mp4" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_schedule_forwarded_and_reported(self, tmp_path):
+        chan = _setup_klodkot_vault(tmp_path)
+        draft = chan / "drafts" / "later.md"
+        draft.write_text('---\n---\nHello', encoding="utf-8")
+
+        client = AsyncMock()
+        client.send_message = AsyncMock(return_value=MagicMock(id=9))
+        when = datetime(2027, 6, 1, 10, 0)
+
+        with patch(
+            "telegram_telethon.modules.publish.resolve_entity",
+            new=AsyncMock(return_value=(MagicMock(), "@klodkot")),
+        ):
+            result = await publish_draft(
+                client, str(draft), dry_run=False,
+                schedule=when, vault_path=tmp_path,
+            )
+
+        assert result["scheduled_for"] == when.isoformat()
+        kwargs = client.send_message.await_args.kwargs
+        assert kwargs["schedule"] == when
+
+    @pytest.mark.asyncio
+    async def test_lint_warnings_surface_in_result(self, tmp_path):
+        """If the body still contains HTML-ish leaked markup (e.g. raw <b>
+        tags that the converter leaves intact), lint findings appear
+        in the result so a reviewer can catch render issues."""
+        chan = _setup_klodkot_vault(tmp_path)
+        draft = chan / "drafts" / "lint-post.md"
+        # Raw HTML that markdown converter leaves intact — detected by lint
+        draft.write_text(
+            '---\n---\nBody with <b>hand-rolled</b> html',
+            encoding="utf-8",
+        )
+        client = AsyncMock()
+        client.send_message = AsyncMock(return_value=MagicMock(id=1))
+
+        with patch(
+            "telegram_telethon.modules.publish.resolve_entity",
+            new=AsyncMock(return_value=(MagicMock(), "@klodkot")),
+        ):
+            result = await publish_draft(
+                client, str(draft), dry_run=False, vault_path=tmp_path,
+            )
+
+        # Sent ok, but lint flagged raw HTML tag
+        assert result["published"] is True
+        assert "lint_warnings" in result
+        assert any(w.get("kind") == "html_tag" for w in result["lint_warnings"])

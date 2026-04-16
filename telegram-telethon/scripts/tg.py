@@ -695,6 +695,32 @@ async def cmd_draft_send(args):
         await client.disconnect()
 
 
+async def cmd_publish(args):
+    """Publish a draft markdown file to its configured Telegram channel."""
+    from telegram_telethon.modules.publish import publish_draft
+    from telegram_telethon.modules.schedule import parse_schedule
+
+    schedule_dt = None
+    if args.schedule:
+        try:
+            schedule_dt = parse_schedule(args.schedule)
+        except ValueError as exc:
+            print(json.dumps({"published": False, "error": str(exc)}, indent=2, ensure_ascii=False))
+            return
+
+    client = await get_client()
+    try:
+        result = await publish_draft(
+            client,
+            args.draft,
+            dry_run=args.dry_run,
+            schedule=schedule_dt,
+        )
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    finally:
+        await client.disconnect()
+
+
 async def cmd_lint_channel(args):
     """Scan recent messages in a channel for unrendered markdown/HTML markup."""
     from telegram_telethon.modules.lint import detect_unrendered_markup
@@ -884,6 +910,18 @@ def main():
     draft_send_p = subparsers.add_parser("draft-send", help="Send draft as message")
     draft_send_p.add_argument("--chat", required=True, help="Chat to send draft from")
 
+    # Publish - post a draft markdown file to its channel
+    pub_p = subparsers.add_parser(
+        "publish",
+        help="Publish a draft markdown file to its Telegram channel",
+    )
+    pub_p.add_argument("--draft", required=True, help="Path or slug of the draft (relative to vault OK)")
+    pub_p.add_argument("--dry-run", action="store_true", help="Preview without sending")
+    pub_p.add_argument(
+        "--schedule",
+        help="Schedule delivery. Accepts ISO, relative (+1h/+30m), or 'tomorrow HH:MM'",
+    )
+
     # Lint channel - scan published messages for unrendered markup
     lint_p = subparsers.add_parser(
         "lint-channel",
@@ -941,6 +979,8 @@ def main():
         asyncio.run(cmd_draft_send(args))
     elif args.command == "lint-channel":
         asyncio.run(cmd_lint_channel(args))
+    elif args.command == "publish":
+        asyncio.run(cmd_publish(args))
 
 
 if __name__ == "__main__":

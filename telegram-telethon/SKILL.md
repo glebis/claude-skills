@@ -64,8 +64,12 @@ pip install -e ".[dev]"
 
 The separate `telegram` skill (single-script `telegram_fetch.py` backed by `telegram_dl`) overlaps on list/recent/search/send/edit/download/thread but differs:
 
-- **Use `telegram`** for publishing drafts to the `@klodkot` channel (`publish` command with frontmatter parsing, media albums, draft→published workflow). Also supports scheduled sends (`--schedule`).
-- **Use `telegram-telethon` (this skill)** for: daemon mode + Claude Code spawning, voice transcription (Telegram/Groq/Whisper), `delete`/`forward`/`mark-read`, local `draft`/`drafts`/`draft-send`, `lint-channel` to catch unrendered markup, `--markdown` on `send` for markdown→Telegram-HTML conversion, and non-interactive auth setup.
+With the publish/markdown/schedule ports now complete, **`telegram-telethon` is a superset of `telegram`** on everything except the external `telegram_dl` auth dependency. Use this skill for:
+
+- `publish` — draft→channel workflow (frontmatter, media albums, post-publish move + index update, post-flight lint)
+- `--markdown` on `send` / `publish` — markdown→Telegram HTML conversion
+- `--schedule` on `send` / `publish` — ISO / relative / natural-language scheduled delivery
+- Daemon mode + Claude Code spawning, voice transcription (Telegram/Groq/Whisper), `delete` / `forward` / `mark-read`, local `draft` / `drafts` / `draft-send`, `lint-channel`, non-interactive auth setup.
 
 ## Prerequisites
 
@@ -197,6 +201,23 @@ python3 scripts/tg.py transcribe "Chat Name" MESSAGE_ID [--method telegram|groq|
 # Batch-transcribe recent voice messages (omit MESSAGE_ID, use --batch)
 python3 scripts/tg.py transcribe "Chat Name" --batch [--limit 10] [--method telegram|groq|whisper]
 ```
+
+### Publish a Draft to a Channel
+
+End-to-end publish workflow: parse a draft markdown file, resolve the destination channel from folder structure or frontmatter `channel:`, upload media (single file or album), post-process to move the draft to `published/` and insert an entry in the channel index.
+
+```bash
+# Dry-run preview
+python3 scripts/tg.py publish --draft "Channels/klodkot/drafts/20260416-post.md" --dry-run
+
+# Publish now
+python3 scripts/tg.py publish --draft "20260416-post"  # slug works too
+
+# Publish scheduled for later
+python3 scripts/tg.py publish --draft "..." --schedule "tomorrow 10:00"
+```
+
+The result JSON includes `published`, `channel`, `message_id`, `media_count`, `moved_to`, and — crucially — `lint_warnings` when the final body contains leaked markdown/HTML that Telegram wouldn't render. Post-publish bookkeeping failures (e.g. index write error) surface as `warnings` but don't roll back the send.
 
 ### Markdown Formatting on Send
 
@@ -462,6 +483,9 @@ Mapping natural-language asks to commands:
 | "Batch-transcribe recent voices from John" | `transcribe "John" --batch --limit 10` |
 | "Add John's messages to daily note" | `recent "John" --to-daily` |
 | "Add messages to a person's note" | `recent "Chat" --to-person "Person Name"` |
+| "Publish this draft to the klodkot channel" | `publish --draft "20260416-post"` |
+| "Preview a draft before publishing" | `publish --draft "..." --dry-run` |
+| "Publish this at 10am tomorrow" | `publish --draft "..." --schedule "tomorrow 10:00"` |
 | "Check if @mychannel has unrendered markup" | `lint-channel --chat "@mychannel"` |
 | "Lint message 1234 in @mychannel" | `lint-channel --chat "@mychannel" --message-id 1234` |
 | "Start the Telegram daemon" | `python3 scripts/tgd.py start` (or `--foreground`) |
