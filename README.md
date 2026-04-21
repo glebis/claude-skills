@@ -1387,6 +1387,34 @@ cp -r linear ~/.claude/skills/
 
 ---
 
+### [Skill Studio](https://github.com/glebis/skill-studio) ⭐ NEW
+Interview-driven automation design tool. Runs a coverage-driven JTBD interview (text or voice) to capture what to build, for whom, and why — then exports a one-page `design.md` spec plus an SVG design map. Sits between "should I automate this?" (automation-advisor) and "how do I package this as a skill?" (skill-creator).
+
+**Features:**
+- 🎯 Coverage-driven JTBD interview with 22-field DesignJSON schema
+- 🎙️ Text mode (runs natively in Claude Code) or voice mode (Daily + Groq Whisper + Deepgram TTS)
+- 📊 3 depth levels: sprint (~5–7 questions), standard (~15–20), deep (~25–35)
+- 🎨 4 interview styles: scenario-first, socratic, metaphor-first, form
+- 🔄 4 presets: ai-agent, life-automation, knowledge-work, custom
+- 📥 Session seeding from prior Claude Code transcripts (`propose-from-session`)
+- 📝 Exports `design.md` + `design.svg` — ready to hand off to skill-creator
+
+**Quick Start:**
+```bash
+# Install CLI
+pip install -e ~/.claude/skills/skill-studio
+
+# Text mode (default)
+/skill-studio
+
+# Voice mode (requires Daily, Groq, Deepgram keys)
+skill-studio new --voice --preset ai-agent --depth standard
+```
+
+**Use when:** Designing a new skill, agent, automation, or workflow — transforms "I want a bot that..." into a structured spec with concrete scenarios, triggers, inputs/outputs, and guardrails.
+
+---
+
 ### [Nano Banana (Gemini Image Generation)](./nano-banana/) ⭐ NEW
 Generate and edit images using Google's Gemini image generation models. Supports style presets, platform-specific sizing, variants, image editing, and reference images for style transfer.
 
