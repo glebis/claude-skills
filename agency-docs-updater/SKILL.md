@@ -543,110 +543,35 @@ python3 update_meeting_doc.py <fathom_file> <youtube_url> <summary_file> [-n NN]
 
 ## Learnings
 
-### 2026-02-07
-**Context**: First full pipeline run for meeting 08
+### Pipeline
+- Parallelize summary (Step 4) with YouTube upload (Step 3) — saves 10+ minutes
+- `--resume-from upload` skips metadata/thumbnail regeneration on retry
+- Always run `npm run build` locally before pushing — MDX errors cause Vercel deploy failures
+- Zoom recordings may take ~15 min to process after meeting ends
 
-**What Worked**:
-- `--resume-from upload` avoids re-generating metadata/thumbnails on upload retry
-- Parallelizing summary (Step 4) with YouTube upload (Step 3) saves 10+ minutes
-- `gh api repos/OWNER/REPO/commits/HASH/status` reliably checks Vercel deploy status
-- Local `npm run build` catches MDX errors before pushing
+### MDX pitfalls
+- `update_meeting_doc.py` appends Marp presentation content with `<!-- -->` HTML comments — always strip everything after the summary. Use `head -N` truncation at the last valid `---` before `<!-- _class: lead -->`
+- MDX breaks on HTML comments (`<!-- -->`), unescaped `<`, and bare `{` characters
 
-**What Failed**:
-- YouTube upload speed degraded from 5.4 MB/s to 0.15 MB/s mid-upload (3 attempts needed)
-- `update_meeting_doc.py` appended lab-01 Marp presentation with `<!-- -->` comments — broke MDX build
-- Pushed without local build check — caused Vercel deploy failure, required fix commit
+### YouTube API
+- YouTube description rejects `<` and `>` characters (`invalidDescription`) — use plain language
+- Always pass `--title` from Fathom frontmatter — without it, the LLM generates poor/generic titles for Russian content
+- OAuth token expires periodically: `rm token.pickle && python3 -c "from auth import get_authenticated_service; get_authenticated_service()"` — requires browser click-through
+- `youtube.force-ssl` scope is needed for both uploads and metadata updates (`youtube.upload` alone can't call `videos().update()`)
 
-**Known Issues**:
-- `presentations/lab-XX/` may contain presentations from wrong meetings — always strip appended content
-- YouTube API upload speed is highly variable and not controllable from client side
-- MDX does not support HTML comments (`<!-- -->`), unescaped `<`, or bare `{` characters
+### Meeting number detection
+- Don't trust auto-detected meeting number blindly — placeholder MDX files may already exist for future meetings. Check existing files by date content first, use `-n NN` to override
 
-### 2026-02-14
-**Context**: Pipeline run for meeting 10 (Agent SDK workshop)
+### Thumbnails (Step 3b)
+- Nano Banana with "pure black background" prompt usually returns black-bg + light lines — skip `-negate` in that case
+- If raw image has white background, apply `-negate -level 15%,100%` first
+- Always inspect the raw image before recoloring — wrong assumptions flood the image with orange
+- Use custom renderer config JSON with `imagePath` field (not the default `thumbnail_generator.py` which only injects `title`/`subtitle`)
 
-**What Worked**:
-- Parallelizing summary with YouTube upload continues to save significant time
-- Date-matching existing placeholder MDX files correctly identifies target meeting number
-- Local `npm run build` caught issues before push
+### English-language labs
+- When `TRANSCRIPT_LANG=en`, rewrite the MDX entirely with English labels — `update_meeting_doc.py` defaults to Russian and the translation fallback produces broken mixed-language output
+- Correct spelling: "WisprFlow" (wisprflow.ai)
 
-**What Failed**:
-1. **venv activation** — `source venv/bin/activate` fails because youtube-uploader has no venv. Fixed: run `python3` directly
-2. **Playwright missing** — `ERR_MODULE_NOT_FOUND: Cannot find package 'playwright'` during thumbnail generation. Fixed: added prerequisite check in Step 3
-3. **Wrong meeting number** — `update_meeting_doc.py` auto-detected meeting 13 (next available), but meeting 10 was a placeholder for today's date. Fixed: added date-matching guidance in Step 5
-4. **Personal scheduling details in summary** — "X will be on vacation" included in published summary. Fixed: added exclusion rule in Step 4
-5. **Appended Marp content** — still happens despite being documented. Reinforced in Step 5 post-processing
-
-**Key Fix**: Always check existing MDX files by date content before trusting auto-detected meeting number. Use `-n NN` flag to override.
-
-### 2026-03-04
-**Context**: Pipeline run for Lab 03, Meeting 01
-
-**What Worked**:
-- Full pipeline completed successfully (transcript, download, upload, summary, MDX, deploy)
-- Fathom recorded as "Impromptu Zoom Meeting" — found by date, renamed correctly
-
-**What Failed**:
-1. **Wrong YouTube title** — Without `--title` flag, LLM generated "Клод Код Лаб" instead of proper meeting name. Fixed: added `--title "${MEETING_TITLE}"` to Step 3 using frontmatter title
-2. **YouTube OAuth scope too narrow** — `youtube.upload` scope can't update video metadata (title/description) after upload. Needed `youtube.force-ssl` scope for `videos().update()` call
-3. **Appended Marp content** — Still happens (3rd time). Truncation via Edit tool only replaced first match, leaving 1100+ lines of Marp. Fixed: rewrote entire file with Write tool
-
-**Key Fix**: Always pass `--title` from Fathom frontmatter `title` field to `process_video.py`. The LLM metadata generator produces poor/generic titles for Russian-language content.
-
-### 2026-04-08
-**Context**: Pipeline run for Lab 03, Meeting 11
-
-**What Worked**:
-- **Zoom as primary video source** — Fathom had transcript but no video. `zoom_meetings.py recordings` + curl with OAuth token downloaded 407MB in ~13s (~30 MB/s, much faster than Fathom)
-- Placeholder date-matching correctly identified meeting 11 (not auto-detected next number)
-- `--resume-from upload` worked perfectly after OAuth re-auth
-
-**What Failed**:
-1. **YouTube OAuth token revoked** — `invalid_grant: Token has been expired or revoked`. Fix: `rm token.pickle && python3 -c "from auth import get_authenticated_service; get_authenticated_service()"` — opens browser for re-auth (user must click through)
-2. **Appended Marp content** — 6th occurrence. Summary ends at `## Ключевые выводы` list, then `---` + `<!-- _class: lead -->` starts. Fix: `head -N + sed -n 'start,endp'` concat to rewrite file at clean boundary
-
-**Key Fix**: Zoom is now the primary video source (Step 2). Fathom is fallback only.
-
-### 2026-04-13
-**Context**: Pipeline run for Lab 04, Meeting 01 (first English-language lab)
-
-**What Worked**:
-- Zoom download: 306MB in 11s (~28 MB/s)
-- YouTube playlist auto-created when "Claude Code Lab 04" didn't exist yet
-- Appended Marp content cleanly stripped with `head -N` truncation
-- Full pipeline completed including Vercel deploy
-
-**What Failed**:
-1. **Wrong summary language** — Skill hardcoded Russian summary generation. Lab 04 is in English. Generated Russian summary, had to redo in English and re-push.
-2. **Fathom filename hardcoded as `-lab-02`** — Step 1 looked for `${DATE}-claude-code-lab-02.md` but Lab 04 transcript was `${DATE}-claude-code-lab-04.md`. Fixed: glob `${DATE}-claude-code-lab-*.md`
-3. **WhisperFlow misspelled** — Correct name is "WisprFlow" with link https://wisprflow.ai
-4. **Zoom recording still processing** — Meeting just ended, had to wait ~15 min before MP4 was available
-
-**Key Fixes**:
-- Added `TRANSCRIPT_LANG` auto-detection in Step 1 (check first 50 lines of transcript for dominant language)
-- Summary, YouTube description, and MDX labels now adapt to detected language
-- Step 1 now uses glob pattern instead of hardcoded lab number
-- Removed hardcoded playlist IDs — now looked up by name via YouTube API at runtime
-
-### 2026-04-15
-**Context**: Pipeline run for Lab 04, Meeting 02 (Terminal & Plan Mode)
-
-**What Worked**:
-- Zoom download: 488MB in 16s (~30 MB/s)
-- Placeholder date-matching correctly identified meeting 02
-- `--resume-from upload` recovered cleanly after mid-pipeline OAuth failure
-- Custom Python block for metadata/playlist update (bypassing Groq's generic description)
-- Custom renderer config + `node scripts/render-thumbnails.mjs` for lab-style thumbnail regeneration
-
-**What Failed**:
-1. **YouTube OAuth token revoked mid-pipeline** — had to stop, run re-auth (`rm token.pickle && python3 -c "from auth import get_authenticated_service; get_authenticated_service()"`) in a user terminal, then `--resume-from upload`. Auth requires browser click-through.
-2. **YouTube description rejected: `>` character** — YouTube API returns `invalidDescription` for `<` or `>` in description. Must swap for plain language (e.g. "trash over rm" instead of "trash > rm").
-3. **`update_meeting_doc.py` tried to translate English summary to Russian** — Lab 04 is English but script's default target lang is `ru`. Translation failed (empty), leaving English content but with Russian section headers (`## Видео`, `## Краткое содержание`). Fix: when `TRANSCRIPT_LANG=en`, rewrite the MDX entirely with English labels instead of relying on the script.
-4. **Step 3b thumbnail prior guidance was wrong** — Old skill said to run `-negate -level 15%,100%` unconditionally, but Nano Banana (with explicit "pure black background" prompt) already returns black-bg + light-line images. The negation flipped it to white-bg + dark-line. The orange color swap then flooded the whole background with orange. Fix: inspect raw image first; only negate if background is actually white.
-5. **Appended Marp content (8th occurrence)** — persistent issue. Use `head -N` truncation at last valid `---` before `<!-- _class: lead -->`.
-6. **Git push rejected (remote ahead + unstaged changes)** — had to `git stash push -- <unrelated paths>`, `git pull --rebase`, push, `git stash pop`.
-
-**Key Fixes**:
-- Rewrote Step 3b with conditional recolor logic based on actual image inspection, plus a concrete renderer config JSON example (bypasses the default `thumbnail_generator.py` flow which only injects `title`/`subtitle`/`agency` — for lab-meeting.html we need `imagePath` and template-embedded text)
-- Added YouTube description character restrictions to Step 4b (no `<` or `>`)
-- Added English-lab MDX rewrite guidance for when `update_meeting_doc.py`'s translation step fails
+### Git push
+- Only stage pipeline-created files — never `git add .`
+- If remote is ahead: `git stash push`, `git pull --rebase`, push, `git stash pop`
