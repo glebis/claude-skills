@@ -427,10 +427,13 @@ async def cmd_recent(args):
     from telegram_telethon.modules.messages import fetch_recent
     from telegram_telethon.utils.formatting import format_output, append_to_daily, append_to_person, save_to_file
 
+    # Support both positional and --chat flag (positional takes precedence)
+    chat = args.chat_positional or args.chat
+
     client = await get_client()
     try:
         messages = await fetch_recent(
-            client, chat_id=args.chat_id, chat_name=args.chat,
+            client, chat_id=args.chat_id, chat_name=chat,
             limit=args.limit, days=args.days, include_chat_id=True,
         )
         output_fmt = "json" if args.json else "markdown"
@@ -535,7 +538,7 @@ async def cmd_send(args):
         result = await send_message(
             client, chat_name=args.chat, text=args.text or "",
             reply_to=reply_to, file_path=args.file, allowed_groups=allowed_groups,
-            markdown=args.markdown, schedule=schedule_dt,
+            markdown=args.markdown, html=args.html, schedule=schedule_dt,
         )
         print(json.dumps(result, indent=2, ensure_ascii=False))
     finally:
@@ -804,6 +807,7 @@ def main():
 
     # Recent messages
     recent_p = subparsers.add_parser("recent", help="Fetch recent messages")
+    recent_p.add_argument("chat_positional", nargs="?", default=None, help="Chat name (positional)")
     recent_p.add_argument("--chat", help="Chat name")
     recent_p.add_argument("--chat-id", type=int, help="Chat ID")
     recent_p.add_argument("--limit", type=int, default=50, help="Max messages")
@@ -848,6 +852,11 @@ def main():
         "--markdown",
         action="store_true",
         help="Convert markdown (**bold**, _italic_, [text](url), ## Header, * bullet) to Telegram HTML before sending",
+    )
+    send_p.add_argument(
+        "--html",
+        action="store_true",
+        help="Send text as pre-written HTML (parse_mode='html'). Use when text already contains <b>, <a href>, etc.",
     )
     send_p.add_argument(
         "--schedule",

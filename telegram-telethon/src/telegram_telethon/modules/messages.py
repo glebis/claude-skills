@@ -318,6 +318,7 @@ async def send_message(
     file_path: Optional[str] = None,
     allowed_groups: Optional[List[str]] = None,
     markdown: bool = False,
+    html: bool = False,
     schedule: Optional[datetime] = None,
 ) -> Dict:
     """Send a message or file to a chat.
@@ -325,6 +326,11 @@ async def send_message(
     When ``markdown`` is True, ``text`` is converted to Telegram-flavored
     HTML via ``modules.markdown.convert_markdown_to_telegram_html`` and
     sent with ``parse_mode='html'``.
+
+    When ``html`` is True, ``text`` is sent with ``parse_mode='html'``
+    directly -- no conversion is applied. Use this when the text already
+    contains Telegram-compatible HTML (``<b>``, ``<i>``, ``<a href>``,
+    ``<code>``, ``<pre>``, etc.).
 
     When ``schedule`` is a datetime, the message is handed to Telegram's
     scheduled-delivery queue instead of being sent immediately. The
@@ -354,7 +360,10 @@ async def send_message(
 
     body = text
     parse_mode: Optional[str] = None
-    if markdown and text:
+    if html and text:
+        # Send pre-written HTML as-is with parse_mode='html'
+        parse_mode = "html"
+    elif markdown and text:
         body = convert_markdown_to_telegram_html(text)
         parse_mode = "html"
 

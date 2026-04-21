@@ -153,7 +153,7 @@ python3 scripts/tg.py unread [--chat "Chat Name"] [--format markdown|json]
 python3 scripts/tg.py thread CHAT_ID THREAD_ID [--limit 100]
 
 # Send message
-python3 scripts/tg.py send --chat "Chat Name" --text "Message text" [--reply-to MSG_ID] [--file path] [--topic TOPIC_ID] [--markdown] [--schedule "+1h" | "tomorrow 10:00" | "2026-04-10T09:30"]
+python3 scripts/tg.py send --chat "Chat Name" --text "Message text" [--reply-to MSG_ID] [--file path] [--topic TOPIC_ID] [--markdown] [--html] [--schedule "+1h" | "tomorrow 10:00" | "2026-04-10T09:30"]
 
 # Edit message
 python3 scripts/tg.py edit --chat "Chat Name" --message-id MESSAGE_ID --text "New text"
@@ -231,6 +231,17 @@ python3 scripts/tg.py send --chat "@mychannel" --markdown \
 Rules (applied in order): `## Header` → bold line; `* item` / `- item` at line start → `→ item`; `**bold**` → `<b>`; `_italic_` → `<i>`; `[text](url)` → `<a href>`. Pre-existing HTML passes through unchanged, so the flag is safe to add to content that was already authored as HTML.
 
 Pair with `lint-channel` below to catch cases where `--markdown` was forgotten.
+
+### Sending Pre-written HTML
+
+Pass `--html` to send text that already contains Telegram-compatible HTML tags (`<b>`, `<i>`, `<a href>`, `<code>`, `<pre>`, `<u>`, `<s>`, `<tg-spoiler>`, `<blockquote>`):
+
+```bash
+python3 scripts/tg.py send --chat "@mychannel" --html \
+  --text '<b>Release v2</b> ships today. See <a href="https://example.com">docs</a>.'
+```
+
+Unlike `--markdown` (which converts markdown syntax to HTML), `--html` sends the text as-is with `parse_mode='html'`. Use `--html` when you have already authored HTML content or when programmatically building messages with tags.
 
 ### Scheduled Delivery
 

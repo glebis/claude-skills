@@ -65,8 +65,16 @@ class Config:
         os.chmod(path, 0o600)
 
     @classmethod
-    def load(cls, path: Path) -> Config:
-        """Load config from YAML file."""
+    def load(cls, path: Optional[Path] = None) -> Config:
+        """Load config from YAML file.
+
+        Args:
+            path: Path to config YAML. Defaults to
+                  ``DEFAULT_CONFIG_DIR / "config.yaml"`` when omitted.
+        """
+        if path is None:
+            path = DEFAULT_CONFIG_DIR / "config.yaml"
+
         if not path.exists():
             return cls(config_dir=path.parent)
 
@@ -80,6 +88,11 @@ class Config:
             allowed_send_groups=data.get("allowed_send_groups", []),
             config_dir=path.parent,
         )
+
+    @classmethod
+    def load_default(cls) -> Config:
+        """Load config from the standard path (~/.config/telegram-telethon/config.yaml)."""
+        return cls.load(DEFAULT_CONFIG_DIR / "config.yaml")
 
     def __str__(self) -> str:
         """String representation with redacted api_hash."""
