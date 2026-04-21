@@ -9,13 +9,13 @@ Standalone CLI for the Linear issue tracker. Zero dependencies beyond Python 3.
 
 ## Setup
 
-On first use, authenticate with a Linear personal API key (generate at Linear Settings > API):
+On first use, authenticate via browser OAuth (no API keys needed):
 
 ```bash
-linear auth lin_api_XXXX
+linear auth
 ```
 
-The key is stored at `~/.config/linear/api_key` with `0600` permissions. Alternatively, set `LINEAR_API_KEY` env var.
+Opens the browser for Linear authorization. Uses MCP Dynamic Client Registration + PKCE — credentials are stored at `~/.config/linear/` with `0600` permissions.
 
 The CLI script is bundled at `scripts/linear` within this skill directory. Execute it directly or reference its absolute path.
 
