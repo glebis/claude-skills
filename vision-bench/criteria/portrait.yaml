@@ -1,0 +1,44 @@
+name: Portrait Evaluation
+description: Evaluate AI-generated or edited portraits for quality and realism
+mode: absolute
+
+criteria:
+  facial_accuracy:
+    weight: 0.35
+    description: Correct facial proportions, symmetry, and natural features
+    rubric:
+      5: "Facial features perfectly proportioned, natural symmetry, no uncanny valley"
+      4: "Natural face with very minor proportion issues"
+      3: "Acceptable face but some proportion oddities or subtle strangeness"
+      2: "Clear facial anomalies or uncanny valley effect"
+      1: "Severely distorted or unnatural face"
+
+  skin_and_texture:
+    weight: 0.25
+    description: Realistic skin texture, pores, hair, and surface detail
+    rubric:
+      5: "Photographic skin quality with natural texture variation"
+      4: "Good skin texture, minor smoothing or repetition"
+      3: "Skin present but clearly AI-smooth or plastic-like"
+      2: "Texture largely missing, waxy or fake appearance"
+      1: "No realistic skin texture"
+
+  expression_and_emotion:
+    weight: 0.25
+    description: Natural expression, coherent eye gaze, believable emotion
+    rubric:
+      5: "Authentic emotion with natural expression and correct eye focus"
+      4: "Clear expression, minor stiffness or glassy eyes"
+      3: "Expression recognizable but lacks emotional depth"
+      2: "Expression feels staged or eyes appear unfocused/dead"
+      1: "No discernible expression or deeply unsettling"
+
+  hair_and_details:
+    weight: 0.15
+    description: Natural hair strands, eyebrows, eyelashes, and fine details
+    rubric:
+      5: "Individual hair strands, natural eyelashes, every fine detail correct"
+      4: "Good hair quality with minor clumping or artifacts"
+      3: "Hair recognizable but visibly synthetic or overly smooth"
+      2: "Hair significantly artificial or missing fine details"
+      1: "Hair completely unrealistic or missing"

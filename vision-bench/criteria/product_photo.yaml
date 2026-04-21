@@ -1,0 +1,44 @@
+name: Product Photography Evaluation
+description: Evaluate product images for e-commerce, marketing, and catalog use
+mode: absolute
+
+criteria:
+  product_clarity:
+    weight: 0.35
+    description: Product is sharp, fully visible, and the hero of the image
+    rubric:
+      5: "Product perfectly sharp, no occlusion, all details visible"
+      4: "Product clear with minor softness in edges"
+      3: "Product mostly clear but some details obscured"
+      2: "Product partially hidden or significantly soft"
+      1: "Product unclear or not the visual focus"
+
+  background_and_staging:
+    weight: 0.25
+    description: Background is clean, non-distracting, appropriate to context
+    rubric:
+      5: "Professional background perfectly suited to product and brand"
+      4: "Clean background with minor distractions"
+      3: "Background acceptable but not optimal"
+      2: "Background distracts from product"
+      1: "Background dominates or clashes with product"
+
+  lighting_and_color:
+    weight: 0.25
+    description: Even lighting that shows product accurately, true-to-life colors
+    rubric:
+      5: "Studio-quality lighting, accurate colors, no harsh shadows"
+      4: "Good lighting with minor hot spots or shadows"
+      3: "Adequate lighting but some shadows or color cast"
+      2: "Poor lighting obscuring texture or creating false color"
+      1: "Lighting severely misrepresents the product"
+
+  brand_consistency:
+    weight: 0.15
+    description: Image feels professional and consistent with commercial standards
+    rubric:
+      5: "Professional quality suitable for luxury/flagship catalog"
+      4: "Commercial quality with minor polish needed"
+      3: "Usable but requires post-processing"
+      2: "Below commercial standard, significant retouching needed"
+      1: "Not suitable for commercial use"

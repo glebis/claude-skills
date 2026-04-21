@@ -1,0 +1,44 @@
+name: Invoice & Financial Document Processing
+description: Extract and verify financial fields from invoices, receipts, and purchase orders
+mode: absolute
+
+criteria:
+  field_extraction_accuracy:
+    weight: 0.45
+    description: Correct extraction of key fields — total, line items, dates, vendor, tax
+    rubric:
+      5: "All financial fields extracted with 100% accuracy including all line items"
+      4: "All key fields correct, 1-2 minor secondary field errors"
+      3: "Totals and dates correct, some line items missing or wrong"
+      2: "Key amount or vendor errors that would cause reconciliation failures"
+      1: "Cannot reliably extract financial fields"
+
+  table_interpretation:
+    weight: 0.30
+    description: Line item tables parsed with correct quantities, prices, and descriptions
+    rubric:
+      5: "All rows and columns correctly mapped, merged cells handled"
+      4: "Table structure correct, 1-2 cell content errors"
+      3: "Table structure understood, some cell-level errors"
+      2: "Table rows mixed up or column alignment wrong"
+      1: "Cannot parse tabular line items"
+
+  currency_and_format:
+    weight: 0.15
+    description: Correct handling of currencies, number formats, and date formats
+    rubric:
+      5: "All currencies, decimals, and date formats correctly identified"
+      4: "Minor format inconsistency but values correct"
+      3: "Currency identified, some format normalization errors"
+      2: "Format errors causing ambiguous values"
+      1: "Cannot correctly parse numerical formats"
+
+  multilingual_robustness:
+    weight: 0.10
+    description: Handles non-English text, non-Latin scripts, and international formats
+    rubric:
+      5: "Correctly processes any language and regional format"
+      4: "Most languages handled, minor issues with rare scripts"
+      3: "Common European languages handled, others partially"
+      2: "Significantly degrades for non-English documents"
+      1: "English-only extraction"

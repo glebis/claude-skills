@@ -1,0 +1,44 @@
+name: Chart & Diagram Analysis
+description: Evaluate understanding of charts, graphs, and data visualizations
+mode: absolute
+
+criteria:
+  data_accuracy:
+    weight: 0.40
+    description: Correctly reads data values, scales, and numerical information
+    rubric:
+      5: "All data points and values read precisely"
+      4: "Values correct with minor rounding errors (<5%)"
+      3: "Approximate values correct, some errors on fine-grained data"
+      2: "Several significant data reading errors"
+      1: "Cannot accurately read data values"
+
+  trend_identification:
+    weight: 0.30
+    description: Correctly identifies patterns, trends, peaks, and relationships
+    rubric:
+      5: "All trends and patterns correctly identified and described"
+      4: "Main trends correct, minor patterns missed"
+      3: "Obvious trends identified, subtle patterns missed"
+      2: "Trends misidentified or oversimplified"
+      1: "Cannot identify meaningful trends"
+
+  structural_comprehension:
+    weight: 0.20
+    description: Understands chart type, axes, legends, units, and labels
+    rubric:
+      5: "All axes, labels, units, and legend elements correctly interpreted"
+      4: "Structure mostly correct, minor label confusion"
+      3: "Chart type and main structure understood, some label errors"
+      2: "Significant structural misinterpretation"
+      1: "Cannot understand chart structure"
+
+  insight_quality:
+    weight: 0.10
+    description: Draws meaningful, non-obvious conclusions from the data
+    rubric:
+      5: "Insightful, non-obvious conclusions correctly derived"
+      4: "Good analysis beyond surface-level description"
+      3: "Describes data but limited analytical depth"
+      2: "Mostly restates visible data without analysis"
+      1: "No meaningful insights"

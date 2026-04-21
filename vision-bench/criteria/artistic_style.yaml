@@ -1,0 +1,44 @@
+name: Artistic Style Evaluation
+description: Assess creative/artistic images for style consistency, composition, and craft
+mode: absolute
+
+criteria:
+  style_consistency:
+    weight: 0.35
+    description: Coherence of the chosen artistic style throughout the image
+    rubric:
+      5: "Perfect stylistic unity; every element belongs to the same aesthetic"
+      4: "Consistent style with minor mixing of incompatible elements"
+      3: "General style recognizable but several inconsistencies"
+      2: "Style incoherent, multiple conflicting aesthetics"
+      1: "No discernible style or complete stylistic chaos"
+
+  composition:
+    weight: 0.30
+    description: Balance, focal point, rule of thirds, visual flow
+    rubric:
+      5: "Masterful composition; clear focal point, strong visual flow"
+      4: "Good composition with intentional choices"
+      3: "Acceptable composition, somewhat static or unbalanced"
+      2: "Poor balance, no clear focal point, distracting clutter"
+      1: "No compositional intent"
+
+  color_harmony:
+    weight: 0.20
+    description: Color palette cohesion, emotional resonance, contrast
+    rubric:
+      5: "Colors create strong mood, palette is cohesive and purposeful"
+      4: "Pleasing palette with good contrast and mood"
+      3: "Colors acceptable but palette feels accidental"
+      2: "Clashing or poorly chosen colors that undermine the image"
+      1: "Colors actively unpleasant or completely incoherent"
+
+  originality:
+    weight: 0.15
+    description: Distinctive artistic voice, avoids clichés
+    rubric:
+      5: "Strikingly original; clear artistic vision not seen elsewhere"
+      4: "Memorable with distinctive creative choices"
+      3: "Competent work but derivative of common styles"
+      2: "Generic, stock-image aesthetic, no distinctive voice"
+      1: "Complete pastiche with no original contribution"

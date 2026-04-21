@@ -1,0 +1,44 @@
+name: UI / Screenshot Understanding
+description: Evaluate how well a vision model understands app screenshots and web interfaces
+mode: absolute
+
+criteria:
+  element_identification:
+    weight: 0.35
+    description: Correctly identifies UI elements — buttons, inputs, navigation, modals
+    rubric:
+      5: "All UI elements correctly identified and labeled"
+      4: "Most elements identified, 1-2 minor misclassifications"
+      3: "Common elements identified, some complex components missed"
+      2: "Only obvious elements identified, most missed"
+      1: "Cannot identify UI elements"
+
+  layout_understanding:
+    weight: 0.30
+    description: Understands spatial hierarchy, grouping, and information architecture
+    rubric:
+      5: "Perfect understanding of layout hierarchy and information flow"
+      4: "Correct layout understanding with minor spatial errors"
+      3: "General layout captured, some hierarchy confusion"
+      2: "Layout mostly misunderstood or described sequentially"
+      1: "No spatial or hierarchical understanding"
+
+  functional_inference:
+    weight: 0.25
+    description: Correctly infers what each element does and the screen's purpose
+    rubric:
+      5: "Correctly infers all element functions and overall screen purpose"
+      4: "Most functions correctly inferred"
+      3: "Screen purpose clear, some element functions misunderstood"
+      2: "Limited functional inference"
+      1: "Cannot infer purpose or functions"
+
+  state_recognition:
+    weight: 0.10
+    description: Identifies UI state — active/inactive, selected, error, loading
+    rubric:
+      5: "All states correctly identified (hover, disabled, selected, error)"
+      4: "Most states identified"
+      3: "Obvious states (active, disabled) identified"
+      2: "Only most prominent state identified"
+      1: "Cannot identify UI states"

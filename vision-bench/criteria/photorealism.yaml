@@ -1,0 +1,44 @@
+name: Photorealism Evaluation
+description: How convincingly an image looks like a real photograph
+mode: absolute
+
+criteria:
+  realism:
+    weight: 0.35
+    description: Overall believability — would a viewer mistake this for a photograph?
+    rubric:
+      5: "Indistinguishable from a real photograph at first glance"
+      4: "Very realistic with only subtle tells under close inspection"
+      3: "Mostly realistic but clearly AI-generated on closer look"
+      2: "Several unrealistic elements visible immediately"
+      1: "Obviously synthetic, not attempting realism"
+
+  lighting_accuracy:
+    weight: 0.25
+    description: Natural, consistent light sources, shadows, and reflections
+    rubric:
+      5: "Perfect light consistency, shadows match source, realistic reflections"
+      4: "Mostly accurate lighting with minor inconsistencies"
+      3: "Light direction inconsistent in some areas"
+      2: "Multiple lighting errors, shadows mismatch source"
+      1: "Flat or impossible lighting"
+
+  texture_and_detail:
+    weight: 0.25
+    description: Fine-grained surface textures — skin, fabric, materials, backgrounds
+    rubric:
+      5: "Rich, accurate textures throughout; microscopic detail preserved"
+      4: "Good textures with minor smoothing or repetition artefacts"
+      3: "Textures present but noticeably AI-smooth or repetitive"
+      2: "Textures largely missing or clearly synthetic"
+      1: "No meaningful texture, plastic/waxy appearance"
+
+  anatomical_accuracy:
+    weight: 0.15
+    description: Correct proportions, hands, eyes, faces, and physical structures
+    rubric:
+      5: "All anatomy correct, hands/faces perfect, proportions natural"
+      4: "Minor anatomical issues (e.g. slight hand oddity)"
+      3: "Noticeable but not extreme anatomy errors"
+      2: "Significant errors in hands, faces, or proportions"
+      1: "Major deformities or impossible anatomy"

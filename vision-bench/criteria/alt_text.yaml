@@ -1,0 +1,44 @@
+name: Accessibility Alt-Text Generation
+description: Evaluate quality of image descriptions generated for screen readers and accessibility
+mode: absolute
+
+criteria:
+  accuracy_and_completeness:
+    weight: 0.40
+    description: Description correctly captures all essential visual content
+    rubric:
+      5: "All essential content described accurately, nothing important omitted"
+      4: "Main content accurate, minor secondary elements missed"
+      3: "Core subject described, context or background elements missing"
+      2: "Significant content omitted or incorrectly described"
+      1: "Description is inaccurate or missing essential information"
+
+  appropriate_detail_level:
+    weight: 0.25
+    description: Description is neither too sparse nor too verbose for screen reader use
+    rubric:
+      5: "Perfect balance — essential detail without overwhelming length"
+      4: "Good length with minor verbosity or slight sparseness"
+      3: "Acceptable but noticeably too long or too brief"
+      2: "Excessively long (>150 words) or too terse (<5 words)"
+      1: "Completely wrong length for accessibility use"
+
+  context_and_purpose:
+    weight: 0.20
+    description: Conveys why the image matters in its context, not just what it depicts
+    rubric:
+      5: "Captures semantic meaning and purpose of image, not just literal content"
+      4: "Good contextual understanding with minor gaps"
+      3: "Describes content but misses the communicative purpose"
+      2: "Purely literal description with no contextual awareness"
+      1: "No contextual understanding"
+
+  decorative_classification:
+    weight: 0.15
+    description: Correctly identifies decorative images that should have empty alt text
+    rubric:
+      5: "Always correctly distinguishes informational vs decorative images"
+      4: "Usually correct, rare misclassification"
+      3: "Sometimes treats decorative as informational or vice versa"
+      2: "Frequently misclassifies image purpose"
+      1: "Cannot distinguish decorative from informational"

@@ -1,0 +1,44 @@
+name: Text-to-Image Generation Evaluation
+description: Compare AI image generators (Midjourney, DALL-E, Flux, Stable Diffusion)
+mode: absolute
+
+criteria:
+  prompt_adherence:
+    weight: 0.40
+    description: How accurately all elements from the prompt appear in the image
+    rubric:
+      5: "All key elements present, correct style, accurate details and relationships"
+      4: "Most elements present, minor deviations from prompt"
+      3: "Core concept captured but missing several specified elements"
+      2: "Loosely related to prompt, significant elements missing or wrong"
+      1: "Does not match prompt or fundamental misinterpretation"
+
+  visual_quality:
+    weight: 0.25
+    description: Technical quality — sharpness, coherence, no artifacts
+    rubric:
+      5: "Crisp, coherent, no artifacts, proper proportions throughout"
+      4: "High quality with minor artifacts or slight inconsistencies"
+      3: "Acceptable quality, some noticeable artifacts or blurring"
+      2: "Significant artifacts, blurriness, or anatomical/structural errors"
+      1: "Poor quality, major incoherence, unusable result"
+
+  aesthetic_appeal:
+    weight: 0.20
+    description: Composition, color harmony, visual balance
+    rubric:
+      5: "Outstanding composition, balanced colors, highly compelling image"
+      4: "Good composition and palette with minor issues"
+      3: "Acceptable aesthetics, average composition"
+      2: "Poor composition or clashing colors that distract"
+      1: "Visually jarring, unbalanced, unpleasant"
+
+  creativity:
+    weight: 0.15
+    description: Originality and interesting interpretation of the prompt
+    rubric:
+      5: "Highly creative, unexpected yet apt interpretation"
+      4: "Creative with distinctive elements beyond the literal prompt"
+      3: "Competent but conventional execution"
+      2: "Generic, clichéd, predictable interpretation"
+      1: "No creative merit, robotic or template-like result"

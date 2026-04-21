@@ -1,0 +1,44 @@
+name: Scientific & Medical Image Evaluation
+description: Evaluate scientific images — microscopy, medical scans, diagrams, data figures
+mode: absolute
+
+criteria:
+  technical_accuracy:
+    weight: 0.40
+    description: Scientifically correct structures, labels, and representations
+    rubric:
+      5: "All structures/labels scientifically accurate, no errors"
+      4: "Mostly accurate with very minor technical issues"
+      3: "General accuracy, some simplification or minor errors"
+      2: "Several scientific inaccuracies that could mislead"
+      1: "Scientifically incorrect or misleading"
+
+  detail_preservation:
+    weight: 0.30
+    description: Fine-grained structures, boundaries, and subtle features are visible
+    rubric:
+      5: "All fine details preserved, subtle structures clearly distinguishable"
+      4: "Good detail with minor loss in complex regions"
+      3: "Main structures clear, fine details partly lost"
+      2: "Significant detail loss obscuring important features"
+      1: "Detail insufficient for scientific use"
+
+  annotation_quality:
+    weight: 0.20
+    description: Labels, arrows, scale bars, and annotations are correct and clear
+    rubric:
+      5: "All annotations accurate, well-placed, and clearly readable"
+      4: "Annotations correct, minor placement or legibility issues"
+      3: "Main annotations correct, some missing or misplaced"
+      2: "Several annotation errors or missing critical labels"
+      1: "Annotations absent, wrong, or misleading"
+
+  reproducibility_clarity:
+    weight: 0.10
+    description: Image contains enough information to understand the experimental context
+    rubric:
+      5: "All experimental context inferable from image alone"
+      4: "Most context clear"
+      3: "Partial context visible"
+      2: "Limited contextual information"
+      1: "Image cannot stand alone without extensive text explanation"

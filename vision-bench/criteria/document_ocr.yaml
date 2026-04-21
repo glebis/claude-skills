@@ -1,0 +1,44 @@
+name: Document & OCR Understanding
+description: Evaluate how well a vision model reads and understands documents, forms, invoices
+mode: absolute
+
+criteria:
+  text_extraction_accuracy:
+    weight: 0.45
+    description: Correct reading of all text including numbers, dates, special chars
+    rubric:
+      5: "All text extracted correctly, including handwriting and degraded fonts"
+      4: "99%+ accuracy, 1-2 minor character errors"
+      3: "Most text correct, several errors in difficult regions"
+      2: "Significant text errors affecting meaning"
+      1: "Cannot reliably extract text"
+
+  layout_preservation:
+    weight: 0.25
+    description: Tables, columns, headers, and spatial structure correctly interpreted
+    rubric:
+      5: "All tables, columns, and structure perfectly understood"
+      4: "Structure mostly correct, minor alignment issues"
+      3: "General structure captured, some table/column confusion"
+      2: "Layout mostly lost, content out of sequence"
+      1: "No structural understanding"
+
+  semantic_understanding:
+    weight: 0.20
+    description: Correctly identifies document type, key fields, and their meaning
+    rubric:
+      5: "Correctly identifies all key fields and their semantic role"
+      4: "Most fields identified correctly"
+      3: "Document type understood, some field misclassification"
+      2: "Minimal semantic understanding"
+      1: "No semantic interpretation"
+
+  completeness:
+    weight: 0.10
+    description: Nothing important is missed or skipped
+    rubric:
+      5: "All content accounted for, nothing omitted"
+      4: "Minor omissions in peripheral areas"
+      3: "Some content missed but main body captured"
+      2: "Significant gaps in coverage"
+      1: "Majority of content missing"
