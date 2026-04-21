@@ -48,7 +48,7 @@ python3 ~/ai_projects/claude-skills/zoom/scripts/zoom_meetings.py recordings \
 Find the MP4 URL, then:
 ```bash
 TOK=$(python3 -c "import json,pathlib; print(json.load(open(pathlib.Path.home()/'.zoom_credentials/oauth_token.json'))['access_token'])")
-curl -L -o ~/Brains/brain/${VIDEO_NAME}.mp4 "${MP4_DOWNLOAD_URL}?access_token=${TOK}"
+curl -L -H "Authorization: Bearer ${TOK}" -o ~/Brains/brain/${VIDEO_NAME}.mp4 "${MP4_DOWNLOAD_URL}"
 ```
 
 **Fallback — Fathom** (if no Zoom recording):

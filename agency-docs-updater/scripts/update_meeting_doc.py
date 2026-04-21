@@ -11,6 +11,7 @@ import json
 import argparse
 from pathlib import Path
 from typing import Dict, Optional
+from urllib.parse import urlparse, parse_qs
 
 
 def parse_fathom_frontmatter(fathom_file: str) -> Dict:
@@ -93,7 +94,14 @@ def create_meeting_doc(
     """Create meeting MDX document."""
 
     # Extract YouTube video ID
-    youtube_id = youtube_url.split('/')[-1].split('?v=')[-1].split('&')[0]
+    parsed = urlparse(youtube_url)
+    qs = parse_qs(parsed.query)
+    if 'v' in qs:
+        youtube_id = qs['v'][0]
+    elif parsed.netloc == 'youtu.be':
+        youtube_id = parsed.path.lstrip('/')
+    else:
+        raise ValueError(f'Cannot extract video ID from URL: {youtube_url}')
 
     # Build content
     content = f"""---
@@ -241,6 +249,9 @@ Examples:
 
     # Determine meeting number
     if args.meeting_number:
+        if not re.match(r'^\d{1,3}$', args.meeting_number):
+            print(f'Error: invalid meeting number: {args.meeting_number}')
+            sys.exit(1)
         meeting_number = args.meeting_number.zfill(2)
         print(f"✓ Using specified meeting number: {meeting_number}")
 
@@ -253,6 +264,12 @@ Examples:
     else:
         meeting_number = determine_meeting_number(docs_dir)
         print(f"✓ Auto-detected meeting number: {meeting_number}")
+
+        meeting_file = Path(docs_dir) / 'meetings' / f'{meeting_number}.mdx'
+        if meeting_file.exists() and not args.update:
+            print(f"⚠️  Meeting file already exists: {meeting_file}")
+            print("    Use --update flag to update existing file, or -n to specify a different number")
+            sys.exit(1)
 
     # Find presentation
     presentation_file = find_presentation_file(lab_number)
@@ -293,7 +310,8 @@ Examples:
     print(f"\nNext steps:")
     print(f"  1. Edit title and description in frontmatter")
     print(f"  2. cd {Path(docs_dir).parent.parent.parent}")
-    print(f"  3. git add . && git commit -m '{action} meeting {meeting_number} documentation'")
+    print(f"  3. git add content/docs/claude-code-internal-{lab_number}/meetings/{meeting_number}.mdx")
+    print(f"     git commit -m '{action} meeting {meeting_number} documentation'")
     print(f"  4. git push")
     print(f"  5. Check Vercel deploy logs")
 
