@@ -7,6 +7,13 @@ description: End-to-end pipeline for publishing Claude Code lab meetings. Accept
 
 Execute ALL steps automatically in sequence. Only pause if a step fails and cannot be recovered. Read `references/learnings.md` before starting for known pitfalls.
 
+**Dependencies** (verify these exist before running):
+- [zoom](https://github.com/glebis/claude-skills/tree/main/zoom) — Zoom recording download (`scripts/zoom_meetings.py`)
+- [fathom](https://github.com/glebis/claude-skills/tree/main/fathom) — Fathom video fallback (`scripts/download_video.py`)
+- [nano-banana](https://github.com/glebis/claude-skills/tree/main/nano-banana) — thumbnail overlay generation (`scripts/generate_image.sh`)
+- [calendar-sync](~/.claude/skills/calendar-sync) — local-only, calendar event sync (`sync.sh`)
+- [youtube-uploader](https://github.com/glebis/youtube-uploader) — video processing, upload, and YouTube API auth (`~/ai_projects/youtube-uploader/`)
+
 ## Step 0: Parse Arguments
 
 Split `args` by whitespace:
