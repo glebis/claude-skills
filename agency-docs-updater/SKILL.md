@@ -353,12 +353,7 @@ else:
 "
 ```
 
-Known playlist IDs (for reference):
-- Claude Code Lab 03: `REDACTED_PLAYLIST_ID`
-- Claude Code Lab 02: `REDACTED_PLAYLIST_ID`
-- Claude Code Lab: `REDACTED_PLAYLIST_ID`
-
-Replace `LAB_NUMBER` with the two-digit lab number (e.g. `03`). The playlist name must match exactly (e.g. "Claude Code Lab 03").
+Playlist IDs are looked up at runtime via the YouTube API (the code above searches by name). The playlist name must match exactly (e.g. "Claude Code Lab 03"). If not found, create it manually on YouTube first.
 
 ## Step 5: Run update_meeting_doc.py
 
@@ -631,7 +626,7 @@ python3 update_meeting_doc.py <fathom_file> <youtube_url> <summary_file> [-n NN]
 - Added `TRANSCRIPT_LANG` auto-detection in Step 1 (check first 50 lines of transcript for dominant language)
 - Summary, YouTube description, and MDX labels now adapt to detected language
 - Step 1 now uses glob pattern instead of hardcoded lab number
-- Known playlist IDs updated: Claude Code Lab 04: `REDACTED_PLAYLIST_ID`
+- Removed hardcoded playlist IDs — now looked up by name via YouTube API at runtime
 
 ### 2026-04-15
 **Context**: Pipeline run for Lab 04, Meeting 02 (Terminal & Plan Mode)
