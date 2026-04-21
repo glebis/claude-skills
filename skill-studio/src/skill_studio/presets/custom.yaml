@@ -1,0 +1,19 @@
+name: custom
+label: Something else
+default_jtbd_frame: job-story
+opening_question: "What do you want to build or design today?"
+field_weights:
+  hook: 1.0
+  problem.what_hurts: 0.9
+  jtbd.situation: 0.8
+  jtbd.motivation: 0.8
+  before_after: 0.7
+  scenarios: 0.7
+  needs.functional: 0.6
+  needs.emotional: 0.6
+  trigger: 0.6
+  capabilities: 0.5
+  outputs: 0.5
+  guardrails: 0.4
+  concept_imagery:
+    metaphor: 0.3

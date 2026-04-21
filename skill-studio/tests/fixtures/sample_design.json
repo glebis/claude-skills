@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "created": "2026-04-16T10:00:00",
+    "preset": "ai-agent",
+    "jtbd_frame": "forces",
+    "interview_mode": {"depth": "standard", "style": "scenario-first"},
+    "language": "en"
+  },
+  "hook": "An agent that drafts my weekly review from vault activity",
+  "problem": {
+    "what_hurts": "Writing reviews from scratch takes 90 minutes every Sunday",
+    "cost_today": "~6 hours/month"
+  },
+  "needs": {
+    "functional": ["pull week's notes", "group by theme"],
+    "emotional": ["feel on top of things"],
+    "social": []
+  },
+  "jtbd": {
+    "situation": "When Sunday afternoon rolls around",
+    "motivation": "I want a draft review in 5 minutes",
+    "outcome": "so I can spend Sunday with family"
+  },
+  "jtbd_frame_extension": {
+    "push": "Sunday dread",
+    "pull": "time with family",
+    "anxiety": "will the draft miss important things?",
+    "habit": "scrolling Obsidian"
+  },
+  "before_after": {
+    "before_external": "visibly stressed Sunday evenings",
+    "before_internal": "resentful, rushed",
+    "after_external": "calm review shared Monday morning",
+    "after_internal": "closure, satisfaction"
+  },
+  "scenarios": [
+    {"title": "Sunday afternoon", "vignette": "I open Claude Code after lunch, run /weekly-review, it drafts 4 theme sections in 90 seconds. I edit for 10 minutes and post it to my channel."}
+  ],
+  "cta": "Draft the skill manifest tomorrow",
+  "trigger": {"type": "manual", "detail": "/weekly-review command"},
+  "inputs": ["Obsidian Daily/ folder", "last 7 days"],
+  "capabilities": ["vault read", "LLM summarize"],
+  "outputs": ["markdown draft in vault", "Telegram DM"],
+  "guardrails": ["never auto-publish", "max 1200 words"],
+  "concept_imagery": {"metaphor": "gentle curator", "visual_style": "organic", "nano_banana_prompt": ""},
+  "coverage": {},
+  "transcript": []
+}

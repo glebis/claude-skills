@@ -1,0 +1,18 @@
+name: life-automation
+label: Life / personal automation
+default_jtbd_frame: job-story
+opening_question: "Describe one moment last week when you wished a tool would just handle something for you."
+field_weights:
+  hook: 1.0
+  problem.what_hurts: 1.0
+  problem.cost_today: 0.9
+  jtbd.situation: 0.9
+  jtbd.motivation: 0.9
+  before_after: 0.9
+  scenarios: 0.9
+  needs.emotional: 0.8
+  trigger: 0.6
+  capabilities: 0.4
+  outputs: 0.5
+  concept_imagery:
+    metaphor: 0.3

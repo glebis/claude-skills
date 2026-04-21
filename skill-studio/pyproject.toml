@@ -1,0 +1,55 @@
+[project]
+name = "skill-studio"
+version = "0.1.0"
+description = "Interview-driven automation design tool — conducts a JTBD interview (text or voice) and exports a one-page design spec plus an SVG map."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "skill-studio contributors" },
+]
+requires-python = ">=3.11"
+keywords = ["jtbd", "interview", "design", "skill", "claude-code", "automation", "voice"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+dependencies = [
+    "anthropic>=0.40",
+    "openai>=1.40",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "jinja2>=3.1",
+    "loguru>=0.7",
+    "pipecat-ai>=1.0.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0", "pytest-mock>=3.12", "coverage>=7.0"]
+
+[project.urls]
+Homepage = "https://github.com/glebis/skill-studio"
+Issues = "https://github.com/glebis/skill-studio/issues"
+Repository = "https://github.com/glebis/skill-studio.git"
+
+[project.scripts]
+skill-studio = "skill_studio.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+skill_studio = ["presets/*.yaml", "interview/frameworks/*.yaml", "../assets/*.j2"]

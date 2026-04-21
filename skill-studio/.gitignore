@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+develop-eggs/
+eggs/
+.eggs/
+sdist/
+wheels/
+share/python-wheels/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.cache/
+coverage.xml
+*.cover
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Secrets — never commit plaintext or encrypted provider keys
+.env
+.env.*
+!.env.example
+.env.skill-studio
+.env.pipecat
+
+# User data (default location outside repo, but guard anyway)
+.skill-studio/
+sessions/
+
+# Logs
+*.log
+
+# Enzyme local cache
+.enzyme/
+.enzyme-embeddings/

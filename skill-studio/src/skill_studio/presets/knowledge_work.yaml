@@ -1,0 +1,21 @@
+name: knowledge-work
+label: Knowledge-worker workflow
+default_jtbd_frame: fse
+opening_question: "Which recurring task at work do you wish you could hand off?"
+field_weights:
+  hook: 1.0
+  problem.what_hurts: 1.0
+  problem.cost_today: 1.0
+  jtbd.situation: 0.9
+  jtbd.motivation: 0.9
+  needs.functional: 0.9
+  needs.social: 0.7
+  needs.emotional: 0.7
+  before_after: 0.8
+  scenarios: 0.8
+  trigger: 0.7
+  capabilities: 0.6
+  outputs: 0.7
+  guardrails: 0.6
+  concept_imagery:
+    metaphor: 0.2

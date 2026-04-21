@@ -1,0 +1,20 @@
+name: ai-agent
+label: AI agent / skill
+default_jtbd_frame: forces
+opening_question: "In one sentence — what do you want this agent to help you do?"
+field_weights:
+  hook: 1.0
+  problem.what_hurts: 1.0
+  jtbd.situation: 0.9
+  jtbd.motivation: 0.9
+  trigger: 0.95
+  capabilities: 0.9
+  inputs: 0.8
+  outputs: 0.8
+  guardrails: 0.7
+  before_after: 0.7
+  scenarios: 0.7
+  needs.functional: 0.6
+  needs.emotional: 0.5
+  concept_imagery:
+    metaphor: 0.2

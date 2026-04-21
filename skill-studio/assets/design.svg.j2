@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900" font-family="system-ui, sans-serif">
+  <defs>
+    <filter id="organic" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="4"/>
+      <feDisplacementMap in="SourceGraphic" scale="4"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="900" fill="#fafaf7"/>
+
+  <g transform="translate(600,200)">
+    <ellipse cx="0" cy="0" rx="260" ry="90" fill="#111" filter="url(#organic)"/>
+    <text text-anchor="middle" fill="#fafaf7" font-size="22" font-weight="600" dy="6">
+      {{ design.hook[:60] or "Untitled" }}
+    </text>
+  </g>
+
+  <g transform="translate(600,340)">
+    <text text-anchor="middle" fill="#555" font-size="14">
+      When {{ design.jtbd.situation[:40] }}
+    </text>
+    <text text-anchor="middle" fill="#111" font-size="16" dy="20" font-weight="500">
+      I want to {{ design.jtbd.motivation[:50] }}
+    </text>
+    <text text-anchor="middle" fill="#555" font-size="14" dy="40">
+      so I can {{ design.jtbd.outcome[:40] }}
+    </text>
+  </g>
+
+  {% set grid_y = 450 %}
+  <g transform="translate(100,{{ grid_y }})">
+    <text x="0" y="-10" fill="#555" font-size="14" font-weight="600">BEFORE (seen)</text>
+    <text x="480" y="-10" fill="#555" font-size="14" font-weight="600">AFTER (seen)</text>
+    <text x="0" y="140" fill="#555" font-size="14" font-weight="600">BEFORE (felt)</text>
+    <text x="480" y="140" fill="#555" font-size="14" font-weight="600">AFTER (felt)</text>
+    <rect x="0" y="0" width="440" height="110" fill="none" stroke="#ccc" stroke-width="1" rx="14"/>
+    <rect x="480" y="0" width="440" height="110" fill="none" stroke="#ccc" stroke-width="1" rx="14"/>
+    <rect x="0" y="150" width="440" height="110" fill="none" stroke="#ccc" stroke-width="1" rx="14"/>
+    <rect x="480" y="150" width="440" height="110" fill="none" stroke="#ccc" stroke-width="1" rx="14"/>
+    <foreignObject x="12" y="12" width="416" height="90">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px; color:#222;">
+        {{ design.before_after.before_external[:200] or "—" }}
+      </div>
+    </foreignObject>
+    <foreignObject x="492" y="12" width="416" height="90">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px; color:#222;">
+        {{ design.before_after.after_external[:200] or "—" }}
+      </div>
+    </foreignObject>
+    <foreignObject x="12" y="162" width="416" height="90">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px; color:#222;">
+        {{ design.before_after.before_internal[:200] or "—" }}
+      </div>
+    </foreignObject>
+    <foreignObject x="492" y="162" width="416" height="90">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px; color:#222;">
+        {{ design.before_after.after_internal[:200] or "—" }}
+      </div>
+    </foreignObject>
+  </g>
+
+  <g transform="translate(1020,200)">
+    <text x="0" y="0" fill="#111" font-size="13" font-weight="600">TRIGGER</text>
+    <text x="0" y="18" fill="#555" font-size="12">{{ design.trigger.type }}: {{ design.trigger.detail[:30] or "—" }}</text>
+    <text x="0" y="60" fill="#111" font-size="13" font-weight="600">INPUTS</text>
+    {% for i in design.inputs[:4] %}<text x="0" y="{{ 78 + loop.index0 * 14 }}" fill="#555" font-size="12">· {{ i[:30] }}</text>{% endfor %}
+    <text x="0" y="180" fill="#111" font-size="13" font-weight="600">OUTPUTS</text>
+    {% for o in design.outputs[:4] %}<text x="0" y="{{ 198 + loop.index0 * 14 }}" fill="#555" font-size="12">· {{ o[:30] }}</text>{% endfor %}
+  </g>
+
+  {% if design.scenarios %}
+  <g transform="translate(100,760)">
+    <text x="0" y="0" fill="#111" font-size="13" font-weight="600">SCENARIO</text>
+    <text x="0" y="20" fill="#222" font-size="14" font-style="italic">{{ design.scenarios[0].title }}</text>
+    <foreignObject x="0" y="28" width="1000" height="90">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px; color:#333;">
+        {{ design.scenarios[0].vignette[:400] }}
+      </div>
+    </foreignObject>
+  </g>
+  {% endif %}
+
+  <text x="1180" y="880" text-anchor="end" fill="#999" font-size="10">skill-studio · {{ design.meta.id[:8] }}</text>
+</svg>
