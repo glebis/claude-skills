@@ -1,0 +1,519 @@
+#!/usr/bin/env python3
+"""Linear CLI — standalone client using MCP JSON-RPC over Linear's MCP server."""
+
+import argparse
+import base64
+import hashlib
+import json
+import os
+import secrets
+import sys
+import urllib.parse
+import urllib.request
+import urllib.error
+import webbrowser
+from datetime import date, timedelta
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+MCP_URL = "https://mcp.linear.app/mcp"
+OAUTH_BASE = "https://mcp.linear.app"
+CONFIG_DIR = os.path.expanduser("~/.config/linear")
+TOKEN_PATH = os.path.join(CONFIG_DIR, "token")
+CLIENT_PATH = os.path.join(CONFIG_DIR, "client")
+
+PRIORITY_MAP = {"none": 0, "urgent": 1, "high": 2, "medium": 3, "low": 4}
+PRIORITY_LABELS = {0: "None", 1: "Urgent", 2: "High", 3: "Medium", 4: "Low"}
+
+_request_id = 0
+
+
+def get_token():
+    key = os.environ.get("LINEAR_API_KEY")
+    if key:
+        return key
+
+    if os.path.exists(TOKEN_PATH):
+        with open(TOKEN_PATH) as f:
+            data = json.load(f)
+        token = data.get("access_token")
+        if token:
+            return f"Bearer {token}"
+
+    print("Error: Not authenticated.", file=sys.stderr)
+    print("Run: linear auth", file=sys.stderr)
+    sys.exit(1)
+
+
+def mcp_call(tool_name, arguments=None):
+    global _request_id
+    _request_id += 1
+
+    payload = json.dumps({
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {"name": tool_name, "arguments": arguments or {}},
+        "id": _request_id,
+    }).encode()
+
+    req = urllib.request.Request(
+        MCP_URL,
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": get_token(),
+        },
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            content_type = resp.headers.get("Content-Type", "")
+            raw = resp.read().decode()
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"API error {e.code}: {body}", file=sys.stderr)
+        sys.exit(1)
+
+    if "text/event-stream" in content_type:
+        result = _parse_sse(raw)
+    else:
+        result = json.loads(raw)
+
+    if "error" in result:
+        print(f"MCP error: {result['error']}", file=sys.stderr)
+        sys.exit(1)
+
+    content = result.get("result", {}).get("content", [])
+    for item in content:
+        if item.get("type") == "text":
+            try:
+                return json.loads(item["text"])
+            except (json.JSONDecodeError, KeyError):
+                return item["text"]
+
+    return content
+
+
+def _parse_sse(raw):
+    for line in raw.split("\n"):
+        if line.startswith("data: "):
+            try:
+                return json.loads(line[6:])
+            except json.JSONDecodeError:
+                continue
+    return json.loads(raw)
+
+
+def resolve_date(s):
+    if not s:
+        return None
+    if s == "today":
+        return date.today().isoformat()
+    if s == "tomorrow":
+        return (date.today() + timedelta(days=1)).isoformat()
+    return s
+
+
+def resolve_priority(s):
+    if s is None:
+        return None
+    if s.isdigit():
+        return int(s)
+    return PRIORITY_MAP.get(s.lower())
+
+
+# --- OAuth ---
+
+
+def _pkce_pair():
+    verifier = secrets.token_urlsafe(32)
+    digest = hashlib.sha256(verifier.encode()).digest()
+    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
+    return verifier, challenge
+
+
+def _register_client(redirect_uri):
+    if os.path.exists(CLIENT_PATH):
+        with open(CLIENT_PATH) as f:
+            return json.load(f)
+
+    reg_data = json.dumps({
+        "client_name": "Linear CLI",
+        "redirect_uris": [redirect_uri],
+        "grant_types": ["authorization_code", "refresh_token"],
+        "response_types": ["code"],
+        "token_endpoint_auth_method": "client_secret_post",
+    }).encode()
+
+    req = urllib.request.Request(
+        f"{OAUTH_BASE}/register",
+        data=reg_data,
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            client = json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"Client registration failed: {body}", file=sys.stderr)
+        sys.exit(1)
+
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    with open(CLIENT_PATH, "w") as f:
+        json.dump(client, f, indent=2)
+    os.chmod(CLIENT_PATH, 0o600)
+    return client
+
+
+class _OAuthCallbackHandler(BaseHTTPRequestHandler):
+    auth_code = None
+
+    def do_GET(self):
+        query = urllib.parse.urlparse(self.path).query
+        params = urllib.parse.parse_qs(query)
+        code = params.get("code", [None])[0]
+        if code:
+            _OAuthCallbackHandler.auth_code = code
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"<h2>Authorized! You can close this tab.</h2>")
+        else:
+            self.send_response(400)
+            self.end_headers()
+            self.wfile.write(b"Missing code parameter")
+
+    def log_message(self, *a):
+        pass
+
+
+def cmd_auth(args):
+    verifier, challenge = _pkce_pair()
+    server = HTTPServer(("127.0.0.1", 0), _OAuthCallbackHandler)
+    port = server.server_address[1]
+    redirect_uri = f"http://127.0.0.1:{port}/callback"
+    state = secrets.token_urlsafe(16)
+
+    client = _register_client(redirect_uri)
+    client_id = client["client_id"]
+    client_secret = client.get("client_secret", "")
+
+    auth_url = (
+        f"{OAUTH_BASE}/authorize?"
+        f"client_id={client_id}&"
+        f"response_type=code&"
+        f"redirect_uri={urllib.parse.quote(redirect_uri)}&"
+        f"state={state}&"
+        f"code_challenge={challenge}&"
+        f"code_challenge_method=S256&"
+        f"resource={urllib.parse.quote(OAUTH_BASE + '/')}"
+    )
+
+    print("Opening browser for authorization...")
+    print(f"If browser doesn't open, visit: {auth_url}")
+    webbrowser.open(auth_url)
+
+    server.handle_request()
+
+    code = _OAuthCallbackHandler.auth_code
+    if not code:
+        print("Authorization failed — no code received.", file=sys.stderr)
+        sys.exit(1)
+
+    token_data = urllib.parse.urlencode({
+        "grant_type": "authorization_code",
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "redirect_uri": redirect_uri,
+        "code_verifier": verifier,
+    }).encode()
+
+    req = urllib.request.Request(
+        f"{OAUTH_BASE}/token",
+        data=token_data,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            token_response = json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"Token exchange failed: {body}", file=sys.stderr)
+        sys.exit(1)
+
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    with open(TOKEN_PATH, "w") as f:
+        json.dump(token_response, f, indent=2)
+    os.chmod(TOKEN_PATH, 0o600)
+
+    print(f"Authenticated successfully! Token saved to {TOKEN_PATH}")
+
+
+# --- Commands ---
+
+
+def cmd_teams(args):
+    data = mcp_call("list_teams")
+    for t in data.get("teams", []):
+        print(f"  {t.get('key', ''):10s}  {t.get('name', ''):30s}  {t.get('id', '')}")
+
+
+def cmd_me(args):
+    data = mcp_call("get_user", {"id": "me"})
+    print(f"  {data.get('name', '')} <{data.get('email', '')}>  (id: {data.get('id', '')})")
+
+
+def cmd_statuses(args):
+    data = mcp_call("list_issue_statuses", {"team": args.team})
+    for s in data if isinstance(data, list) else []:
+        print(f"  {s.get('type', ''):12s}  {s.get('name', '')}")
+
+
+def cmd_labels(args):
+    data = mcp_call("list_issue_labels", {"team": args.team})
+    items = data if isinstance(data, list) else data.get("labels", [])
+    for l in items:
+        print(f"  {l.get('name', ''):30s}  {l.get('color', '')}")
+
+
+def cmd_list(args):
+    params = {}
+    if args.team:
+        params["team"] = args.team
+    if args.mine:
+        params["assignee"] = "me"
+    if args.status:
+        params["status"] = args.status
+
+    data = mcp_call("list_issues", params)
+    issues = data.get("issues", []) if isinstance(data, dict) else data
+
+    if not issues:
+        print("  No issues found.")
+        return
+
+    if args.json:
+        print(json.dumps(issues, indent=2))
+        return
+
+    for i in issues:
+        pri_val = i.get("priority", {})
+        pri = pri_val.get("name", "?") if isinstance(pri_val, dict) else PRIORITY_LABELS.get(pri_val, "?")
+        assignee = i.get("assignee", "unassigned")
+        if isinstance(assignee, dict):
+            assignee = assignee.get("name", "unassigned")
+        due = i.get("dueDate") or ""
+        status = i.get("status", i.get("state", ""))
+        if isinstance(status, dict):
+            status = status.get("name", "")
+        ident = i.get("identifier", i.get("id", ""))
+        print(f"  {ident:10s}  [{status:12s}]  P:{pri:6s}  {assignee:15s}  {due:10s}  {i.get('title', '')}")
+
+
+def cmd_show(args):
+    data = mcp_call("get_issue", {"id": args.issue_id})
+
+    if not data:
+        print(f"Issue {args.issue_id} not found.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.json:
+        print(json.dumps(data, indent=2))
+        return
+
+    pri_val = data.get("priority", {})
+    pri = pri_val.get("name", "?") if isinstance(pri_val, dict) else PRIORITY_LABELS.get(pri_val, "?")
+    assignee = data.get("assignee", "unassigned")
+    if isinstance(assignee, dict):
+        assignee = assignee.get("name", "unassigned")
+    status = data.get("status", data.get("state", ""))
+    if isinstance(status, dict):
+        status = status.get("name", "")
+    labels = data.get("labels", [])
+    if isinstance(labels, list):
+        labels = ", ".join(l.get("name", l) if isinstance(l, dict) else str(l) for l in labels) or "none"
+
+    print(f"  {data.get('identifier', '')}: {data.get('title', '')}")
+    print(f"  Status:   {status}")
+    print(f"  Priority: {pri}")
+    print(f"  Assignee: {assignee}")
+    print(f"  Labels:   {labels}")
+    print(f"  Due:      {data.get('dueDate') or 'none'}")
+    print(f"  URL:      {data.get('url', '')}")
+    if data.get("description"):
+        print(f"\n{data['description']}")
+
+
+def cmd_create(args):
+    params = {"title": args.title, "team": args.team}
+
+    if args.description:
+        params["description"] = args.description
+    if args.priority is not None:
+        p = resolve_priority(args.priority)
+        if p is not None:
+            params["priority"] = p
+    due = resolve_date(args.due)
+    if due:
+        params["due_date"] = due
+    if args.assignee:
+        params["assignee"] = args.assignee
+    if args.state:
+        params["state"] = args.state
+    if args.label:
+        params["labels"] = [args.label]
+
+    data = mcp_call("save_issue", params)
+
+    ident = data.get("id", data.get("identifier", ""))
+    print(f"  Created {ident}: {data.get('title', '')}")
+    print(f"  Status:  {data.get('status', data.get('state', ''))}")
+    print(f"  URL:     {data.get('url', '')}")
+
+
+def cmd_update(args):
+    params = {"id": args.issue_id}
+
+    if args.title:
+        params["title"] = args.title
+    if args.description:
+        params["description"] = args.description
+    if args.priority is not None:
+        p = resolve_priority(args.priority)
+        if p is not None:
+            params["priority"] = p
+    due = resolve_date(args.due)
+    if due:
+        params["due_date"] = due
+    if args.state:
+        params["state"] = args.state
+    if args.assignee:
+        params["assignee"] = args.assignee
+
+    if len(params) <= 1:
+        print("Nothing to update — pass at least one flag.", file=sys.stderr)
+        sys.exit(1)
+
+    data = mcp_call("save_issue", params)
+
+    ident = data.get("id", data.get("identifier", ""))
+    print(f"  Updated {ident}: {data.get('title', '')}")
+    print(f"  Status:  {data.get('status', data.get('state', ''))}")
+    print(f"  URL:     {data.get('url', '')}")
+
+
+def cmd_comment(args):
+    data = mcp_call("save_comment", {"issue": args.issue_id, "body": args.body})
+    print(f"  Comment added to {args.issue_id}")
+
+
+def cmd_tools(args):
+    global _request_id
+    _request_id += 1
+    payload = json.dumps({
+        "jsonrpc": "2.0",
+        "method": "tools/list",
+        "params": {},
+        "id": _request_id,
+    }).encode()
+    req = urllib.request.Request(
+        MCP_URL,
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": get_token(),
+        },
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            content_type = resp.headers.get("Content-Type", "")
+            raw = resp.read().decode()
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        print(f"API error {e.code}: {body}", file=sys.stderr)
+        sys.exit(1)
+
+    result = _parse_sse(raw) if "text/event-stream" in content_type else json.loads(raw)
+    tools = result.get("result", {}).get("tools", [])
+    for t in tools:
+        desc = (t.get("description") or "")[:60]
+        print(f"  {t['name']:35s}  {desc}")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="linear",
+        description="Standalone CLI for the Linear issue tracker",
+    )
+    sub = parser.add_subparsers(dest="command")
+
+    sub.add_parser("auth", help="Authenticate with Linear via browser OAuth")
+    sub.add_parser("teams", help="List teams")
+    sub.add_parser("me", help="Show current user info")
+    sub.add_parser("tools", help="List available MCP tools")
+
+    p_st = sub.add_parser("statuses", help="List workflow states for a team")
+    p_st.add_argument("--team", required=True, help="Team key or name")
+
+    p_lb = sub.add_parser("labels", help="List issue labels for a team")
+    p_lb.add_argument("--team", required=True, help="Team key or name")
+
+    p_ls = sub.add_parser("list", help="List issues")
+    p_ls.add_argument("--team", help="Filter by team key")
+    p_ls.add_argument("--mine", action="store_true", help="Only my issues")
+    p_ls.add_argument("--status", help="Filter by status name")
+    p_ls.add_argument("--json", action="store_true", help="Output raw JSON")
+
+    p_sh = sub.add_parser("show", help="Show issue details")
+    p_sh.add_argument("issue_id", help="Issue identifier (e.g. GLE-123)")
+    p_sh.add_argument("--json", action="store_true", help="Output raw JSON")
+
+    p_cr = sub.add_parser("create", help="Create a new issue")
+    p_cr.add_argument("title", help="Issue title")
+    p_cr.add_argument("--team", required=True, help="Team key or name")
+    p_cr.add_argument("--description", "-d", help="Markdown description")
+    p_cr.add_argument("--priority", "-p", help="Priority (urgent/high/medium/low or 0-4)")
+    p_cr.add_argument("--due", help="Due date (YYYY-MM-DD, 'today', 'tomorrow')")
+    p_cr.add_argument("--assignee", "-a", help="Assignee ('me' for self)")
+    p_cr.add_argument("--state", "-s", help="Initial state (e.g. Todo, Backlog)")
+    p_cr.add_argument("--label", "-l", help="Label name")
+
+    p_up = sub.add_parser("update", help="Update an existing issue")
+    p_up.add_argument("issue_id", help="Issue identifier (e.g. GLE-123)")
+    p_up.add_argument("--title", help="New title")
+    p_up.add_argument("--description", "-d", help="New description")
+    p_up.add_argument("--priority", "-p", help="New priority")
+    p_up.add_argument("--due", help="New due date")
+    p_up.add_argument("--state", "-s", help="New state")
+    p_up.add_argument("--assignee", "-a", help="New assignee ('me' for self)")
+
+    p_cm = sub.add_parser("comment", help="Add a comment to an issue")
+    p_cm.add_argument("issue_id", help="Issue identifier (e.g. GLE-123)")
+    p_cm.add_argument("body", help="Comment text (markdown)")
+
+    args = parser.parse_args()
+
+    commands = {
+        "auth": cmd_auth,
+        "teams": cmd_teams,
+        "me": cmd_me,
+        "tools": cmd_tools,
+        "statuses": cmd_statuses,
+        "labels": cmd_labels,
+        "list": cmd_list,
+        "show": cmd_show,
+        "create": cmd_create,
+        "update": cmd_update,
+        "comment": cmd_comment,
+    }
+
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+
+    commands[args.command](args)
+
+
+if __name__ == "__main__":
+    main()
