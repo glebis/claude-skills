@@ -29,7 +29,7 @@ magick /tmp/overlay-raw.png \
   -fuzz 30% -fill '#e85d04' -opaque 'cyan' \
   -fuzz 30% -fill '#e85d04' -opaque '#4a90e2' \
   -fuzz 25% -fill '#e85d04' -opaque '#c0c0c0' \
-  ~/ai_projects/youtube-uploader/processed/thumbnails/${VIDEO_NAME}.overlay.png
+  ${YOUTUBE_UPLOADER_DIR}/processed/thumbnails/${VIDEO_NAME}.overlay.png
 
 # If white-bg + dark lines (fallback):
 magick /tmp/overlay-raw.png -negate -level 15%,100% /tmp/overlay-neg.png
@@ -40,7 +40,7 @@ If the whole image floods with orange, the background got color-swapped — reve
 
 ## 3. Edit the template
 
-Edit `~/ai_projects/youtube-uploader/templates/images/lab-meeting.html`:
+Edit `${YOUTUBE_UPLOADER_DIR}/templates/images/lab-meeting.html`:
 - `<span class="top-left" data-field="title">` → `Claude Code Lab · XX`
 - `<span class="top-right" data-field="subtitle">` → short session descriptor
 - `<div class="meeting-label" data-field="meeting_number">` → `Meeting NN`
@@ -55,7 +55,7 @@ Keep topic-hero to 3 short lines — font sizes are fixed and long phrases overf
 ```bash
 cat > /tmp/render-thumb.json <<EOF
 {
-  "template": "$HOME/ai_projects/youtube-uploader/templates/images/lab-meeting.html",
+  "template": "${YOUTUBE_UPLOADER_DIR}/templates/images/lab-meeting.html",
   "jobs": [
     {
       "name": "youtube_maxres",
@@ -63,16 +63,16 @@ cat > /tmp/render-thumb.json <<EOF
       "height": 720,
       "format": "jpeg",
       "quality": 95,
-      "output": "$HOME/ai_projects/youtube-uploader/processed/thumbnails/${VIDEO_NAME}.jpg",
+      "output": "${YOUTUBE_UPLOADER_DIR}/processed/thumbnails/${VIDEO_NAME}.jpg",
       "data": {
-        "imagePath": "$HOME/ai_projects/youtube-uploader/processed/thumbnails/${VIDEO_NAME}.overlay.png",
+        "imagePath": "${YOUTUBE_UPLOADER_DIR}/processed/thumbnails/${VIDEO_NAME}.overlay.png",
         "imageAlt": "Meeting topic"
       }
     }
   ]
 }
 EOF
-cd ~/ai_projects/youtube-uploader && node scripts/render-thumbnails.mjs --config /tmp/render-thumb.json
+cd ${YOUTUBE_UPLOADER_DIR} && node scripts/render-thumbnails.mjs --config /tmp/render-thumb.json
 ```
 
 Read the rendered `.jpg` to verify layout before uploading.
@@ -80,7 +80,7 @@ Read the rendered `.jpg` to verify layout before uploading.
 ## 5. Upload thumbnail to YouTube
 
 ```bash
-cd ~/ai_projects/youtube-uploader && PYTHONPATH=. python3 - <<'PY'
+cd ${YOUTUBE_UPLOADER_DIR} && PYTHONPATH=. python3 - <<PY
 from auth import get_authenticated_service
 from googleapiclient.http import MediaFileUpload
 youtube = get_authenticated_service()

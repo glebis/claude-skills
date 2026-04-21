@@ -24,7 +24,7 @@
 
 ## English-language labs
 - When `TRANSCRIPT_LANG=en`, rewrite the MDX entirely with English labels — `update_meeting_doc.py` defaults to Russian and the translation fallback produces broken mixed-language output
-- Correct spelling: "WisprFlow" (wisprflow.ai)
+- Correct spelling: "WisprFlow" (https://wisprflow.ai/r/GLEB3)
 
 ## Git push
 - Only stage pipeline-created files — never `git add .`

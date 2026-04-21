@@ -1,13 +1,13 @@
 # YouTube API Reference
 
-All scripts run from `~/ai_projects/youtube-uploader` with `PYTHONPATH=.` to access `auth.py`.
+All scripts run from `${YOUTUBE_UPLOADER_DIR}` with `PYTHONPATH=.` to access `auth.py`.
 
 `auth.py` manages `token.pickle` with `youtube.force-ssl` scope (covers uploads + metadata updates). Token auto-refreshes; if revoked: `rm token.pickle && python3 -c "from auth import get_authenticated_service; get_authenticated_service()"` (requires browser click-through).
 
 ## Update video metadata
 
 ```python
-cd ~/ai_projects/youtube-uploader && PYTHONPATH=. python3 -c "
+cd ${YOUTUBE_UPLOADER_DIR} && PYTHONPATH=. python3 -c "
 from auth import get_authenticated_service
 youtube = get_authenticated_service()
 resp = youtube.videos().list(part='snippet', id='VIDEO_ID').execute()
@@ -24,7 +24,7 @@ youtube.videos().update(part='snippet', body={'id': 'VIDEO_ID', 'snippet': snipp
 Playlists are looked up by name at runtime — no hardcoded IDs.
 
 ```python
-cd ~/ai_projects/youtube-uploader && PYTHONPATH=. python3 -c "
+cd ${YOUTUBE_UPLOADER_DIR} && PYTHONPATH=. python3 -c "
 from auth import get_authenticated_service
 youtube = get_authenticated_service()
 resp = youtube.playlists().list(part='snippet', mine=True, maxResults=50).execute()

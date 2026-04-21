@@ -2,16 +2,45 @@
 """
 Update agency-docs meeting documentation.
 Creates/updates meeting MDX files with Fathom links, YouTube embeds, fact-checked summaries, and presentations.
+
+Reads path configuration from .env file in skill root, with sensible defaults.
 """
 
 import os
 import sys
 import re
-import json
 import argparse
 from pathlib import Path
 from typing import Dict, Optional
 from urllib.parse import urlparse, parse_qs
+
+
+def load_env():
+    """Load .env file from skill root if it exists."""
+    env_file = Path(__file__).parent.parent / '.env'
+    if env_file.exists():
+        with open(env_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    value = os.path.expanduser(value.strip())
+                    os.environ.setdefault(key.strip(), value)
+
+
+def get_path(env_var: str, default_relative: str) -> Path:
+    """Get a path from env var or fall back to ~/default_relative."""
+    value = os.environ.get(env_var)
+    if value:
+        return Path(os.path.expanduser(value))
+    return Path.home() / default_relative
+
+
+VAULT_DIR = lambda: get_path('VAULT_DIR', 'Brains/brain')
+DOCS_SITE_DIR = lambda: get_path('DOCS_SITE_DIR', 'Sites/agency-docs')
+PRESENTATIONS_DIR = lambda: get_path('PRESENTATIONS_DIR', 'ai_projects/claude-code-lab')
+GITHUB_REPO = lambda: os.environ.get('GITHUB_REPO', 'glebis/agency-docs')
+SITE_DOMAIN = lambda: os.environ.get('SITE_DOMAIN', 'agency-lab.glebkalinin.com')
 
 
 def parse_fathom_frontmatter(fathom_file: str) -> Dict:
@@ -19,24 +48,26 @@ def parse_fathom_frontmatter(fathom_file: str) -> Dict:
     with open(fathom_file, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    # Parse frontmatter
     parts = content.split('---')
     if len(parts) < 3:
         raise ValueError("Invalid Fathom transcript format - missing frontmatter")
 
     frontmatter = parts[1].strip()
-    metadata = {}
-    for line in frontmatter.split('\n'):
-        if ':' in line:
-            key, value = line.split(':', 1)
-            metadata[key.strip()] = value.strip().strip('"\'[]')
+    try:
+        import yaml
+        metadata = yaml.safe_load(frontmatter) or {}
+    except ImportError:
+        metadata = {}
+        for line in frontmatter.split('\n'):
+            if ':' in line:
+                key, value = line.split(':', 1)
+                metadata[key.strip()] = value.strip().strip('"\'')
 
     return metadata
 
 
 def extract_lab_number(fathom_file: str) -> str:
     """Extract lab number from Fathom transcript filename."""
-    # Pattern: YYYYMMDD-claude-code-lab-XX.md
     filename = os.path.basename(fathom_file)
     match = re.search(r'claude-code-lab-(\d+)', filename)
     if not match:
@@ -46,16 +77,13 @@ def extract_lab_number(fathom_file: str) -> str:
 
 def find_presentation_file(lab_number: str) -> Optional[str]:
     """Find presentation markdown for lab number."""
-    presentations_dir = Path.home() / 'ai_projects' / 'claude-code-lab' / 'presentations' / f'lab-{lab_number}'
+    presentations_dir = PRESENTATIONS_DIR() / 'presentations' / f'lab-{lab_number}'
 
     if not presentations_dir.exists():
         print(f"⚠️  Presentations directory not found: {presentations_dir}")
         return None
 
-    # Find latest .md file (not .html)
     md_files = sorted(presentations_dir.glob('*.md'), key=lambda p: p.stat().st_mtime, reverse=True)
-
-    # Filter out homework-prompt.md
     md_files = [f for f in md_files if 'homework-prompt' not in f.name.lower()]
 
     if md_files:
@@ -72,13 +100,11 @@ def determine_meeting_number(docs_dir: str) -> str:
     if not meetings_dir.exists():
         return "01"
 
-    # Find all XX.mdx files
     existing = [f.stem for f in meetings_dir.glob('*.mdx') if f.stem.isdigit()]
 
     if not existing:
         return "01"
 
-    # Return max + 1
     max_num = max(int(n) for n in existing)
     return str(max_num + 1).zfill(2)
 
@@ -91,9 +117,8 @@ def create_meeting_doc(
     presentation_content: Optional[str],
     docs_dir: str
 ) -> str:
-    """Create meeting MDX document."""
+    """Create meeting MDX document. Note: --update is a full overwrite, not a merge."""
 
-    # Extract YouTube video ID
     parsed = urlparse(youtube_url)
     qs = parse_qs(parsed.query)
     if 'v' in qs:
@@ -103,7 +128,6 @@ def create_meeting_doc(
     else:
         raise ValueError(f'Cannot extract video ID from URL: {youtube_url}')
 
-    # Build content
     content = f"""---
 title: "Встреча {meeting_number}: [Название встречи]"
 description: [Краткое описание встречи]
@@ -128,18 +152,13 @@ description: [Краткое описание встречи]
 ---
 """
 
-    # Append presentation if available
     if presentation_content:
-        # Remove frontmatter from presentation
         presentation_lines = presentation_content.split('\n')
         if presentation_lines[0].strip() == '---':
-            # Find end of frontmatter
             end_idx = presentation_lines[1:].index('---') + 2 if '---' in presentation_lines[1:] else 0
             presentation_content = '\n'.join(presentation_lines[end_idx:]).strip()
-
         content += f"\n{presentation_content}\n"
 
-    # Write file
     output_file = Path(docs_dir) / 'meetings' / f'{meeting_number}.mdx'
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -151,8 +170,7 @@ description: [Краткое описание встречи]
 
 def detect_language(text: str) -> str:
     """Detect if text is primarily Russian or English."""
-    # Count Cyrillic characters
-    cyrillic_count = sum(1 for char in text if '\u0400' <= char <= '\u04FF')
+    cyrillic_count = sum(1 for char in text if 'Ѐ' <= char <= 'ӿ')
     total_alpha = sum(1 for char in text if char.isalpha())
 
     if total_alpha == 0:
@@ -163,26 +181,23 @@ def detect_language(text: str) -> str:
 
 
 def translate_summary_to_russian(summary: str) -> str:
-    """Translate English summary to Russian using Task agent."""
+    """Translate English summary to Russian using Claude CLI."""
     import subprocess
     import tempfile
 
     print("⚙️  Translating summary to Russian...")
 
-    # Create temp file with translation prompt
     with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
         f.write(summary)
         temp_input = f.name
 
     try:
-        # Use claude to translate
         result = subprocess.run([
             'claude', '-p',
-            f'''Translate this meeting summary to Russian. Keep all technical terms in English (MCP, Skills, Claude Code, YOLO, vibe coding, etc.). Preserve all markdown formatting, code examples, paths, and table structures.
-
-Input file: {temp_input}
-
-Output the translated text directly.''',
+            f'Translate this meeting summary to Russian. Keep all technical terms in English '
+            f'(MCP, Skills, Claude Code, YOLO, vibe coding, etc.). Preserve all markdown formatting, '
+            f'code examples, paths, and table structures.\n\nInput file: {temp_input}\n\n'
+            f'Output the translated text directly.',
             '--output-format', 'text'
         ], capture_output=True, text=True, encoding='utf-8')
 
@@ -196,21 +211,15 @@ Output the translated text directly.''',
 
 
 def main():
+    load_env()
+
     parser = argparse.ArgumentParser(
         description='Update agency-docs meeting documentation',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Examples:
-  # Auto-detect meeting number and language
   python3 update_meeting_doc.py transcript.md https://youtube.com/watch?v=abc summary.md
-
-  # Specify meeting number
   python3 update_meeting_doc.py transcript.md https://youtube.com/watch?v=abc summary.md -n 07
-
-  # Force Russian translation
-  python3 update_meeting_doc.py transcript.md https://youtube.com/watch?v=abc summary.md -l ru
-
-  # Update existing meeting with new summary
   python3 update_meeting_doc.py transcript.md https://youtube.com/watch?v=abc summary.md -n 07 --update
         '''
     )
@@ -218,16 +227,15 @@ Examples:
     parser.add_argument('fathom_transcript', help='Path to Fathom transcript markdown file')
     parser.add_argument('youtube_url', help='YouTube video URL')
     parser.add_argument('summary_file', help='Path to summary markdown file')
-    parser.add_argument('docs_dir', nargs='?', help='Target docs directory (optional, auto-detected)')
+    parser.add_argument('docs_dir', nargs='?', help='Target docs directory (auto-detected from env)')
     parser.add_argument('-n', '--meeting-number', help='Specific meeting number (e.g., 07)')
     parser.add_argument('-l', '--language', choices=['en', 'ru', 'auto'], default='auto',
                         help='Summary language (auto-detect, en, or ru)')
     parser.add_argument('--update', action='store_true',
-                        help='Update existing meeting file instead of creating new')
+                        help='Overwrite existing meeting file (destructive, not a merge)')
 
     args = parser.parse_args()
 
-    # Parse Fathom frontmatter
     print(f"Parsing Fathom transcript: {args.fathom_transcript}")
     metadata = parse_fathom_frontmatter(args.fathom_transcript)
     fathom_url = metadata.get('meeting_url', metadata.get('url', metadata.get('fathom_url', '')))
@@ -236,18 +244,15 @@ Examples:
         print("⚠️  Could not find Fathom URL in frontmatter (looking for 'meeting_url', 'url', or 'fathom_url')")
         sys.exit(1)
 
-    # Extract lab number
     lab_number = extract_lab_number(args.fathom_transcript)
     print(f"✓ Detected lab number: {lab_number}")
 
-    # Determine docs directory
     docs_dir = args.docs_dir
     if not docs_dir:
-        docs_dir = str(Path.home() / 'Sites' / 'agency-docs' / 'content' / 'docs' / f'claude-code-internal-{lab_number}')
+        docs_dir = str(DOCS_SITE_DIR() / 'content' / 'docs' / f'claude-code-internal-{lab_number}')
 
     print(f"✓ Target docs directory: {docs_dir}")
 
-    # Determine meeting number
     if args.meeting_number:
         if not re.match(r'^\d{1,3}$', args.meeting_number):
             print(f'Error: invalid meeting number: {args.meeting_number}')
@@ -255,11 +260,10 @@ Examples:
         meeting_number = args.meeting_number.zfill(2)
         print(f"✓ Using specified meeting number: {meeting_number}")
 
-        # Check if file exists
         meeting_file = Path(docs_dir) / 'meetings' / f'{meeting_number}.mdx'
         if meeting_file.exists() and not args.update:
             print(f"⚠️  Meeting file already exists: {meeting_file}")
-            print("    Use --update flag to update existing file, or omit -n to create new meeting")
+            print("    Use --update flag to overwrite, or omit -n to create new meeting")
             sys.exit(1)
     else:
         meeting_number = determine_meeting_number(docs_dir)
@@ -268,10 +272,9 @@ Examples:
         meeting_file = Path(docs_dir) / 'meetings' / f'{meeting_number}.mdx'
         if meeting_file.exists() and not args.update:
             print(f"⚠️  Meeting file already exists: {meeting_file}")
-            print("    Use --update flag to update existing file, or -n to specify a different number")
+            print("    Use --update flag to overwrite, or -n to specify a different number")
             sys.exit(1)
 
-    # Find presentation
     presentation_file = find_presentation_file(lab_number)
     presentation_content = None
     if presentation_file:
@@ -281,13 +284,11 @@ Examples:
     else:
         print("ℹ️  No presentation found, continuing without")
 
-    # Read summary
     with open(args.summary_file, 'r', encoding='utf-8') as f:
         summary = f.read()
 
-    # Handle language detection and translation
     detected_lang = detect_language(summary)
-    target_lang = args.language if args.language != 'auto' else 'ru'  # Default to Russian
+    target_lang = args.language if args.language != 'auto' else 'ru'
 
     print(f"✓ Detected summary language: {detected_lang}")
     print(f"✓ Target language: {target_lang}")
@@ -295,7 +296,6 @@ Examples:
     if detected_lang != target_lang and target_lang == 'ru':
         summary = translate_summary_to_russian(summary)
 
-    # Create meeting doc
     output_file = create_meeting_doc(
         meeting_number,
         fathom_url,

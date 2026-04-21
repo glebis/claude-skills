@@ -7,27 +7,42 @@ description: End-to-end pipeline for publishing Claude Code lab meetings. Accept
 
 Execute ALL steps automatically in sequence. Only pause if a step fails and cannot be recovered. Read `references/learnings.md` before starting for known pitfalls.
 
+**Configuration**: paths are read from `.env` in the skill root (see `.env.example`). Defaults work for the standard setup. Key env vars: `VAULT_DIR`, `DOCS_SITE_DIR`, `YOUTUBE_UPLOADER_DIR`, `PRESENTATIONS_DIR`, `SKILLS_REPO_DIR`, `SKILLS_LOCAL_DIR`, `ZOOM_CREDENTIALS_DIR`, `GITHUB_REPO`, `SITE_DOMAIN`.
+
 **Dependencies** (verify these exist before running):
 - [zoom](https://github.com/glebis/claude-skills/tree/main/zoom) — Zoom recording download (`scripts/zoom_meetings.py`)
 - [fathom](https://github.com/glebis/claude-skills/tree/main/fathom) — Fathom video fallback (`scripts/download_video.py`)
 - [nano-banana](https://github.com/glebis/claude-skills/tree/main/nano-banana) — thumbnail overlay generation (`scripts/generate_image.sh`)
 - [calendar-sync](~/.claude/skills/calendar-sync) — local-only, calendar event sync (`sync.sh`)
-- [youtube-uploader](https://github.com/glebis/youtube-uploader) — video processing, upload, and YouTube API auth (`~/ai_projects/youtube-uploader/`)
+- [youtube-uploader](https://github.com/glebis/youtube-uploader) — video processing, upload, and YouTube API auth
 
-## Step 0: Parse Arguments
+## Step 0: Parse Arguments & Load Config
 
-Split `args` by whitespace:
+Load `.env` from skill root. Then split `args` by whitespace:
 - 8-digit token (`YYYYMMDD`) → `DATE`
 - "yesterday" → `DATE = $(date -v-1d +%Y%m%d)`
 - "today" or missing → `DATE = $(date +%Y%m%d)`
 - 2-digit token (`NN`) or `lab-NN` → `LAB_FILTER`
 
+Expand env vars for paths used in subsequent steps:
+```bash
+VAULT_DIR="${VAULT_DIR:-$HOME/Brains/brain}"
+DOCS_SITE_DIR="${DOCS_SITE_DIR:-$HOME/Sites/agency-docs}"
+YOUTUBE_UPLOADER_DIR="${YOUTUBE_UPLOADER_DIR:-$HOME/ai_projects/youtube-uploader}"
+SKILLS_REPO_DIR="${SKILLS_REPO_DIR:-$HOME/ai_projects/claude-skills}"
+SKILLS_LOCAL_DIR="${SKILLS_LOCAL_DIR:-$HOME/.claude/skills}"
+ZOOM_CREDENTIALS_DIR="${ZOOM_CREDENTIALS_DIR:-$HOME/.zoom_credentials}"
+PRESENTATIONS_DIR="${PRESENTATIONS_DIR:-$HOME/ai_projects/claude-code-lab}"
+GITHUB_REPO="${GITHUB_REPO:-glebis/agency-docs}"
+SITE_DOMAIN="${SITE_DOMAIN:-agency-lab.glebkalinin.com}"
+```
+
 ## Step 1: Find Fathom Transcript
 
-If `LAB_FILTER` is set: `~/Brains/brain/${DATE}-claude-code-lab-${LAB_FILTER}.md`
-If empty: glob `~/Brains/brain/${DATE}-claude-code-lab-*.md` (pick most recent by mtime).
+If `LAB_FILTER` is set: `${VAULT_DIR}/${DATE}-claude-code-lab-${LAB_FILTER}.md`
+If empty: glob `${VAULT_DIR}/${DATE}-claude-code-lab-*.md` (pick most recent by mtime).
 
-If missing: run `~/.claude/skills/calendar-sync/sync.sh`, re-check, stop if still missing.
+If missing: run `${SKILLS_LOCAL_DIR}/calendar-sync/sync.sh`, re-check, stop if still missing.
 
 Extract from YAML frontmatter and store:
 - `FATHOM_FILE`, `SHARE_URL`, `MEETING_TITLE`, `DATE`, `LAB_NUMBER`
@@ -36,33 +51,33 @@ Extract from YAML frontmatter and store:
 
 ## Step 2: Download Video
 
-Skip if `~/Brains/brain/${VIDEO_NAME}.mp4` exists and is > 1MB.
+Skip if `${VAULT_DIR}/${VIDEO_NAME}.mp4` exists and is > 1MB.
 
 **Primary — Zoom:**
 ```bash
-python3 ~/ai_projects/claude-skills/zoom/scripts/zoom_meetings.py recordings \
+python3 ${SKILLS_REPO_DIR}/zoom/scripts/zoom_meetings.py recordings \
   --start ${DATE:0:4}-${DATE:4:2}-${DATE:6:2} \
   --end $(date -j -v+1d -f %Y%m%d ${DATE} +%Y-%m-%d) \
   --show-downloads 2>&1
 ```
 Find the MP4 URL, then:
 ```bash
-TOK=$(python3 -c "import json,pathlib; print(json.load(open(pathlib.Path.home()/'.zoom_credentials/oauth_token.json'))['access_token'])")
-curl -L -H "Authorization: Bearer ${TOK}" -o ~/Brains/brain/${VIDEO_NAME}.mp4 "${MP4_DOWNLOAD_URL}"
+TOK=$(python3 -c "import json,pathlib; print(json.load(open(pathlib.Path('${ZOOM_CREDENTIALS_DIR}')/'.zoom_credentials/oauth_token.json'))['access_token'])")
+curl -L -H "Authorization: Bearer ${TOK}" -o ${VAULT_DIR}/${VIDEO_NAME}.mp4 "${MP4_DOWNLOAD_URL}"
 ```
 
 **Fallback — Fathom** (if no Zoom recording):
 ```bash
-cd ~/Brains/brain && python3 ~/.claude/skills/fathom/scripts/download_video.py \
+cd ${VAULT_DIR} && python3 ${SKILLS_LOCAL_DIR}/fathom/scripts/download_video.py \
   "${SHARE_URL}" --output-name "${VIDEO_NAME}"
 ```
 
 ## Step 3: Upload to YouTube
 
 ```bash
-cd ~/ai_projects/youtube-uploader && \
+cd ${YOUTUBE_UPLOADER_DIR} && \
 python3 process_video.py \
-  --video ~/Brains/brain/${VIDEO_NAME}.mp4 \
+  --video ${VAULT_DIR}/${VIDEO_NAME}.mp4 \
   --fathom-transcript ${FATHOM_FILE} \
   --title "${MEETING_TITLE}" \
   --upload
@@ -91,14 +106,14 @@ Fact-check Claude Code feature claims using `claude-code-guide` subagent. Save c
 
 **After both Step 3 and Step 4 complete.** Read `references/youtube-api.md` for description format and API snippets.
 
-Generate YouTube description from the summary in `${TRANSCRIPT_LANG}`. Meeting page URL: `https://agency-lab.glebkalinin.com/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`
+Generate YouTube description from the summary in `${TRANSCRIPT_LANG}`. Meeting page URL: `https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`
 
 Update title, description, tags via YouTube API, then add video to playlist (looked up by name "Claude Code Lab ${LAB_NUMBER}").
 
 ## Step 5: Generate MDX
 
 ```bash
-python3 ~/.claude/skills/agency-docs-updater/scripts/update_meeting_doc.py \
+python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/update_meeting_doc.py \
   ${FATHOM_FILE} "${YOUTUBE_URL}" ${SCRATCHPAD}/summary.md
 ```
 
@@ -106,16 +121,16 @@ python3 ~/.claude/skills/agency-docs-updater/scripts/update_meeting_doc.py \
 
 **After running**:
 1. Strip appended Marp content (everything after summary's closing `---` before `<!-- _class: lead -->`)
-2. If `~/ai_projects/claude-code-lab/lesson-generator/${DATE}.html` exists, copy to `~/Sites/agency-docs/public/${DATE}-claude-code-lab-${LAB_NUMBER}.html` and add link in MDX
+2. If `${PRESENTATIONS_DIR}/lesson-generator/${DATE}.html` exists, copy to `${DOCS_SITE_DIR}/public/${DATE}-claude-code-lab-${LAB_NUMBER}.html` and add link in MDX
 3. Replace frontmatter placeholders (`[Название встречи]`, `[Краткое описание встречи]`, `[Дата встречи]`)
 4. If `TRANSCRIPT_LANG=en`, rewrite MDX with English labels (script defaults to Russian)
-5. Verify: `cd ~/Sites/agency-docs && npm run build 2>&1 | tail -5`
+5. Verify: `cd ${DOCS_SITE_DIR} && npm run build 2>&1 | tail -5`
 
 ## Step 6: Commit and Push
 
 Only stage pipeline files — never `git add .`:
 ```bash
-cd ~/Sites/agency-docs
+cd ${DOCS_SITE_DIR}
 git fetch origin main
 BEHIND=$(git rev-list --count HEAD..origin/main)
 if [ "$BEHIND" -gt 0 ]; then
@@ -131,14 +146,14 @@ git push
 ## Step 7: Wait for Vercel Deploy
 
 ```bash
-until [ "$(gh api repos/glebis/agency-docs/commits/${COMMIT_HASH}/status --jq '.state')" != "pending" ]; do sleep 15; done
+until [ "$(gh api repos/${GITHUB_REPO}/commits/${COMMIT_HASH}/status --jq '.state')" != "pending" ]; do sleep 15; done
 ```
 
 Run with `run_in_background: true`. On failure: fix locally, re-push, restart this step.
 
 ## Step 8: Verify in Browser
 
-Load `mcp__claude-in-chrome__*` tools via ToolSearch. Open `https://agency-lab.glebkalinin.com/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`, wait 5s, screenshot. Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
+Load `mcp__claude-in-chrome__*` tools via ToolSearch. Open `https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`, wait 5s, screenshot. Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
 
 ## Pipeline Report
 
