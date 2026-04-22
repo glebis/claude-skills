@@ -34,20 +34,31 @@ for p in resp['items']:
         playlist_id = p['id']
         break
 
-if playlist_id:
-    youtube.playlistItems().insert(part='snippet', body={
-        'snippet': {
-            'playlistId': playlist_id,
-            'resourceId': {'kind': 'youtube#video', 'videoId': 'VIDEO_ID'}
+if not playlist_id:
+    playlist = youtube.playlists().insert(
+        part='snippet,status',
+        body={
+            'snippet': {
+                'title': 'Claude Code Lab LAB_NUMBER',
+                'description': 'Claude Code Lab LAB_NUMBER'
+            },
+            'status': {'privacyStatus': 'unlisted'}
         }
-    }).execute()
-    print(f'Added to playlist: {playlist_id}')
-else:
-    print('Playlist not found — create it manually on YouTube first')
+    ).execute()
+    playlist_id = playlist['id']
+    print(f'Created playlist: {playlist_id}')
+
+youtube.playlistItems().insert(part='snippet', body={
+    'snippet': {
+        'playlistId': playlist_id,
+        'resourceId': {'kind': 'youtube#video', 'videoId': 'VIDEO_ID'}
+    }
+}).execute()
+print(f'Added to playlist: {playlist_id}')
 "
 ```
 
-Playlist name must match exactly (e.g. "Claude Code Lab 03").
+If no matching playlist exists, one is created automatically (unlisted). Playlist name must match exactly (e.g. "Claude Code Lab 03").
 
 ## Description format
 

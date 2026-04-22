@@ -108,7 +108,7 @@ Fact-check Claude Code feature claims using `claude-code-guide` subagent. Save c
 
 Generate YouTube description from the summary in `${TRANSCRIPT_LANG}`. Meeting page URL: `https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`
 
-Update title, description, tags via YouTube API, then add video to playlist (looked up by name "Claude Code Lab ${LAB_NUMBER}").
+Update title, description, tags via YouTube API, then add video to playlist "Claude Code Lab ${LAB_NUMBER}" (auto-created if it does not exist).
 
 ## Step 5: Generate MDX
 
