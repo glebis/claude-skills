@@ -89,9 +89,19 @@ Extract `YOUTUBE_URL` from stdout (`✓ YouTube video: ...`) or `processed/metad
 
 **Start Step 4 in parallel** — summary doesn't depend on YouTube URL.
 
-### Step 3b: Lab-Style Thumbnail
+### Step 3b: Lab-Style Thumbnail (REQUIRED)
 
-Read `references/thumbnail-guide.md` for the full thumbnail generation workflow (Nano Banana overlay → recolor → Playwright render → upload).
+**Always run this step** — it replaces the generic thumbnail from `process_video.py` with the branded lab template. The generic thumbnail is NOT acceptable for publishing.
+
+Follow `references/thumbnail-guide.md` for the full workflow:
+1. Generate Nano Banana overlay image (topic-specific prompt)
+2. Inspect raw image, recolor lines to orange (#e85d04)
+3. Write a temporary copy of `lab-meeting.html` with meeting-specific content (meeting number, topic hero text, bullet descriptions, date)
+4. Render with Playwright at 1280×720
+5. Inspect the rendered thumbnail before uploading
+6. Upload to YouTube via API (replaces the generic one)
+
+Do NOT skip this step or rely on the `process_video.py` thumbnail.
 
 ## Step 4: Generate Fact-Checked Summary
 
