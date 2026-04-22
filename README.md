@@ -1450,6 +1450,27 @@ cp -r lab-retro ~/.claude/skills/
 
 ---
 
+### [Tufte Report](./tufte-report/) ⭐ NEW
+Generate Tufte-inspired data reports as standalone HTML files. Combines editorial narrative with interactive data visualization: high information density, minimal chart junk, typography-first design with EB Garamond and Monaspace Argon.
+
+**Features:**
+- Universal data adapter: normalize any source (CSV, JSON, SQLite, API) into a standard intermediate format
+- Composable block library: 8 typed blocks (sparkline-row, kpi-card, trend-chart, data-table, correlation-matrix, narrative, heatmap, strip-chart) with defined data contracts
+- Behavior-outcome correlations (e.g. screen time vs HRV)
+- Multiple precision levels: headline → summary → deep dive
+- Live-reload preview server (zero-dependency Python)
+- Responsive, mobile-friendly, accessible charts
+
+**Quick Start:**
+```bash
+cp -r tufte-report ~/.claude/skills/
+/tufte-report
+```
+
+**Use when:** Creating data reports, health dashboards, personal analytics, financial reviews, lab cohort metrics, or any document that combines narrative text with interactive charts.
+
+---
+
 ## 🚀 Installation
 
 ### Plugin Marketplace (Claude Code)
@@ -1640,6 +1661,10 @@ skill-name/
 ## 🏗️ Building Skills
 
 For guidance on creating your own skills, see the [skill-creator guide](https://docs.claude.com/docs/claude-code/skills).
+
+## 💪 Support My Work
+
+[Support my work and learn Claude Code](https://claude.salient.community/) — join the Claude Code Lab, a hands-on course where we build real projects with AI.
 
 ## 📜 License
 
