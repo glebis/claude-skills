@@ -1,0 +1,74 @@
+# GPT Image 2 Style Presets
+# Usage: gpt_image_2.py --preset <name> "subject description" output.png
+#
+# Each preset defines a style wrapper around the user's subject.
+# The subject gets interpolated into the prompt template at {subject}.
+#
+# Visual presets include "no text" to avoid unwanted labels.
+# Text-heavy presets explicitly request readable typography.
+
+# --- Visual Presets (aesthetic-focused) ---
+
+editorial:
+  description: "Dark editorial style — thin lines on black, muted palette, technical feel"
+  prompt: "on pure black background, {subject}, thin pale gray and subtle orange line art, minimalist technical diagram aesthetic, clean vector style, sparse with lots of negative space, dark moody, no text, no labels"
+
+blueprint:
+  description: "Technical blueprint — white/cyan lines on dark navy, engineering drawing feel"
+  prompt: "technical blueprint drawing of {subject}, thin white and light cyan lines on dark navy #0a1628 background, engineering schematic style, precise geometric, grid dots in background, architectural, no text, clean"
+
+ink:
+  description: "Japanese ink wash — organic brushstrokes, minimal, high contrast"
+  prompt: "{subject}, Japanese ink wash sumi-e style, black ink on off-white rice paper, minimal brushstrokes, negative space, organic flowing lines, zen aesthetic, monochrome, no text"
+
+risograph:
+  description: "Risograph print — flat colors, grain, slight misregistration, zine aesthetic"
+  prompt: "{subject}, risograph print style, flat color fills with visible halftone grain, terracotta orange and sage green ink on cream paper, slight color misregistration, screen print texture, vintage zine aesthetic, no text"
+
+wireframe:
+  description: "3D wireframe — glowing edges on black, holographic feel"
+  prompt: "{subject}, 3D wireframe mesh rendering on pure black background, thin glowing white and orange edge lines, transparent polygonal structure, holographic feel, no solid fills, technical visualization, no text"
+
+constellation:
+  description: "Star map — dots connected by faint lines, celestial feel"
+  prompt: "{subject} depicted as a constellation pattern, small white dots connected by very faint thin lines on deep black sky background, scattered star dust, celestial map aesthetic, minimal, ethereal, no text"
+
+brutalist:
+  description: "Neobrutalist — bold shapes, black borders, hard shadows, flat saturated colors"
+  prompt: "{subject}, neobrutalist graphic design style, bold geometric shapes, thick 3px black outlines, hard offset shadows, flat saturated colors orange and yellow on white, no gradients, no rounded corners, poster art, no text"
+
+grain:
+  description: "Film grain photo — moody, high ISO, warm tones, cinematic"
+  prompt: "photograph of {subject}, heavy film grain ISO 3200, warm color grading, shallow depth of field, cinematic lighting, moody atmosphere, 35mm analog film look, slight vignette"
+
+# --- Text-Heavy Presets (leverage GPT Image 2 text rendering) ---
+
+infographic:
+  description: "Data-rich visual explainer with labels, clean typography, structured layout"
+  prompt: "clean infographic about {subject}, structured layout with clear sections, readable sans-serif labels and headings, data visualization elements, white or light background, professional color palette, clear visual hierarchy, information design"
+  thinking: medium
+
+slide:
+  description: "Presentation slide — title + subtitle, minimal background, ready for keynote"
+  prompt: "presentation slide about {subject}, large bold title text, smaller subtitle, clean minimal background with subtle gradient, professional typography, wide 16:9 composition, ample whitespace, corporate-ready design"
+  thinking: low
+
+diagram:
+  description: "Labeled technical diagram — boxes, arrows, clean lines, readable annotations"
+  prompt: "technical diagram of {subject}, labeled boxes connected by arrows, clean lines, readable sans-serif annotations, structured flowchart or architecture layout, white background, professional, engineering documentation style"
+  thinking: medium
+
+poster:
+  description: "Event poster — bold headline + details, striking typography"
+  prompt: "event poster for {subject}, bold large headline typography, event details in smaller text below, striking visual design, strong color contrast, professional print-ready layout, eye-catching composition"
+  thinking: low
+
+menu:
+  description: "Print-ready menu/card — elegant type pairing, structured items"
+  prompt: "elegant menu or card layout for {subject}, refined serif and sans-serif type pairing, structured list of items with descriptions, cream or white background, subtle decorative elements, print-ready, restaurant or event quality"
+  thinking: low
+
+manga:
+  description: "Comic panel layout — speech bubbles, SFX text, dynamic composition"
+  prompt: "{subject}, manga comic panel layout, black and white with screentone shading, speech bubbles with readable text, dynamic action lines, Japanese manga aesthetic, expressive characters, sound effect text"
+  thinking: medium

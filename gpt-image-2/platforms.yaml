@@ -1,0 +1,43 @@
+# Platform-specific output presets
+# Each platform sets target dimensions; image is resized/cropped to fit.
+# Usage: gpt_image_2.py --platform youtube "subject" out.png
+
+youtube:
+  description: "YouTube thumbnail"
+  width: 1280
+  height: 720
+
+youtube-short:
+  description: "YouTube Shorts cover (vertical)"
+  width: 1080
+  height: 1920
+
+slides:
+  description: "Presentation slide (16:9 HD)"
+  width: 1920
+  height: 1080
+
+blog:
+  description: "Blog hero / social preview (1.91:1)"
+  width: 1200
+  height: 630
+
+x:
+  description: "X / Twitter in-stream image"
+  width: 1600
+  height: 900
+
+square:
+  description: "Instagram / LinkedIn square post"
+  width: 1080
+  height: 1080
+
+story:
+  description: "Instagram / TikTok story (9:16)"
+  width: 1080
+  height: 1920
+
+pinterest:
+  description: "Pinterest pin (2:3)"
+  width: 1000
+  height: 1500
