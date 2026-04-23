@@ -49,9 +49,13 @@ Extract from YAML frontmatter and store:
 - `VIDEO_NAME` = `${DATE}-claude-code-lab-${LAB_NUMBER}`
 - `TRANSCRIPT_LANG` = auto-detect from first ~50 lines (Cyrillic ratio > 0.3 → `ru`, else `en`)
 
+**Determine `MEETING_NUMBER`**: check existing MDX files in `${DOCS_SITE_DIR}/content/docs/claude-code-internal-${LAB_NUMBER}/meetings/` for a placeholder with today's date. If found, use that number. Otherwise, check file content sizes to find the next empty slot. Store as zero-padded two-digit string (e.g. `04`). This variable is used in Steps 3b, 4b, 5, 6, and 8.
+
 ## Step 2: Download Video
 
 Skip if `${VAULT_DIR}/${VIDEO_NAME}.mp4` exists and is > 1MB.
+
+**Note**: Zoom recordings may take ~15 minutes to process after a meeting ends. If the Zoom API returns no recordings, wait and retry before falling back to Fathom.
 
 **Primary — Zoom:**
 ```bash
@@ -62,7 +66,7 @@ python3 ${SKILLS_REPO_DIR}/zoom/scripts/zoom_meetings.py recordings \
 ```
 Find the MP4 URL, then:
 ```bash
-TOK=$(python3 -c "import json,pathlib; print(json.load(open(pathlib.Path('${ZOOM_CREDENTIALS_DIR}')/'.zoom_credentials/oauth_token.json'))['access_token'])")
+TOK=$(python3 -c "import json,pathlib; print(json.load(open(pathlib.Path('${ZOOM_CREDENTIALS_DIR}')/'oauth_token.json'))['access_token'])")
 curl -L -H "Authorization: Bearer ${TOK}" -o ${VAULT_DIR}/${VIDEO_NAME}.mp4 "${MP4_DOWNLOAD_URL}"
 ```
 
@@ -86,6 +90,7 @@ python3 process_video.py \
 Run with `run_in_background: true` (10-30 min). On failure: `--resume-from upload`.
 
 Extract `YOUTUBE_URL` from stdout (`✓ YouTube video: ...`) or `processed/metadata/${VIDEO_NAME}.json`.
+Extract `VIDEO_ID` from the URL (the part after `?v=` or last path segment).
 
 **Start Step 4 in parallel** — summary doesn't depend on YouTube URL.
 
@@ -93,13 +98,15 @@ Extract `YOUTUBE_URL` from stdout (`✓ YouTube video: ...`) or `processed/metad
 
 **Always run this step** — it replaces the generic thumbnail from `process_video.py` with the branded lab template. The generic thumbnail is NOT acceptable for publishing.
 
+**Prerequisites**: `VIDEO_ID` must be known (wait for Step 3 to complete if needed).
+
 Follow `references/thumbnail-guide.md` for the full workflow:
-1. Generate Nano Banana overlay image (topic-specific prompt)
-2. Inspect raw image, recolor lines to orange (#e85d04)
-3. Write a temporary copy of `lab-meeting.html` with meeting-specific content (meeting number, topic hero text, bullet descriptions, date)
-4. Render with Playwright at 1280×720
-5. Inspect the rendered thumbnail before uploading
-6. Upload to YouTube via API (replaces the generic one)
+1. Generate Nano Banana overlay image (topic-specific prompt from the guide's prompt patterns)
+2. Read/inspect raw image to confirm background color, then recolor lines to orange (#e85d04)
+3. Write a **temporary** HTML file (e.g. `/tmp/lab-meeting-${MEETING_NUMBER}.html`) based on `${YOUTUBE_UPLOADER_DIR}/templates/images/lab-meeting.html` — update meeting number, topic hero text, bullet descriptions, date. **Do not edit the original template in-place.**
+4. Render with Playwright at 1280×720 → `${YOUTUBE_UPLOADER_DIR}/processed/thumbnails/${VIDEO_NAME}.jpg`
+5. Read/inspect the rendered thumbnail to verify layout before uploading
+6. Upload to YouTube: use `VIDEO_ID` extracted from Step 3
 
 Do NOT skip this step or rely on the `process_video.py` thumbnail.
 
@@ -109,14 +116,22 @@ Read `${FATHOM_FILE}`. Generate a structured summary **in `${TRANSCRIPT_LANG}`**
 - `##` section headers, bullet points, code examples where relevant
 - Technical terms in English (MCP, Skills, Claude Code, etc.)
 - **Exclude personal scheduling details**
+- Sanitize for MDX: escape `<`, `>`, and bare `{` characters that would break MDX compilation
 
-Fact-check Claude Code feature claims using `claude-code-guide` subagent. Save corrected summary to scratchpad as `summary.md`.
+Fact-check Claude Code feature claims using `claude-code-guide` subagent (if available; skip fact-checking if the agent is not accessible). Save corrected summary to scratchpad as `summary.md`.
 
 ## Step 4b: Update YouTube Metadata
 
-**After both Step 3 and Step 4 complete.** Read `references/youtube-api.md` for description format and API snippets.
+**After both Step 3 and Step 4 complete.** `VIDEO_ID`, `MEETING_NUMBER`, and `LAB_NUMBER` must all be determined before this step. Read `references/youtube-api.md` for description format and API snippets.
 
-Generate YouTube description from the summary in `${TRANSCRIPT_LANG}`. Meeting page URL: `https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`
+Generate YouTube description from the summary. Use the language-appropriate template:
+
+- **If `TRANSCRIPT_LANG=en`**: English labels ("In this video:", "Course materials and session notes:")
+- **If `TRANSCRIPT_LANG=ru`**: Russian labels ("В этом видео:", "Материалы и конспект занятия:")
+
+Do NOT mix languages in a single description.
+
+Meeting page URL: `https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`
 
 Update title, description, tags via YouTube API, then add video to playlist "Claude Code Lab ${LAB_NUMBER}" (auto-created if it does not exist).
 
@@ -127,13 +142,13 @@ python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/update_meeting_doc.py \
   ${FATHOM_FILE} "${YOUTUBE_URL}" ${SCRATCHPAD}/summary.md
 ```
 
-**Before running**: check if a placeholder MDX already exists for today's date (`grep -l` in `meetings/`). If so, use `-n NN --update` to target it.
+**Before running**: check if a placeholder MDX already exists for today's date (`grep -l` in `meetings/`). If so, use `-n ${MEETING_NUMBER} --update` to target it.
 
 **After running**:
-1. Strip appended Marp content (everything after summary's closing `---` before `<!-- _class: lead -->`)
-2. If `${PRESENTATIONS_DIR}/lesson-generator/${DATE}.html` exists, copy to `${DOCS_SITE_DIR}/public/${DATE}-claude-code-lab-${LAB_NUMBER}.html` and add link in MDX
+1. Strip appended Marp content (everything after summary's closing `---` before `<!-- _class: lead -->`) — MDX breaks on HTML comments (`<!-- -->`), unescaped `<`, and bare `{` characters
+2. Check for presentation file: look in `${PRESENTATIONS_DIR}/presentations/lab-${LAB_NUMBER}/` and `${PRESENTATIONS_DIR}/lesson-generator/` for files matching `${DATE}`. If found, copy to `${DOCS_SITE_DIR}/public/${DATE}-claude-code-lab-${LAB_NUMBER}.html` and add link in MDX
 3. Replace frontmatter placeholders (`[Название встречи]`, `[Краткое описание встречи]`, `[Дата встречи]`)
-4. If `TRANSCRIPT_LANG=en`, rewrite MDX with English labels (script defaults to Russian)
+4. If `TRANSCRIPT_LANG=en`, rewrite the MDX entirely with English labels — the script defaults to Russian and the translation fallback produces broken mixed-language output
 5. Verify: `cd ${DOCS_SITE_DIR} && npm run build 2>&1 | tail -5`
 
 ## Step 6: Commit and Push
@@ -148,22 +163,32 @@ if [ "$BEHIND" -gt 0 ]; then
   git pull --rebase origin main
   git stash pop || true
 fi
-git add content/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}.mdx public/${DATE}-claude-code-lab-${LAB_NUMBER}.html
+git add content/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}.mdx
+# Only stage presentation HTML if it was copied
+[ -f public/${DATE}-claude-code-lab-${LAB_NUMBER}.html ] && git add public/${DATE}-claude-code-lab-${LAB_NUMBER}.html
 git commit -m "Add Lab ${LAB_NUMBER} Meeting ${MEETING_NUMBER}"
 git push
 ```
 
+Store `COMMIT_HASH=$(git rev-parse HEAD)` for Step 7.
+
 ## Step 7: Wait for Vercel Deploy
 
 ```bash
-until [ "$(gh api repos/${GITHUB_REPO}/commits/${COMMIT_HASH}/status --jq '.state')" != "pending" ]; do sleep 15; done
+TIMEOUT=300; ELAPSED=0
+until [ "$(gh api repos/${GITHUB_REPO}/commits/${COMMIT_HASH}/status --jq '.state' 2>/dev/null || echo 'pending')" != "pending" ]; do
+  sleep 15; ELAPSED=$((ELAPSED+15))
+  [ "$ELAPSED" -ge "$TIMEOUT" ] && echo "Deploy timeout after ${TIMEOUT}s" && break
+done
+DEPLOY_STATE=$(gh api repos/${GITHUB_REPO}/commits/${COMMIT_HASH}/status --jq '.state')
+echo "Deploy state: ${DEPLOY_STATE}"
 ```
 
-Run with `run_in_background: true`. On failure: fix locally, re-push, restart this step.
+Run with `run_in_background: true`. If state is `failure` or `error`: check Vercel logs (`vercel logs`), fix locally, re-push, restart this step.
 
 ## Step 8: Verify in Browser
 
-Load `mcp__claude-in-chrome__*` tools via ToolSearch. Open `https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`, wait 5s, screenshot. Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
+Open `https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}` in a browser (via chrome automation tools or manually). Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
 
 ## Pipeline Report
 
