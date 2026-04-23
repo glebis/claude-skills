@@ -1,0 +1,9 @@
+{
+  "name": "jtbd",
+  "description": "Terminal-first JTBD engine for founders and product people. Interview fast, kill jargon, capture real switching forces (",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

@@ -242,6 +242,16 @@ Only add ODI when the user has 3+ candidate outcomes — below that, skip it.
    - `gtm-brief.md` — positioning, channels, experiments (from `templates/gtm-brief.md`). Only generated when switch forces are fully captured (no `"unknown"` values).
 7. Report all paths.
 
+## Downstream pipeline (superpowers integration)
+
+The `jtbd.json` is a contract between `/jtbd` and downstream agents. See `references/superpowers_handoff.md` for the full field mapping.
+
+**Short version:** when brainstorming starts and a `jtbd.json` exists, it should skip the questions the JSON already answers (who, what, why, constraints) and focus on the questions it doesn't (how, architecture, scope, technical choices). Switch forces inform approach selection. Open questions become brainstorming priorities.
+
+**Chain:** `/jtbd` → `jtbd.json` → brainstorm → writing-plans → implementation
+
+After the interview, suggest: "Want to brainstorm approaches? I can feed this into superpowers with your job, forces, and needs as context."
+
 ## Naming convention
 
 `project-slug` = lowercase, hyphens, no spaces. Derive from the project name. Max 40 chars.
