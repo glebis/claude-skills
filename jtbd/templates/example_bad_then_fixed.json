@@ -1,0 +1,84 @@
+{
+  "_note": "This file demonstrates the Granularity Gate in action. The 'bad' version passes a naive check but fails all 5 gate dimensions. The 'fixed' version is what the gate forces out through its rewrite prompts. Compare side-by-side.",
+
+  "bad_version": {
+    "name": "productivity-booster",
+    "hook": "A delightful productivity tool that helps users work better.",
+    "jtbd": {
+      "situation": "When users need to be more productive",
+      "motivation": "I want to use a tool that helps me",
+      "outcome": "So I can get more done"
+    },
+    "problem": {
+      "what_hurts": "Current tools don't meet user needs"
+    },
+    "needs": {
+      "functional": ["Be fast", "Be easy to use"],
+      "emotional": ["Feel empowered"]
+    },
+    "switch_forces": {
+      "push": "Current tools are not great",
+      "pull": "Our tool is better",
+      "habit": "Users are used to what they have",
+      "anxiety": "Change is hard"
+    },
+    "outputs": ["Productivity improvements"],
+    "evidence": {
+      "source": "interview",
+      "quotes": [],
+      "weaknesses": []
+    },
+    "_gate_failures": {
+      "actor_specificity": "0 — 'users' is generic",
+      "context_trigger": "0 — 'when users need to be more productive' is always",
+      "current_workaround": "0 — 'current tools don't meet needs' is content-free",
+      "measurable_outcome": "0 — 'get more done' has no direction or number",
+      "evidence_quote": "0 — empty quotes array",
+      "jargon_violations": "'delightful', 'empowered' — both in jargon_blacklist.md"
+    }
+  },
+
+  "fixed_version": {
+    "name": "sprint-retro-compiler",
+    "hook": "For engineering leads at 10-30 person teams: turns Friday retro notes + sprint board state into a Monday-ready exec summary in under 5 minutes.",
+    "jtbd": {
+      "situation": "When an engineering lead at a Series-A/B SaaS finishes Friday sprint retro and faces a Monday exec update with no time to write it up over the weekend",
+      "motivation": "I want to convert retro bullets and sprint board state into a structured exec summary with velocity, risks, and asks",
+      "outcome": "So I can cut summary prep from 45 minutes to under 5 and keep the weekend clean"
+    },
+    "problem": {
+      "what_hurts": "Rewriting the same retro material into exec-speak every Monday while trying to reconstruct what 'shipped' means without re-reading 40 PRs",
+      "cost_today": "45 minutes every Monday morning under pressure; occasionally misremember what shipped and get caught out in exec review"
+    },
+    "needs": {
+      "functional": [
+        "Pull sprint board state (closed tickets, open blockers, velocity numbers)",
+        "Ingest retro notes from Miro or a Google Doc",
+        "Populate a structured exec-summary template with velocity, risks, and specific asks"
+      ],
+      "emotional": [
+        "Walk into Monday's exec review without scrambling",
+        "Trust the summary accurately reflects the sprint"
+      ]
+    },
+    "switch_forces": {
+      "push": "'I spend every Monday morning rewriting Friday retro into CEO-speak — by the time I'm done my coffee is cold and the exec call is in 10 minutes.' — Eng lead at 22-person Series-B SaaS",
+      "pull": "'If the summary drafted itself from what the team already produced, I'd get my Monday back.'",
+      "habit": "Already uses Linear for sprints and Miro for retros. Team expects exec updates in the same Google Doc format every week.",
+      "anxiety": "'If it auto-generates and gets velocity wrong, I'll look like I don't know my own team. Last month my deputy caught a 30% error in a manual summary — I can't risk that happening in front of the CEO.'"
+    },
+    "outputs": [
+      "Exec-summary Google Doc populated with velocity (closed story points), risks (open blockers), and asks (unblocked dependencies)",
+      "Source-link column showing where each claim came from (Linear ticket IDs, Miro sticky IDs, PR links)",
+      "Gap report flagging sections where retro or board data was too thin"
+    ],
+    "evidence": {
+      "source": "interview",
+      "quotes": [
+        "\"I spend every Monday morning rewriting Friday retro into CEO-speak — by the time I'm done my coffee is cold and the exec call is in 10 minutes.\" — Eng lead, 22-person Series-B SaaS",
+        "\"Last month my deputy caught a 30% error in a manual summary — I can't risk that happening in front of the CEO.\" — same eng lead"
+      ],
+      "weaknesses": []
+    }
+  }
+}

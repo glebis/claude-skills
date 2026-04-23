@@ -1,0 +1,43 @@
+{
+  "name": "readiness-doc-helper",
+  "hook": "Cuts Series-B PMs' launch-readiness doc prep from 90 min to under 15 by pulling PR/Linear/Slack signal directly into the template.",
+  "jtbd": {
+    "situation": "When a PM at a Series-B SaaS is preparing launch-readiness docs the Sunday before a Monday go/no-go review",
+    "motivation": "I want to assemble the doc from sources of truth (PRs merged, Linear tickets closed, Slack decisions) without re-interviewing the team",
+    "outcome": "So I can cut prep from 90 minutes to under 15 and show up to the meeting with a defensible readiness view"
+  },
+  "problem": {
+    "what_hurts": "Rebuilding the readiness context from scratch every launch because the tracker is always 24-48 hours stale",
+    "cost_today": "Every Sunday for 2-3 hours pre-launch, plus the stress of walking into Monday under-prepared"
+  },
+  "needs": {
+    "functional": [
+      "Pull PR/ticket/Slack signal for a named feature or milestone",
+      "Populate a structured readiness template with source links",
+      "Flag gaps where signal is missing"
+    ],
+    "emotional": [
+      "Walk into Monday confident the doc is defensible",
+      "Reclaim the Sunday evening"
+    ]
+  },
+  "switch_forces": {
+    "push": "Every Sunday rebuilding the doc by hand while team is offline — 'I spent my entire Sunday chasing Slack threads'",
+    "pull": "'What if the doc wrote itself from the signal my team already produces?'",
+    "habit": "Already using Notion for the readiness template; team expects the same format",
+    "anxiety": "'If it auto-generates and misses something, I still own it on Monday — last launch we missed a flag and got burned'"
+  },
+  "outputs": [
+    "Populated readiness doc (Markdown, compatible with existing Notion template)",
+    "Signal-to-section map showing where each claim came from",
+    "Gap list — sections where signal was too thin to auto-fill"
+  ],
+  "evidence": {
+    "source": "interview",
+    "quotes": [
+      "\"I spend my entire Sunday rebuilding the readiness doc because nobody updated the tracker\" — PM at Series-B SaaS",
+      "\"Last launch I missed a rollback flag that was in a Slack thread from 3am — we shipped broken.\" — same PM, 2 weeks later"
+    ],
+    "weaknesses": []
+  }
+}
