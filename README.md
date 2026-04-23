@@ -1450,6 +1450,58 @@ cp -r lab-retro ~/.claude/skills/
 
 ---
 
+### [JTBD (Jobs to Be Done)](./jtbd/) ⭐ NEW
+Terminal-first JTBD engine. Interview fast, kill jargon, capture real switching forces (Push/Pull/Habit/Anxiety), score opportunities with ODI, and export structured artifacts that product, marketing, and design workflows can use immediately.
+
+**Features:**
+- 🎙️ 4 modes: live interview, transcript ingest, review mining, update existing brief
+- 🔄 3-pass interview: core questions → Switch forces (with 6-moment timeline) → Job Map decomposition
+- 🚫 Jargon Kill Switch with 30+ banned phrases and evidence-demand replacements
+- 📊 Granularity Gate: 5-dimension validator (actor, context, workaround, outcome, evidence) blocks vague output
+- 🎯 ODI opportunity scoring: importance × satisfaction → prioritized outcomes
+- 📝 4 output templates: `jtbd.json`, `one-pager.md`, `messaging-angles.md`, `gtm-brief.md`
+- 🔍 Review mining: 3-axis clustering (pain × outcome × workaround) with convergence threshold and uniqueness filter
+- 📋 Transcript ingest: auto-detect Q/A or speaker format, map to schema fields with confidence scores
+- ✅ 97 tests, zero external dependencies — all scripts work offline
+
+**Architecture:**
+```
+jtbd/
+├── SKILL.md              # 4 modes, 3 passes, tone + scope rules
+├── references/           # Switch forces, ODI, job map, jargon blacklist,
+│                         # granularity fixes, review taxonomy
+├── scripts/              # validate_granularity.py, validate_outcome.py,
+│                         # ingest_transcript.py, mine_reviews.py, odi_score.py
+├── templates/            # one-pager, messaging-angles, gtm-brief, review-brief,
+│                         # example_good.json, example_bad_then_fixed.json
+└── tests/                # 97 tests across 5 test files
+```
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r jtbd ~/.claude/skills/
+
+# Live interview
+/jtbd
+
+# Ingest a transcript
+/jtbd "Turn this interview into a JTBD brief" (then provide path)
+
+# Mine reviews
+/jtbd "Mine these reviews for jobs" (then provide CSV/JSON path)
+
+# Update existing brief
+/jtbd "Update my JTBD brief with new data"
+
+# Run tests
+cd ~/.claude/skills/jtbd && python3 -m pytest tests/ -v
+```
+
+**Use when:** Articulating what a project does, who it's for, and why it matters. Converting interview transcripts or product reviews into structured briefs. Prioritizing what to build next. Generating messaging copy from switching forces.
+
+---
+
 ### [Tufte Report](./tufte-report/) ⭐ NEW
 Generate Tufte-inspired data reports as standalone HTML files. Combines editorial narrative with interactive data visualization: high information density, minimal chart junk, typography-first design with EB Garamond and Monaspace Argon.
 
