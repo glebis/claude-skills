@@ -3,7 +3,7 @@
 
 A CLI wrapper around OpenAI's GPT Image 2 model.
 Supports style presets, platform-specific sizing, thinking mode, variants,
-image editing, reference images, cost estimation, and OpenRouter routing.
+image editing, seed locking, cost controls, and OpenRouter routing.
 
 Usage:
     gpt_image_2.py [flags] "prompt" [output.png]
@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import base64
-import concurrent.futures
 import json
 import os
 import re
@@ -27,7 +26,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -66,21 +65,22 @@ PROVIDERS = {
     },
 }
 
-COST_ESTIMATES = {
-    "off": 0.19,
-    "low": 0.23,
-    "medium": 0.29,
-    "high": 0.38,
-}
-
-DRAFT_COST_ESTIMATES = {
-    "off": 0.02,
-    "low": 0.03,
-    "medium": 0.04,
-    "high": 0.06,
+# Cost per image by quality and thinking level (April 2026 pricing)
+COST_PER_IMAGE = {
+    "high":   {"off": 0.21, "low": 0.25, "medium": 0.32, "high": 0.42},
+    "medium": {"off": 0.05, "low": 0.07, "medium": 0.09, "high": 0.14},
+    "low":    {"off": 0.006, "low": 0.01, "medium": 0.015, "high": 0.025},
 }
 
 CONFIRM_THRESHOLD = 0.50
+
+
+def estimate_cost(quality: str, thinking: str, n: int) -> float:
+    return COST_PER_IMAGE.get(quality, COST_PER_IMAGE["high"]).get(thinking, 0.21) * n
+
+
+def cost_per_unit(quality: str, thinking: str) -> float:
+    return COST_PER_IMAGE.get(quality, COST_PER_IMAGE["high"]).get(thinking, 0.21)
 
 
 # ---------- Config & secrets ----------
@@ -219,6 +219,7 @@ def api_request(
     size: str = "1024x1024",
     quality: str = "high",
     n: int = 1,
+    seed: int | None = None,
     edit_image: str | None = None,
     reference_images: list[str] | None = None,
 ) -> list[str]:
@@ -235,6 +236,7 @@ def api_request(
             ("size", size, None),
             ("quality", quality, None),
         ]
+        # seed parameter reserved for future API support
         if edit_image:
             with open(edit_image, "rb") as f:
                 fields.append(("image[]", f.read(), Path(edit_image).name))
@@ -259,6 +261,7 @@ def api_request(
         }
         if thinking != "off":
             body["thinking"] = {"type": "enabled", "effort": thinking}
+        # seed parameter reserved for future API support
         data = json.dumps(body).encode("utf-8")
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -276,12 +279,12 @@ def api_request(
         try:
             with urllib.request.urlopen(req, timeout=300) as resp:
                 result = json.loads(resp.read().decode("utf-8"))
-                data = result.get("data")
-                if not data:
+                resp_data = result.get("data")
+                if not resp_data:
                     print("Error: API returned no image data.", file=sys.stderr)
                     sys.exit(1)
                 images = []
-                for item in data:
+                for item in resp_data:
                     b64 = item.get("b64_json")
                     if b64:
                         images.append(b64)
@@ -292,16 +295,16 @@ def api_request(
         except urllib.error.HTTPError as e:
             error_body = e.read().decode("utf-8", errors="replace") if e.fp else ""
             if e.code == 429 or e.code >= 500:
-                pass  # fall through to retry logic below
+                if attempt < max_retries - 1:
+                    wait = 2 ** (attempt + 1)
+                    label = "Rate limited" if e.code == 429 else f"Server error {e.code}"
+                    print(f"{label}, retrying in {wait}s (attempt {attempt + 1}/{max_retries})...", file=sys.stderr)
+                    time.sleep(wait)
+                else:
+                    print(f"Failed after {max_retries} attempts. Last error {e.code}: {error_body}", file=sys.stderr)
+                    sys.exit(1)
             else:
                 print(f"Error {e.code}: {error_body}", file=sys.stderr)
-                sys.exit(1)
-            if attempt < max_retries - 1:
-                wait = 2 ** (attempt + 1)
-                print(f"Server error {e.code}, retrying in {wait}s (attempt {attempt + 1}/{max_retries})...", file=sys.stderr)
-                time.sleep(wait)
-            else:
-                print(f"Failed after {max_retries} attempts. Last error {e.code}: {error_body}", file=sys.stderr)
                 sys.exit(1)
         except urllib.error.URLError as e:
             if attempt < max_retries - 1:
@@ -324,8 +327,10 @@ class HistoryEntry:
     preset: str | None
     platform: str | None
     thinking: str
+    quality: str
     provider: str
     n: int
+    seed: int | None
     output: str
     project: str | None
     estimated_cost: float | None
@@ -371,14 +376,6 @@ def save_metadata(output_path: Path, entry: HistoryEntry) -> None:
         json.dump(asdict(entry), f, indent=2)
 
 
-# ---------- Cost estimation ----------
-
-
-def estimate_cost(thinking: str, n: int) -> float:
-    per_image = COST_ESTIMATES.get(thinking, 0.21)
-    return per_image * n
-
-
 # ---------- Init wizard ----------
 
 
@@ -417,6 +414,12 @@ def cmd_init():
         print(f"\n✅ Config saved to {CONFIG_FILE}")
     else:
         print(f"\n✅ Config already exists at {CONFIG_FILE}")
+
+    print("\n📊 Pricing (per image):")
+    print("  quality=low:    $0.006 (draft)  — fast iteration")
+    print("  quality=medium: $0.05           — good for review")
+    print("  quality=high:   $0.21 (default) — production")
+    print("  + thinking adds 20-100% on top")
 
     print("\nReady! Try: scripts/gpt_image_2.py \"a cat astronaut\" ./cat.png")
 
@@ -463,11 +466,12 @@ def cmd_generate(args):
     quality = args.quality or config.get("quality", "high")
     size = args.size or config.get("size", "1024x1024")
     n = args.n or 1
+    seed = getattr(args, "seed", None)
     is_draft = getattr(args, "draft", False)
 
     if is_draft:
         quality = "low"
-        size = "512x512"
+        size = "1024x1024"
 
     output_path = Path(args.output) if args.output else Path(f"./gpt-image-2-{datetime.now().strftime('%Y%m%d-%H%M%S')}.png")
 
@@ -476,9 +480,9 @@ def cmd_generate(args):
         slug = re.sub(r'[^a-z0-9]+', '-', args.prompt.lower()[:40]).strip('-')
         output_path = base_dir / f"{datetime.now().strftime('%Y%m%d')}-{slug}.png"
 
-    cost_table = DRAFT_COST_ESTIMATES if is_draft else COST_ESTIMATES
-    cost = cost_table.get(thinking, 0.21) * n
-    mode_label = "DRAFT" if is_draft else "FULL"
+    cost = estimate_cost(quality, thinking, n)
+    per = cost_per_unit(quality, thinking)
+    mode_label = "DRAFT" if is_draft else quality.upper()
 
     if args.dry_run:
         print(f"Mode:      {mode_label}")
@@ -488,18 +492,19 @@ def cmd_generate(args):
         print(f"Quality:   {quality}")
         print(f"Size:      {size}")
         print(f"N:         {n}")
+        if seed is not None:
+            print(f"Seed:      {seed}")
         print(f"Output:    {output_path}")
-        print(f"Est. cost: ${cost:.2f}")
+        print(f"Est. cost: ${cost:.3f}")
         return
 
     if args.estimate:
-        per = cost_table.get(thinking, 0.21)
-        print(f"Estimated cost ({mode_label}): ${cost:.2f} ({n} image{'s' if n > 1 else ''} × ~${per:.2f}/image with {thinking} thinking)")
+        print(f"Estimated cost ({mode_label}): ${cost:.3f} ({n} image{'s' if n > 1 else ''} × ~${per:.3f}/image, quality={quality}, thinking={thinking})")
         return
 
     no_confirm = getattr(args, "yes", False)
     if not no_confirm and cost >= CONFIRM_THRESHOLD:
-        print(f"⚠  Estimated cost: ${cost:.2f} ({n} × ~${cost_table.get(thinking, 0.21):.2f}/image, {mode_label} mode)")
+        print(f"⚠  Estimated cost: ${cost:.2f} ({n} × ~${per:.3f}/image, {mode_label})")
         try:
             answer = input("Proceed? [y/N] ").strip().lower()
         except (EOFError, KeyboardInterrupt):
@@ -508,7 +513,7 @@ def cmd_generate(args):
             print("Cancelled.", file=sys.stderr)
             sys.exit(0)
 
-    print(f"Generating {mode_label} with {provider} (thinking: {thinking}, quality: {quality}, size: {size})...", file=sys.stderr)
+    print(f"Generating {mode_label} with {provider} (thinking: {thinking}, quality: {quality}, size: {size}{f', seed: {seed}' if seed else ''})...", file=sys.stderr)
 
     images = api_request(
         prompt=prompt,
@@ -518,6 +523,7 @@ def cmd_generate(args):
         size=size,
         quality=quality,
         n=n,
+        seed=seed,
         edit_image=args.edit,
         reference_images=args.reference,
     )
@@ -557,24 +563,26 @@ def cmd_generate(args):
                 platform_fit(p, plat["width"], plat["height"])
             print(f"  Resized to {plat['width']}×{plat['height']} ({args.platform})")
 
-    cost = cost_table.get(thinking, 0.21) * len(images)
+    actual_cost = estimate_cost(quality, thinking, len(images))
     entry = HistoryEntry(
         timestamp=datetime.now().isoformat(),
         prompt=args.prompt,
         preset=args.preset,
         platform=platform,
         thinking=thinking,
+        quality=quality,
         provider=provider,
         n=len(images),
+        seed=seed,
         output=str(saved_paths[0] if len(saved_paths) == 1 else saved_paths[0].parent),
         project=args.project,
-        estimated_cost=cost,
+        estimated_cost=actual_cost,
     )
     save_history(entry)
     for p in saved_paths:
         save_metadata(p, entry)
 
-    print(f"  Est. cost: ${cost:.2f}")
+    print(f"  Est. cost: ${actual_cost:.3f}")
 
 
 # ---------- Again ----------
@@ -592,13 +600,16 @@ def cmd_again(args):
     args.thinking = last.get("thinking", "off")
     args.provider = last.get("provider", "openai")
     args.n = last.get("n", 1)
-    args.quality = "high"
+    args.quality = last.get("quality", "high")
     args.size = "1024x1024"
+    args.seed = last.get("seed")
     args.edit = None
     args.reference = None
     args.project = last.get("project")
     args.dry_run = False
     args.estimate = False
+    args.draft = False
+    args.yes = False
     args.output = None
     cmd_generate(args)
 
@@ -613,11 +624,13 @@ def cmd_history(args):
         return
     for e in entries:
         ts = e["timestamp"][:19]
-        prompt = e["prompt"][:60]
-        cost = f"${e.get('estimated_cost', 0):.2f}" if e.get("estimated_cost") else "?"
+        prompt = e["prompt"][:50]
+        cost = f"${e.get('estimated_cost', 0):.3f}" if e.get("estimated_cost") else "?"
         preset = f" [{e['preset']}]" if e.get("preset") else ""
-        thinking = f" thinking:{e['thinking']}" if e.get("thinking", "off") != "off" else ""
-        print(f"  {ts}  {cost}  {prompt}{preset}{thinking}")
+        q = e.get("quality", "high")
+        thinking = f" t:{e['thinking']}" if e.get("thinking", "off") != "off" else ""
+        seed_str = f" s:{e['seed']}" if e.get("seed") else ""
+        print(f"  {ts}  {cost:>7s}  q:{q:<6s}{thinking}{seed_str}  {prompt}{preset}")
 
 
 # ---------- CLI ----------
@@ -655,12 +668,13 @@ def main():
     gen_parser.add_argument("--quality", choices=("low", "medium", "high"), help="Image quality")
     gen_parser.add_argument("--size", help="Image size (e.g., 1024x1024, 1536x1024, 2000x1024)")
     gen_parser.add_argument("--n", type=int, help="Number of variants (1-10)")
+    gen_parser.add_argument("--seed", type=int, help="Seed for reproducible output")
     gen_parser.add_argument("--edit", help="Path to image to edit")
     gen_parser.add_argument("--reference", action="append", help="Reference image for style (repeatable)")
     gen_parser.add_argument("--project", help="Project name for organized output")
     gen_parser.add_argument("--dry-run", action="store_true", help="Preview prompt without API call")
     gen_parser.add_argument("--estimate", action="store_true", help="Show cost estimate only")
-    gen_parser.add_argument("--draft", action="store_true", help="Draft mode: low quality, 512x512, ~10× cheaper")
+    gen_parser.add_argument("--draft", action="store_true", help="Draft mode: low quality, ~$0.006/image")
     gen_parser.add_argument("-y", "--yes", action="store_true", help="Skip cost confirmation prompt")
 
     sub_again = sub.add_parser("again", help="Re-run last generation")

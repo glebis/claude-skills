@@ -1,218 +1,187 @@
 ---
 name: gpt-image-2
-description: Generate and edit images using OpenAI's GPT Image 2 API. Supports style presets (including text-heavy ones like infographic/diagram/poster), platform-specific sizing (YouTube/slides/blog), thinking mode for complex compositions, variants with contact sheets, image editing, reference images for style transfer, cost estimation, and OpenRouter support. This skill should be used when the user requests image generation via OpenAI/GPT Image 2, or when high-quality text rendering in images is needed.
+description: Generate and edit images using OpenAI's GPT Image 2 API. Interactive skill that guides users through image creation with style presets, cost-aware draft/final workflow, thinking mode, carousels, and photo editing. This skill should be used when the user requests image generation via OpenAI/GPT Image 2, wants to create social media carousels, edit photos into artistic styles, or needs images with readable text (infographics, diagrams, posters).
 ---
 
-# GPT Image 2 — OpenAI Image Generation
+# GPT Image 2 — Interactive Image Generation
 
-Generate and edit images from text prompts via OpenAI's GPT Image 2 API.
+Generate and edit images via OpenAI's GPT Image 2 API with an interactive, guided workflow.
 
-## When to Use
+## Interactive Flow
 
-- User requests image generation using OpenAI or GPT Image 2
-- Creating images with readable text: infographics, diagrams, posters, slides, menus
-- Editing existing images with text instructions
-- Style-transfer: generate new images matching an aesthetic reference
-- Creating illustrations for presentations, articles, thumbnails, social posts
-- Batch variations of the same concept
-- When text rendering quality matters more than cost (vs. nano-banana/Gemini)
+When the user invokes this skill, guide them through these steps using AskUserQuestion. Do not skip steps — the interactive flow is the core experience.
 
-## First-Time Setup
+### Step 1: What are we making?
 
-```bash
-scripts/gpt_image_2.py init
+Ask the user what they want to create. Offer these options:
+
+- **Single image** — one image from a text prompt
+- **Photo edit** — transform an existing photo into a style
+- **Carousel** — 5-10 cohesive slides for LinkedIn/Instagram
+- **Variants** — multiple versions of the same concept
+- **Quick generate** — skip questions, just run the prompt
+
+If the user already provided a clear prompt (e.g. "generate an editorial image of a rocket"), skip to Step 3.
+
+### Step 2: Style selection
+
+Show the user available presets grouped by category. Read `presets.yaml` and present them:
+
+**Visual styles** (no text in image):
+editorial, blueprint, ink, risograph, wireframe, constellation, brutalist, grain
+
+**Text-heavy** (leverages GPT Image 2 text rendering):
+infographic, slide, diagram, poster, menu, manga
+
+**Community favorites:**
+trading-card, pixar, app-mockup, isometric, action-figure, cinematic, panorama
+
+**Custom** — user describes their own style
+
+Ask: "Which style? Or describe your own."
+
+### Step 3: Platform & sizing
+
+Ask where this will be used:
+- YouTube thumbnail (1280×720)
+- Instagram square (1080×1080)
+- Slides/presentation (1920×1080)
+- Blog hero (1200×630)
+- X/Twitter (1600×900)
+- Story (1080×1920)
+- Custom size
+- No resize (use API default)
+
+### Step 4: Draft first, then final
+
+**Always generate a draft first** unless the user says "skip draft" or uses `--draft false`.
+
+1. Generate with `--draft` (quality=low, ~$0.006/image)
+2. Show the image to the user using the Read tool
+3. Ask: "Like this direction? I can: (a) generate final quality, (b) adjust the prompt, (c) try a different style, (d) regenerate with a new seed"
+4. If approved, generate final with `--quality high` (~$0.21/image)
+5. Use `--seed` from the draft to maintain composition when upgrading to final
+
+This draft→final flow saves ~97% on iteration costs.
+
+### Step 5: Show result and offer next actions
+
+After generation, always:
+1. Show the image using the Read tool
+2. Open it with `open <path>` for full-resolution preview
+3. Report the cost
+4. Offer: "Want to (a) generate variants, (b) edit this further, (c) use as reference for more images, (d) done?"
+
+## Carousel Workflow
+
+When the user wants a carousel (5-10 slides):
+
+### 1. Story arc
+Ask: "What's the story? Give me the key message and I'll draft a 10-slide arc."
+
+Then propose a slide-by-slide plan like:
+```
+Slide 1: [Cover] — hook headline + hero image
+Slide 2: [Problem] — bold statement
+Slide 3: [Context] — illustration + explanation
+...
+Slide 10: [CTA] — call to action with URL
 ```
 
-Wizard checks dependencies (sops, age, magick), verifies the API key, and saves defaults to `~/.config/gpt-image-2/config.yaml`.
+Ask the user to approve or modify the plan.
 
-## Quick Start
+### 2. Style consistency
+Use the same preset + seed range across all slides. For carousels:
+- Pick one visual style for all slides
+- Use `--seed` to lock composition patterns
+- Include pagination dots in prompts (e.g., "10 small dots at bottom, third dot highlighted orange")
+- Maintain consistent color palette and typography
 
-```bash
-# Simple generation
-scripts/gpt_image_2.py "a minimalist illustration of a rocket" ./rocket.png
+### 3. Draft batch
+Generate all slides as drafts first ($0.006 × 10 = $0.06 total). Show them all to the user as a contact sheet or one by one. Ask which ones to regenerate or adjust.
 
-# With style preset
-scripts/gpt_image_2.py --preset infographic "benefits of remote work" ./info.png
+### 4. Final batch
+Only generate finals for approved slides. Offer to generate all at once with `-y` flag.
 
-# With thinking mode for complex layouts
-scripts/gpt_image_2.py --thinking high --preset diagram "OAuth 2.0 flow" ./oauth.png
+## Photo Edit Workflow
 
-# YouTube thumbnail (auto-cropped to 1280x720)
-scripts/gpt_image_2.py --preset grain --platform youtube "coffee on desk" ./thumb.png
+When the user wants to transform a photo:
 
-# Generate 4 variants + contact sheet
-scripts/gpt_image_2.py --preset editorial "a crystal" ./crystal.png --n 4
+1. Ask for the source image (file path or clipboard)
+2. For clipboard: save with `osascript` to a temp file
+3. Show available styles and ask which to try
+4. Generate a draft edit first
+5. Show result, ask if they want adjustments
+6. Generate final when approved
 
-# Edit existing image
-scripts/gpt_image_2.py --edit ./old.png "make the background deep teal" ./new.png
+Use `--edit <path>` for the API call.
 
-# Style reference (match aesthetic of existing image)
-scripts/gpt_image_2.py --reference ./style.png "a new mountain landscape" ./mountain.png
+## Cost Awareness
 
-# Cost estimate without generating
-scripts/gpt_image_2.py --estimate --thinking high "complex infographic" ./out.png
+Always communicate costs before generating:
 
-# Via OpenRouter instead of OpenAI direct
-scripts/gpt_image_2.py --provider openrouter "a cat in space" ./cat.png
+| Quality | Per image | 10-slide carousel |
+|---------|-----------|-------------------|
+| `--draft` (low) | $0.006 | $0.06 |
+| medium | $0.05 | $0.50 |
+| high (default) | $0.21 | $2.10 |
+| high + thinking | $0.25-0.42 | $2.50-4.20 |
 
-# Re-roll last prompt
-scripts/gpt_image_2.py again
+Thinking mode adds 20-100% cost. Only suggest it for text-heavy or complex compositions.
 
-# View history
-scripts/gpt_image_2.py history -n 10
-```
+The script auto-confirms when cost < $0.50. Above that, it prompts the user.
 
-## Requirements
+## Prompt Engineering Tips
 
-- `OPENAI_API_KEY` — auto-decrypted from `secrets.enc.yaml` via SOPS + age. Fallback: `export OPENAI_API_KEY=...`
-- `OPENROUTER_API_KEY` — required only when using `--provider openrouter`. Same decryption chain.
-- `sops`, `age` — for key decryption
-- `magick` (ImageMagick) — for platform fit + contact sheets
-- `python3` with `pyyaml` (`pip3 install pyyaml`)
+When helping users write prompts, apply these patterns:
 
-## Thinking Mode
+1. **Structure**: Scene → Subject → Detail → Lighting → Constraint
+2. **Front-load the subject**: put the main thing first
+3. **For text in images**: quote exact text with single quotes: `'with the headline "Hello World"'`
+4. **Character consistency**: maintain a 5-tuple: age + appearance + hairstyle + distinctive features + clothing
+5. **Style tags at end**: append tags like `editorial-magazine`, `studio-product` to converge batches
+6. **Use `--seed` for iteration**: lock composition, vary only the prompt details
 
-GPT Image 2's unique feature: the model reasons about composition before rendering.
-
-| Level | Use When | Cost Impact |
-|-------|----------|-------------|
-| `off` (default) | Simple subjects, speed matters | Base cost only |
-| `low` | Moderate complexity, some text | +~20% reasoning tokens |
-| `medium` | Multi-element scenes, diagrams | +~50% reasoning tokens |
-| `high` | Dense infographics, precise layouts | +~100% reasoning tokens |
+## CLI Reference
 
 ```bash
-scripts/gpt_image_2.py --thinking high "detailed infographic about climate change" ./climate.png
+# Basic generation
+scripts/gpt_image_2.py "prompt" output.png
+
+# With preset and platform
+scripts/gpt_image_2.py --preset editorial --platform square "subject" out.png
+
+# Draft mode (~$0.006/image)
+scripts/gpt_image_2.py --draft "prompt" out.png
+
+# With thinking for complex layouts
+scripts/gpt_image_2.py --thinking medium --preset diagram "OAuth flow" out.png
+
+# Seed for reproducibility
+scripts/gpt_image_2.py --seed 42 "prompt" out.png
+
+# Edit existing photo
+scripts/gpt_image_2.py --edit photo.png "transform into constellation style" out.png
+
+# Variants with contact sheet
+scripts/gpt_image_2.py --n 4 --preset ink "mountain" out.png
+
+# Cost estimate
+scripts/gpt_image_2.py --estimate --n 10 --quality high "batch test"
+
+# Skip confirmation
+scripts/gpt_image_2.py -y --n 10 "batch" out.png
+
+# Dry run (show prompt without API call)
+scripts/gpt_image_2.py --dry-run --preset editorial "test" out.png
 ```
-
-## Style Presets
-
-```bash
-scripts/gpt_image_2.py list-presets
-scripts/gpt_image_2.py --preset editorial "your subject" out.png
-```
-
-### Visual Presets (aesthetic-focused)
-
-| Preset | Style |
-|--------|-------|
-| `editorial` | Thin lines on black, muted palette, technical diagram feel |
-| `blueprint` | White/cyan lines on dark navy, engineering drawing |
-| `ink` | Japanese sumi-e ink wash, organic brushstrokes, monochrome |
-| `risograph` | Flat colors, grain, terracotta + sage, zine aesthetic |
-| `wireframe` | 3D wireframe mesh, glowing edges on black |
-| `constellation` | Star map dots connected by faint lines, celestial |
-| `brutalist` | Bold shapes, thick borders, hard shadows, flat colors |
-| `grain` | Film grain photo, high ISO, warm cinematic tones |
-
-### Text-Heavy Presets (leverage GPT Image 2's text rendering)
-
-| Preset | Style |
-|--------|-------|
-| `infographic` | Data-rich visual explainer with labels, clean typography, structured layout |
-| `slide` | Presentation-ready with title + subtitle, minimal background |
-| `diagram` | Labeled technical diagram, boxes and arrows, clean lines |
-| `poster` | Event poster with headline + details, bold typography |
-| `menu` | Print-ready menu/card layout, elegant type pairing |
-| `manga` | Comic panel layout with speech bubbles and SFX text |
-
-Defined in `presets.yaml` — edit to add custom presets.
-
-## Platform Presets
-
-```bash
-scripts/gpt_image_2.py list-platforms
-scripts/gpt_image_2.py --platform youtube "your subject" out.png
-```
-
-Generated image is automatically resized + center-cropped to target dimensions.
-
-| Platform | Size |
-|----------|------|
-| `youtube` | 1280×720 |
-| `youtube-short` | 1080×1920 |
-| `slides` | 1920×1080 |
-| `blog` | 1200×630 |
-| `x` | 1600×900 |
-| `square` | 1080×1080 |
-| `story` | 1080×1920 |
-| `pinterest` | 1000×1500 |
-
-## Features
-
-### Variants + Contact Sheet
-`--n N` generates N variants (up to 10 natively) and assembles a contact sheet:
-```bash
-scripts/gpt_image_2.py --preset ink "mountain" ./mt.png --n 6
-# Creates mt-01.png ... mt-06.png + mt-contact.png
-```
-
-### Edit Mode
-Pass an existing image and the prompt becomes the edit instruction:
-```bash
-scripts/gpt_image_2.py --edit ./thumb.png "remove the watermark, warmer colors" ./clean.png
-```
-
-### Reference Images (Style Anchor)
-Use one or more reference images to guide the aesthetic without editing them:
-```bash
-scripts/gpt_image_2.py --reference ./episode1.png --reference ./episode2.png \
-  "episode 3: data drift" ./ep3.png
-```
-
-### Cost Estimation
-Preview estimated cost before generating (token-based pricing is complex):
-```bash
-scripts/gpt_image_2.py --estimate --thinking high --n 4 "complex scene" ./out.png
-# Estimated cost: ~$1.52 (4 images × ~$0.38/image with high thinking)
-```
-
-### OpenRouter Support
-Route through OpenRouter for unified billing or provider fallback:
-```bash
-scripts/gpt_image_2.py --provider openrouter "subject" ./out.png
-```
-
-### Projects + Metadata
-Organize outputs by project:
-```bash
-scripts/gpt_image_2.py --project lab-05/meeting-01 --preset diagram "MCP loops" ./overlay.png
-# Saves to ~/gpt-image-2/outputs/lab-05/meeting-01/20260423-<subject>.png + .json sidecar
-```
-
-### Re-roll + History
-```bash
-scripts/gpt_image_2.py again              # rerun last prompt
-scripts/gpt_image_2.py history -n 20      # show last 20 generations
-scripts/gpt_image_2.py history --project lab-05
-```
-
-### Dry Run
-Preview the composed prompt without calling the API:
-```bash
-scripts/gpt_image_2.py --preset infographic --platform slides "subject" --dry-run
-```
-
-## Transient Errors & Retry
-
-The API occasionally returns 500/502 errors. The script retries up to 4 times with exponential backoff (2s, 4s, 8s, 16s). Permanent errors (4xx, safety violations) fail fast without retry.
-
-## Prompt Tips
-
-- GPT Image 2 excels at text — quote exact text: `'with the headline "Hello World"'`
-- Use `--thinking medium` or `high` for multi-element compositions
-- Specify layout: "left-aligned title, three columns below"
-- For CJK text, specify the language: "Japanese menu with items in kanji"
-- For infographics, describe the data structure: "bar chart showing 5 categories"
-
-See `references/api_reference.md` for full API documentation.
 
 ## Files
 
-- `scripts/gpt_image_2.py` — main CLI (Python, stdlib only)
-- `presets.yaml` — style presets (visual + text-heavy)
-- `platforms.yaml` — platform sizing presets
-- `secrets.enc.yaml` — encrypted API keys (SOPS + age)
-- `~/.config/gpt-image-2/config.yaml` — user defaults (from `init`)
+- `scripts/gpt_image_2.py` — main CLI (Python, requires PyYAML)
+- `presets.yaml` — 21 style presets (visual + text-heavy + community)
+- `platforms.yaml` — 8 platform sizing presets
+- `references/api_reference.md` — full API documentation
+- `~/.config/gpt-image-2/config.yaml` — user defaults
 - `~/.config/gpt-image-2/history.jsonl` — generation log
 - `~/.config/gpt-image-2/last.json` — last run (for `again`)
