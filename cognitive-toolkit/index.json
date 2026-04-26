@@ -1,0 +1,141 @@
+{
+  "name": "claude-cognitive-toolkit",
+  "version": "0.1.0",
+  "description": "Evidence-based CBT and DBT intervention skills for AI assistants. Implements 7-step thought records, Opposite Action, DEAR MAN roleplay, TIPP, Wise Mind, and affect labeling — with configurable pushback levels and optional HRV biofeedback integration.",
+  "author": "Gleb Kalinin",
+  "license": "MIT",
+  "homepage": "https://github.com/glebis/claude-cognitive-toolkit",
+  "techniques": [
+    {
+      "id": "thought-record",
+      "name": "Thought Record",
+      "description": "7-step cognitive restructuring using Burns' distortion taxonomy. Captures situation, automatic thoughts, distortion detection, emotion rating, balanced reframe, and re-rating.",
+      "type": "CBT",
+      "path": "skill.md",
+      "steps": 7,
+      "duration_minutes": 15,
+      "status": "available",
+      "wave": 1,
+      "keywords": ["thought record", "cognitive restructuring", "CBT", "Burns", "distortion detection", "automatic thoughts", "emotion regulation"]
+    },
+    {
+      "id": "opposite-action",
+      "name": "Opposite Action",
+      "description": "DBT Emotion Regulation skill. Identifies the action urge driven by a problematic emotion, then guides behaviorally opposite response to break avoidance and shame spirals.",
+      "type": "DBT",
+      "path": "skill.md",
+      "steps": 5,
+      "duration_minutes": 8,
+      "status": "available",
+      "wave": 1,
+      "keywords": ["opposite action", "DBT", "emotion regulation", "avoidance", "shame", "Linehan", "behavioral activation", "action urge"]
+    },
+    {
+      "id": "dear-man",
+      "name": "DEAR MAN",
+      "description": "DBT Interpersonal Effectiveness skill for assertive communication. Includes AI roleplay mode where the model plays the other person so you can rehearse before the real conversation.",
+      "type": "DBT",
+      "path": "skill.md",
+      "steps": 7,
+      "duration_minutes": 18,
+      "status": "planned",
+      "wave": 2,
+      "keywords": ["DEAR MAN", "DBT", "interpersonal effectiveness", "assertiveness", "communication", "roleplay", "negotiation", "boundaries"]
+    },
+    {
+      "id": "tipp",
+      "name": "TIPP",
+      "description": "DBT Crisis Survival skill: Temperature, Intense exercise, Paced breathing, Paired muscle relaxation. Fast physiological regulation for acute distress.",
+      "type": "DBT",
+      "path": "skill.md",
+      "steps": 4,
+      "duration_minutes": 5,
+      "status": "planned",
+      "wave": 2,
+      "keywords": ["TIPP", "DBT", "crisis survival", "distress tolerance", "paced breathing", "physiological regulation", "acute distress"]
+    },
+    {
+      "id": "chain-analysis",
+      "name": "Chain Analysis",
+      "description": "DBT behavior analysis tool. Maps the chain of events, thoughts, emotions, and behaviors leading to a problem behavior to identify intervention points.",
+      "type": "DBT",
+      "path": "skill.md",
+      "steps": 8,
+      "duration_minutes": 25,
+      "status": "planned",
+      "wave": 3,
+      "keywords": ["chain analysis", "DBT", "behavior analysis", "problem behavior", "functional analysis", "intervention points"]
+    },
+    {
+      "id": "behavioral-activation",
+      "name": "Behavioral Activation",
+      "description": "CBT technique for depression. Schedules and tracks activities correlated with mood improvement, breaking the inactivity-low mood cycle.",
+      "type": "CBT",
+      "path": "skill.md",
+      "steps": 6,
+      "duration_minutes": 12,
+      "status": "planned",
+      "wave": 3,
+      "keywords": ["behavioral activation", "CBT", "depression", "activity scheduling", "mood tracking", "pleasant events"]
+    },
+    {
+      "id": "wise-mind",
+      "name": "Wise Mind",
+      "description": "DBT Core Mindfulness skill. Guides access to the synthesis of Emotion Mind and Reasonable Mind — the intuitive inner wisdom that integrates both.",
+      "type": "DBT",
+      "path": "skill.md",
+      "steps": 3,
+      "duration_minutes": 7,
+      "status": "planned",
+      "wave": 3,
+      "keywords": ["wise mind", "DBT", "mindfulness", "emotion mind", "reasonable mind", "intuition", "Linehan"]
+    },
+    {
+      "id": "give-fast",
+      "name": "GIVE / FAST",
+      "description": "DBT Interpersonal Effectiveness skills for maintaining relationships (GIVE) and self-respect (FAST) during interactions.",
+      "type": "DBT",
+      "path": "skill.md",
+      "steps": 8,
+      "duration_minutes": 18,
+      "status": "planned",
+      "wave": 4,
+      "keywords": ["GIVE", "FAST", "DBT", "interpersonal effectiveness", "relationships", "self-respect", "communication"]
+    },
+    {
+      "id": "affect-labeling",
+      "name": "Affect Labeling",
+      "description": "Neuroscience-based technique: naming emotions reduces amygdala activation. Brief structured labeling exercise to reduce emotional intensity.",
+      "type": "Neuroscience",
+      "path": "skill.md",
+      "steps": 3,
+      "duration_minutes": 4,
+      "status": "planned",
+      "wave": 4,
+      "keywords": ["affect labeling", "emotion naming", "amygdala", "neuroscience", "mindfulness", "Lieberman", "emotion regulation"]
+    }
+  ],
+  "features": {
+    "pushback": {
+      "enabled": true,
+      "levels": [0, 1, 2, 3],
+      "default": 2,
+      "descriptions": {
+        "0": "Silent — record only, no challenge",
+        "1": "Gentle — soft Socratic questions",
+        "2": "Balanced — moderate challenge and reframe",
+        "3": "Direct — strong evidence-based confrontation"
+      }
+    },
+    "health_integration": {
+      "apple_health": true,
+      "aurora_ring": true,
+      "genome_vault": true,
+      "required": false
+    },
+    "telegram": {
+      "commands": ["/record", "/opposite", "/checkin"],
+      "bot_support": true
+    }
+  }
+}
