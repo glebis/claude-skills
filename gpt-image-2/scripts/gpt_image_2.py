@@ -259,8 +259,8 @@ def api_request(
             "quality": quality,
             "output_format": "png",
         }
-        if thinking != "off":
-            body["thinking"] = {"type": "enabled", "effort": thinking}
+        # thinking parameter reserved for future API support
+        # (not yet accepted on /v1/images/generations endpoint)
         # seed parameter reserved for future API support
         data = json.dumps(body).encode("utf-8")
         headers = {
