@@ -108,3 +108,7 @@ panorama:
   description: "360° equirectangular panorama for VR/immersive view"
   prompt: "{subject}, 360 degree equirectangular panoramic view, seamless edges, immersive environment, photorealistic, HDR lighting, complete surrounding scene, VR ready"
   thinking: medium
+
+nordic:
+  description: "Calm Scandinavian — muted tones, fog, clean geometry, quiet atmosphere"
+  prompt: "{subject}, Scandinavian design aesthetic, muted cool palette of slate blue and warm gray and soft white, foggy atmosphere, clean minimal geometry, natural textures like birch wood and raw linen, quiet contemplative mood, diffused northern light, no harsh shadows, serene and understated, hygge feeling"
