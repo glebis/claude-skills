@@ -25,3 +25,5 @@ Thumbs.db
 # research_report_*.md
 # research_prompt_*.txt
 .env
+cognitive-toolkit/
+concepts/

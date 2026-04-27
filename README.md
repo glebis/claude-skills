@@ -4,7 +4,11 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
-### [GPT Image 2 (OpenAI Image Generation)](./gpt-image-2/) ⭐ NEW
+### [Cognitive Toolkit (CBT/DBT)](https://github.com/glebis/claude-cognitive-toolkit) ⭐ NEW
+
+Evidence-based CBT and DBT intervention skills — guided thought records, opposite action, DEAR MAN roleplay, crisis skills with HRV biofeedback. Configurable therapeutic pushback. Works standalone or via Telegram. **[Standalone repo →](https://github.com/glebis/claude-cognitive-toolkit)**
+
+### [GPT Image 2 (OpenAI Image Generation)](./gpt-image-2/)
 
 Generate and edit images using OpenAI's GPT Image 2 model — the first image model with built-in reasoning ("thinking mode"). Mirrors the [Nano Banana](./nano-banana/) architecture but targets OpenAI's API with superior text rendering, thinking mode for complex compositions, and cost controls.
 
