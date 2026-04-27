@@ -112,3 +112,23 @@ panorama:
 nordic:
   description: "Calm Scandinavian — muted tones, fog, clean geometry, quiet atmosphere"
   prompt: "{subject}, Scandinavian design aesthetic, muted cool palette of slate blue and warm gray and soft white, foggy atmosphere, clean minimal geometry, natural textures like birch wood and raw linen, quiet contemplative mood, diffused northern light, no harsh shadows, serene and understated, hygge feeling"
+
+bauhaus:
+  description: "Bauhaus — primary colors, geometric shapes, rough grain texture, Kandinsky meets Moholy-Nagy"
+  prompt: "{subject}, Bauhaus design style, primary colors red yellow blue on off-white textured paper, bold geometric circles triangles rectangles, rough grain texture visible throughout, asymmetric grid composition, sans-serif typography, constructivist influence, handmade printing feel, no gradients, flat shapes with visible paper texture"
+
+flat-social:
+  description: "LinkedIn/social card — flat design, bold text with hard drop shadow, high contrast"
+  prompt: "{subject}, flat graphic design for social media, bold large sans-serif text with hard black drop shadow offset 4px, vibrant solid color background, no gradients, no 3D, extremely clean and minimal, high contrast, Instagram-ready square composition, text dominates the frame, modern editorial feel"
+
+linkedin-hero:
+  description: "LinkedIn hero card — professional, large quote text, author photo area, brand bar"
+  prompt: "{subject}, professional LinkedIn post card design, large bold serif quote text centered with hard flat shadow, muted professional background color like navy or charcoal, thin accent color bar at bottom, clean whitespace, author name area at bottom left, modern thought leadership aesthetic, square format"
+
+social-bold:
+  description: "Social media statement — giant text fills frame, textured flat background, punk energy"
+  prompt: "{subject}, social media graphic with giant bold condensed sans-serif text filling entire frame, rough textured flat background in a single saturated color, text in white or black with hard offset shadow, punk poster energy, no images just typography, raw and direct, square format"
+
+social-split:
+  description: "Split card — image left half, bold text right half, flat color block"
+  prompt: "{subject}, split composition social media card, left half is a photograph or illustration, right half is a solid flat color block with large bold white text, clean dividing line between halves, modern editorial magazine layout, no gradients, high contrast, square format"
