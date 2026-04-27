@@ -1,6 +1,6 @@
 ---
 name: wispr-analytics
-description: This skill should be used when analyzing Wispr Flow voice dictation history for self-reflection, work patterns, mental health insights, or productivity analytics. Triggered by requests like "/wispr-analytics", "analyze my dictations", "what did I dictate today", "wispr reflection", or any request to review voice dictation patterns. Supports modes - technical (coding/work), soft (communication), trends (volume/frequency), mental (sentiment/energy/rumination).
+description: This skill should be used when analyzing Wispr Flow voice dictation history for self-reflection, work patterns, mental health insights, or productivity analytics AND when managing the Wispr Flow dictionary (adding terms, fixing mishears, exporting/importing, suggesting improvements). Triggered by requests like "/wispr-analytics", "analyze my dictations", "what did I dictate today", "wispr reflection", "add to wispr dictionary", "improve dictation", "wispr suggest", "export wispr dictionary", or any request to review voice dictation patterns or manage dictation quality.
 ---
 
 # Wispr Analytics
@@ -50,6 +50,21 @@ python3 scripts/extract_wispr.py --period week --format markdown --output /path/
 - `soft` -- filters to communication/writing dictations
 - `trends` -- focus on volume/frequency patterns
 - `mental` -- all text, framed for wellbeing reflection
+
+### Comparison & Graphs
+- `--compare` -- auto-compare with the equivalent previous period (week vs previous week, month vs previous month)
+- `--graphs PATH` -- generate an HTML dashboard with Chart.js graphs (implies --compare). Graphs include: daily words overlay, hourly activity, category breakdown, top apps, language distribution
+
+```bash
+# Compare this month vs previous month (markdown)
+python3 scripts/extract_wispr.py --period month --compare --format markdown
+
+# Generate visual dashboard for week comparison
+python3 scripts/extract_wispr.py --period week --compare --graphs /tmp/wispr-week.html
+
+# Compare and save both markdown + graphs
+python3 scripts/extract_wispr.py --period month --compare --format markdown --output report.md --graphs report.html
+```
 
 ## Workflow
 
@@ -113,15 +128,77 @@ If the user requests console-only output, skip file creation and display directl
 ## App Category Mapping
 
 The extraction script categorizes apps:
-- **coding**: iTerm2, VS Code, Windsurf, Zed, Cursor, Terminal
-- **ai_tools**: ChatGPT, Claude Desktop, Perplexity, OpenAI Atlas
+- **coding**: iTerm2, cmuxterm, VS Code, Windsurf, Zed, Cursor, Terminal
+- **ai_tools**: ChatGPT, Claude Desktop, Perplexity, OpenAI Atlas, Codex
 - **communication**: Telegram, Messages, Slack, Zoom
 - **writing**: Obsidian, Notes, Chrome, Arc browser
 
+## Dictionary Management
+
+Manage Wispr Flow's dictionary for better recognition accuracy. The dictionary JSON is version-controlled in `~/ai_projects/claude-skills/wispr-analytics/data/dictionary.json`.
+
+### Dictionary Script
+
+Run `scripts/wispr_dictionary.py` for all dictionary operations:
+
+```bash
+# Check database health and dictionary stats
+python3 scripts/wispr_dictionary.py check
+
+# List all entries (safe while Wispr is running)
+python3 scripts/wispr_dictionary.py list
+python3 scripts/wispr_dictionary.py list --filter "claude"
+
+# Export dictionary to JSON (safe while running)
+python3 scripts/wispr_dictionary.py export
+
+# Suggest new entries by analyzing ASR vs formatted text differences
+python3 scripts/wispr_dictionary.py suggest --days 30 --min-freq 3
+
+# Add a single term (requires Wispr Flow to be QUIT)
+python3 scripts/wispr_dictionary.py add "Gastown"
+python3 scripts/wispr_dictionary.py add "cloud code" "Claude Code"
+
+# Remove an entry (requires Wispr Flow to be QUIT)
+python3 scripts/wispr_dictionary.py remove "old term"
+
+# Import from JSON (requires Wispr Flow to be QUIT)
+python3 scripts/wispr_dictionary.py import --dry-run
+python3 scripts/wispr_dictionary.py import
+```
+
+### Dictionary Safety Rules
+
+**CRITICAL**: Wispr Flow must be quit before any write operations (add, remove, import). The script enforces this automatically. Read operations (export, list, suggest, check) are safe while Wispr is running.
+
+Writing to the SQLite database while Wispr Flow has it open causes index corruption. Always:
+1. Check if Wispr is running: `pgrep -f "Wispr Flow"`
+2. If running, ask user to quit first (Cmd+Q)
+3. After writes, run `check` to verify integrity
+4. Restart Wispr Flow
+
+### Dictionary Entry Types
+
+- **Recognition terms** (phrase only): teaches Wispr to hear the word correctly (e.g., "Gastown", "LLM", "subagent")
+- **Replacement rules** (phrase → replacement): auto-corrects mishears (e.g., "cloud code" → "Claude Code", "клод дизайн" → "Claude Design")
+- **Snippets** (isSnippet=true): text expansion shortcuts (e.g., "my email" → "glebis@gmail.com")
+
+### Proactive Dictionary Improvement Workflow
+
+When running analytics, also check for dictionary improvement opportunities:
+
+1. Run `suggest` to find recurring ASR corrections
+2. Compare `asrText` vs `formattedText` for patterns
+3. Look for Russian/English code-switching mishears
+4. Check for new technical terms the user started using
+5. Export updated dictionary and commit to git
+
 ## Notes
 
-- The database is read-only; this skill never modifies Wispr data
+- For analytics: the database is read-only; analytics never modifies Wispr data
+- For dictionary: writes require Wispr Flow to be quit first
 - Text samples are capped at 100 per extraction to manage context window
 - For multi-day periods, daily trend tables help visualize changes
 - Bilingual dictations are common; analysis should honor both Russian and English
 - The `asrText` field contains raw speech recognition before formatting -- useful for detecting speech patterns vs formatted output
+- Dictionary JSON is stored at `~/ai_projects/claude-skills/wispr-analytics/data/dictionary.json` for version control

@@ -1,12 +1,12 @@
 # Granola Cache Structure
 
-Location: `~/Library/Application Support/Granola/cache-v4.json`
+Location: `~/Library/Application Support/Granola/cache-v*.json` (currently v6, script auto-detects latest)
 
 ## Top-level
 ```
-{ "cache": { "state": <string|object>, "version": 5 } }
+{ "cache": { "state": <object>, "version": 6 } }
 ```
-`state` may be a JSON string that needs parsing.
+In earlier versions `state` was sometimes a JSON string that needed parsing; the script handles both cases.
 
 ## State Keys
 

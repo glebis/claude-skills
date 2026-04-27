@@ -9,12 +9,33 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timezone
 
-CACHE_PATH = os.path.expanduser(
-    "~/Library/Application Support/Granola/cache-v4.json"
-)
-SUPABASE_PATH = os.path.expanduser(
-    "~/Library/Application Support/Granola/supabase.json"
-)
+GRANOLA_DIR = os.path.expanduser("~/Library/Application Support/Granola")
+SUPABASE_PATH = os.path.join(GRANOLA_DIR, "supabase.json")
+
+
+def _find_cache_path():
+    """Find the latest cache-v*.json file. Granola bumps the version over time
+    (v4 -> v5 -> v6 ...), so we pick the highest numbered one."""
+    import glob
+
+    candidates = glob.glob(os.path.join(GRANOLA_DIR, "cache-v*.json"))
+    # Filter out .tmp files
+    candidates = [c for c in candidates if not c.endswith(".tmp")]
+    if not candidates:
+        print(
+            "ERROR: No Granola cache file found. Is Granola installed?",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    # Sort by version number extracted from filename
+    candidates.sort(
+        key=lambda p: int(os.path.basename(p).split("-v")[1].split(".json")[0]),
+        reverse=True,
+    )
+    return candidates[0]
+
+
+CACHE_PATH = _find_cache_path()
 API_BASE = "https://api.granola.ai"
 
 

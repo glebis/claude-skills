@@ -91,79 +91,10 @@ Files saved as: `YYYYMMDD-meeting-title-slug.md`
 
 The script reads from two local sources:
 
-1. **Cache file**: `~/Library/Application Support/Granola/cache-v4.json` -- metadata for all meetings, transcripts for active/recent meetings only
+1. **Cache file**: `~/Library/Application Support/Granola/cache-v*.json` (currently v6) -- metadata for all meetings, transcripts for active/recent meetings only. The script auto-detects the latest version.
 2. **API token**: `~/Library/Application Support/Granola/supabase.json` -- WorkOS bearer token for API calls (auto-refreshed when app is open, ~6h expiry)
 
 See `references/cache-structure.md` for full schema documentation.
-
-## Auto-Sync (LaunchAgent)
-
-The `scripts/sync.sh` script checks for new Granola meetings and exports any not yet in the vault. Designed to run on a schedule via macOS LaunchAgent.
-
-### How it works
-
-1. Scans existing vault `.md` files for `granola_id:` frontmatter to find already-exported meetings
-2. Calls `granola.py api-list` to get the 20 most recent meetings
-3. Exports any new ones via `granola.py export`
-4. Logs all activity to `~/Library/Logs/granola-sync.log`
-
-### Setup
-
-```bash
-# 1. Copy sync script (included in this skill)
-chmod +x ~/.claude/skills/granola/scripts/sync.sh
-
-# 2. Create LaunchAgent (runs every 15 minutes)
-cat > ~/Library/LaunchAgents/com.user.granola-sync.plist << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.user.granola-sync</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/bin/bash</string>
-        <string>/Users/YOUR_USERNAME/.claude/skills/granola/scripts/sync.sh</string>
-    </array>
-    <key>StartInterval</key>
-    <integer>900</integer>
-    <key>StandardOutPath</key>
-    <string>/Users/YOUR_USERNAME/Library/Logs/granola-sync.log</string>
-    <key>StandardErrorPath</key>
-    <string>/Users/YOUR_USERNAME/Library/Logs/granola-sync.log</string>
-    <key>RunAtLoad</key>
-    <false/>
-</dict>
-</plist>
-EOF
-
-# 3. Edit the plist: replace YOUR_USERNAME with your macOS username
-
-# 4. Load the agent
-launchctl load ~/Library/LaunchAgents/com.user.granola-sync.plist
-
-# 5. Test manually
-bash ~/.claude/skills/granola/scripts/sync.sh
-```
-
-### Configuration
-
-Set `GRANOLA_VAULT` environment variable to change the target vault (default: `~/Brains/brain`).
-
-```bash
-GRANOLA_VAULT=~/Obsidian/MyVault bash ~/.claude/skills/granola/scripts/sync.sh
-```
-
-### Verify
-
-```bash
-# Check agent is loaded
-launchctl list | grep granola
-
-# Check logs
-tail -20 ~/Library/Logs/granola-sync.log
-```
 
 ## Known Limitations
 
