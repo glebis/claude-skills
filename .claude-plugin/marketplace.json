@@ -1,0 +1,252 @@
+{
+  "name": "glebis-skills",
+  "owner": {
+    "name": "Gleb Kalinin",
+    "email": "glebis@gmail.com"
+  },
+  "metadata": {
+    "description": "50+ Claude Code skills \u2014 meetings, research, publishing, development, and more."
+  },
+  "plugins": [
+    {
+      "name": "agency-docs-updater",
+      "source": "./agency-docs-updater",
+      "description": "End-to-end pipeline for publishing Claude Code lab meetings. Accepts optional args: date (YYYYMMDD, \"yesterday\", \"today\""
+    },
+    {
+      "name": "balanced",
+      "source": "./balanced",
+      "description": "Constructive, evidence-based dialogue mode that avoids sycophancy. This skill should be used when the user wants balance"
+    },
+    {
+      "name": "brand-agency",
+      "source": "./brand-agency",
+      "description": "Applies Agency brand colors and typography to artifacts including presentations, SVG graphics, documents, and web interf"
+    },
+    {
+      "name": "browsing-history",
+      "source": "./browsing-history",
+      "description": "Query browsing history from all synced devices (iPhone, Mac, iPad, desktop). Supports natural language queries for filte"
+    },
+    {
+      "name": "chrome-history",
+      "source": "./chrome-history",
+      "description": "Query Chrome browsing history with natural language. Filter by date range, article type, keywords, and specific sites."
+    },
+    {
+      "name": "context-builder",
+      "source": "./context-builder",
+      "description": "Generate interactive AI transformation context-builder prompts for consulting clients. Use when creating structured disc"
+    },
+    {
+      "name": "daydream",
+      "source": "./daydream",
+      "description": "daydream"
+    },
+    {
+      "name": "decision-toolkit",
+      "source": "./decision-toolkit",
+      "description": "Generate structured decision-making tools \u2014 step-by-step guides, bias checkers, scenario explorers, and interactive dash"
+    },
+    {
+      "name": "deep-research",
+      "source": "./deep-research",
+      "description": "This skill should be used when conducting comprehensive research on any topic using the OpenAI Deep Research API. It aut"
+    },
+    {
+      "name": "doctorg",
+      "source": "./doctorg",
+      "description": "Evidence-based health research using tiered trusted sources with GRADE-inspired evidence ratings. Integrates Apple Healt"
+    },
+    {
+      "name": "elevenlabs-tts",
+      "source": "./elevenlabs-tts",
+      "description": "This skill converts text to high-quality audio files using ElevenLabs API. Use this skill when users request text-to-spe"
+    },
+    {
+      "name": "fathom",
+      "source": "./fathom",
+      "description": "Fetch meetings, transcripts, summaries, and action items from Fathom API. Use when user asks to get Fathom recordings, s"
+    },
+    {
+      "name": "firecrawl-research",
+      "source": "./firecrawl-research",
+      "description": "This skill should be used when the user requests to research topics using FireCrawl, enrich notes with web sources, sear"
+    },
+    {
+      "name": "github-gist",
+      "source": "./github-gist",
+      "description": "Publish files or Obsidian notes as GitHub Gists. Use when user wants to share code/notes publicly, create quick shareabl"
+    },
+    {
+      "name": "gmail",
+      "source": "./gmail",
+      "description": "This skill should be used when searching, fetching, or downloading emails from Gmail. Use for queries like \"search Gmail"
+    },
+    {
+      "name": "google-image-search",
+      "source": "./google-image-search",
+      "description": "Search and download images via Google Custom Search API with LLM-powered selection. This skill should be used when findi"
+    },
+    {
+      "name": "gpt-image-2",
+      "source": "./gpt-image-2",
+      "description": "Generate and edit images using OpenAI's GPT Image 2 API. Supports style presets (including text-heavy ones like infograp"
+    },
+    {
+      "name": "granola",
+      "source": "./granola",
+      "description": "This skill should be used when importing, listing, or exporting Granola meeting recordings and transcripts. Queries Gran"
+    },
+    {
+      "name": "gws",
+      "source": "./gws",
+      "description": "This skill should be used when interacting with Google Workspace services via the gws CLI \u2014 Gmail (search, triage, send,"
+    },
+    {
+      "name": "health-data",
+      "source": "./health-data",
+      "description": "Query Apple Health SQLite database for vitals, activity, sleep, and workouts. Supports Markdown, JSON, and FHIR R4 outpu"
+    },
+    {
+      "name": "insight-extractor",
+      "source": "./insight-extractor",
+      "description": "insight-extractor"
+    },
+    {
+      "name": "jtbd",
+      "source": "./jtbd",
+      "description": "Terminal-first JTBD engine for founders and product people. Interview fast, kill jargon, capture real switching forces ("
+    },
+    {
+      "name": "lab-retro",
+      "source": "./lab-retro",
+      "description": "Final retrospective and self-assessment for participants of Claude Code Lab. Runs four sequential interactive parts \u2014 pr"
+    },
+    {
+      "name": "linear",
+      "source": "./linear",
+      "description": "Manage Linear issues, projects, and workflows via CLI. This skill should be used when the user wants to create, list, up"
+    },
+    {
+      "name": "llm-cli",
+      "source": "./llm-cli",
+      "description": "Process textual and multimedia files with various LLM providers using the llm CLI. Supports both non-interactive and int"
+    },
+    {
+      "name": "meeting-processor",
+      "source": "./meeting-processor",
+      "description": "This skill should be used when processing meeting transcripts to auto-detect meeting type (leadgen, partnership, coachin"
+    },
+    {
+      "name": "nano-banana",
+      "source": "./nano-banana",
+      "description": "Generate and edit images using Google's Gemini image generation models (Nano Banana family). Supports style presets, pla"
+    },
+    {
+      "name": "pdf-generation",
+      "source": "./pdf-generation",
+      "description": "Professional PDF generation from markdown using Pandoc with Eisvogel template and EB Garamond fonts. Use when converting"
+    },
+    {
+      "name": "presentation-generator",
+      "source": "./presentation-generator",
+      "description": "Generate interactive HTML presentations with neobrutalism styling, ASCII art decorations, and Agency brand colors. Outpu"
+    },
+    {
+      "name": "recording",
+      "source": "./recording",
+      "description": "Demo/recording mode that redacts personally identifiable and sensitive information from Claude Code's outputs. Use when "
+    },
+    {
+      "name": "retrospective",
+      "source": "./retrospective",
+      "description": "retrospective"
+    },
+    {
+      "name": "session-finder",
+      "source": "./session-finder",
+      "description": "Index and search Claude Code sessions using semantic embeddings (Gemini). Find past sessions by topic, relaunch the best"
+    },
+    {
+      "name": "session-search",
+      "source": "./session-search",
+      "description": "This skill should be used when searching Claude Code session transcripts with semantic understanding. Triggers on querie"
+    },
+    {
+      "name": "sketch",
+      "source": "./sketch",
+      "description": "sketch"
+    },
+    {
+      "name": "skill-studio",
+      "source": "./skill-studio",
+      "description": "Interview-driven automation design tool. This skill should be used when the user wants to design a new skill, agent, aut"
+    },
+    {
+      "name": "tdd",
+      "source": "./tdd",
+      "description": "This skill should be used when the user wants to implement features or fix bugs using test-driven development. Enforces "
+    },
+    {
+      "name": "telegram",
+      "source": "./telegram",
+      "description": "This skill should be used when fetching, searching, downloading, sending, editing, or publishing messages on Telegram. U"
+    },
+    {
+      "name": "telegram-post",
+      "source": "./telegram-post",
+      "description": "telegram-post"
+    },
+    {
+      "name": "telegram-telethon",
+      "source": "./telegram-telethon",
+      "description": "This skill should be used for comprehensive Telegram automation via Telethon API. Use for sending/receiving messages, mo"
+    },
+    {
+      "name": "temple-generator",
+      "source": "./temple-generator",
+      "description": "Generate a 3D interactive knowledge map (Inner Temple) from any Obsidian vault or document set. Supports multi-scale abs"
+    },
+    {
+      "name": "thinking-patterns",
+      "source": "./thinking-patterns",
+      "description": "thinking-patterns"
+    },
+    {
+      "name": "timebuzzer-led",
+      "source": "./timebuzzer-led",
+      "description": "Control timeBuzzer hardware LED via MIDI — set color, effects (pulse, strobe, rainbow, fade), and semantic status signals"
+    },
+    {
+      "name": "transcript-analyzer",
+      "source": "./transcript-analyzer",
+      "description": "This skill analyzes meeting transcripts to extract decisions, action items, opinions, questions, and terminology using C"
+    },
+    {
+      "name": "tufte-report",
+      "source": "./tufte-report",
+      "description": "Create Tufte-inspired data reports and infographic dashboards as standalone HTML files. Uses EB Garamond for text, Monas"
+    },
+    {
+      "name": "vision-bench",
+      "source": "./vision-bench",
+      "description": "Score and compare images using vision LLMs as judges. YAML-defined criteria presets for 11 use cases (text-to-image, pho"
+    },
+    {
+      "name": "wispr-analytics",
+      "source": "./wispr-analytics",
+      "description": "This skill should be used when analyzing Wispr Flow voice dictation history for self-reflection, work patterns, mental h"
+    },
+    {
+      "name": "youtube-transcript",
+      "source": "./youtube-transcript",
+      "description": "\"Extract YouTube video transcripts with metadata and save as Markdown to Obsidian vault. Use this skill when the user re"
+    },
+    {
+      "name": "zoom",
+      "source": "./zoom",
+      "description": "Create and manage Zoom meetings and access cloud recordings via the Zoom API. Use for queries like \"create a Zoom meetin"
+    }
+  ]
+}

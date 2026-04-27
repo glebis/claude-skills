@@ -1557,6 +1557,37 @@ cd ~/.claude/skills/jtbd && python3 -m pytest tests/ -v
 
 ---
 
+### [timeBuzzer LED](./timebuzzer-led/) ⭐ NEW
+Control the [timeBuzzer](https://timebuzzer.com) hardware LED via MIDI — set colors, run effects (pulse, strobe, rainbow, fade), and send semantic status signals that pair with the Hue skill.
+
+**Features:**
+- 🎨 Named colors (red, orange, yellow, green, cyan, blue, purple, magenta, pink, white, warm) + hex + RGB
+- 💫 Effects: pulse (BPM-controlled), strobe, rainbow, fade
+- 🚦 8 semantic signals: success, error, warning, thinking, working, idle, attention, focus
+- 🔲 Per-segment control (3 independent RGB segments)
+- 🔗 Same signal vocabulary as the Hue skill for synchronized desk + room feedback
+
+**Quick Start:**
+```bash
+# Copy to skills directory
+cp -r timebuzzer-led ~/.claude/skills/
+
+# Set a color
+python3 scripts/buzzer_led.py color blue
+
+# Run an effect
+python3 scripts/buzzer_led.py pulse cyan --bpm 30 --seconds 5
+
+# Send a status signal
+python3 scripts/buzzer_led.py signal success
+```
+
+**Depends on:** timeBuzzer USB device, `python-rtmidi` (`pip install python-rtmidi`)
+
+**Use when:** You want visual desk feedback for task status, build results, or ambient signaling — especially combined with Hue for room-wide effects.
+
+---
+
 ### [Tufte Report](./tufte-report/) ⭐ NEW
 Generate Tufte-inspired data reports as standalone HTML files. Combines editorial narrative with interactive data visualization: high information density, minimal chart junk, typography-first design with EB Garamond and Monaspace Argon.
 
