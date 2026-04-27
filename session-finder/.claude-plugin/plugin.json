@@ -1,0 +1,9 @@
+{
+  "name": "session-finder",
+  "description": "Index and search Claude Code sessions using semantic embeddings (Gemini). Find past sessions by topic, relaunch the best",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}
