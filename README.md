@@ -1,6 +1,10 @@
 # Claude Skills
 
-A collection of skills for [Claude Code](https://claude.com/claude-code) that extend AI capabilities with specialized workflows, tools, and domain expertise.
+A collection of skills for [Claude Code](https://claude.com/claude-code) that extend AI capabilities with specialized workflows, tools, and domain expertise. 
+
+## Intro from author
+
+— [Gleb](https://glebkalinin.com/) is a Berlin-based technologist, AI educator, solopreneur and artist. He teaches in-depth skills and workflows, plus productivity and values-based project management using AI tools as a support tool. Join my Claude code labs and community (coming soon!). 
 
 ## 📦 Available Skills
 
