@@ -4,7 +4,7 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## Intro from author
 
-— [Gleb](https://glebkalinin.com/) is a Berlin-based technologist, AI educator, solopreneur and artist. He teaches in-depth skills and workflows, plus productivity and values-based project management using AI tools as a support tool. Join my Claude code labs and community (coming soon!). 
+[Gleb](https://glebkalinin.com/) is a Berlin-based technologist, AI educator, solopreneur and artist. He teaches in-depth agentic skills and workflows, productivity and values-based project management using AI tools as a support tool. Join my [Claude code labs](https://claude.salient.community/) and community (coming soon!). 
 
 ## 📦 Available Skills
 
