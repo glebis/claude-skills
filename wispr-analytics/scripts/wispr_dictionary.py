@@ -145,7 +145,7 @@ def cmd_import(args):
             continue
 
         entry_id = str(uuid.uuid4())
-        replacement = entry.get("replacement")
+        replacement = entry.get("replacement") or phrase
         is_snippet = 1 if entry.get("is_snippet") else 0
         is_starred = 1 if entry.get("is_starred") else 0
         manual = 1 if entry.get("manual", True) else 0
@@ -185,7 +185,7 @@ def cmd_add(args):
 
     entry_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    replacement = args.replacement if args.replacement else None
+    replacement = args.replacement if args.replacement else args.phrase
 
     conn.execute(
         "INSERT INTO Dictionary (id, phrase, replacement, teamDictionaryId, "
@@ -240,10 +240,10 @@ def cmd_list(args):
         snippet = " [snippet]" if r["isSnippet"] else ""
         freq_str = f" (used {freq}x)" if freq > 0 else ""
 
-        if replacement:
+        if replacement and replacement != phrase:
             print(f"  {phrase} → {replacement}{freq_str}{snippet}")
         else:
-            print(f"  {phrase}{freq_str}{snippet}")
+            print(f"  {phrase} [vocab]{freq_str}{snippet}")
 
     print(f"\n{len(rows)} entries")
 
