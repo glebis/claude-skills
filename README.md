@@ -1301,6 +1301,50 @@ cd sketch-mcp-server && npm install && npm run build
 
 **Use when:** Visual prototyping, creating diagrams, building reusable canvas templates, before/after comparisons, or any task where Claude and the user need a shared visual workspace.
 
+### [Session Anonymizer](./session-anonymizer/) ⭐ NEW
+Three-layer PII anonymization for session transcripts (therapy, coaching, consulting, mentoring). Runs Natasha (Russian NER), OpenAI Privacy Filter, and local LLM (Qwen2.5 via Ollama) in sequence for maximum coverage. Fully local by default — no data leaves the machine.
+
+**Features:**
+- 🛡️ Three detection layers: Natasha (names/locations/orgs, instant), OPF (phones/accounts, 1.5s), Ollama LLM (medications/dates/contextual IDs, 2-10s)
+- 💊 Medication-aware: detects drug names with dosages as PII (they narrow identity in clinical contexts)
+- 🇷🇺 Russian + English: Natasha is native Russian NER; OPF handles English; LLM handles both languages
+- 📁 Batch processing with consistent pseudonyms across files
+- 🔐 AES-256 encryption for data at rest
+- ⚡ Graceful degradation: each layer is optional, warns about what's missing
+- 📊 JSON output with per-entity spans, types, confidence, and source layer
+
+**Quick Start:**
+```bash
+# Install prerequisites
+pip install natasha setuptools pymorphy2-dicts-ru
+pip install 'opf @ git+https://github.com/openai/privacy-filter.git'
+ollama pull qwen2.5:3b
+
+# Copy to skills directory
+cp -r session-anonymizer ~/.claude/skills/
+
+# Anonymize a transcript
+python3 ~/.claude/skills/session-anonymizer/scripts/anonymize.py session.txt
+
+# Pipe from stdin
+cat transcript.md | python3 ~/.claude/skills/session-anonymizer/scripts/anonymize.py --json
+
+# Batch process a folder
+python3 ~/.claude/skills/session-anonymizer/scripts/anonymize.py --batch ~/sessions/ -o ~/clean/
+
+# Use pseudonyms instead of tags
+python3 ~/.claude/skills/session-anonymizer/scripts/anonymize.py session.txt --pseudonyms
+
+# Fast mode (Natasha only, instant)
+python3 ~/.claude/skills/session-anonymizer/scripts/anonymize.py session.txt --layers natasha
+```
+
+**Depends on:** `natasha` (pip), `opf` (GitHub), Ollama with `qwen2.5:3b`. Each layer is optional.
+
+**Use when:** Anonymizing session transcripts before AI analysis — pipe through the anonymizer before sending to Claude, ChatGPT, or any other tool. Also for supervision preparation, research datasets, and regulatory compliance (152-FZ, GDPR, HIPAA).
+
+---
+
 ### [Meeting Processor](./meeting-processor/)
 Intelligent meeting transcript processor that auto-detects meeting type (leadgen, partnership, coaching, internal) and applies type-specific structured extraction with optional interactive clarification.
 
