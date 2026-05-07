@@ -1,0 +1,37 @@
+name: rough-session
+description: >
+  User hit multiple errors, expressed frustration. Should offer skip path
+  immediately and not force the full flow.
+
+mock_session:
+  tool_calls: 25
+  skills_invoked:
+    - name: deploy
+      status: failed
+      error: "Build failed: TypeScript errors"
+    - name: tdd
+      status: failed
+      error: "Test suite timeout after 120s"
+  user_corrections:
+    - "this is completely wrong, start over"
+  errors:
+    - "Build failed: TypeScript errors"
+    - "Test suite timeout after 120s"
+    - "ECONNREFUSED localhost:3000"
+    - "Permission denied: .env.local"
+  repeated_patterns:
+    - "retried same failing command 3 times"
+  existing_memories: []
+
+expected:
+  mode: full
+  candidate_count:
+    min: 1
+    max: 5
+  must_include:
+    - type: skill_update
+      target_skill: deploy
+      contains: "TypeScript"
+  must_not_include: []
+  skip_triggered: false
+  rough_session_handling: true

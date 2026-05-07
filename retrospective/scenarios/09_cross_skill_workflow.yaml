@@ -1,0 +1,33 @@
+name: cross-skill-workflow
+description: >
+  Session chaining multiple skills in a pipeline.
+  Should detect the workflow pattern as a candidate.
+
+mock_session:
+  tool_calls: 60
+  skills_invoked:
+    - name: telegram
+      status: success
+    - name: linear
+      status: success
+    - name: de-ai
+      status: success
+    - name: presentation-generator
+      status: success
+  user_corrections: []
+  errors: []
+  repeated_patterns:
+    - "telegram output fed into linear task creation"
+    - "presentation content humanized via de-ai"
+  existing_memories: []
+
+expected:
+  mode: full
+  candidate_count:
+    min: 1
+    max: 5
+  must_include:
+    - type: feedback_memory
+      contains: "workflow"
+  must_not_include: []
+  skip_triggered: false

@@ -1,0 +1,58 @@
+name: many-learnings
+description: >
+  Long session with 12+ distinct findings. Should cap candidates at 5,
+  ranked by signal strength (corrections > failures > patterns).
+
+mock_session:
+  tool_calls: 85
+  skills_invoked:
+    - name: telegram
+      status: failed
+      error: "send_message: chat type mismatch"
+    - name: linear
+      status: success
+    - name: de-ai
+      status: success
+    - name: presentation-generator
+      status: success
+    - name: gpt-image-2
+      status: failed
+      error: "rate limit exceeded"
+  user_corrections:
+    - "use Telethon directly for DMs"
+    - "don't use /api/generate, use /api/chat for Qwen"
+    - "always check .trash before linking"
+  errors:
+    - "send_message: chat type mismatch"
+    - "rate limit exceeded"
+    - "Ollama: empty content on long prompts"
+    - "ENOMEM: layers fight for RAM"
+    - "pandoc: missing LaTeX package"
+    - "ESLint warnings in 6 files"
+  repeated_patterns:
+    - "retried gpt-image-2 after rate limit 3 times"
+    - "switched from Qwen3 to Qwen2.5 after thinking mode issues"
+  existing_memories:
+    - name: "feedback_telethon"
+      content: "use Telethon directly for DMs"
+
+expected:
+  mode: full
+  candidate_count:
+    min: 5
+    max: 5
+  must_include:
+    - type: skill_update
+      target_skill: telegram
+      contains: "chat type"
+    - type: feedback_memory
+      contains: "Qwen"
+  must_not_include:
+    - type: feedback_memory
+      contains: "Telethon directly for DMs"
+      reason: "already exists in memory"
+  skip_triggered: false
+  ranking_order:
+    - "user_corrections first"
+    - "failed_skills second"
+    - "repeated_patterns third"

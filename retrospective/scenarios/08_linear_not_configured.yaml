@@ -1,0 +1,31 @@
+name: linear-not-configured
+description: >
+  Session where a bug worth tracking was found, but Linear CLI is not configured.
+  Linear candidate should be omitted gracefully.
+
+mock_session:
+  tool_calls: 22
+  skills_invoked:
+    - name: telegram
+      status: failed
+      error: "send_message fails for group chats"
+  user_corrections: []
+  errors:
+    - "send_message fails for group chats"
+  repeated_patterns: []
+  existing_memories: []
+  linear_configured: false
+
+expected:
+  mode: full
+  candidate_count:
+    min: 1
+    max: 4
+  must_include:
+    - type: skill_update
+      target_skill: telegram
+      contains: "group chats"
+  must_not_include:
+    - type: linear_task
+      reason: "linear CLI not configured"
+  skip_triggered: false

@@ -1,0 +1,42 @@
+name: productive-long-session
+description: >
+  90-min session: 3 skills invoked, telegram failed, user corrected Claude twice.
+  Should trigger full mode with skill update and feedback memory candidates.
+
+mock_session:
+  tool_calls: 47
+  skills_invoked:
+    - name: linear
+      status: success
+    - name: telegram
+      status: failed
+      error: "Telethon session file not found"
+    - name: de-ai
+      status: success
+  user_corrections:
+    - "no, use Telethon directly for private DMs"
+    - "don't mock the database in integration tests"
+  errors:
+    - "Telethon session file not found"
+    - "FileNotFoundError: user.session"
+  repeated_patterns: []
+  existing_memories:
+    - name: "feedback_testing"
+      content: "Integration tests must hit a real database"
+
+expected:
+  mode: full
+  candidate_count:
+    min: 2
+    max: 5
+  must_include:
+    - type: skill_update
+      target_skill: telegram
+      contains: "Telethon"
+    - type: feedback_memory
+      contains: "Telethon"
+  must_not_include:
+    - type: feedback_memory
+      contains: "don't mock the database"
+      reason: "already exists in memory"
+  skip_triggered: false

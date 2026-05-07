@@ -1,0 +1,36 @@
+name: duplicate-memory
+description: >
+  Session where the main finding already exists in memory.
+  Dedup should filter it out, leaving fewer or zero candidates.
+
+mock_session:
+  tool_calls: 20
+  skills_invoked:
+    - name: telegram
+      status: failed
+      error: "chat type mismatch for private DMs"
+  user_corrections:
+    - "use Telethon directly for private DMs"
+  errors:
+    - "chat type mismatch for private DMs"
+  repeated_patterns: []
+  existing_memories:
+    - name: "feedback_telethon_dms"
+      content: "Use Telethon client.send_message directly for private DMs — telegram skill misclassifies some private chats"
+    - name: "feedback_telegram_chat_type"
+      content: "telegram skill send command misclassifies some private chats as channels due to get_chat_type() bug"
+
+expected:
+  mode: full
+  candidate_count:
+    min: 0
+    max: 2
+  must_include: []
+  must_not_include:
+    - type: feedback_memory
+      contains: "Telethon directly"
+      reason: "already exists in feedback_telethon_dms"
+    - type: feedback_memory
+      contains: "chat type"
+      reason: "already exists in feedback_telegram_chat_type"
+  skip_triggered: false

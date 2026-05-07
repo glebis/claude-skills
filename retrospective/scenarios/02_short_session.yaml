@@ -1,0 +1,21 @@
+name: short-session
+description: >
+  Quick 3-tool session: user asked one question, got an answer, left.
+  Should trigger fast mode with single optional question.
+
+mock_session:
+  tool_calls: 3
+  skills_invoked: []
+  user_corrections: []
+  errors: []
+  repeated_patterns: []
+  existing_memories: []
+
+expected:
+  mode: fast
+  candidate_count:
+    min: 0
+    max: 1
+  must_include: []
+  must_not_include: []
+  skip_triggered: false

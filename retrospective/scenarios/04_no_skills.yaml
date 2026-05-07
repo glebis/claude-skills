@@ -1,0 +1,28 @@
+name: no-skills-used
+description: >
+  Medium session with pure code editing, no skills invoked.
+  Should only surface CLAUDE.md and memory candidates, no skill updates.
+
+mock_session:
+  tool_calls: 18
+  skills_invoked: []
+  user_corrections:
+    - "always use single quotes in this project"
+  errors:
+    - "ESLint: prefer-single-quotes"
+  repeated_patterns:
+    - "fixed quote style 4 times across different files"
+  existing_memories: []
+
+expected:
+  mode: full
+  candidate_count:
+    min: 1
+    max: 3
+  must_include:
+    - type: claude_md_rule
+      contains: "single quotes"
+  must_not_include:
+    - type: skill_update
+      reason: "no skills were used"
+  skip_triggered: false

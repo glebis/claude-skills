@@ -1,0 +1,33 @@
+name: skill-file-conflict
+description: >
+  Session finding contradicts existing content in a skill file.
+  Engine should detect the conflict and flag it instead of writing.
+
+mock_session:
+  tool_calls: 30
+  skills_invoked:
+    - name: pdf-generation
+      status: success
+  user_corrections: []
+  errors:
+    - "pandoc: missing babel-lang for Russian"
+  repeated_patterns: []
+  existing_memories: []
+  existing_skill_content:
+    pdf-generation: |
+      ## Known Issues
+      ### 2025-01-01
+      - Russian text needs `babel-lang: russian` in YAML frontmatter
+
+expected:
+  mode: full
+  candidate_count:
+    min: 0
+    max: 3
+  must_include: []
+  must_not_include:
+    - type: skill_update
+      target_skill: pdf-generation
+      contains: "babel-lang"
+      reason: "already documented in skill file"
+  skip_triggered: false
