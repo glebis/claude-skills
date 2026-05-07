@@ -1,0 +1,52 @@
+daemon:
+  db_path: ~/Brains/data/telegram/responder.db
+  signal_method: file_flag
+  signal_path: /tmp/tg-responder-signal
+  batch_window_seconds: 30
+
+worker:
+  max_concurrent_agents: 1
+  lease_duration_seconds: 300
+  max_attempts: 3
+  retry_delay_seconds: 60
+  claude_timeout_seconds: 300
+  claude_max_turns: 15
+  stale_check: true
+
+contacts:
+  "Lora Vit":
+    mode: auto
+    cadence_days: 3
+    tags: [family]
+    timezone: Asia/Tbilisi
+
+  "Yulia Katan":
+    mode: draft_only
+    cadence_days: 1
+    tags: [partner]
+    timezone: Europe/Berlin
+
+  _course_inquiry:
+    mode: auto_respond
+    template: lab_signup
+    detect_patterns:
+      - "Хочу записаться на лабораторию"
+      - "Хочу записаться на курс"
+
+  _default:
+    mode: draft_only
+
+  _ignore:
+    - "AGENCY Community Bot"
+    - "Hermes"
+    - "toolbuildingape_claude"
+    - "FreeFeed"
+    - "Таблица жизни"
+    - "New Circle Pro"
+    - "Один Вкус"
+    - "Verity"
+
+scan:
+  chat_types: [dm]
+  ignore_bots: true
+  min_message_length: 1
