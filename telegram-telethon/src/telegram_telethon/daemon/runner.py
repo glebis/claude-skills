@@ -124,6 +124,30 @@ class Daemon:
 
             logger.debug(f"Message from {chat_name} ({chat_type}): {message_text[:50]}...")
 
+            # tg-responder hook: queue private DMs
+            if chat_type == "private":
+                try:
+                    from tg_responder_hook import on_new_dm
+                    sender = await event.get_sender()
+                    sender_name = getattr(sender, "first_name", "") or ""
+                    if getattr(sender, "last_name", None):
+                        sender_name += f" {sender.last_name}"
+                    on_new_dm(
+                        chat_id=event.chat_id,
+                        message_id=event.message.id,
+                        sender_id=getattr(sender, "id", 0),
+                        sender_name=sender_name.strip(),
+                        text=message_text,
+                        has_media=event.message.media is not None,
+                        media_type=type(event.message.media).__name__ if event.message.media else None,
+                        is_bot=getattr(sender, "bot", False),
+                        received_at=int(event.message.date.timestamp()),
+                    )
+                except ImportError:
+                    pass  # tg-responder not installed
+                except Exception as e:
+                    logger.warning(f"tg-responder hook error: {e}")
+
             # Route to trigger
             match = self._router.match(
                 chat_name=chat_name,
