@@ -1636,6 +1636,27 @@ python3 scripts/buzzer_led.py signal success
 
 ---
 
+### [RAG Eval](./rag-eval/) ⭐ NEW
+Replace the "tweak, squint, swap model, burn credits" loop with structured RAG evaluation. Runs cost-aware sweep grids against a human-labeled gold set, ranks variants, and returns concrete next experiments. Learns from prior runs to avoid re-testing dead ends.
+
+**Features:**
+- Cost-aware scoring: `quality x (1 / log(1 + cost))` — cheap-and-good beats expensive-and-slightly-better
+- Session ingest: extract signals from prior Claude Code transcripts without pasting 100k tokens
+- Stack audit against evidence-based RAG checklist before proposing experiments
+- Budget guardrails with hard dollar caps per sweep
+- Iterative memory via `history.jsonl` across runs
+- Gold set bootstrapping from your corpus
+
+**Quick Start:**
+```bash
+cp -r rag-eval ~/.claude/skills/
+/rag-eval
+```
+
+**Depends on:** DSPy, OpenRouter or OpenAI API key
+
+---
+
 ### [Tufte Report](./tufte-report/) ⭐ NEW
 Generate Tufte-inspired data reports as standalone HTML files. Combines editorial narrative with interactive data visualization: high information density, minimal chart junk, typography-first design with EB Garamond and Monaspace Argon.
 
