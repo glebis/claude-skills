@@ -168,6 +168,19 @@ def cmd_import(args):
     prefix = "[DRY RUN] " if args.dry_run else ""
     print(f"{prefix}Added: {added}, Skipped (existing): {skipped}")
 
+    if not args.dry_run and added > 0:
+        restart_wispr()
+
+
+def restart_wispr():
+    print("Starting Wispr Flow...")
+    try:
+        subprocess.Popen(["open", "-a", "Wispr Flow"],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("Wispr Flow restarted.")
+    except Exception:
+        print("Warning: Could not restart Wispr Flow. Start it manually.", file=sys.stderr)
+
 
 def cmd_add(args):
     require_wispr_stopped()
