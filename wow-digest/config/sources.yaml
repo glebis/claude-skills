@@ -1,0 +1,25 @@
+email:
+  # GWS query to match newsletters (excludes marketing caught by email-rules)
+  query: "newer_than:1d -category:promotions -category:social"
+  max_results: 100
+
+telegram:
+  channels:
+    - "macOS/iOS & AI"
+    - "Записки злого терапевта"
+    - "DEKSDEN (chat)"
+    - "Точки над ИИ"
+    - "@hegai AI Tools / Assistants / Agents"
+    - "DEKSDEN notes"
+    - "Екатерина Шульман"
+    - "Поиск доказательной помощи."
+    - "Запятые"
+    - "СВП | Сообщество выпускников Психодемии"
+    - "out of homeland"
+    - "Freiberufler werden (самозанятость и бизнес в 🇩🇪)"
+    - "CHAOS"
+    - "CI in Berlin & around"
+    - "Syntony Dialogue"
+  # Excluded (own channels): КЛОДКОТ, AGENCY: Community, Опытным путём
+  days: 1
+  limit_per_channel: 50

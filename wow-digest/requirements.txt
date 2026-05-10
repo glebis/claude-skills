@@ -1,0 +1,6 @@
+pyyaml>=6.0
+
+# External CLI tools required (not pip-installable):
+# - gws: Google Workspace CLI (~/.claude/skills/gws/)
+# - llm: Simon Willison's llm CLI (pip install llm)
+# - telegram-telethon: tg.py script (~/.claude/skills/telegram-telethon/)
