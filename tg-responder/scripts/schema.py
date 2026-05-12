@@ -7,7 +7,7 @@ from pathlib import Path
 
 DB_PATH = Path.home() / "Brains" / "data" / "telegram" / "responder.db"
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA_SQL = """
 PRAGMA journal_mode=WAL;
@@ -98,6 +98,38 @@ CREATE TABLE IF NOT EXISTS contacts_state (
     created_at                INTEGER NOT NULL,
     updated_at                INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS follow_ups (
+    id                        INTEGER PRIMARY KEY,
+    chat_id                   INTEGER NOT NULL,
+    sender_name               TEXT NOT NULL,
+    outbound_message_id       INTEGER,
+    outbound_text             TEXT,
+    outbound_at               INTEGER NOT NULL,
+    -- schedule
+    schedule_type             TEXT DEFAULT 'exponential' CHECK(schedule_type IN ('exponential','fixed','custom')),
+    base_interval_days        INTEGER DEFAULT 3,
+    max_reminders             INTEGER DEFAULT 3,
+    -- state
+    reminder_count            INTEGER DEFAULT 0,
+    next_reminder_at          INTEGER,
+    last_reminder_at          INTEGER,
+    last_reminder_text        TEXT,
+    status                    TEXT DEFAULT 'active' CHECK(status IN ('active','replied','archived','deleted','paused')),
+    -- reply tracking
+    reply_message_id          INTEGER,
+    reply_at                  INTEGER,
+    -- metadata
+    reminder_style            TEXT DEFAULT 'auto' CHECK(reminder_style IN ('auto','manual')),
+    custom_reminder_text      TEXT,
+    notes                     TEXT,
+    created_at                INTEGER NOT NULL,
+    updated_at                INTEGER NOT NULL,
+    UNIQUE(chat_id, outbound_message_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_follow_ups_status ON follow_ups(status, next_reminder_at);
+CREATE INDEX IF NOT EXISTS idx_follow_ups_chat ON follow_ups(chat_id);
 
 CREATE TABLE IF NOT EXISTS templates (
     id                        INTEGER PRIMARY KEY,

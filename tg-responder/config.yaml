@@ -46,6 +46,17 @@ contacts:
     - "Один Вкус"
     - "Verity"
 
+follow_ups:
+  enabled: true
+  default_schedule: exponential   # exponential | fixed | custom
+  default_base_days: 3            # first reminder after N days
+  default_max_reminders: 3        # archive after this many
+  auto_archive_after_days: 30     # archive even if max not reached
+  reminder_style: auto            # auto (Claude drafts) | manual (queue for user)
+  scan_interval_hours: 12
+  # Per-contact overrides (merge with contacts section)
+  # "Lora Vit": { base_days: 2, max_reminders: 5, style: auto }
+
 scan:
   chat_types: [dm]
   ignore_bots: true

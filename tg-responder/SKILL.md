@@ -1,6 +1,6 @@
 ---
 name: tg-responder
-description: Review and send Telegram response drafts queued by the responder daemon. Use when the user says "/tg-responder review", "/tg-responder status", "check telegram drafts", "review pending messages", or "telegram inbox".
+description: Review and send Telegram response drafts, manage follow-ups for unanswered outbound messages. Use when the user says "/tg-responder review", "/tg-responder status", "/tg-responder follow-ups", "check telegram drafts", "review pending messages", "telegram inbox", "who hasn't replied", or "follow up".
 ---
 
 # tg-responder — Telegram Communications Assistant
@@ -59,6 +59,41 @@ FROM inbox ORDER BY created_at DESC LIMIT 10;
 ```
 
 Report: pending count, drafts waiting, sent today, failed items.
+
+### follow-ups — Track unanswered outbound messages
+
+Scan for people who haven't replied, send reminders with exponential backoff.
+
+```bash
+# Scan for new unanswered messages (needs Telethon session — stop daemon first)
+python3 ~/.claude/skills/tg-responder/scripts/follow_ups.py scan
+
+# Process due reminders (drafts to Telegram or outbox)
+python3 ~/.claude/skills/tg-responder/scripts/follow_ups.py remind
+
+# List active follow-ups
+python3 ~/.claude/skills/tg-responder/scripts/follow_ups.py list
+
+# Archive expired follow-ups
+python3 ~/.claude/skills/tg-responder/scripts/follow_ups.py archive
+
+# Run all (scan + check replies + remind + archive)
+python3 ~/.claude/skills/tg-responder/scripts/follow_ups.py all
+```
+
+Also query directly:
+```sql
+SELECT sender_name, outbound_text, reminder_count, max_reminders,
+       datetime(outbound_at, 'unixepoch') as sent,
+       datetime(next_reminder_at, 'unixepoch') as next_ping,
+       status
+FROM follow_ups
+WHERE status = 'active'
+ORDER BY next_reminder_at;
+```
+
+Schedule: exponential (3d → 6d → 12d), fixed (every Nd), or custom per contact.
+After max_reminders → archived. If they reply → auto-resolved.
 
 ## Database
 

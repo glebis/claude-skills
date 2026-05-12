@@ -178,10 +178,15 @@ class Worker:
 
         system_prompt = classify_prompt.read_text()
 
+        # Sanitize untrusted input
+        msg_text = (row["text"] or "")[:2000]
+        msg_text = "".join(c for c in msg_text if c.isprintable() or c in "\n\r\t")
+        context = (context or "")[:3000]
+
         user_prompt = json.dumps({
             "sender_name": row["sender_name"],
             "contact_mode": row["contact_mode"],
-            "message_text": row["text"],
+            "message_text": msg_text,
             "has_media": bool(row["has_media"]),
             "media_type": row["media_type"],
             "context": context,
@@ -250,6 +255,10 @@ class Worker:
                 )
 
             self.db.commit()
+
+            if draft:
+                self._set_telegram_draft(row["chat_id"], draft, row["message_id"])
+
             logger.info(
                 f"Classified {row['sender_name']}: {category} "
                 f"(confidence={confidence:.2f}, draft={'yes' if draft else 'no'})"
@@ -264,21 +273,50 @@ class Worker:
         """Parse Claude CLI JSON output to extract the result."""
         try:
             data = json.loads(raw_output)
+            result_text = None
             if isinstance(data, list):
                 for event in data:
                     if event.get("type") == "result" and event.get("result"):
-                        try:
-                            return json.loads(event["result"])
-                        except json.JSONDecodeError:
-                            return None
+                        result_text = event["result"]
+                        break
             elif isinstance(data, dict) and "result" in data:
-                try:
-                    return json.loads(data["result"])
-                except json.JSONDecodeError:
-                    return None
-        except json.JSONDecodeError:
+                result_text = data["result"]
+
+            if not result_text:
+                return None
+
+            # Strip markdown code fences if present
+            text = result_text.strip()
+            if text.startswith("```"):
+                lines = text.split("\n")
+                # Remove first line (```json) and last line (```)
+                lines = [l for l in lines if not l.strip().startswith("```")]
+                text = "\n".join(lines).strip()
+
+            return json.loads(text)
+        except (json.JSONDecodeError, KeyError):
             pass
         return None
+
+    def _set_telegram_draft(self, chat_id: int, text: str, reply_to: int | None = None) -> None:
+        """Set a native Telegram draft so it appears on the user's phone."""
+        try:
+            cmd = [
+                "python3",
+                str(Path(__file__).parent / "tg_draft.py"),
+                "--chat-id", str(chat_id),
+                "--text", text,
+            ]
+            if reply_to:
+                cmd.extend(["--reply-to", str(reply_to)])
+
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if result.returncode == 0 and "ok" in result.stdout:
+                logger.info(f"Telegram draft set for chat {chat_id}")
+            else:
+                logger.warning(f"Telegram draft failed: {result.stderr[:200]}")
+        except Exception as e:
+            logger.warning(f"Telegram draft error: {e}")
 
     def _fetch_context(self, chat_id: int, sender_name: str) -> str:
         """Fetch recent conversation context for a chat."""
