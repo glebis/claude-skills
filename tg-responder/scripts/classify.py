@@ -117,9 +117,9 @@ if __name__ == "__main__":
     cfg = load_config()
 
     tests = [
-        ("AGENCY Community Bot", "some message", False),
-        ("Lora Vit", "Сделай мне PDF", False),
-        ("Анастасия", "Привет! Хочу записаться на лабораторию по Claude code!", False),
+        ("Ignored Bot", "some message", False),
+        ("Known Contact", "Some request", False),
+        ("New Person", "Привет! Хочу записаться на лабораторию по Claude code!", False),
         ("Unknown Person", "Привет, как дела?", False),
         ("SomeBot", "spam", True),
     ]

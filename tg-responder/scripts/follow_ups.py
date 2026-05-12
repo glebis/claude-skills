@@ -208,8 +208,8 @@ class FollowUpManager:
             "max_reminders": row["max_reminders"],
         }, ensure_ascii=False)
 
-        system_prompt = """You draft short follow-up reminders for Gleb Kalinin's Telegram.
-Context: Gleb sent a message and hasn't received a reply.
+        system_prompt = """You draft short follow-up reminders for the user's Telegram.
+Context: The user sent a message and hasn't received a reply.
 
 Rules:
 - Keep it 1-2 sentences, casual, not pushy
