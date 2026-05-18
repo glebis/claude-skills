@@ -92,6 +92,56 @@ Run with `run_in_background: true` (10-30 min). On failure: `--resume-from uploa
 Extract `YOUTUBE_URL` from stdout (`✓ YouTube video: ...`) or `processed/metadata/${VIDEO_NAME}.json`.
 Extract `VIDEO_ID` from the URL (the part after `?v=` or last path segment).
 
+### Step 3a: Verify Upload (REQUIRED)
+
+After extracting `VIDEO_ID`, verify the video actually exists on YouTube before proceeding. Videos can silently fail processing or get auto-deleted by YouTube's content review.
+
+```python
+cd ${YOUTUBE_UPLOADER_DIR} && PYTHONPATH=. python3 -c "
+from auth import get_authenticated_service
+import sys, time
+
+youtube = get_authenticated_service()
+video_id = '${VIDEO_ID}'
+
+# Poll up to 5 minutes for video to become available
+for attempt in range(10):
+    resp = youtube.videos().list(part='status,processingDetails', id=video_id).execute()
+    if not resp['items']:
+        if attempt < 9:
+            print(f'Video not yet available (attempt {attempt+1}/10), waiting 30s...')
+            time.sleep(30)
+            continue
+        print(f'FATAL: Video {video_id} not found after 5 minutes. Upload may have failed.')
+        sys.exit(1)
+
+    status = resp['items'][0]['status']
+    processing = resp['items'][0].get('processingDetails', {})
+    upload_status = status.get('uploadStatus', 'unknown')
+    privacy = status.get('privacyStatus', 'unknown')
+    rejection = status.get('rejectionReason', None)
+
+    print(f'Upload status: {upload_status}, Privacy: {privacy}')
+    if rejection:
+        print(f'REJECTED: {rejection}')
+        sys.exit(1)
+    if upload_status in ('processed', 'uploaded'):
+        print(f'✓ Video {video_id} verified OK')
+        sys.exit(0)
+    if upload_status == 'failed':
+        print(f'FATAL: Upload failed — {status.get(\"failureReason\", \"unknown\")}')
+        sys.exit(1)
+
+    print(f'Status: {upload_status}, waiting 30s...')
+    time.sleep(30)
+
+print('FATAL: Video not ready after 5 minutes')
+sys.exit(1)
+"
+```
+
+If verification fails: delete the failed video metadata (`rm processed/metadata/${VIDEO_NAME}.json`), re-upload with `--resume-from upload`, and re-verify. Do NOT proceed to MDX or thumbnail steps with an unverified VIDEO_ID.
+
 **Start Step 4 in parallel** — summary doesn't depend on YouTube URL.
 
 ### Step 3b: Lab-Style Thumbnail (REQUIRED)
@@ -131,7 +181,7 @@ Generate YouTube description from the summary. Use the language-appropriate temp
 
 Do NOT mix languages in a single description.
 
-Meeting page URL: `https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`
+Meeting page URL: `https://${SITE_DOMAIN}/claude-code-lab-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`
 
 Update title, description, tags via YouTube API, then add video to playlist "Claude Code Lab ${LAB_NUMBER}" (auto-created if it does not exist).
 
@@ -188,7 +238,7 @@ Run with `run_in_background: true`. If state is `failure` or `error`: check Verc
 
 ## Step 8: Verify in Browser
 
-Open `https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}` in a browser (via chrome automation tools or manually). Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
+Open `https://${SITE_DOMAIN}/claude-code-lab-${LAB_NUMBER}/meetings/${MEETING_NUMBER}` in a browser (via chrome automation tools or manually). Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
 
 ## Pipeline Report
 

@@ -13,6 +13,8 @@
 ## YouTube API
 - Always pass `--title` from Fathom frontmatter — without it, the LLM generates poor/generic titles for Russian content
 - `youtube.force-ssl` scope is needed for both uploads and metadata updates
+- **Videos can silently disappear after upload.** On 2026-05-16, a video was uploaded successfully (got VIDEO_ID), but YouTube later deleted it (shows as "Deleted video" with `privacyStatusUnspecified`). Always run Step 3a verification after upload. If verification fails, re-upload before proceeding
+- The YouTube oEmbed API (`youtube.com/oembed?url=...`) returns "Not Found" for deleted/private videos — useful quick check
 
 ## Meeting number detection
 - Don't trust auto-detected meeting number blindly — placeholder MDX files may already exist. Check existing files by date content first, use `-n NN` to override
