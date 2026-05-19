@@ -1,346 +1,195 @@
 #!/usr/bin/env python3
-"""Granola meeting notes CLI — query local cache and API, export to Obsidian."""
+"""Granola meeting notes CLI — Personal API, export to Obsidian."""
 
 import json
 import sys
 import os
-import time
 import argparse
+import subprocess
+import urllib.request
+import urllib.parse
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime
 
-GRANOLA_DIR = os.path.expanduser("~/Library/Application Support/Granola")
-SUPABASE_PATH = os.path.join(GRANOLA_DIR, "supabase.json")
+PUBLIC_API_BASE = "https://public-api.granola.ai/v1"
+SOPS_ENV_PATH = os.path.expanduser("~/Brains/brain/.env.granola")
 
 
-def _find_cache_path():
-    """Find the latest cache-v*.json file. Granola bumps the version over time
-    (v4 -> v5 -> v6 ...), so we pick the highest numbered one."""
-    import glob
-
-    candidates = glob.glob(os.path.join(GRANOLA_DIR, "cache-v*.json"))
-    # Filter out .tmp files
-    candidates = [c for c in candidates if not c.endswith(".tmp")]
-    if not candidates:
-        print(
-            "ERROR: No Granola cache file found. Is Granola installed?",
-            file=sys.stderr,
+def _get_api_key():
+    """Decrypt Personal API Key from sops-encrypted .env.granola."""
+    try:
+        result = subprocess.run(
+            ["sops", "-d", SOPS_ENV_PATH],
+            capture_output=True, text=True, timeout=10,
         )
-        sys.exit(1)
-    # Sort by version number extracted from filename
-    candidates.sort(
-        key=lambda p: int(os.path.basename(p).split("-v")[1].split(".json")[0]),
-        reverse=True,
-    )
-    return candidates[0]
+        if result.returncode == 0:
+            for line in result.stdout.strip().splitlines():
+                if line.startswith("GRANOLA_API_KEY="):
+                    return line.split("=", 1)[1].strip()
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    print("ERROR: Cannot decrypt Granola API key from", SOPS_ENV_PATH, file=sys.stderr)
+    sys.exit(1)
 
 
-CACHE_PATH = _find_cache_path()
-API_BASE = "https://api.granola.ai"
-
-
-def load_cache():
-    with open(CACHE_PATH, "r") as f:
-        raw = json.load(f)
-    state = raw.get("cache", {})
-    if isinstance(state.get("state"), str):
-        state = json.loads(state["state"])
-    else:
-        state = state.get("state", {})
-    return state
-
-
-def get_access_token():
-    with open(SUPABASE_PATH, "r") as f:
-        data = json.load(f)
-    tokens = json.loads(data["workos_tokens"])
-    obtained = tokens["obtained_at"]
-    expires_ms = obtained + tokens["expires_in"] * 1000
-    now_ms = int(time.time() * 1000)
-    if now_ms >= expires_ms:
-        print("ERROR: Access token expired. Open Granola app to refresh.", file=sys.stderr)
-        sys.exit(1)
-    return tokens["access_token"]
-
-
-def api_request(endpoint, payload=None):
-    """Make authenticated API request to Granola."""
-    import urllib.request
-    import gzip
-
-    token = get_access_token()
-    url = f"{API_BASE}{endpoint}"
-    data = json.dumps(payload or {}).encode("utf-8")
+def api_get(path, params=None):
+    """GET request to Granola Personal API."""
+    key = _get_api_key()
+    url = f"{PUBLIC_API_BASE}{path}"
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(
         url,
-        data=data,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-            "Accept-Encoding": "gzip, deflate",
-        },
-        method="POST",
+        headers={"Authorization": f"Bearer {key}"},
+        method="GET",
     )
-    with urllib.request.urlopen(req) as resp:
-        body = resp.read()
-        if resp.headers.get("Content-Encoding") == "gzip":
-            body = gzip.decompress(body)
-        return json.loads(body.decode("utf-8"))
-
-
-def extract_people(doc):
-    """Extract attendee names/emails from document."""
-    people = doc.get("people", {})
-    if not isinstance(people, dict):
-        return []
-    attendees = people.get("attendees", [])
-    result = []
-    for a in attendees:
-        if isinstance(a, dict):
-            name = None
-            details = a.get("details", {})
-            if isinstance(details, dict):
-                person = details.get("person", {})
-                if isinstance(person, dict):
-                    name_obj = person.get("name", {})
-                    if isinstance(name_obj, dict):
-                        name = name_obj.get("fullName")
-            email = a.get("email", "")
-            result.append({"name": name or email.split("@")[0], "email": email})
-    return result
-
-
-def extract_calendar_times(doc):
-    """Extract start/end times from calendar event."""
-    cal = doc.get("google_calendar_event")
-    if not cal or not isinstance(cal, dict):
-        return None, None
-    start = cal.get("start", {}).get("dateTime")
-    end = cal.get("end", {}).get("dateTime")
-    return start, end
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        print(f"API error {e.code}: {body}", file=sys.stderr)
+        sys.exit(1)
 
 
 def format_time(iso_str):
-    """Format ISO timestamp to HH:MM."""
     if not iso_str:
         return "?"
     try:
-        dt = datetime.fromisoformat(iso_str)
-        return dt.strftime("%H:%M")
+        return datetime.fromisoformat(iso_str).strftime("%H:%M")
     except (ValueError, TypeError):
         return "?"
 
 
 def cmd_list(args):
-    """List all meetings from local cache."""
-    state = load_cache()
-    docs = state.get("documents", {})
-    transcripts = state.get("transcripts", {})
+    """List meetings via Personal API."""
+    all_notes = []
+    cursor = None
 
-    sorted_docs = sorted(
-        docs.values(), key=lambda d: d.get("created_at", ""), reverse=True
-    )
+    while True:
+        params = {}
+        if cursor:
+            params["cursor"] = cursor
+        if args.after:
+            params["created_after"] = args.after
 
-    output = {"meetings": []}
-    for doc in sorted_docs:
-        doc_id = doc.get("id", "")
-        title = doc.get("title") or "(Untitled)"
-        created = doc.get("created_at", "")[:10]
-        people = extract_people(doc)
-        start, end = extract_calendar_times(doc)
-        has_transcript = doc_id in transcripts
-        transcript_count = len(transcripts.get(doc_id, []))
+        data = api_get("/notes", params if params else None)
+        notes = data.get("notes", [])
+        all_notes.extend(notes)
 
-        entry = {
-            "id": doc_id,
-            "title": title,
-            "date": created,
-            "start": format_time(start),
-            "end": format_time(end),
-            "attendees": [p["name"] for p in people],
-            "has_local_transcript": has_transcript,
-            "transcript_utterances": transcript_count,
-        }
-        output["meetings"].append(entry)
+        if not args.all or not data.get("hasMore"):
+            break
+        cursor = data.get("cursor")
+        if not cursor:
+            break
 
     if args.format == "json":
-        print(json.dumps(output, ensure_ascii=False, indent=2))
+        print(json.dumps({"notes": all_notes, "count": len(all_notes)}, ensure_ascii=False, indent=2))
     else:
-        print(f"Found {len(output['meetings'])} meetings in Granola:\n")
-        for m in output["meetings"]:
-            tx = f" [{m['transcript_utterances']} utterances]" if m["has_local_transcript"] else ""
-            attendees = f" with {', '.join(m['attendees'])}" if m["attendees"] else ""
-            print(f"  {m['date']} {m['start']}-{m['end']}  {m['title']}{attendees}{tx}")
-            print(f"    id: {m['id']}")
-
-
-def find_document(docs, meeting_id):
-    """Find a document by ID prefix or title substring."""
-    for did, d in docs.items():
-        if did.startswith(meeting_id) or (
-            meeting_id.lower() in (d.get("title") or "").lower()
-        ):
-            return d
-    return None
-
-
-def require_document(docs, meeting_id):
-    """Find a document or exit with error."""
-    doc = find_document(docs, meeting_id)
-    if not doc:
-        print(f"Meeting not found: {meeting_id}", file=sys.stderr)
-        sys.exit(1)
-    return doc
+        print(f"Found {len(all_notes)} notes:\n")
+        for n in all_notes:
+            date = n.get("created_at", "")[:10]
+            title = n.get("title") or "(Untitled)"
+            owner = n.get("owner", {}).get("name", "")
+            nid = n.get("id", "")
+            attendees = n.get("attendees", [])
+            names = ", ".join(a.get("name", a.get("email", "")) for a in attendees[:4])
+            att_str = f" with {names}" if names else ""
+            print(f"  {date}  {title}{att_str}")
+            print(f"    id: {nid}")
 
 
 def cmd_show(args):
-    """Show details of a specific meeting."""
-    state = load_cache()
-    docs = state.get("documents", {})
-    transcripts = state.get("transcripts", {})
-
-    doc = require_document(docs, args.meeting_id)
-
-    doc_id = doc["id"]
-    result = {
-        "id": doc_id,
-        "title": doc.get("title") or "(Untitled)",
-        "date": doc.get("created_at", "")[:10],
-        "attendees": extract_people(doc),
-        "calendar": None,
-        "notes_markdown": doc.get("notes_markdown") or "",
-        "notes_plain": doc.get("notes_plain") or "",
-        "summary": doc.get("summary") or "",
-    }
-
-    cal = doc.get("google_calendar_event")
-    if cal and isinstance(cal, dict):
-        result["calendar"] = {
-            "title": cal.get("summary"),
-            "start": cal.get("start", {}).get("dateTime"),
-            "end": cal.get("end", {}).get("dateTime"),
-        }
-
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-
-
-def cmd_transcript(args):
-    """Get transcript for a meeting (local cache or API)."""
-    state = load_cache()
-    docs = state.get("documents", {})
-    transcripts = state.get("transcripts", {})
-
-    doc = require_document(docs, args.meeting_id)
-
-    doc_id = doc["id"]
-    utterances = transcripts.get(doc_id)
-
-    # Try local cache first, then API
-    if not utterances and not args.local_only:
-        try:
-            utterances = api_request("/v1/get-document-transcript", {"document_id": doc_id})
-            if isinstance(utterances, dict) and "message" in utterances:
-                utterances = None
-        except Exception as e:
-            print(f"API fetch failed: {e}", file=sys.stderr)
-            utterances = None
-
-    if not utterances:
-        print(f"No transcript available for: {doc.get('title')}", file=sys.stderr)
-        sys.exit(1)
+    """Show a single note with summary."""
+    params = {"include": "transcript"} if args.transcript else None
+    note = api_get(f"/notes/{args.note_id}", params)
 
     if args.format == "json":
-        print(json.dumps(utterances, ensure_ascii=False, indent=2))
-    else:
-        for u in utterances:
-            ts = u.get("start_timestamp", "")
-            text = u.get("text", "")
-            source = u.get("source", "")
-            time_str = format_time(ts) if ts else ""
-            src_tag = f" [{source}]" if source else ""
-            print(f"[{time_str}]{src_tag} {text}")
+        print(json.dumps(note, ensure_ascii=False, indent=2))
+        return
 
+    title = note.get("title") or "(Untitled)"
+    date = note.get("created_at", "")[:10]
+    owner = note.get("owner", {}).get("name", "")
+    attendees = [a.get("name", a.get("email", "")) for a in note.get("attendees", [])]
+    cal = note.get("calendar_event", {})
 
-def compute_duration(utterances):
-    """Compute duration from first to last utterance timestamps."""
-    if not utterances:
-        return None
-    first_ts = utterances[0].get("start_timestamp", "")
-    last_ts = utterances[-1].get("end_timestamp", "")
-    if not first_ts or not last_ts:
-        return None
-    try:
-        t0 = datetime.fromisoformat(first_ts.replace("Z", "+00:00"))
-        t1 = datetime.fromisoformat(last_ts.replace("Z", "+00:00"))
-        delta = t1 - t0
-        minutes = int(delta.total_seconds() / 60)
-        return f"{minutes // 60:02d}:{minutes % 60:02d}"
-    except (ValueError, TypeError):
-        return None
+    print(f"# {title}")
+    print(f"Date: {date}  Owner: {owner}")
+    if cal:
+        start = format_time(cal.get("start_time"))
+        end = format_time(cal.get("end_time"))
+        print(f"Time: {start}–{end}")
+    if attendees:
+        print(f"Attendees: {', '.join(attendees)}")
+    print()
+
+    summary = note.get("summary_markdown") or note.get("summary_text") or ""
+    if summary:
+        print("## Summary\n")
+        print(summary)
+        print()
+
+    transcript = note.get("transcript")
+    if transcript:
+        print("## Transcript\n")
+        for u in transcript:
+            ts = format_time(u.get("start_time", ""))
+            text = u.get("text", "").strip()
+            speaker = u.get("speaker", {})
+            source = speaker.get("source", "") if isinstance(speaker, dict) else ""
+            label = speaker.get("diarization_label", "") if isinstance(speaker, dict) else ""
+            tag = label or source or ""
+            tag_str = f" [{tag}]" if tag else ""
+            print(f"[{ts}]{tag_str} {text}")
 
 
 def cmd_export(args):
-    """Export meeting to Obsidian markdown note (Fathom-compatible format)."""
-    state = load_cache()
-    docs = state.get("documents", {})
-    transcripts = state.get("transcripts", {})
-    metadata = state.get("meetingsMetadata", {})
+    """Export note to Obsidian markdown (Fathom-compatible format)."""
+    note = api_get(f"/notes/{args.note_id}", {"include": "transcript"})
 
-    doc = require_document(docs, args.meeting_id)
+    title = note.get("title") or "(Untitled)"
+    note_id = note.get("id", "")
+    created_at = note.get("created_at", "")
+    date_short = created_at[:10].replace("-", "")
+    date_dash = created_at[:10]
+    owner = note.get("owner", {}).get("name", "")
+    attendees = note.get("attendees", [])
+    participant_names = []
+    if owner:
+        participant_names.append(owner)
+    for a in attendees:
+        name = a.get("name", a.get("email", ""))
+        if name and name not in participant_names:
+            participant_names.append(name)
 
-    doc_id = doc["id"]
-    title = doc.get("title") or "(Untitled)"
-    created = doc.get("created_at", "")[:10].replace("-", "")
-    created_dash = doc.get("created_at", "")[:10]
-    people = extract_people(doc)
-    start, end = extract_calendar_times(doc)
-    notes_md = doc.get("notes_markdown") or ""
-    summary = doc.get("summary") or ""
+    cal = note.get("calendar_event", {})
+    start_time = cal.get("start_time") if cal else None
+    end_time = cal.get("end_time") if cal else None
 
-    # Get transcript
-    utterances = transcripts.get(doc_id)
-    if not utterances and not args.local_only:
+    duration = None
+    if start_time and end_time:
         try:
-            utterances = api_request("/v1/get-document-transcript", {"document_id": doc_id})
-            if isinstance(utterances, dict):
-                utterances = None
-        except Exception:
-            utterances = None
-
-    # Compute duration
-    duration = compute_duration(utterances)
-    if not duration and start and end:
-        try:
-            t0 = datetime.fromisoformat(start)
-            t1 = datetime.fromisoformat(end)
+            t0 = datetime.fromisoformat(start_time)
+            t1 = datetime.fromisoformat(end_time)
             mins = int((t1 - t0).total_seconds() / 60)
             duration = f"{mins // 60:02d}:{mins % 60:02d}"
         except (ValueError, TypeError):
-            duration = None
+            pass
 
-    # Build participant list including creator
-    participant_names = []
-    people_dict = doc.get("people", {})
-    if isinstance(people_dict, dict):
-        creator = people_dict.get("creator", {})
-        if isinstance(creator, dict) and creator.get("name"):
-            participant_names.append(creator["name"])
-    for p in people:
-        if p["name"] not in participant_names:
-            participant_names.append(p["name"])
+    summary = note.get("summary_markdown") or note.get("summary_text") or ""
+    transcript = note.get("transcript") or []
 
-    # Build slug
     slug = title.lower().strip()
     for ch in ".,!?:;'\"()[]{}":
         slug = slug.replace(ch, "")
     slug = slug.replace(" ", "-").replace("--", "-")[:60].rstrip("-")
-    filename = f"{created}-{slug}.md"
+    filename = f"{date_short}-{slug}.md"
 
-    # Build frontmatter (Fathom-compatible)
     lines = ["---"]
-    lines.append(f"granola_id: {doc_id}")
-    lines.append(f"title: \"{title}\"")
-    lines.append(f"date: {created_dash}")
+    lines.append(f"granola_id: {note_id}")
+    lines.append(f'title: "{title}"')
+    lines.append(f"date: {date_dash}")
     if participant_names:
         lines.append(f"participants: {json.dumps(participant_names)}")
     if duration:
@@ -357,29 +206,25 @@ def cmd_export(args):
         lines.append(summary)
         lines.append("")
 
-    if notes_md:
-        lines.append("## Notes")
-        lines.append("")
-        lines.append(notes_md)
-        lines.append("")
-
-    if utterances:
+    if transcript:
         lines.append("## Transcript")
         lines.append("")
-        for u in utterances:
+        for u in transcript:
             text = u.get("text", "").strip()
             if not text:
                 continue
-            source = u.get("source", "")
-            # Granola doesn't have per-utterance speaker names.
-            # Use source label as speaker stand-in.
-            if source == "microphone":
-                speaker = participant_names[0] if participant_names else "Speaker"
-            elif source == "system":
-                speaker = "Other"
+            speaker = u.get("speaker", {})
+            source = speaker.get("source", "") if isinstance(speaker, dict) else ""
+            label = speaker.get("diarization_label", "") if isinstance(speaker, dict) else ""
+            if label:
+                speaker_name = label
+            elif source == "microphone":
+                speaker_name = participant_names[0] if participant_names else "Speaker"
+            elif source == "speaker":
+                speaker_name = "Other"
             else:
-                speaker = "Speaker"
-            lines.append(f"**{speaker}**: {text}")
+                speaker_name = "Speaker"
+            lines.append(f"**{speaker_name}**: {text}")
             lines.append("")
 
     content = "\n".join(lines)
@@ -394,73 +239,34 @@ def cmd_export(args):
     print(json.dumps({
         "exported": str(out_path),
         "title": title,
-        "date": created,
+        "date": date_short,
         "participants": participant_names,
         "duration": duration,
-        "utterances": len(utterances) if utterances else 0,
+        "utterances": len(transcript),
     }, ensure_ascii=False, indent=2))
 
 
-def cmd_api_list(args):
-    """List all meetings via Granola API (may have more than local cache)."""
-    result = api_request("/v2/get-documents", {
-        "limit": args.limit,
-        "offset": args.offset,
-        "include_content": True,
-    })
-    docs = result.get("docs", [])
-    output = {"meetings": [], "total_returned": len(docs)}
-    for doc in docs:
-        people = extract_people(doc)
-        start, end = extract_calendar_times(doc)
-        output["meetings"].append({
-            "id": doc.get("id", ""),
-            "title": doc.get("title") or "(Untitled)",
-            "date": doc.get("created_at", "")[:10],
-            "start": format_time(start),
-            "end": format_time(end),
-            "attendees": [p["name"] for p in people],
-            "has_notes": bool(doc.get("notes_markdown")),
-            "has_summary": bool(doc.get("summary")),
-        })
-    print(json.dumps(output, ensure_ascii=False, indent=2))
-
-
 def main():
-    parser = argparse.ArgumentParser(description="Granola meeting notes CLI")
+    parser = argparse.ArgumentParser(description="Granola meeting notes CLI (Personal API)")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # list
-    p_list = sub.add_parser("list", help="List meetings from local cache")
+    p_list = sub.add_parser("list", help="List notes")
     p_list.add_argument("--format", choices=["text", "json"], default="text")
+    p_list.add_argument("--after", help="ISO 8601 date filter (created_after)")
+    p_list.add_argument("--all", action="store_true", help="Paginate through all results")
     p_list.set_defaults(func=cmd_list)
 
-    # show
-    p_show = sub.add_parser("show", help="Show meeting details")
-    p_show.add_argument("meeting_id", help="Document ID (prefix) or title substring")
+    p_show = sub.add_parser("show", help="Show note details")
+    p_show.add_argument("note_id", help="Note ID (not_xxxx)")
+    p_show.add_argument("--format", choices=["text", "json"], default="text")
+    p_show.add_argument("--transcript", action="store_true", help="Include transcript")
     p_show.set_defaults(func=cmd_show)
 
-    # transcript
-    p_tx = sub.add_parser("transcript", help="Get meeting transcript")
-    p_tx.add_argument("meeting_id", help="Document ID (prefix) or title substring")
-    p_tx.add_argument("--format", choices=["text", "json"], default="text")
-    p_tx.add_argument("--local-only", action="store_true", help="Only use local cache")
-    p_tx.set_defaults(func=cmd_transcript)
-
-    # export
-    p_exp = sub.add_parser("export", help="Export meeting to Obsidian note")
-    p_exp.add_argument("meeting_id", help="Document ID (prefix) or title substring")
-    p_exp.add_argument("--vault", default=os.path.expanduser("~/Brains/brain"),
-                       help="Obsidian vault path")
-    p_exp.add_argument("--output", help="Custom output path (overrides vault)")
-    p_exp.add_argument("--local-only", action="store_true")
-    p_exp.set_defaults(func=cmd_export)
-
-    # api-list
-    p_api = sub.add_parser("api-list", help="List meetings via Granola API")
-    p_api.add_argument("--limit", type=int, default=50)
-    p_api.add_argument("--offset", type=int, default=0)
-    p_api.set_defaults(func=cmd_api_list)
+    p_export = sub.add_parser("export", help="Export note to Obsidian")
+    p_export.add_argument("note_id", help="Note ID (not_xxxx)")
+    p_export.add_argument("--vault", default=os.path.expanduser("~/Brains/brain"))
+    p_export.add_argument("--output", help="Custom output path")
+    p_export.set_defaults(func=cmd_export)
 
     args = parser.parse_args()
     args.func(args)
