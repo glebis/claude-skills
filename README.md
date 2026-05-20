@@ -1403,6 +1403,25 @@ cp -r session-search ~/.claude/skills/
 
 **Use when:** Finding previous Claude Code sessions about specific topics, locating past debugging conversations, or searching for research/planning sessions.
 
+### [Ecosystem Audit](./ecosystem/) ⭐ NEW
+On-demand audit of your Claude Code ecosystem — skill health/staleness, project activity pulse, CLAUDE.md instruction drift, and Mac Mini service status. Prints a full report and appends a summary to your Obsidian daily note.
+
+**Checks:**
+- **Skill Health**: classifies 150+ skills as active/recent/stale, detects broken symlinks
+- **Project Pulse**: scans git repos by last commit date, flags missing CLAUDE.md
+- **CLAUDE.md Drift**: finds stale instructions (>90 days behind project) and untracked files
+- **Mac Mini Health**: SSH check for services, LaunchAgents, health pipeline (via Tailscale)
+
+**Quick Start:**
+```bash
+cp -r ecosystem ~/.claude/skills/
+/ecosystem
+```
+
+**Use when:** Periodic health check of your Claude Code setup, finding stale skills to prune, checking if Mac Mini services are running, or reviewing which projects are abandoned.
+
+---
+
 ### [Balanced Dialog](./balanced/) ⭐ NEW
 Evidence-based dialogue mode that replaces sycophantic AI responses with structured, critical analysis. Five modes for different contexts — from quick gut-checks to deep Socratic dialogue.
 
