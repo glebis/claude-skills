@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sand: #f5f0e8;
+  --ink: #2c2c2c;
+  --ink-light: #5a5a5a;
+  --accent-1: #c4756e;
+  --accent-2: #6b7c4e;
+  --accent-3: #5b7b8a;
+  --accent-4: #c9a84c;
+  --rule: #d4cfc4;
+  --bg: #faf8f3;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 20px; -webkit-font-smoothing: antialiased; }
+body { font-family: 'EB Garamond', Georgia, serif; background: var(--bg); color: var(--ink); line-height: 1.55; padding-top: 40px; }
+
+/* ===== HERO ENTRANCE ===== */
+.hero-label, .hero h1, .hero .subtitle, .hero-meta {
+  opacity: 0; transform: translateY(18px);
+  animation: heroIn 0.7s var(--ease-out-quart) forwards;
+}
+.hero-label { animation-delay: 0.1s; }
+.hero h1 { animation-delay: 0.25s; }
+.hero .subtitle { animation-delay: 0.45s; }
+.hero-meta { animation-delay: 0.6s; }
+@keyframes heroIn { to { opacity: 1; transform: translateY(0); } }
+
+/* ===== SCROLL REVEAL ===== */
+.reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.6s var(--ease-out-quart), transform 0.6s var(--ease-out-quart);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-stagger > .reveal:nth-child(1) { transition-delay: 0s; }
+.reveal-stagger > .reveal:nth-child(2) { transition-delay: 0.08s; }
+.reveal-stagger > .reveal:nth-child(3) { transition-delay: 0.16s; }
+.reveal-stagger > .reveal:nth-child(4) { transition-delay: 0.24s; }
+
+/* ===== H2 RULE DRAW ===== */
+h2 {
+  background-image: linear-gradient(var(--ink), var(--ink));
+  background-size: 0% 2px; background-position: bottom left; background-repeat: no-repeat;
+  padding-bottom: 0.5rem; transition: background-size 0.5s var(--ease-out-quart);
+}
+h2.visible { background-size: 100% 2px; }
+
+/* ===== FIGURE FADE ===== */
+.figure img { transition: opacity 0.5s var(--ease-out-quart), transform 0.5s var(--ease-out-quart); }
+.figure:not(.visible) img { opacity: 0.4; transform: scale(0.97); }
+.figure.visible img { opacity: 1; transform: scale(1); }
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  .hero-label, .hero h1, .hero .subtitle, .hero-meta { animation: none; opacity: 1; transform: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  h2 { background-size: 100% 2px; transition: none; }
+  .figure img { opacity: 1; transform: none; transition: none; }
+  .slide { transition: none; }
+}
+
+/* ===== MODE BAR ===== */
+.mode-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: var(--ink); color: white;
+  display: flex; align-items: center; justify-content: center; gap: 1rem;
+  padding: 0.5rem 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.6rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  transition: transform 0.35s var(--ease-out-quart), opacity 0.35s var(--ease-out-quart);
+}
+.mode-bar.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+.mode-bar button { background: none; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.3em 1em; font-family: inherit; font-size: inherit; letter-spacing: inherit; text-transform: uppercase; cursor: pointer; border-radius: 2px; transition: all 0.2s; }
+.mode-bar button.active { background: white; color: var(--ink); border-color: white; }
+.mode-bar button:hover { border-color: white; }
+
+.audio-controls { display: flex; align-items: center; gap: 0.6rem; margin-left: 1.5rem; padding-left: 1.5rem; border-left: 1px solid rgba(255,255,255,0.2); }
+.audio-controls button { background: none; border: 1px solid rgba(255,255,255,0.3); color: white; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 2px; font-size: 14px; transition: all 0.2s; }
+.audio-controls button:hover { border-color: white; }
+.audio-controls button.playing { background: var(--accent-1); border-color: var(--accent-1); }
+.audio-progress { width: 100px; height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; }
+.audio-progress-fill { height: 100%; background: var(--accent-1); width: 0%; transition: width 0.3s; }
+.audio-time { font-variant-numeric: tabular-nums; min-width: 3em; }
+
+/* ===== ARTICLE MODE ===== */
+.hero { min-height: 65vh; display: flex; flex-direction: column; justify-content: flex-end; padding: 4rem 2rem 3rem; background: var(--sand); border-bottom: 3px solid var(--ink); position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; }
+.hero-inner { max-width: 1100px; margin: 0 auto; width: 100%; position: relative; z-index: 1; }
+.hero-label { font-family: 'DM Sans', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent-3); margin-bottom: 1.5rem; }
+.hero h1 { font-size: 3.8rem; line-height: 1.05; font-weight: 700; letter-spacing: -0.02em; max-width: 14em; margin-bottom: 1.2rem; }
+.hero .subtitle { font-size: 1.35rem; font-style: italic; color: var(--ink-light); max-width: 32em; line-height: 1.4; }
+.hero-meta { margin-top: 2rem; font-family: 'DM Sans', sans-serif; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-light); display: flex; gap: 2rem; flex-wrap: wrap; }
+.container { max-width: 1100px; margin: 0 auto; padding: 3rem 2rem; }
+
+.exec-summary { background: var(--sand); border: 2px solid var(--ink); padding: 2.5rem; margin-bottom: 4rem; position: relative; }
+.exec-summary::before { content: 'Executive Summary'; position: absolute; top: -0.6em; left: 1.5rem; background: var(--sand); padding: 0 0.6rem; font-family: 'DM Sans', sans-serif; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-3); }
+.exec-summary p { font-size: 1.15rem; line-height: 1.6; margin-bottom: 1rem; }
+.exec-summary p:last-child { margin-bottom: 0; }
+
+.section { margin-bottom: 4rem; }
+.section-number { font-family: 'DM Sans', sans-serif; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-1); margin-bottom: 0.5rem; }
+h2 { font-size: 2.4rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.015em; margin-bottom: 1.5rem; }
+h3 { font-size: 1.4rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.8rem; }
+p { font-size: 1rem; line-height: 1.6; margin-bottom: 1rem; max-width: 38em; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin: 2rem 0; }
+.two-col p { max-width: none; }
+
+.stat-card { background: var(--sand); padding: 1.8rem; border-left: 4px solid var(--accent-1); }
+.stat-card .number { font-family: 'DM Sans', sans-serif; font-size: 3.2rem; font-weight: 700; line-height: 1; color: var(--accent-1); letter-spacing: -0.03em; }
+.stat-card .label { font-size: 0.85rem; line-height: 1.35; margin-top: 0.5rem; color: var(--ink-light); }
+.stat-card .source { font-family: 'DM Sans', sans-serif; font-size: 0.55rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent-3); margin-top: 0.6rem; }
+.stat-card:nth-child(2) { border-left-color: var(--accent-2); }
+.stat-card:nth-child(2) .number { color: var(--accent-2); }
+.stat-card:nth-child(3) { border-left-color: var(--accent-3); }
+.stat-card:nth-child(3) .number { color: var(--accent-3); }
+.stat-card:nth-child(4) { border-left-color: var(--accent-4); }
+.stat-card:nth-child(4) .number { color: var(--accent-4); }
+
+.figure { margin: 2.5rem 0; }
+.figure img { width: 100%; max-width: 600px; display: block; border: 1px solid var(--rule); }
+.figure.full img { max-width: 100%; }
+.figure.float-right { float: right; margin: 0 0 1.5rem 2.5rem; max-width: 340px; }
+.figure.float-right img { max-width: 100%; }
+.figure-caption { font-family: 'DM Sans', sans-serif; font-size: 0.6rem; letter-spacing: 0.05em; color: var(--ink-light); margin-top: 0.4rem; text-transform: uppercase; }
+
+.data-table { width: 100%; border-collapse: collapse; margin: 2rem 0; font-size: 0.85rem; }
+.data-table th { font-family: 'DM Sans', sans-serif; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; text-align: left; padding: 0.8rem 1rem; border-bottom: 2px solid var(--ink); color: var(--ink-light); }
+.data-table td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.4; }
+.data-table tr:last-child td { border-bottom: 2px solid var(--ink); }
+
+.rec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0; }
+.rec-card { padding: 1.8rem; border: 1px solid var(--rule); background: white; }
+.rec-card .rec-number { font-family: 'DM Sans', sans-serif; font-size: 2rem; font-weight: 700; color: var(--rule); line-height: 1; margin-bottom: 0.5rem; }
+.rec-card h4 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.6rem; }
+.rec-card p { font-size: 0.85rem; color: var(--ink-light); margin-bottom: 0; max-width: none; }
+
+.prose-list { margin: 1.5rem 0; }
+.prose-list dt { font-weight: 600; font-size: 1rem; margin-top: 1rem; }
+.prose-list dt:first-child { margin-top: 0; }
+.prose-list dd { font-size: 0.9rem; color: var(--ink-light); margin-left: 0; margin-top: 0.2rem; }
+
+.badge { display: inline-block; font-family: 'DM Sans', sans-serif; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.2em 0.6em; border-radius: 2px; }
+.badge-accent { background: var(--accent-2); color: white; }
+
+.divider { border: none; border-top: 1px solid var(--rule); margin: 3rem 0; }
+
+.footer { border-top: 2px solid var(--ink); padding: 2rem 0; margin-top: 4rem; }
+.footer-inner { max-width: 1100px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; flex-wrap: wrap; }
+.footer-col h4 { font-family: 'DM Sans', sans-serif; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.8rem; }
+.footer-col a { display: block; font-size: 0.75rem; color: var(--accent-3); text-decoration: none; line-height: 1.8; }
+.footer-col a:hover { text-decoration: underline; }
+
+/* ===== SLIDE MODE ===== */
+body.slide-mode .article-content { display: none; }
+body.slide-mode .slide-deck { display: flex; }
+body:not(.slide-mode) .slide-deck { display: none; }
+
+.slide-deck { position: fixed; inset: 0; top: 40px; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); overflow: hidden; }
+
+.slide {
+  position: absolute; inset: 0; top: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 3rem 5rem;
+  opacity: 0; visibility: hidden; transform: translateY(12px);
+  transition: opacity 0.45s var(--ease-out-quart), transform 0.45s var(--ease-out-quart), visibility 0s 0.45s;
+  pointer-events: none;
+}
+.slide.active {
+  opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto;
+  transition: opacity 0.45s var(--ease-out-quart), transform 0.45s var(--ease-out-quart), visibility 0s 0s;
+}
+.slide-inner { max-width: 1000px; width: 100%; }
+.slide .slide-label { font-family: 'DM Sans', sans-serif; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-3); margin-bottom: 1rem; }
+.slide h2 { font-size: 3rem; line-height: 1.08; background: none; padding: 0; margin-bottom: 1.2rem; }
+.slide p { font-size: 1.15rem; line-height: 1.6; max-width: 34em; }
+.slide img { max-height: 380px; border: 1px solid var(--rule); }
+
+.slide .slide-stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; margin: 1.5rem 0; }
+.slide .slide-stat .number { font-family: 'DM Sans', sans-serif; font-size: 3.5rem; font-weight: 700; line-height: 1; }
+.slide .slide-stat .label { font-size: 0.8rem; color: var(--ink-light); margin-top: 0.3rem; line-height: 1.3; }
+
+.slide .slide-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; margin-top: 1.5rem; }
+.slide .slide-finding { margin-bottom: 1rem; }
+.slide .slide-finding h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.2rem; }
+.slide .slide-finding p { font-size: 0.85rem; color: var(--ink-light); margin-bottom: 0; }
+
+.slide .slide-grid-3x2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; margin-top: 1.2rem; }
+.slide .slide-card { padding: 1.2rem; border: 1px solid var(--rule); background: white; }
+.slide .slide-card .card-num { font-family: 'DM Sans', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--rule); line-height: 1; }
+.slide .slide-card h4 { font-size: 0.9rem; font-weight: 600; margin: 0.3rem 0; }
+.slide .slide-card p { font-size: 0.72rem; color: var(--ink-light); margin: 0; max-width: none; line-height: 1.4; }
+
+.slide .sources-table { font-size: 0.78rem; width: 100%; }
+.slide .sources-table td { padding: 0.4rem 0.8rem; border-bottom: 1px solid var(--rule); }
+.slide .sources-table a { color: var(--accent-3); }
+
+/* Slide nav */
+.slide-nav {
+  position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 100;
+  display: none; align-items: center; gap: 1.5rem;
+  font-family: 'DM Sans', sans-serif;
+  transition: transform 0.35s var(--ease-out-quart), opacity 0.35s var(--ease-out-quart);
+}
+body.slide-mode .slide-nav { display: flex; }
+.slide-nav.hidden { transform: translateX(-50%) translateY(120%); opacity: 0; pointer-events: none; }
+.slide-nav button { background: none; border: none; color: var(--ink); cursor: pointer; font-size: 2rem; line-height: 1; padding: 0.3em 0.5em; border-radius: 3px; transition: background 0.2s, color 0.2s; }
+.slide-nav button:hover { background: var(--sand); }
+.slide-dots { display: flex; gap: 7px; }
+.slide-dots span { width: 9px; height: 9px; border-radius: 50%; background: var(--rule); transition: all 0.3s var(--ease-out-quart); cursor: pointer; }
+.slide-dots span:hover { background: var(--ink-light); }
+.slide-dots span.active { background: var(--accent-1); transform: scale(1.4); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  html { font-size: 17px; }
+  .hero h1 { font-size: 2.4rem; }
+  .two-col, .rec-grid { grid-template-columns: 1fr; }
+  .figure.float-right { float: none; max-width: 100%; margin: 2rem 0; }
+  .hero-meta { flex-direction: column; gap: 0.5rem; }
+  .footer-inner { flex-direction: column; }
+  .stat-card .number { font-size: 2.4rem; }
+  .slide { padding: 2rem 1.5rem; }
+  .slide .slide-stat-row { grid-template-columns: 1fr 1fr; }
+  .slide .slide-grid-3x2 { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- MODE BAR -->
+<div class="mode-bar hidden">
+  <button id="btn-article" class="active" onclick="setMode('article')">Article</button>
+  <button id="btn-slides" onclick="setMode('slides')">Slides</button>
+  <div class="audio-controls">
+    <button id="btn-play" onclick="toggleAudio()" title="Play narration">&#9654;</button>
+    <div class="audio-progress"><div class="audio-progress-fill" id="progress-fill"></div></div>
+    <span class="audio-time" id="audio-time">0:00</span>
+  </div>
+</div>
+
+<!-- ===== ARTICLE CONTENT ===== -->
+<div class="article-content">
+{{ARTICLE_CONTENT}}
+</div>
+
+<!-- ===== SLIDE DECK ===== -->
+<div class="slide-deck">
+{{SLIDE_CONTENT}}
+</div>
+
+<!-- Slide navigation -->
+<div class="slide-nav hidden">
+  <button onclick="prevSlide()" title="Previous slide">&larr;</button>
+  <div class="slide-dots" id="slide-dots"></div>
+  <button onclick="nextSlide()" title="Next slide">&rarr;</button>
+</div>
+
+<script>
+// ===== ZONE-BASED BAR VISIBILITY =====
+let barVisMode = 'zone';
+const modeBar = document.querySelector('.mode-bar');
+const slideNav = document.querySelector('.slide-nav');
+let barHideTimer = null;
+let navHideTimer = null;
+
+function updateBarVis(mouseY) {
+  if (barVisMode === 'show') { modeBar.classList.remove('hidden'); slideNav.classList.remove('hidden'); return; }
+  if (barVisMode === 'hide') { modeBar.classList.add('hidden'); slideNav.classList.add('hidden'); return; }
+  const vh = window.innerHeight;
+  if (mouseY <= vh * 0.2) {
+    modeBar.classList.remove('hidden');
+    clearTimeout(barHideTimer);
+    barHideTimer = setTimeout(() => modeBar.classList.add('hidden'), 2000);
+  }
+  if (mouseY >= vh * 0.8 && document.body.classList.contains('slide-mode')) {
+    slideNav.classList.remove('hidden');
+    clearTimeout(navHideTimer);
+    navHideTimer = setTimeout(() => slideNav.classList.add('hidden'), 2000);
+  }
+}
+document.addEventListener('mousemove', e => updateBarVis(e.clientY));
+modeBar.addEventListener('mouseenter', () => { clearTimeout(barHideTimer); modeBar.classList.remove('hidden'); });
+modeBar.addEventListener('mouseleave', () => { barHideTimer = setTimeout(() => { if (barVisMode === 'zone') modeBar.classList.add('hidden'); }, 1500); });
+slideNav.addEventListener('mouseenter', () => { clearTimeout(navHideTimer); slideNav.classList.remove('hidden'); });
+slideNav.addEventListener('mouseleave', () => { navHideTimer = setTimeout(() => { if (barVisMode === 'zone') slideNav.classList.add('hidden'); }, 1500); });
+
+document.addEventListener('keydown', e => {
+  if (e.shiftKey && e.key === '>') { e.preventDefault(); barVisMode = barVisMode === 'zone' ? 'show' : barVisMode === 'show' ? 'hide' : 'zone'; updateBarVis(-1); }
+});
+
+// ===== MODE =====
+function setMode(mode) {
+  document.body.classList.toggle('slide-mode', mode === 'slides');
+  document.getElementById('btn-article').classList.toggle('active', mode === 'article');
+  document.getElementById('btn-slides').classList.toggle('active', mode === 'slides');
+  if (mode === 'slides') goToSlide(currentSlide);
+}
+
+// ===== SLIDES =====
+const slides = document.querySelectorAll('.slide');
+const totalSlides = slides.length;
+let currentSlide = 0;
+
+const dotsContainer = document.getElementById('slide-dots');
+for (let i = 0; i < totalSlides; i++) {
+  const dot = document.createElement('span');
+  if (i === 0) dot.classList.add('active');
+  dot.addEventListener('click', () => goToSlide(i));
+  dotsContainer.appendChild(dot);
+}
+
+function goToSlide(n) {
+  slides.forEach(s => s.classList.remove('active'));
+  slides[n].classList.add('active');
+  document.querySelectorAll('.slide-dots span').forEach((d, i) => d.classList.toggle('active', i === n));
+  currentSlide = n;
+}
+function nextSlide() { if (currentSlide < totalSlides - 1) goToSlide(currentSlide + 1); }
+function prevSlide() { if (currentSlide > 0) goToSlide(currentSlide - 1); }
+
+document.addEventListener('keydown', e => {
+  if (!document.body.classList.contains('slide-mode')) return;
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+});
+
+// ===== AUDIO ENGINE =====
+const audioBase = '{{AUDIO_BASE}}';
+const audioDurations = {{AUDIO_DURATIONS}};
+const totalAudioDur = Object.values(audioDurations).reduce((a, b) => a + b, 0);
+
+const slideData = [];
+slides.forEach(s => { slideData.push({ audioId: s.dataset.audio, readTime: parseInt(s.dataset.readTime) || 10 }); });
+
+const narrationEl = document.createElement('audio');
+narrationEl.preload = 'auto';
+document.body.appendChild(narrationEl);
+const transitionEl = document.createElement('audio');
+transitionEl.preload = 'auto';
+transitionEl.volume = 0.35;
+transitionEl.src = audioBase + 'transition.mp3';
+document.body.appendChild(transitionEl);
+
+let isPlaying = false;
+let autoplayTimer = null;
+let progressInterval = null;
+
+function toggleAudio() { if (isPlaying) stopAudio(); else startAudio(); }
+
+function startAudio() {
+  isPlaying = true;
+  document.getElementById('btn-play').classList.add('playing');
+  document.getElementById('btn-play').innerHTML = '&#9646;&#9646;';
+  if (!document.body.classList.contains('slide-mode')) setMode('slides');
+  playSlideAudio(currentSlide);
+}
+
+function stopAudio() {
+  isPlaying = false;
+  document.getElementById('btn-play').classList.remove('playing');
+  document.getElementById('btn-play').innerHTML = '&#9654;';
+  narrationEl.pause();
+  if (autoplayTimer) { clearTimeout(autoplayTimer); autoplayTimer = null; }
+  if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
+}
+
+function playSlideAudio(slideIndex) {
+  if (!isPlaying || slideIndex >= totalSlides) { stopAudio(); return; }
+  goToSlide(slideIndex);
+  const entry = slideData[slideIndex];
+  const audioDur = audioDurations[entry.audioId] || 20;
+
+  narrationEl.src = audioBase + entry.audioId + '.mp3';
+  narrationEl.currentTime = 0;
+
+  let elapsed = 0;
+  for (let i = 0; i < slideIndex; i++) elapsed += audioDurations[slideData[i].audioId] || 20;
+
+  if (progressInterval) clearInterval(progressInterval);
+  progressInterval = setInterval(() => {
+    if (!isPlaying) { clearInterval(progressInterval); return; }
+    const cur = elapsed + narrationEl.currentTime;
+    document.getElementById('progress-fill').style.width = (cur / totalAudioDur * 100) + '%';
+    const mins = Math.floor(cur / 60);
+    const secs = Math.floor(cur % 60);
+    document.getElementById('audio-time').textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+  }, 250);
+
+  narrationEl.onended = () => {
+    clearInterval(progressInterval);
+    const extraRead = Math.max(0, entry.readTime - audioDur);
+    autoplayTimer = setTimeout(() => {
+      if (!isPlaying) return;
+      if (slideIndex < totalSlides - 1) {
+        transitionEl.currentTime = 0;
+        transitionEl.play().catch(() => {});
+        autoplayTimer = setTimeout(() => { if (isPlaying) playSlideAudio(slideIndex + 1); }, 1800);
+      } else stopAudio();
+    }, (extraRead + 2) * 1000);
+  };
+
+  narrationEl.play().catch(err => {
+    autoplayTimer = setTimeout(() => {
+      if (isPlaying && slideIndex < totalSlides - 1) playSlideAudio(slideIndex + 1);
+      else stopAudio();
+    }, (audioDur + 2) * 1000);
+  });
+}
+
+// ===== SCROLL REVEAL =====
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.querySelectorAll('.article-content .exec-summary, .article-content .section, .article-content .stat-card, .article-content .figure, .article-content .rec-card, .article-content .data-table').forEach(el => el.classList.add('reveal'));
+  document.querySelectorAll('.three-col, .rec-grid').forEach(el => el.classList.add('reveal-stagger'));
+  document.querySelectorAll('.article-content h2').forEach(el => el.classList.add('reveal'));
+
+  const revealObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); revealObserver.unobserve(entry.target); } });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+  function animateCounter(el, target, suffix) {
+    const dur = 1200, start = performance.now();
+    const isApprox = target.toString().startsWith('~');
+    const num = parseFloat(target.toString().replace(/[^0-9.]/g, ''));
+    function tick(now) {
+      const t = Math.min((now - start) / dur, 1);
+      const eased = 1 - Math.pow(1 - t, 4);
+      el.textContent = (isApprox ? '~' : '') + Math.round(eased * num) + suffix;
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  const statObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target, text = el.textContent.trim(), match = text.match(/^(~?)(\d+)(%?)$/);
+        if (match) { el.textContent = match[1] + '0' + match[3]; setTimeout(() => animateCounter(el, match[1] + match[2], match[3]), 200); }
+        statObserver.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.article-content .stat-card .number').forEach(el => statObserver.observe(el));
+}
+</script>
+</body>
+</html>
