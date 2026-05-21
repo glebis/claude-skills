@@ -347,22 +347,29 @@ if (!hasAudio) document.querySelector('.audio-controls').style.display = 'none';
 const slideData = [];
 slides.forEach(s => { slideData.push({ audioId: s.dataset.audio, readTime: parseInt(s.dataset.readTime) || 10 }); });
 
-const narrationEl = document.createElement('audio');
-narrationEl.preload = 'auto';
-document.body.appendChild(narrationEl);
-const transitionEl = document.createElement('audio');
-transitionEl.preload = 'auto';
-transitionEl.volume = 0.35;
-transitionEl.src = audioBase + 'transition.mp3';
-document.body.appendChild(transitionEl);
-
+let narrationEl = null;
+let transitionEl = null;
+let audioUnlocked = false;
 let isPlaying = false;
 let autoplayTimer = null;
 let progressInterval = null;
 
-function toggleAudio() { if (isPlaying) stopAudio(); else startAudio(); }
+function unlockAudio() {
+  if (audioUnlocked) return;
+  narrationEl = new Audio();
+  narrationEl.preload = 'auto';
+  transitionEl = new Audio();
+  transitionEl.preload = 'auto';
+  transitionEl.volume = 0.35;
+  transitionEl.src = audioBase + 'transition.mp3';
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ctx.resume().then(() => { audioUnlocked = true; });
+}
+
+function toggleAudio() { unlockAudio(); if (isPlaying) stopAudio(); else startAudio(); }
 
 function startAudio() {
+  if (!narrationEl) unlockAudio();
   isPlaying = true;
   document.getElementById('btn-play').classList.add('playing');
   document.getElementById('btn-play').innerHTML = '&#9646;&#9646;';
@@ -374,27 +381,29 @@ function stopAudio() {
   isPlaying = false;
   document.getElementById('btn-play').classList.remove('playing');
   document.getElementById('btn-play').innerHTML = '&#9654;';
-  narrationEl.pause();
+  if (narrationEl) narrationEl.pause();
   if (autoplayTimer) { clearTimeout(autoplayTimer); autoplayTimer = null; }
   if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
 }
 
 function playSlideAudio(slideIndex) {
-  if (!isPlaying || slideIndex >= totalSlides) { stopAudio(); return; }
+  if (!isPlaying || slideIndex >= totalSlides || !narrationEl) { stopAudio(); return; }
   goToSlide(slideIndex, true);
   const entry = slideData[slideIndex];
   const audioDur = audioDurations[entry.audioId] || 20;
+  const src = audioBase + entry.audioId + '.mp3';
 
-  narrationEl.src = audioBase + entry.audioId + '.mp3';
-  narrationEl.currentTime = 0;
+  narrationEl.pause();
+  narrationEl.src = src;
+  narrationEl.load();
 
   let elapsed = 0;
   for (let i = 0; i < slideIndex; i++) elapsed += audioDurations[slideData[i].audioId] || 20;
 
   if (progressInterval) clearInterval(progressInterval);
   progressInterval = setInterval(() => {
-    if (!isPlaying) { clearInterval(progressInterval); return; }
-    const cur = elapsed + narrationEl.currentTime;
+    if (!isPlaying || !narrationEl) { clearInterval(progressInterval); return; }
+    const cur = elapsed + (narrationEl.currentTime || 0);
     document.getElementById('progress-fill').style.width = (cur / totalAudioDur * 100) + '%';
     const mins = Math.floor(cur / 60);
     const secs = Math.floor(cur % 60);
@@ -414,12 +423,32 @@ function playSlideAudio(slideIndex) {
     }, (extraRead + 2) * 1000);
   };
 
-  narrationEl.play().catch(err => {
-    autoplayTimer = setTimeout(() => {
-      if (isPlaying && slideIndex < totalSlides - 1) playSlideAudio(slideIndex + 1);
+  narrationEl.onerror = () => {
+    console.error('Audio load error:', src, narrationEl.error);
+    document.getElementById('audio-time').textContent = 'ERR';
+  };
+
+  narrationEl.oncanplay = function oncp() {
+    narrationEl.oncanplay = null;
+    narrationEl.play().then(() => {
+      console.log('Playing:', entry.audioId);
+    }).catch(err => {
+      console.error('Play failed:', err.name, err.message);
+      document.getElementById('audio-time').textContent = 'ERR';
+      autoplayTimer = setTimeout(() => {
+        if (isPlaying && slideIndex < totalSlides - 1) playSlideAudio(slideIndex + 1);
+        else stopAudio();
+      }, (audioDur + 2) * 1000);
+    });
+  };
+
+  setTimeout(() => {
+    if (narrationEl.readyState < 2 && isPlaying) {
+      console.warn('Audio not ready after 5s, skipping:', src);
+      if (slideIndex < totalSlides - 1) playSlideAudio(slideIndex + 1);
       else stopAudio();
-    }, (audioDur + 2) * 1000);
-  });
+    }
+  }, 5000);
 }
 
 // ===== SCROLL REVEAL =====
