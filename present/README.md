@@ -31,6 +31,7 @@ Takes content (research, notes, a topic) and produces a self-contained HTML pres
 | `--image-prompt` | custom string | auto | Override image prompt prefix |
 | `--output` | path | `./presentation/` | Output directory |
 | `--deploy` | vercel project or `none` | `none` | Auto-deploy target |
+| `--title` | string | auto | Presentation title |
 | `--no-audio` | flag | false | Skip audio generation |
 
 ### Detail levels
@@ -59,6 +60,7 @@ Takes content (research, notes, a topic) and produces a self-contained HTML pres
 ## Requirements
 
 - ElevenLabs API key in `~/claude-skills/elevenlabs-tts/.env`
+- Python `requests` library
 - GPT Image 2 skill (for `--images`)
 - ffprobe (for audio duration detection)
 

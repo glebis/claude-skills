@@ -171,7 +171,7 @@ Each slide has three timing properties:
 - `data-audio="slide-name"` — maps to audio file
 - `data-read-time="N"` — seconds for reading the visual content
 
-The audio engine calculates: `slide_duration = max(audio_duration + 2s, read_time)`. After narration ends, it waits for any remaining read time, plays a transition sound (1.8s), then advances to the next slide.
+The audio engine calculates: `slide_duration = max(audio_duration, read_time) + 2s`. After narration ends, it waits for any remaining read time plus a 2-second buffer, plays a transition sound (1.8s), then advances to the next slide.
 
 ### Avoiding AI-Looking Formatting
 

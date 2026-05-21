@@ -52,24 +52,39 @@ def get_api_key():
     raise ValueError("ELEVENLABS_API_KEY not found in environment or ~/claude-skills/elevenlabs-tts/.env")
 
 
-def generate_tts(text, voice_id, output_path, api_key):
+def generate_tts(text, voice_id, output_path, api_key, retries=2):
     import requests
-    r = requests.post(
-        f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
-        headers={"xi-api-key": api_key, "Content-Type": "application/json"},
-        json={
-            "text": text,
-            "model_id": "eleven_turbo_v2_5",
-            "voice_settings": {"stability": 0.65, "similarity_boost": 0.75, "style": 0.15},
-        },
-    )
-    if r.status_code == 200:
-        with open(output_path, "wb") as f:
-            f.write(r.content)
-        return len(r.content)
-    else:
-        print(f"  ERROR: {r.status_code} {r.text[:200]}", file=sys.stderr)
-        return 0
+    for attempt in range(retries + 1):
+        try:
+            r = requests.post(
+                f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+                headers={"xi-api-key": api_key, "Content-Type": "application/json"},
+                json={
+                    "text": text,
+                    "model_id": "eleven_turbo_v2_5",
+                    "voice_settings": {"stability": 0.65, "similarity_boost": 0.75, "style": 0.15},
+                },
+                timeout=60,
+            )
+            if r.status_code == 200:
+                with open(output_path, "wb") as f:
+                    f.write(r.content)
+                return len(r.content)
+            elif r.status_code == 429 and attempt < retries:
+                wait = 2 ** (attempt + 1)
+                print(f"  Rate limited, waiting {wait}s...", file=sys.stderr)
+                time.sleep(wait)
+                continue
+            else:
+                print(f"  ERROR: {r.status_code} {r.text[:200]}", file=sys.stderr)
+                return 0
+        except requests.exceptions.Timeout:
+            if attempt < retries:
+                print(f"  Timeout, retrying ({attempt + 1}/{retries})...", file=sys.stderr)
+                continue
+            print(f"  ERROR: Request timed out after {retries + 1} attempts", file=sys.stderr)
+            return 0
+    return 0
 
 
 def generate_transition(output_path, api_key):
@@ -118,6 +133,15 @@ def main():
 
     with open(args.slides_json) as f:
         slides = json.load(f)
+
+    errors = []
+    for slide in slides:
+        if "id" not in slide or "narration" not in slide:
+            print(f"ERROR: Each slide must have 'id' and 'narration' keys. Got: {list(slide.keys())}", file=sys.stderr)
+            sys.exit(1)
+        if "/" in slide["id"] or "\\" in slide["id"] or ".." in slide["id"]:
+            print(f"ERROR: Slide id '{slide['id']}' contains path separators", file=sys.stderr)
+            sys.exit(1)
 
     print(f"Generating {len(slides)} narration tracks with voice '{args.voice}'...")
     for i, slide in enumerate(slides):

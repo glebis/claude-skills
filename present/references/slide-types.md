@@ -61,7 +61,7 @@ Text + image side by side. For presenting findings with supporting visuals.
       <h2 style="font-size:2.2rem;">Heading</h2>
       <p>Body text with <em>emphasis</em> as needed.</p>
     </div>
-    <img src="path/to/image.png" alt="Description" style="width:100%;max-height:400px;object-fit:contain;">
+    <img src="/slug/images/image.png" alt="Description" style="width:100%;max-height:400px;object-fit:contain;">
   </div>
 </div>
 ```
@@ -76,8 +76,8 @@ Two images or concepts side by side.
     <div class="slide-label">Section Label</div>
     <h2>Comparison Title</h2>
     <div class="slide-two-col">
-      <img src="path/to/left.png" alt="Option A" style="width:100%;max-height:280px;object-fit:contain;border:1px solid var(--rule);">
-      <img src="path/to/right.png" alt="Option B" style="width:100%;max-height:280px;object-fit:contain;border:1px solid var(--rule);">
+      <img src="/slug/images/left.png" alt="Option A" style="width:100%;max-height:280px;object-fit:contain;border:1px solid var(--rule);">
+      <img src="/slug/images/right.png" alt="Option B" style="width:100%;max-height:280px;object-fit:contain;border:1px solid var(--rule);">
     </div>
     <p style="font-size:1.2rem;font-weight:600;margin-top:1rem;">Key takeaway statement.</p>
   </div>

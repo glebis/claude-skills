@@ -239,8 +239,8 @@ body.slide-mode .slide-nav { display: flex; }
 
 <!-- MODE BAR -->
 <div class="mode-bar hidden">
-  <button id="btn-article" class="active" onclick="setMode('article')">Article</button>
-  <button id="btn-slides" onclick="setMode('slides')">Slides</button>
+  <button id="btn-article" class="active" onclick="setMode('article')" aria-label="Switch to article mode">Article</button>
+  <button id="btn-slides" onclick="setMode('slides')" aria-label="Switch to slides mode">Slides</button>
   <div class="audio-controls">
     <button id="btn-play" onclick="toggleAudio()" title="Play narration">&#9654;</button>
     <div class="audio-progress"><div class="audio-progress-fill" id="progress-fill"></div></div>
@@ -289,6 +289,8 @@ function updateBarVis(mouseY) {
   }
 }
 document.addEventListener('mousemove', e => updateBarVis(e.clientY));
+document.addEventListener('touchstart', e => updateBarVis(e.touches[0].clientY));
+document.addEventListener('focusin', () => { modeBar.classList.remove('hidden'); clearTimeout(barHideTimer); barHideTimer = setTimeout(() => { if (barVisMode === 'zone') modeBar.classList.add('hidden'); }, 3000); });
 modeBar.addEventListener('mouseenter', () => { clearTimeout(barHideTimer); modeBar.classList.remove('hidden'); });
 modeBar.addEventListener('mouseleave', () => { barHideTimer = setTimeout(() => { if (barVisMode === 'zone') modeBar.classList.add('hidden'); }, 1500); });
 slideNav.addEventListener('mouseenter', () => { clearTimeout(navHideTimer); slideNav.classList.remove('hidden'); });
@@ -319,11 +321,12 @@ for (let i = 0; i < totalSlides; i++) {
   dotsContainer.appendChild(dot);
 }
 
-function goToSlide(n) {
+function goToSlide(n, fromAudio) {
   slides.forEach(s => s.classList.remove('active'));
   slides[n].classList.add('active');
   document.querySelectorAll('.slide-dots span').forEach((d, i) => d.classList.toggle('active', i === n));
   currentSlide = n;
+  if (!fromAudio && isPlaying) stopAudio();
 }
 function nextSlide() { if (currentSlide < totalSlides - 1) goToSlide(currentSlide + 1); }
 function prevSlide() { if (currentSlide > 0) goToSlide(currentSlide - 1); }
@@ -337,7 +340,9 @@ document.addEventListener('keydown', e => {
 // ===== AUDIO ENGINE =====
 const audioBase = '{{AUDIO_BASE}}';
 const audioDurations = {{AUDIO_DURATIONS}};
+const hasAudio = Object.keys(audioDurations).length > 0;
 const totalAudioDur = Object.values(audioDurations).reduce((a, b) => a + b, 0);
+if (!hasAudio) document.querySelector('.audio-controls').style.display = 'none';
 
 const slideData = [];
 slides.forEach(s => { slideData.push({ audioId: s.dataset.audio, readTime: parseInt(s.dataset.readTime) || 10 }); });
@@ -376,7 +381,7 @@ function stopAudio() {
 
 function playSlideAudio(slideIndex) {
   if (!isPlaying || slideIndex >= totalSlides) { stopAudio(); return; }
-  goToSlide(slideIndex);
+  goToSlide(slideIndex, true);
   const entry = slideData[slideIndex];
   const audioDur = audioDurations[entry.audioId] || 20;
 
