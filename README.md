@@ -12,6 +12,19 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 Evidence-based CBT and DBT intervention skills — guided thought records, opposite action, DEAR MAN roleplay, crisis skills with HRV biofeedback. Configurable therapeutic pushback. Works standalone or via Telegram. **[Standalone repo →](https://github.com/glebis/claude-cognitive-toolkit)**
 
+### [Present — Narrated Interactive Presentations](./present/) ⭐ NEW
+
+Generate interactive HTML presentations with ElevenLabs voiceover narration synced to slides. Dual article/slides mode, scroll-reveal animations, optional GPT Image 2 illustrations, configurable detail levels (executive/standard/detailed), auto-hide zone-based UI, keyboard navigation.
+
+**Features:**
+- Dual mode: scrollable article + navigable slide deck
+- ElevenLabs narration with per-slide audio sync and Rhodes transition sounds
+- 3 detail levels: executive (5-7 slides), standard (10-14), detailed (15-20)
+- Optional GPT Image 2 illustrations (risograph, editorial, ink, custom)
+- Tufte-inspired typography (EB Garamond + DM Sans)
+- Intersection Observer scroll-reveal animations with stat counters
+- `prefers-reduced-motion` support
+
 ### [GPT Image 2 (OpenAI Image Generation)](./gpt-image-2/)
 
 Generate and edit images using OpenAI's GPT Image 2 model — the first image model with built-in reasoning ("thinking mode"). Mirrors the [Nano Banana](./nano-banana/) architecture but targets OpenAI's API with superior text rendering, thinking mode for complex compositions, and cost controls.
