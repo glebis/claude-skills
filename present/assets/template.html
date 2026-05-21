@@ -35,6 +35,7 @@ body { font-family: 'EB Garamond', Georgia, serif; background: var(--bg); color:
 .hero .subtitle { animation-delay: 0.45s; }
 .hero-meta { animation-delay: 0.6s; }
 @keyframes heroIn { to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ===== SCROLL REVEAL ===== */
 .reveal {
@@ -171,13 +172,12 @@ body:not(.slide-mode) .slide-deck { display: none; }
   position: absolute; inset: 0; top: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 3rem 5rem;
-  opacity: 0; visibility: hidden; transform: translateY(12px);
-  transition: opacity 0.45s var(--ease-out-quart), transform 0.45s var(--ease-out-quart), visibility 0s 0.45s;
+  opacity: 0; display: none; transform: translateY(12px);
   pointer-events: none;
 }
 .slide.active {
-  opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto;
-  transition: opacity 0.45s var(--ease-out-quart), transform 0.45s var(--ease-out-quart), visibility 0s 0s;
+  opacity: 1; display: flex; transform: translateY(0); pointer-events: auto;
+  animation: slideIn 0.4s var(--ease-out-quart);
 }
 .slide-inner { max-width: 1000px; width: 100%; }
 .slide .slide-label { font-family: 'DM Sans', sans-serif; font-size: 0.55rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-3); margin-bottom: 1rem; }
