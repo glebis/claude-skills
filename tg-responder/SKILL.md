@@ -99,6 +99,11 @@ After max_reminders → archived. If they reply → auto-resolved.
 
 Located at `~/Brains/data/telegram/responder.db`.
 
+## Known Pitfalls
+
+- **Auto-replies are not closers.** Messages like "Отвечу в ближайшее время!" are auto-respond placeholders, not real responses. Exclude them from follow-up resolution — they should not mark a thread as closed.
+- **My messages vs. other people's messages.** The script can mistake the user's own auto-replies for the contact's messages, forming incorrect follow-up state. Always check sender ID, not just message content.
+
 ## Config
 
 Located at `~/.claude/skills/tg-responder/config.yaml`. Edit contacts, modes, and ignore lists there.

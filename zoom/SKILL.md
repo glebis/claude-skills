@@ -210,6 +210,11 @@ pip install requests
 | `~/.zoom_credentials/token.json` | S2S cached token |
 | `~/.zoom_credentials/oauth_token.json` | User OAuth tokens (auto-refreshes) |
 
+## Known Pitfalls
+
+- **`join_before_host` is account-level.** This setting is locked at the Zoom account admin level. Setting it via API per-meeting is silently ignored if the account setting overrides it. Must change in Zoom admin settings (Security → "Allow participants to join before host") first, then API calls respect it.
+- **Waiting room overrides join-before-host.** If waiting room is enabled at account level, `join_before_host` won't work even if the API accepts it.
+
 ## API Reference
 
 - [Zoom Meeting APIs](https://developers.zoom.us/docs/api/meetings/)

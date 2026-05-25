@@ -639,26 +639,53 @@ cp -r recording ~/.claude/skills/
 
 ---
 
-### [Retrospective](./retrospective/) ⭐ NEW
-Session retrospective for continual learning. Reviews conversations, extracts learnings, updates skills.
+### [Retrospective](./retrospective/)
+Session retrospective for continual learning. Reviews conversations, extracts learnings, updates skills. Supports **multi-session mode** — process all of today's sessions across projects in one go.
 
 **Features:**
-- 🔄 Analyze session for successes, failures, and discoveries
-- 📝 Update skill files with dated learnings
-- ⚠️ Document failures explicitly (prevents repeating mistakes)
-- 📊 Surface patterns for skill improvement
-- 🎯 Compound knowledge over sessions
+- 🔄 Single-session mode: analyze the current conversation
+- 📦 Multi-session mode: scan all JSONL transcripts from today (or a given date)
+- 📝 Extract user corrections, skill failures, and repeated patterns
+- ⚠️ Dedup against existing memories and skill files
+- 🎯 One approval step — multi-select candidates, then silent execution
 
 **Quick Start:**
 ```bash
 # Copy to skills directory
 cp -r retrospective ~/.claude/skills/
 
-# Invoke at end of session
+# Retro on current session
 /retrospective
+
+# Retro across all of today's sessions
+/retrospective today
+
+# Retro for a specific date
+/retrospective 2026-05-24
 ```
 
-**Use when:** End of coding sessions to capture learnings before context is lost. Based on [Continual Learning in Claude Code](https://www.youtube.com/watch?v=sWbsD-cP4rI) concepts.
+**Use when:** End of work day to capture learnings across all sessions. Based on [Continual Learning in Claude Code](https://www.youtube.com/watch?v=sWbsD-cP4rI) concepts.
+
+---
+
+### [Learning Vault](./learning-vault/)
+Generate a dedicated Obsidian learning vault for any certification, course, or study goal. Creates structured notes with domains, concepts, MoCs, dataview queries, action items, and multiple navigation paths.
+
+**Features:**
+- 🎯 Interactive setup: subject, goal, curriculum detection, self-assessment
+- 📚 Full vault: Dashboard, MoCs, Domains, Concepts, Scenarios, Action Items
+- 📊 Dataview-powered progress tracking and study prioritization
+- 🧭 Multiple navigation paths (by domain, by confidence gap, by question type)
+- 📋 Inspired by the genome vault pattern
+
+**Quick Start:**
+```bash
+cp -r learning-vault ~/.claude/skills/
+
+/learning-vault for AWS Solutions Architect certification
+```
+
+**Use when:** Starting a new certification, course, or structured learning goal. Works with any subject.
 
 ---
 

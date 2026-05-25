@@ -1,13 +1,55 @@
 ---
 name: retrospective
-description: Interactive post-session retrospective that captures learnings, updates skills, and saves memories. Use when the user says "/retrospective", "let's do a retro", "what did we learn", "session review", "retro", or "wrap up". Also use at the end of long productive sessions when significant patterns or corrections emerged.
+description: Interactive post-session retrospective that captures learnings, updates skills, and saves memories. Use when the user says "/retrospective", "let's do a retro", "what did we learn", "session review", "retro", or "wrap up". Also use at the end of long productive sessions when significant patterns or corrections emerged. Supports multi-session mode — by default processes all of today's sessions across projects.
 ---
 
 # Retrospective
 
-Interactive post-session retro. Scans the conversation, asks focused questions, proposes concrete actions the user approves in one step.
+Interactive post-session retro. Scans sessions, asks focused questions, proposes concrete actions the user approves in one step.
 
-## Process
+## Modes
+
+### Single-session mode (default when inside a substantial conversation)
+Scans the current conversation only. This is the original behavior.
+
+### Multi-session mode (default when invoked with no args, or with "today", or with a date)
+Scans all sessions from a given day (default: today) across all projects. Extracts user corrections, skill failures, and patterns from JSONL transcripts.
+
+**Trigger:** `/retrospective` at the start of a fresh session, or `/retrospective today`, or `/retrospective 2026-05-24`.
+
+## Multi-Session Discovery
+
+### Step 0 — Discover sessions
+
+```bash
+# Find today's sessions (default)
+find ~/.claude/projects -maxdepth 2 -name "*.jsonl" -not -path "*/subagents/*" -mtime 0
+
+# Or for a specific date, filter by file modification date
+find ~/.claude/projects -maxdepth 2 -name "*.jsonl" -not -path "*/subagents/*" -newermt "YYYY-MM-DD" ! -newermt "YYYY-MM-DD + 1 day"
+```
+
+For each JSONL file found, extract a summary:
+1. Parse the project name from the path (the directory name after `projects/`, decoded from the path-encoding)
+2. Extract `user` and `assistant` messages (type `user` and `assistant`)
+3. For user messages: `message.content` (may be string or array of `{type: "text", text: "..."}`)
+4. For assistant messages: collect text blocks from `message.content` array where `type == "text"`
+5. Build a condensed transcript: first 10 user messages + last 5 user messages (to capture corrections at the end)
+6. Skip sessions with fewer than 3 user messages (too short to have learnings)
+
+### Step 0b — Present session list
+
+Show the user what was found:
+
+```
+Found N sessions today:
+- project-name-1 (session-id[:8]) — "first user message preview..."
+- project-name-2 (session-id[:8]) — "first user message preview..."
+```
+
+Then continue to Step 1a with the combined findings from all sessions. Each candidate action should note which session it came from (project name + short ID).
+
+## Single-Session Process
 
 ### Step 0 — Gate Check (silent)
 
@@ -93,6 +135,27 @@ Skipped: pdf-generation update (already documented)
 ```
 
 Done. No trailing commentary.
+
+## JSONL Transcript Format
+
+Session transcripts are stored as JSONL files at `~/.claude/projects/{project-path}/{session-id}.jsonl`.
+
+Each line is a JSON object with a `type` field. Relevant types:
+- `user` — user message. Content at `message.content` (string or array of `{type: "text", text: "..."}`)
+- `assistant` — Claude's response. Content at `message.content` (array of content blocks; extract where `type == "text"`)
+- `ai-title` — auto-generated session title
+
+To extract a readable transcript from a JSONL file, use a Python one-liner or read the file and filter for `user`/`assistant` types.
+
+**Project name decoding:** The directory name uses the absolute path with slashes replaced by dashes, e.g., `-Users-glebkalinin-ai-projects-foo` → `~/ai_projects/foo`.
+
+## Mode Selection Logic
+
+When `/retrospective` is invoked:
+1. If the current conversation has 10+ user messages → **single-session mode** (retro this conversation)
+2. If the current conversation is short (just the `/retrospective` invocation) → **multi-session mode** (scan today's sessions)
+3. If args contain a date (e.g., "today", "yesterday", "2026-05-24") → **multi-session mode** for that date
+4. If args contain "all" → **multi-session mode** for today
 
 ## Candidate Description Format
 
