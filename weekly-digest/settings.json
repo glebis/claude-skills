@@ -1,14 +1,4 @@
 {
-  "subjects": [
-    {
-      "topic": "agent orchestration",
-      "geo_focus": "European, UK, Asian — not American",
-      "output_prefix": "agent-orch"
-    },
-    {
-      "topic": "design innovation",
-      "geo_focus": null,
-      "output_prefix": "design"
-    }
-  ]
+  "version": 1,
+  "subjects": []
 }
