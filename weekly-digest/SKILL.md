@@ -9,9 +9,9 @@ A research-to-publication pipeline that produces a scored, source-verified indus
 
 ## Phase 0: Init
 
-Read `~/.claude/skills/weekly-digest/settings.json`. Three possible states:
+Read `~/.claude/skills/weekly-digest/settings.json`. Two possible states:
 
-**State A — file missing or `subjects` empty:** Run onboarding:
+**State A — file missing, or `subjects` is empty and file has no `version` field (fresh install):** Run onboarding:
 
 1. Ask: "What topic do you want to track?" — get a specific topic. If the user declines or says "just run it" without specifying, respond: "A topic is required — there's no default. What field do you want to monitor?" Do not invent a topic.
 2. Ask: "Any geographic focus? (e.g., European, Asian — not American)" — optional, default null
@@ -29,7 +29,7 @@ Read `~/.claude/skills/weekly-digest/settings.json`. Three possible states:
 
 **State B — subjects exist, user ran `/weekly-digest` (no args):** Run all subjects sequentially.
 
-**State C — user ran `/weekly-digest remove` and subjects list is now empty:** Don't auto-onboard. Instead respond: "No subjects configured. Add one with `/weekly-digest add [topic]`."
+**When subjects list is empty but `version` field exists (user cleared subjects intentionally):** Don't auto-onboard. Respond: "No subjects configured. Add one with `/weekly-digest add [topic]`."
 
 For the full settings schema, see `settings.example.json` in the skill directory.
 
@@ -224,7 +224,7 @@ Only create this file if there are failures to log.
 
 ### Diff mode
 
-If a previous digest exists for the same subject, compare. To find the previous digest: list all files matching `*-{prefix}-digest.md` in `output_dir`, parse the `YYYYMMDD` date prefix, and select the most recent one that is older than today. Compare:
+If a previous digest exists for the same subject, compare. To find the previous digest: list all files matching `*-{prefix}-digest.md` in `output_dir`, parse the `YYYYMMDD` date prefix. If a file from today already exists (same-day rerun), treat it as the previous version and rename it to `YYYYMMDD-{prefix}-digest.prev.md` before writing the new one. Otherwise select the most recent file older than today. Compare:
 - Items in both runs → mark as **persistent** in the new digest
 - Items only in the new run → mark as **new**
 - Items that dropped off → note in the raw file footer as "previously ranked, no longer appearing"
@@ -263,7 +263,7 @@ Before presenting results, verify:
 - [ ] At least `target_candidates` items in the raw file (or shortfall noted)
 - [ ] At least 3 different source types (news, academic, official, funding)
 - [ ] Top candidates have been source-verified via WebFetch
-- [ ] No item in top `top_n` has slopiness > 4 — if one does, drop it and promote the next-ranked item
+- [ ] No item in top `top_n` has slopiness > 6 — if one does, drop it and promote the next-ranked item. (Items at slopiness 5 from WebFetch failures are allowed through; only clearly sloppy sources at 7+ are blocked.)
 - [ ] Every item has a working source link
 - [ ] 2-sentence summaries contain specific facts, not vague claims
 - [ ] Failure log created if any failures occurred
