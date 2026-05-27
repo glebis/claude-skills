@@ -11,11 +11,62 @@ A research-to-publication pipeline that produces a scored, source-verified indus
 
 Read `~/.claude/skills/weekly-digest/settings.json`. Two possible states:
 
-**State A — file missing, or `subjects` is empty and file has no `version` field (fresh install):** Run onboarding:
+**State A — file missing, or `subjects` is empty and file has no `version` field (fresh install):** Run onboarding using the `AskUserQuestion` tool to collect all setup inputs in a single structured prompt:
 
-1. Ask: "What topic do you want to track?" — get a specific topic. If the user declines or says "just run it" without specifying, respond: "A topic is required — there's no default. What field do you want to monitor?" Do not invent a topic.
-2. Ask: "Any geographic focus? (e.g., European, Asian — not American)" — optional, default null
-3. Generate a slug from the topic for `output_prefix` (lowercase, hyphenated, no spaces — e.g., "agent orchestration" → "agent-orch")
+```
+AskUserQuestion({
+  questions: [
+    {
+      question: "What topic do you want to track weekly?",
+      header: "Topic",
+      options: [
+        { label: "Agent orchestration", description: "Multi-agent frameworks, enterprise deployments, governance" },
+        { label: "Design innovation", description: "Design tools, AI-design convergence, award-winning products" },
+        { label: "Climate tech", description: "Clean energy, carbon capture, sustainability startups" },
+        { label: "AI regulation", description: "EU AI Act, governance frameworks, copyright disputes" }
+      ],
+      multiSelect: false
+    },
+    {
+      question: "Any geographic focus for sources?",
+      header: "Geography",
+      options: [
+        { label: "Global (no filter)", description: "Include sources from all regions" },
+        { label: "Europe, UK, Asia — not US", description: "Deprioritize American sources" },
+        { label: "Europe only", description: "EU and UK sources preferred" },
+        { label: "Asia-Pacific", description: "Japan, Korea, China, Singapore, India, Australia" }
+      ],
+      multiSelect: false
+    },
+    {
+      question: "How many top items should the digest include?",
+      header: "Digest size",
+      options: [
+        { label: "5 items (Recommended)", description: "Good balance of depth and brevity" },
+        { label: "3 items", description: "Quick scan, only the best" },
+        { label: "10 items", description: "Comprehensive coverage" }
+      ],
+      multiSelect: false
+    },
+    {
+      question: "Where should output files go?",
+      header: "Output",
+      options: [
+        { label: "output/ (Recommended)", description: "Relative to current working directory" },
+        { label: "~/Digests/", description: "Home directory, shared across projects" }
+      ],
+      multiSelect: false
+    }
+  ]
+})
+```
+
+Adapt the example options to match the user's context if you know it from memory/profile. The user can always pick "Other" to type a custom value for any question.
+
+After receiving answers:
+1. Map the topic to a slug for `output_prefix` (lowercase, hyphenated, no spaces — e.g., "Agent orchestration" → "agent-orch")
+2. Map geographic focus to `geo_focus` (null for "Global", string for others)
+3. Parse `top_n` from the digest size answer (3, 5, or 10)
 4. Write the full settings file with all defaults + the new subject:
    ```json
    { "version": 1, "top_n": 5, "target_candidates": 20, "lookback_days": 7,
@@ -26,6 +77,8 @@ Read `~/.claude/skills/weekly-digest/settings.json`. Two possible states:
 5. Validate `output_dir` exists (create if needed) before proceeding.
 6. Confirm: "Saved. Run `/weekly-digest add [topic]` to add more subjects."
 7. Proceed to Phase 1 with the newly configured subject.
+
+The same `AskUserQuestion` pattern should be used for `/weekly-digest add` — ask topic, geo focus, and confirm the generated slug.
 
 **State B — subjects exist, user ran `/weekly-digest` (no args):** Run all subjects sequentially.
 
