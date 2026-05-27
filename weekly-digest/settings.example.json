@@ -1,4 +1,18 @@
 {
+  "version": 1,
+  "top_n": 5,
+  "target_candidates": 20,
+  "lookback_days": 7,
+  "output_dir": "output",
+  "language": "en",
+  "weights": {
+    "novelty": 1,
+    "relevance": 1,
+    "slopiness": 1,
+    "technical": 1,
+    "feasibility": 1
+  },
+  "obsidian_vault": null,
   "subjects": [
     {
       "topic": "agent orchestration",

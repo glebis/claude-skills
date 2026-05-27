@@ -9,15 +9,29 @@ A research-to-publication pipeline that produces a scored, source-verified indus
 
 ## Phase 0: Init
 
-Read `~/.claude/skills/weekly-digest/settings.json`. If the file doesn't exist or `subjects` is empty, run the onboarding flow before anything else:
+Read `~/.claude/skills/weekly-digest/settings.json`. Three possible states:
 
-1. Ask: "What topic do you want to track?" — get a specific topic (push back on vague ones like "AI")
+**State A — file missing or `subjects` empty:** Run onboarding:
+
+1. Ask: "What topic do you want to track?" — get a specific topic. If the user declines or says "just run it" without specifying, respond: "A topic is required — there's no default. What field do you want to monitor?" Do not invent a topic.
 2. Ask: "Any geographic focus? (e.g., European, Asian — not American)" — optional, default null
 3. Generate a slug from the topic for `output_prefix` (lowercase, hyphenated, no spaces — e.g., "agent orchestration" → "agent-orch")
-4. Write the subject to `settings.json` and confirm: "Saved. Run `/weekly-digest add [topic]` to add more subjects."
-5. Proceed to Phase 1 with the newly configured subject.
+4. Write the full settings file with all defaults + the new subject:
+   ```json
+   { "version": 1, "top_n": 5, "target_candidates": 20, "lookback_days": 7,
+     "output_dir": "output", "language": "en",
+     "weights": { "novelty": 1, "relevance": 1, "slopiness": 1, "technical": 1, "feasibility": 1 },
+     "obsidian_vault": null, "subjects": [{ ... }] }
+   ```
+5. Validate `output_dir` exists (create if needed) before proceeding.
+6. Confirm: "Saved. Run `/weekly-digest add [topic]` to add more subjects."
+7. Proceed to Phase 1 with the newly configured subject.
 
-For `settings.json` schema, see `settings.example.json` in the skill directory.
+**State B — subjects exist, user ran `/weekly-digest` (no args):** Run all subjects sequentially.
+
+**State C — user ran `/weekly-digest remove` and subjects list is now empty:** Don't auto-onboard. Instead respond: "No subjects configured. Add one with `/weekly-digest add [topic]`."
+
+For the full settings schema, see `settings.example.json` in the skill directory.
 
 ## Configuration
 
@@ -148,7 +162,14 @@ Rate each candidate 0-10 on five parameters:
 Overall = (w₁·Novelty + w₂·Relevance + w₃·(10 - Slopiness) + w₄·Technical + w₅·Feasibility) / (w₁ + w₂ + w₃ + w₄ + w₅)
 ```
 
-Where `w₁`...`w₅` are the weights from `settings.json` (default: all 1.0, making this a simple average).
+Weight mapping from `settings.json` keys to formula symbols:
+- `w₁` = `weights.novelty`
+- `w₂` = `weights.relevance`
+- `w₃` = `weights.slopiness`
+- `w₄` = `weights.technical`
+- `w₅` = `weights.feasibility`
+
+Default: all 1.0, making this a simple average.
 
 ### Relevance scoring anchors
 
@@ -162,10 +183,15 @@ Relevance depends on who the user is. Check memory/profile for context. When no 
 
 ## Phase 5: Output Files
 
-Generate files in the configured `output_dir` (default: `output/`, relative to cwd). Create the directory if needed.
+Generate files in the configured `output_dir` (default: `output/`, relative to cwd). Create the directory if needed — if creation fails (permissions, invalid path), abort with a clear error before writing.
 
-When running a single topic, name files: `YYYYMMDD-raw.md`, `YYYYMMDD-digest.md`.
-When running from settings with multiple subjects, use the prefix: `YYYYMMDD-{prefix}-raw.md`, `YYYYMMDD-{prefix}-digest.md`.
+**Slug rule for all runs:** every run has a `{prefix}` slug. For settings-based subjects, use `output_prefix` from the subject config. For single-topic one-off runs, derive a slug from the topic using the same rule as Phase 0 step 3 (lowercase, hyphenated, no spaces — e.g., "quantum computing" → "quantum-computing").
+
+**File naming** (always uses prefix):
+- `YYYYMMDD-{prefix}-raw.md`
+- `YYYYMMDD-{prefix}-digest.md`
+- `YYYYMMDD-{prefix}-failures.md` (only if failures exist)
+- `YYYYMMDD-{prefix}-report.html` (from Phase 6)
 
 ### Raw file (`*-raw.md`)
 
@@ -198,14 +224,14 @@ Only create this file if there are failures to log.
 
 ### Diff mode
 
-If a previous digest exists for the same subject (check for `*-{prefix}-digest.md` files with earlier dates in the same output_dir), compare:
+If a previous digest exists for the same subject, compare. To find the previous digest: list all files matching `*-{prefix}-digest.md` in `output_dir`, parse the `YYYYMMDD` date prefix, and select the most recent one that is older than today. Compare:
 - Items in both runs → mark as **persistent** in the new digest
 - Items only in the new run → mark as **new**
 - Items that dropped off → note in the raw file footer as "previously ranked, no longer appearing"
 
 ### Obsidian export
 
-If `obsidian_vault` is set in settings.json, copy the digest file to `{obsidian_vault}/Digests/YYYYMMDD-{prefix}.md` after generation. Create the `Digests/` directory if needed.
+If `obsidian_vault` is set in settings.json, copy the digest file to `{obsidian_vault}/Digests/YYYYMMDD-{prefix}.md` after generation (using the same `{prefix}` slug as the output files). Create the `Digests/` directory if needed.
 
 ## Phase 6: Presentation
 
@@ -218,7 +244,7 @@ The report should include:
 3. **Full candidate table** — All candidates ranked by overall score with all parameter values
 4. **Methodology section** — How sources were verified, what slopiness means, weights used
 
-Save the report as `{output_dir}/YYYYMMDD-{prefix}-report.html` (or `YYYYMMDD-report.html` for single-topic runs) and open it in the browser.
+Save the report as `{output_dir}/YYYYMMDD-{prefix}-report.html` and open it in the browser.
 
 ## Example invocations
 
