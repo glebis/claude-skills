@@ -8,6 +8,38 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
+### [qmd Search](./qmd-search/) ⭐ NEW
+
+Semantic search over a local Obsidian vault / markdown knowledge base using the on-device [qmd](https://github.com/tobi/qmd) engine — matches **meaning**, not just keywords, and works **across languages** (a Russian query finds the relevant English note). Fully local; nothing leaves the machine.
+
+**Features:**
+- 🔎 Three modes: BM25 keyword (`search`), vector semantic (`vsearch`), hybrid expansion+rerank (`query`)
+- 🌍 Cross-lingual retrieval (EN↔RU) via a multilingual on-device embedding model
+- 🧹 Agent-friendly wrapper: clean `score  path` output (JSON-parsed, comma-safe), suppresses qmd's stderr spinner
+- 🛡️ Best-effort guard against searching during an active `qmd embed` (a common cause of empty results)
+- ♻️ Tolerates qmd's post-output teardown abort; surfaces genuine failures with nonzero exit
+- ✅ Bundled smoke-test suite (`scripts/test_qmd_search.sh`)
+
+**Quick Start:**
+```bash
+# Install qmd (needs Node ≥22 or Bun; macOS: brew install sqlite)
+bun install -g @tobilu/qmd
+
+# Index a vault once
+qmd collection add ~/Brains/brain --name brain
+qmd embed   # re-run until `qmd status` shows 0 pending
+
+# Search
+./scripts/qmd-search.sh "how do I stop overengineering"     # hybrid (default)
+./scripts/qmd-search.sh -m vsearch "behavioral health from photos"
+./scripts/qmd-search.sh -m search sensorium                 # exact keyword
+./scripts/qmd-search.sh --json "agent orchestration"        # structured output
+```
+
+**Use when:** You want to search your notes/vault by concept or question ("find notes about X", "what do my notes say about Y"), need cross-lingual retrieval, or want a local alternative to Obsidian's literal search.
+
+---
+
 ### [Cognitive Toolkit (CBT/DBT)](https://github.com/glebis/claude-cognitive-toolkit) ⭐ NEW
 
 Evidence-based CBT and DBT intervention skills — guided thought records, opposite action, DEAR MAN roleplay, crisis skills with HRV biofeedback. Configurable therapeutic pushback. Works standalone or via Telegram. **[Standalone repo →](https://github.com/glebis/claude-cognitive-toolkit)**
