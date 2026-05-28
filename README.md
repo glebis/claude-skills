@@ -1716,6 +1716,35 @@ cp -r rag-eval ~/.claude/skills/
 
 ---
 
+### [Disk Cleanup](./skills/disk-cleanup/)
+
+Scan and clean macOS system caches to reclaim disk space. Surveys all major cache locations, presents a size-sorted inventory, and executes cleanup safely.
+
+**Features:**
+- 📊 Comprehensive survey: ~/Library/Caches, ~/.cache, Docker, npm/pip/uv/pnpm, Homebrew, browser caches, app updater caches, Claude Desktop, Xcode, Playwright, logs, ML model caches
+- 🎯 4 preset levels: safe (app caches, logs), safe+docker, full (includes ML models), pick-individually
+- 🗑️ Safe deletion via `trash` (never `rm`) — recoverable from Trash
+- 📋 Size-sorted inventory table with per-preset totals
+- 🔍 Discovery sweep catches unlisted caches >100 MB
+- ⚙️ Parameters: preset, skip list, dry-run mode, auto-empty-trash
+- 📈 Before/after disk usage report
+
+**Quick Start:**
+```bash
+# Copy to skills directory (or symlink)
+ln -s ~/ai_projects/claude-skills/skills/disk-cleanup ~/.claude/skills/disk-cleanup
+
+# Then just say:
+# "clean up my mac"
+# "what's eating my disk space?"
+# "free up space, safe only"
+# "disk cleanup dry-run"
+```
+
+**Use when:** Running low on disk space, clearing caches, investigating storage consumption, or getting "disk almost full" warnings on macOS.
+
+---
+
 ### [Tufte Report](./tufte-report/) ⭐ NEW
 Generate Tufte-inspired data reports as standalone HTML files. Combines editorial narrative with interactive data visualization: high information density, minimal chart junk, typography-first design with EB Garamond and Monaspace Argon.
 
