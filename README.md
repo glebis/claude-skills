@@ -496,6 +496,8 @@ End-to-end pipeline for publishing Claude Code lab meetings. Single `/agency-doc
 - 📊 Lesson HTML copied to public/ and linked in meeting page
 - ✅ Local build verification + Vercel deployment check
 - 🔢 Auto-detect or specify meeting number
+- 📚 Rebuilds site-wide aggregations after each meeting — meetings index/database, glossary, and global link library (`scripts/rebuild_aggregations.py`)
+- 🛠️ Fan-out maintenance workflows for repo-wide MDX/embed audits and backfill/repair of past meetings (`references/workflows.md`)
 
 **Quick Start:**
 ```bash

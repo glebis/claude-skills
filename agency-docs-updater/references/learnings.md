@@ -31,3 +31,11 @@
 ## Git push
 - Only stage pipeline-created files — never `git add .`
 - If remote is ahead: `git stash push`, `git pull --rebase`, push, `git stash pop`
+
+## Aggregations (Step 9)
+- `rebuild_aggregations.py` regenerates database/glossary/library from ALL meetings — it's idempotent, safe to re-run
+- Glossary definitions live in `.agency-glossary.json`, NOT in the generated MDX — edit the store, then re-run. Definitions survive rebuilds; only genuinely new terms are flagged
+- Generated MDX pages carry a `{/* GENERATED ... */}` banner — don't hand-edit them
+- The acronym extractor strips URLs first so referral codes (e.g. `…/r/GLEB3`) aren't mistaken for terms; still skim the NEW-term list for noise before defining
+- Per-meeting Fathom/YouTube links are intentionally excluded from the library (they're in the database) — the library is for external resources only
+- Always `npm run build` after a rebuild — the generated MDX can break the deploy just like meeting MDX can

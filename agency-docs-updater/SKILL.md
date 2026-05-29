@@ -240,6 +240,35 @@ Run with `run_in_background: true`. If state is `failure` or `error`: check Verc
 
 Open `https://${SITE_DOMAIN}/claude-code-lab-${LAB_NUMBER}/meetings/${MEETING_NUMBER}` in a browser (via chrome automation tools or manually). Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
 
+## Step 9: Rebuild Site-Wide Aggregations
+
+After the new meeting is committed (Step 6), regenerate the three site-wide aggregations from **all** meetings so the new one is reflected: the **database** (meetings index), the **glossary**, and the **global library** of links.
+
+```bash
+python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/rebuild_aggregations.py
+```
+
+The script reads the same `.env` paths and writes (paths configurable via `AGG_*` env vars):
+- `content/docs/database.mdx` + `public/data/meetings.json` — index of every meeting
+- `content/docs/glossary.mdx` (definitions persisted in `.agency-glossary.json`)
+- `content/docs/library.mdx` — deduplicated external links across all meetings
+
+**Handle new glossary terms**: the script prints `→ N NEW term(s) need definitions` for terms it has never seen. For each, write a one-line definition into `${DOCS_SITE_DIR}/.agency-glossary.json` (keep technical terms in English; match the page language otherwise), then re-run the script so the glossary MDX regenerates with the definitions. Leave already-defined terms untouched — the store is the source of truth.
+
+**Then**: `cd ${DOCS_SITE_DIR} && npm run build 2>&1 | tail -5` to confirm the generated MDX compiles, stage the changed aggregation files (the three MDX pages, `public/data/meetings.json`, and `.agency-glossary.json` — never `git add .`), and commit:
+```bash
+git add content/docs/database.mdx content/docs/glossary.mdx content/docs/library.mdx \
+        public/data/meetings.json .agency-glossary.json
+git commit -m "Rebuild aggregations after Lab ${LAB_NUMBER} Meeting ${MEETING_NUMBER}"
+git push
+```
+
+This commit can be folded into Step 6's commit if you prefer a single push; either way it must land before re-running Step 7's deploy wait.
+
 ## Pipeline Report
 
-After completion, report: Fathom path, video path, YouTube URL, MDX path, commit hash, deploy status, embed verification.
+After completion, report: Fathom path, video path, YouTube URL, MDX path, commit hash, deploy status, embed verification, and the aggregation rebuild (meeting count, any new glossary terms defined).
+
+## Related: fan-out maintenance workflows
+
+For **repo-wide** jobs across all past meetings — auditing every page for broken embeds/MDX defects, or backfilling/repairing incomplete meetings — see `references/workflows.md`. Those are fan-out [dynamic workflows](https://code.claude.com/docs/en/workflows.md) (one agent per meeting), run on demand, separate from this single-meeting pipeline.
