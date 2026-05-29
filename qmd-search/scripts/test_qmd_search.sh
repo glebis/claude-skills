@@ -47,6 +47,17 @@ printf '%s' "$out" | grep -q $'\x1b' && bad "ANSI leaked into output" || ok "no 
 out="$("$W" -n 2 "what helps with anxiety" 2>/dev/null)"; rc=$?
 { [ "$rc" -eq 0 ] && echo "$out" | grep -qE '\.md$'; } && ok "hybrid default returns rows, exit 0" || bad "hybrid default (rc=$rc): $out"
 
+# 12. grep mode finds a literal token (auto-detected root) and prints file:line:text
+out="$("$W" -m grep -n 3 "sensorium" 2>/dev/null)"
+echo "$out" | grep -qE '\.md:[0-9]+:' && ok "grep returns file:line:text" || bad "grep rows ($out)"
+
+# 13. grep mode no-match prints sentinel and exits 0 (not aborted by set -e)
+out="$("$W" -m grep "zzqxnowaymatch_42" 2>/dev/null)"; rc=$?
+{ [ "$rc" -eq 0 ] && echo "$out" | grep -q "no literal matches"; } && ok "grep no-match sentinel, exit 0" || bad "grep no-match (rc=$rc): $out"
+
+# 14. bad mode name still rejected (now includes grep in allowed set)
+"$W" -m frobnicate "x" >/dev/null 2>&1 && bad "bad mode should fail" || ok "bad mode still fails"
+
 echo "----"
 echo "passed=$pass failed=$fail"
 [ "$fail" -eq 0 ]

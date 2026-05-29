@@ -16,6 +16,25 @@ words with the query, and works **across languages** (e.g. a Russian query retri
   Best quality; first run downloads reranker/expansion models (~one-time slow).
 - **vector (`vsearch`)** — fast concept lookup ("notes about embodied computing").
 - **BM25 (`search`)** — an exact keyword, name, or filename. Instant, no model.
+- **grep (`-m grep`)** — literal fixed-string ripgrep over the .md files. The audit path for
+  proper nouns, transliterations, exact phrases, Russian stems/inflections, and absence checks.
+  Bypasses the index; matches only the exact script/spelling you type.
+
+## Bilingual / proper-name rule (do not skip)
+
+This vault is bilingual (English/Russian). The embedding model is decent for **concepts** but weak
+for **proper nouns / specific entities**, and BM25 only matches the script you type. So:
+
+**Never conclude "it's not in the vault" after one English semantic query.** For names, people,
+pets, places, foreign terms, or bilingual topics:
+1. Search semantically first (`query` / `vsearch`).
+2. Generate likely **native-script** spellings/stems and try them, e.g.
+   `Ziggy → Зигги/Зиги`, `dog/pet → собак, пёс, щенок, питомц, животн`. Use **stems** (`собак`
+   catches `собака/собаку/собаки`), not just the nominative.
+3. Run a **literal pass** before concluding absence: `qmd-search.sh -m grep -n 20 "Зигги"`.
+4. Use literal hits to **disambiguate** close names (e.g. `Зигги` the pet vs. `Зигмунд` Freud).
+5. If everything fails, say "I didn't find it with these queries: …" and list the terms tried —
+   not "it's not in the vault." Raise `-n` to ~20 for absence checks.
 
 ## Primary usage — the wrapper
 
@@ -32,6 +51,7 @@ Examples:
 qmd-search.sh "what helps with anxiety"                 # hybrid (default)
 qmd-search.sh -m vsearch -n 8 "behavioral health from photos"
 qmd-search.sh -m search sensorium                       # BM25 keyword
+qmd-search.sh -m grep -n 20 "Зигги"                     # literal native-spelling / absence check
 qmd-search.sh --json "agent orchestration"              # structured output for further processing
 qmd-search.sh --full "quarterly planning"               # include document content
 ```

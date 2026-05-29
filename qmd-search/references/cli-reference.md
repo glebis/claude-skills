@@ -82,6 +82,18 @@ qmd mcp                    # MCP server (stdio) for AI agents
    JSON. Treat the output as authoritative, not the exit code. The wrapper script judges success by
    output validity for this reason; raw `qmd query --json` in scripts should do the same (or use `--files`,
    which exits cleanly).
+7. **Cross-lingual embeddings are good for concepts, weak for proper nouns.** On a bilingual vault, a
+   specific entity (a pet/person/place named in one language) often won't surface from a query in the
+   other language. BM25 (`search`) only matches the script you type. The reliable audit path is a
+   **literal pass on the native spelling** — the wrapper's `-m grep` mode (ripgrep `--fixed-strings`),
+   which also disambiguates close names (e.g. `Зигги` the dog vs. `Зигмунд` Freud).
+
+## Bilingual search examples
+```bash
+qmd-search.sh -m grep -n 20 "Зигги"                 # literal native-spelling pass / absence check
+qmd-search.sh -m grep -n 20 "собак"                 # Russian STEM — catches собака/собаку/собаки
+qmd-search.sh $'lex: Зигги собак\nvec: animals pets dog'   # typed hybrid: native lex + EN concept vec
+```
 
 ## Prerequisites
 - Node ≥ 22 or Bun ≥ 1.0; macOS: `brew install sqlite`.

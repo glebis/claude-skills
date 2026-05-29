@@ -10,17 +10,22 @@
 #     passes through --json / --full unchanged. Real qmd failures are surfaced, not hidden.
 #
 # Usage:
-#   qmd-search.sh [-m query|search|vsearch] [-n N] [-c COLLECTION] [--json] [--full] [--force] <query...>
+#   qmd-search.sh [-m query|search|vsearch|grep] [-n N] [-c COLLECTION] [--json] [--full] [--force] <query...>
 #
 # Modes:
 #   query   (default) hybrid: query expansion + vector + BM25 + LLM rerank. Best quality.
 #   search  BM25 full-text. Instant, no model. Use for exact keywords/filenames.
 #   vsearch pure vector/semantic similarity. Fast concept lookup.
+#   grep    literal fixed-string ripgrep over the vault's .md files. The audit path for
+#           proper nouns, transliterations (e.g. "Зигги"), exact phrases, and absence checks.
+#           Does not use qmd's index. Root = -c <collection|path>, else $QMD_SEARCH_ROOT,
+#           else the sole qmd collection's path (auto-detected). Output: file:line:text.
 #
 # Examples:
 #   qmd-search.sh "how do I stop overengineering"
 #   qmd-search.sh -m search -n 10 sensorium
 #   qmd-search.sh -m vsearch --json "behavioral health from photos"
+#   qmd-search.sh -m grep -n 20 "Зигги"      # native-spelling literal pass
 #   qmd-search.sh --full "what helps with anxiety"
 set -euo pipefail
 
@@ -42,7 +47,7 @@ while [[ $# -gt 0 ]]; do
     --json)           JSON=1; shift;;
     --full)           FULL=1; shift;;
     --force)          FORCE=1; shift;;
-    -h|--help)        sed -n '2,24p' "$0"; exit 0;;
+    -h|--help)        sed -n '2,29p' "$0"; exit 0;;
     --)               shift; break;;
     -*)               die "unknown flag: $1";;
     *)                break;;
@@ -52,8 +57,36 @@ done
 QUERY="$*"
 [[ -n "$QUERY" ]] || die "no query given (run with -h for help)"
 command -v qmd >/dev/null 2>&1 || die "qmd not on PATH — install with: bun install -g @tobilu/qmd"
-case "$MODE" in query|search|vsearch) ;; *) die "mode must be query|search|vsearch (got: $MODE)";; esac
+case "$MODE" in query|search|vsearch|grep) ;; *) die "mode must be query|search|vsearch|grep (got: $MODE)";; esac
 [[ "$N" =~ ^[1-9][0-9]*$ ]] || die "-n must be a positive integer (got: $N)"
+
+err="$(mktemp "${TMPDIR:-/tmp}/qmd-search.XXXXXX")"
+trap 'rm -f "$err"' EXIT
+
+# grep mode: literal ripgrep over the vault's markdown. Bypasses the qmd index entirely.
+if [[ "$MODE" == grep ]]; then
+  command -v rg >/dev/null 2>&1 || die "rg (ripgrep) not on PATH"
+  collection_path() { qmd collection show "$1" 2>/dev/null | sed -n 's/^[[:space:]]*Path:[[:space:]]*//p' | head -1; }
+  root=""
+  if [[ -n "$COLLECTION" ]]; then
+    [[ -d "$COLLECTION" ]] && root="$COLLECTION" || root="$(collection_path "$COLLECTION")"
+  elif [[ -n "${QMD_SEARCH_ROOT:-}" ]]; then
+    root="$QMD_SEARCH_ROOT"
+  else
+    names="$(qmd collection list 2>/dev/null | grep '(qmd://' | awk '{print $1}')"
+    [[ "$(printf '%s\n' "$names" | grep -c .)" -eq 1 ]] && root="$(collection_path "$names")"
+  fi
+  [[ -n "$root" && -d "$root" ]] || die "grep root unknown — pass -c <collection|path> or set QMD_SEARCH_ROOT"
+  set +e  # rg exits 1 on no-match; don't let set -e/pipefail abort before the sentinel
+  out="$(rg --no-heading --line-number --color=never \
+            --glob '*.md' --glob '!**/.git/**' --glob '!**/.obsidian/**' \
+            --fixed-strings --ignore-case -- "$QUERY" "$root" 2>"$err" \
+          | awk -v n="$N" -v home="$HOME" 'NR<=n{sub("^" home, "~"); print} NR==n{exit}')"
+  set -e
+  if [[ -n "$out" ]]; then printf '%s\n' "$out"; exit 0; fi
+  if [[ -s "$err" ]]; then echo "qmd-search: rg failed" >&2; head -n 5 "$err" >&2; exit 2; fi
+  echo "(no literal matches for: $QUERY)"; exit 0
+fi
 
 # Best-effort guard against a concurrent embed (the #1 cause of empty results).
 if [[ $FORCE -eq 0 ]] && pgrep -f "qmd[^ ]* embed" >/dev/null 2>&1; then
@@ -68,8 +101,6 @@ args=("$MODE" "$QUERY" -n "$N")
 # NOTE on exit codes: hybrid `qmd query` may abort during model teardown (exit 134/SIGABRT)
 # *after* writing complete, valid output. So success is judged by output validity, not $rc;
 # a genuine failure produces no usable output and IS surfaced.
-err="$(mktemp "${TMPDIR:-/tmp}/qmd-search.XXXXXX")"
-trap 'rm -f "$err"' EXIT
 set +e
 
 # --json passthrough: emit verbatim if it parses as JSON.
