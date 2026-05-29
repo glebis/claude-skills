@@ -5,10 +5,11 @@ description: This skill should be used to search the local Obsidian vault / mark
 
 # qmd Search
 
-Search a local markdown knowledge base semantically with [`qmd`](https://github.com/tobi/qmd). Three
-modes — BM25 keywords, vector similarity, and hybrid (expansion + rerank) — all running on-device.
-The key advantage over Obsidian's built-in search: it matches **meaning**, finds notes that share no
-words with the query, and works **across languages** (e.g. a Russian query retrieves English notes).
+Search a local markdown knowledge base semantically with [`qmd`](https://github.com/tobi/qmd). Five
+modes — BM25 keywords, vector similarity, hybrid (expansion + rerank), literal native-script grep,
+and a fused `find` — all running on-device. The key advantage over Obsidian's built-in search: it
+matches **meaning**, finds notes that share no words with the query, and works **across languages**
+(e.g. a Russian query retrieves English notes).
 
 ## When to use which mode
 
@@ -43,7 +44,7 @@ Use the bundled wrapper; it suppresses qmd's stderr spinner, formats results as 
 during an active `qmd embed` (which would return empty results — override with `--force`):
 
 ```bash
-~/.claude/skills/qmd-search/scripts/qmd-search.sh [-m query|search|vsearch] [-n N] [-c COLLECTION] [--json] [--full] <query...>
+~/.claude/skills/qmd-search/scripts/qmd-search.sh [-m query|search|vsearch|grep|find] [-n N] [-c COLLECTION] [--snippet] [--min-score X] [--json] [--full] <query...>
 ```
 
 Examples:
@@ -52,8 +53,10 @@ qmd-search.sh "what helps with anxiety"                 # hybrid (default)
 qmd-search.sh -m vsearch -n 8 "behavioral health from photos"
 qmd-search.sh -m search sensorium                       # BM25 keyword
 qmd-search.sh -m grep -n 20 "Зигги"                     # literal native-spelling / absence check
+qmd-search.sh -m find "Зигги собака"                    # fused: semantic + literal in one call
+qmd-search.sh --snippet "agent orchestration"           # rows + matching snippets
+qmd-search.sh --min-score 0.5 "quarterly planning"      # drop low-relevance hits
 qmd-search.sh --json "agent orchestration"              # structured output for further processing
-qmd-search.sh --full "quarterly planning"               # include document content
 ```
 
 After getting hits, read the top files directly (they are normal vault paths) or fetch slices with
