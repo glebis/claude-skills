@@ -78,8 +78,27 @@ Refresh after large edits: `qmd update && qmd embed`. Check health any time with
   silently. See `references/cli-reference.md` → "Operational gotchas".
 - Vector scores are modest (~0.4–0.6); judge by **ranking**, not the absolute number.
 
+## MCP (native tools) vs. the CLI wrapper
+
+qmd ships an MCP server (`qmd mcp`, stdio) exposing tools `query`, `get`, `multi_get`, `status`.
+If it's registered in the host (e.g. `.mcp.json`), **prefer the native `query` tool** for hybrid
+search — it returns structured results with no spinner/JSON-parsing/exit-code quirks. Register with:
+
+```json
+{ "mcpServers": { "qmd": { "command": "qmd", "args": ["mcp"] } } }
+```
+
+Use the **wrapper** (`scripts/qmd-search.sh`) when you need what MCP doesn't cover: BM25-only
+(`search`), vector-only (`vsearch`), the literal/native-script **`grep`** pass, the fused **`find`**
+mode, `--snippet`, or `--min-score`. The bilingual/proper-name rule above applies to both paths.
+
+## Quality / evals
+
+`evals/fixture.example.json` + `scripts/run-evals.sh` run `qmd bench` to score search quality
+(precision/recall/MRR per backend). Baseline and interpretation: `evals/BASELINE.md`. Re-run after
+changing the wrapper, the index, or the embedding model; a drop vs. baseline is a regression.
+
 ## Reference
 
 Full command surface, query grammar (`lex:`/`vec:`/`hyde:`), output formats, models, and recovery
-steps are in `references/cli-reference.md`. The qmd MCP server (`qmd mcp`, stdio) is available for
-agent integrations.
+steps are in `references/cli-reference.md`.

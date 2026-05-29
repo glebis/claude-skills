@@ -13,12 +13,13 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 Semantic search over a local Obsidian vault / markdown knowledge base using the on-device [qmd](https://github.com/tobi/qmd) engine — matches **meaning**, not just keywords, and works **across languages** (a Russian query finds the relevant English note). Fully local; nothing leaves the machine.
 
 **Features:**
-- 🔎 Three modes: BM25 keyword (`search`), vector semantic (`vsearch`), hybrid expansion+rerank (`query`)
-- 🌍 Cross-lingual retrieval (EN↔RU) via a multilingual on-device embedding model
-- 🧹 Agent-friendly wrapper: clean `score  path` output (JSON-parsed, comma-safe), suppresses qmd's stderr spinner
-- 🛡️ Best-effort guard against searching during an active `qmd embed` (a common cause of empty results)
-- ♻️ Tolerates qmd's post-output teardown abort; surfaces genuine failures with nonzero exit
-- ✅ Bundled smoke-test suite (`scripts/test_qmd_search.sh`)
+- 🔎 Five modes: BM25 keyword (`search`), vector semantic (`vsearch`), hybrid expansion+rerank (`query`), literal native-script (`grep`), and fused (`find` = hybrid + grep in one call)
+- 🌍 Cross-lingual retrieval (EN↔RU) plus a bilingual / proper-name rule: try native-script spellings + a literal pass before concluding "not in the vault"
+- 🧹 Agent-friendly wrapper: clean `score  path` output (JSON-parsed, comma-safe), optional `--snippet` and `--min-score`, suppresses qmd's stderr spinner
+- 🛡️ Best-effort guard against searching during an active `qmd embed`; tolerates qmd's post-output teardown abort while surfacing genuine failures
+- 📊 Quality evals via `qmd bench` (`evals/` fixture + baseline) — measure precision/recall/MRR per backend, catch regressions
+- 🔌 Optional MCP integration (`qmd mcp` → `query/get/multi_get/status` as native tools)
+- ✅ Bundled smoke-test suite (18 cases) + Codex-reviewed
 
 **Quick Start:**
 ```bash
@@ -31,9 +32,11 @@ qmd embed   # re-run until `qmd status` shows 0 pending
 
 # Search
 ./scripts/qmd-search.sh "how do I stop overengineering"     # hybrid (default)
-./scripts/qmd-search.sh -m vsearch "behavioral health from photos"
 ./scripts/qmd-search.sh -m search sensorium                 # exact keyword
-./scripts/qmd-search.sh --json "agent orchestration"        # structured output
+./scripts/qmd-search.sh -m grep -n 20 "Зигги"               # literal / native-script / absence check
+./scripts/qmd-search.sh -m find "Зигги собака"              # fused: semantic + literal
+./scripts/qmd-search.sh --snippet "agent orchestration"     # rows + matching snippets
+./scripts/run-evals.sh                                      # quality benchmark vs baseline
 ```
 
 **Use when:** You want to search your notes/vault by concept or question ("find notes about X", "what do my notes say about Y"), need cross-lingual retrieval, or want a local alternative to Obsidian's literal search.

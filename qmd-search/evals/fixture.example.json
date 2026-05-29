@@ -1,0 +1,55 @@
+{
+  "description": "qmd-search quality regression set. Paths are examples from one bilingual Obsidian vault — copy this file and replace `expected_files` with paths from your own indexed collection (the canonical, qmd-normalized form: spaces become hyphens). Run with: qmd bench evals/fixture.example.json -c <collection>",
+  "version": 1,
+  "collection": "brain",
+  "queries": [
+    {
+      "id": "exact-sensorium",
+      "query": "sensorium",
+      "type": "exact",
+      "description": "Exact keyword should hit the project trail note.",
+      "expected_files": ["Trails/Trail-Sensorium.md"],
+      "expected_in_top_k": 1
+    },
+    {
+      "id": "semantic-anxiety-coping",
+      "query": "what helps with anxiety",
+      "type": "semantic",
+      "description": "Intent query should surface coping/CBT notes, not just notes titled 'anxiety'.",
+      "expected_files": ["Cognitive-Behavioral-Techniques.md", "anxiety.md"],
+      "expected_in_top_k": 1
+    },
+    {
+      "id": "topical-animal-communication",
+      "query": "animal communication",
+      "type": "topical",
+      "description": "Topical query should cluster the cross-species / animal-communication notes.",
+      "expected_files": ["Cross-species-communication.md", "Animal-Communication.md", "Sources/Using-AI-to-Decode-Animal-Communication-with-Aza-Raskin.md"],
+      "expected_in_top_k": 2
+    },
+    {
+      "id": "cross-domain-photo-health",
+      "query": "behavioral health signals from photographs",
+      "type": "cross-domain",
+      "description": "No shared words with the target PRD; tests semantic bridging.",
+      "expected_files": ["Claude-Drafts/20260331-product-prds.md"],
+      "expected_in_top_k": 1
+    },
+    {
+      "id": "alias-ziggy-cyrillic",
+      "query": "Зигги",
+      "type": "alias",
+      "description": "Proper noun in native (Cyrillic) script — must reach the therapy/daily notes about the dog. Searching the Latin 'Ziggy' instead returns nothing relevant (the bilingual gotcha).",
+      "expected_files": ["Meetings/20241023-my-therapy.md", "Daily/20241009.md"],
+      "expected_in_top_k": 1
+    },
+    {
+      "id": "cross-lingual-anxiety-ru",
+      "query": "как справляться с тревогой",
+      "type": "cross-domain",
+      "description": "Russian query should bridge to relevant coping notes (EN or RU). Cross-lingual recall is topical, not exact-file-stable, so several valid targets are listed and only one need appear.",
+      "expected_files": ["Worry-time.md", "Sources/The-Worry-Cure-Seven-Steps-to-Stop-Worry-from-Stopping-You.md", "Claude-Drafts/20260313-руминации-и-тревога-стратегии-совладания-и-самоподдержки-summary.md", "Cognitive-Behavioral-Techniques.md"],
+      "expected_in_top_k": 1
+    }
+  ]
+}

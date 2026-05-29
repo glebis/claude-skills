@@ -58,6 +58,24 @@ out="$("$W" -m grep "zzqxnowaymatch_42" 2>/dev/null)"; rc=$?
 # 14. bad mode name still rejected (now includes grep in allowed set)
 "$W" -m frobnicate "x" >/dev/null 2>&1 && bad "bad mode should fail" || ok "bad mode still fails"
 
+# 15. --snippet adds an indented snippet line under a row
+out="$("$W" -m search -n 1 --snippet sensorium 2>/dev/null)"
+{ echo "$out" | grep -qE '\.md$' && echo "$out" | grep -qE '^         [^ ]'; } && ok "--snippet renders snippet" || bad "--snippet ($out)"
+
+# 16. --min-score validates range
+"$W" --min-score 2 "x" >/dev/null 2>&1 && bad "--min-score 2 should fail" || ok "--min-score range validated"
+
+# 17. --min-score rejected for grep mode
+"$W" -m grep --min-score 0.5 "x" >/dev/null 2>&1 && bad "grep+min-score should fail" || ok "grep rejects --min-score"
+
+# 18. find mode prints both labeled sections, exit 0, no abort-trap leakage
+out="$("$W" -m find -n 2 "sensorium" 2>&1)"; rc=$?
+{ [ "$rc" -eq 0 ] \
+  && echo "$out" | grep -q "SEMANTIC (hybrid):" \
+  && echo "$out" | grep -q "LITERAL (grep" \
+  && ! echo "$out" | grep -qi "Abort trap"; } \
+  && ok "find: two sections, clean exit" || bad "find ($rc): $out"
+
 echo "----"
 echo "passed=$pass failed=$fail"
 [ "$fail" -eq 0 ]
