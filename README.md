@@ -513,6 +513,20 @@ python3 scripts/update_meeting_doc.py \
 
 ---
 
+### [Agency Meetup Publish](./agency-meetup-publish/)
+End-to-end pipeline for publishing AGENCY Community meetup recordings to YouTube. Downloads the Zoom recording, adds intro/outro, generates a thumbnail, builds a timecoded description, uploads to YouTube, sets the thumbnail, and adds the video to the AGENCY Community playlist.
+
+**Use when:** Publishing an AGENCY Community meetup — "upload the meetup", "publish the recording", "process the Zoom recording for YouTube".
+
+---
+
+### [Agency Socials](./agency-socials/)
+Generate social media covers and visual assets for AGENCY Community events, meetups, and YouTube recordings using the established design system (colors, typography, layout).
+
+**Use when:** Creating event covers, YouTube thumbnails, or social posts for the AGENCY Community.
+
+---
+
 ### [De-AI Text Humanizer](./de-ai/) ⭐ NEW
 Transform AI-sounding text into human, authentic writing while preserving meaning and facts. Research-backed approach focusing on quality over detection evasion.
 

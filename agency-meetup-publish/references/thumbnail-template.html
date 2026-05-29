@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1280, height=720">
+    <title>AGENCY Meetup Thumbnail</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Geist', sans-serif;
+            background-color: #FF6B1A;
+            width: 1280px;
+            height: 720px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            padding-left: 60px;
+            max-width: 65%;
+        }
+
+        /* CUSTOMIZE: Main title — short, punchy, 2-4 words per line */
+        h1 {
+            font-size: 120px;
+            font-weight: 900;
+            color: white;
+            line-height: 0.88;
+            letter-spacing: -0.03em;
+        }
+
+        /* CUSTOMIZE: Subtitle in EB Garamond italic */
+        .subtitle {
+            font-family: 'EB Garamond', serif;
+            font-size: 72px;
+            font-style: italic;
+            font-weight: 400;
+            color: white;
+            margin-left: 180px;
+            margin-top: -5px;
+            opacity: 0.95;
+        }
+
+        /* CUSTOMIZE: Speaker × AGENCY */
+        .speaker {
+            font-family: 'Geist Mono', monospace;
+            font-size: 28px;
+            font-weight: 400;
+            color: white;
+            opacity: 0.85;
+            margin-top: 30px;
+            letter-spacing: 0.05em;
+        }
+
+        /* Right side: speaker photo or decorative element */
+        .image-container {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 45%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 40px;
+        }
+
+        /* Use for speaker photo if available */
+        .image-container img {
+            max-height: 85%;
+            max-width: 100%;
+            object-fit: contain;
+            mix-blend-mode: hard-light;
+            opacity: 0.7;
+        }
+
+        /* Use for decorative text if no photo */
+        .decorative {
+            font-family: 'Geist Mono', monospace;
+            font-size: 200px;
+            color: white;
+            opacity: 0.15;
+            font-weight: 900;
+            line-height: 0.85;
+            text-align: right;
+        }
+
+        .agency-text {
+            position: absolute;
+            bottom: 25px;
+            right: 30px;
+            font-family: 'Geist Mono', monospace;
+            font-size: 30px;
+            font-weight: 500;
+            color: white;
+            letter-spacing: 0.3em;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <!-- CUSTOMIZE these three elements -->
+            <h1>TITLE<br>LINE 2</h1>
+            <div class="subtitle">subtitle</div>
+            <div class="speaker">Speaker Name × AGENCY</div>
+        </div>
+
+        <!-- Option A: Speaker photo -->
+        <!-- <div class="image-container">
+            <img src="PHOTO_PATH" alt="Speaker">
+        </div> -->
+
+        <!-- Option B: Decorative text (when no photo available) -->
+        <div class="image-container">
+            <div class="decorative">?!<br>∅<br>✓</div>
+        </div>
+
+        <div class="agency-text">AGENCY</div>
+    </div>
+</body>
+</html>
