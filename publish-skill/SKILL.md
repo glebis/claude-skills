@@ -1,0 +1,281 @@
+---
+name: publish-skill
+description: This skill should be used when publishing a new or updated skill to the claude-skills-site Astro website. Use this skill for both adding new skills AND updating existing ones on the site. Triggers on "/publish-skill skillname", "add skill to site", "publish skillname to skills site", "update skill on site", "edit skill on site", "sync skill to site", "republish skill". Reads SKILL.md from the skills repo, generates MDX frontmatter and body, picks the right bundle, updates bundle skills array, and commits/pushes both repos. For existing skills, pass --update to preserve apothecary_name, hero_image, and activity data while regenerating the rest.
+---
+
+# Publish Skill to Site
+
+Automate the full pipeline for publishing a skill to the claude-skills-site Astro website.
+
+## Paths
+
+- **Skills repo:** `~/ai_projects/claude-skills/`
+- **Site repo:** `~/ai_projects/claude-skills-site/`
+- **Site skills:** `~/ai_projects/claude-skills-site/src/content/skills/*.mdx`
+- **Site bundles:** `~/ai_projects/claude-skills-site/src/content/bundles/*.mdx`
+
+## Invocation
+
+```
+/publish-skill <skill-name>              # New skill
+/publish-skill <skill-name> --update     # Regenerate existing .mdx
+/publish-skill <skill-name> --dry-run    # Show what would be written, no commits
+/publish-skill <skill-name> --with-image # Also generate hero image via Codex
+```
+
+## Workflow
+
+Execute these phases in order. Stop and report on any error.
+
+### Phase 1 — Locate and Read Source
+
+1. Check `~/ai_projects/claude-skills/<skill-name>/SKILL.md` exists. Also check `~/.claude/skills/<skill-name>/SKILL.md`.
+2. If neither exists, report error: "SKILL.md not found for `<skill-name>`. Ensure the skill directory exists in the skills repo or ~/.claude/skills/."
+3. If both exist, compare them. If `~/.claude/skills/` version is newer (by mtime), sync it to the skills repo with `rsync -av --exclude='*.egg-info' --exclude='__pycache__'`, commit the change, and push. This ensures the skills repo always has the latest version.
+4. Read the SKILL.md (preferring the skills repo copy after any sync). Extract:
+   - `name` from YAML frontmatter
+   - `description` from YAML frontmatter
+   - Body content (everything after the frontmatter closing `---`)
+5. Also check if `~/ai_projects/claude-skills/<skill-name>/README.md` exists — if so, read it for supplementary context.
+
+### Phase 2 — Check for Existing MDX
+
+1. Check if `~/ai_projects/claude-skills-site/src/content/skills/<skill-name>.mdx` already exists.
+2. If it exists and `--update` was NOT passed: stop and ask for confirmation. "The skill `<skill-name>` already has an .mdx on the site. Pass `--update` to regenerate, or confirm to overwrite."
+3. If it exists and `--update` was passed: read the existing .mdx. Preserve these fields from the existing file (do not regenerate):
+   - `apothecary_name`
+   - `hero_image`
+   - `auto_activity`
+   - `auto_last_synced` (will be updated to today)
+
+### Phase 3 — Generate MDX Frontmatter
+
+Generate each field:
+
+**`name`** — Use the skill directory name (kebab-case). Must match the filename.
+
+**`tagline`** — One sentence, max 80 characters. Summarize what the skill does in plain language. End with a period. Do not start with "A skill that..." — lead with the action verb or the thing it produces.
+
+**`apothecary_name`** — A poetic 2-4 word name in the style of an old apothecary shop. Follow the existing pattern:
+- "The Listener's Ear" (meeting-intelligence)
+- "The Scholar's Deep Draught" (deep-research)
+- "The Artificer's Bench" (developer-tools)
+- "The Therapist's Grimoire" (cognitive-toolkit)
+- Use "The [Noun]'s [Noun]" or "[Noun] of [Noun]" patterns.
+
+**`bundle`** — Select the best-fit bundle by analyzing the skill's purpose against these categories:
+
+| Bundle key | Name | Covers |
+|---|---|---|
+| `meeting-intelligence` | Meeting Intelligence | Transcripts, meetings, recordings, action items, video/audio processing |
+| `communication` | Communication | Email, messaging, Telegram, Google Workspace, Zoom |
+| `research` | Research | Web research, search, image sourcing, knowledge retrieval |
+| `content-publishing` | Content & Publishing | Image generation, presentations, PDFs, reports, brand assets, visual tools |
+| `personal-analytics` | Personal Analytics | Health data, dictation analytics, browsing history, self-reflection, hardware signals, knowledge visualization |
+| `thinking-strategy` | Thinking & Strategy | Decision frameworks, JTBD, dialogue modes, cognitive tools, self-design |
+| `developer-tools` | Developer Tools | TDD, LLM CLI, issue tracking, session search, code tools |
+| `lab-consulting` | Lab & Consulting | Lab meetings, client discovery, retrospectives, demos |
+
+If the skill could fit multiple bundles, prefer the one where it adds the most differentiation. If genuinely unsure, ask the user.
+
+**`tags`** — 3-6 lowercase kebab-case tags. Derive from the skill's domain, tools used, and output types. Check existing skills for tag reuse.
+
+**`accent_color`** — Pick from the validated set: `amber` (default), `blue`, `cyan`, `green`, `orange`, `purple`, `violet`. Use `amber` unless the skill has a strong thematic reason for another color (e.g., hardware/signals → `cyan`, mental health → `violet`, nature/strategy → `green`).
+
+**`auto_description`** — Copy the `description` field from the SKILL.md frontmatter verbatim. Truncate at 200 characters if longer.
+
+**`auto_triggers`** — Extract 0-3 trigger phrases from the SKILL.md description (e.g., "queries like", "check my email"). Leave empty `[]` if no clear triggers.
+
+**`auto_tools`** — Leave as `[]`.
+
+**`auto_last_synced`** — Today's date in `YYYY-MM-DD` format. Run `date +"%Y-%m-%d"` to get it.
+
+**`auto_last_commit`** — Run `git -C ~/ai_projects/claude-skills log -1 --format="%Y-%m-%d" -- <skill-name>/` to get the last commit date for that skill directory.
+
+**`auto_activity`** — Leave as `[]` for new skills. Preserve from existing .mdx on `--update`.
+
+**`install_command`** — Leave as `""`.
+
+**`repo_path`** — The skill directory name (same as `name`).
+
+**`dependencies`** — Extract from SKILL.md requirements/prerequisites sections. List Python packages, CLI tools, or APIs needed. Use `[]` if none.
+
+**`hero_image`** — Leave commented out (`# hero_image:`) unless the skill has a screenshot in the repo.
+
+### Phase 4 — Generate MDX Body
+
+Write the body following this exact structure:
+
+```mdx
+## What it does
+
+[2-3 sentences describing the skill's primary function. Be specific about what it produces or enables. Reference concrete tools, APIs, or protocols if relevant.]
+
+## Key features
+
+[Bulleted list of 4-6 distinguishing features. Each bullet: **Bold label** — explanation. Focus on what makes this skill interesting, not obvious capabilities.]
+
+## When to use
+
+[1-2 sentences describing the trigger scenarios. Start with "When..." to match the existing pattern.]
+```
+
+Additional sections to include only when relevant:
+- `## Signals` or `## Modes` — if the skill has named operational modes or signal types
+- `## How it works` — if the skill uses a non-obvious protocol (MIDI, MCP, etc.)
+
+Do NOT include: installation instructions, quick start commands, code blocks, or dependency lists. Those belong in the SKILL.md and README, not the site .mdx.
+
+### Phase 5 — Validate
+
+Before writing, verify:
+
+1. **Bundle exists:** Confirm `~/ai_projects/claude-skills-site/src/content/bundles/<bundle>.mdx` exists.
+2. **No duplicate:** If not `--update`, confirm no .mdx already exists (handled in Phase 2).
+3. **Accent color valid:** Must be one of: `amber`, `blue`, `cyan`, `green`, `orange`, `purple`, `violet`.
+4. **Name matches:** The `name` field, `repo_path`, and filename must all match.
+5. **Tagline length:** Must be under 100 characters.
+
+If any check fails, report the specific error and stop.
+
+### Phase 6 — Write Files
+
+1. **Write the .mdx file** to `~/ai_projects/claude-skills-site/src/content/skills/<skill-name>.mdx`.
+2. **Update the bundle:** Read the target bundle .mdx. Add the skill name to the `skills:` array if not already present. Append at the end of the array.
+3. If `--dry-run`: Instead of writing, display the full .mdx content and the bundle change, then stop.
+
+### Phase 6.5 — Generate Hero Image (optional, requires `--with-image`)
+
+Skip this phase unless `--with-image` was passed.
+
+Generate a hero image using the `/codex` skill. Codex has a built-in `image_gen` tool that produces images without needing an API key. The image follows the site's apothecary visual language established in the original Codex design session.
+
+**Prompt template** — fill in `SKILL_NAME`, `APOTHECARY_NAME`, `SCENE_BACKDROP`, `SUBJECT`, `COMPOSITION_DETAIL`, and `AVOID_EXTRA`:
+
+```
+Use case: stylized-concept
+Asset type: 16:9 skill hero image for the Claude Skills site
+Primary request: Create a skill-specific hero artwork for the skill "SKILL_NAME", apothecary name "APOTHECARY_NAME". No readable text.
+Style reference: Match the existing main site hero style: dark apothecary workbench fused with developer terminal artifacts, hand-tinted copperplate engraving, technical diagram overlays, tactile paper grain, oxidized copper, medicinal green, ink brown, warm bone, tiny electric-blue signal accents.
+Scene/backdrop: SCENE_BACKDROP
+Subject: SUBJECT
+Composition: Wide 16:9, COMPOSITION_DETAIL, quiet dark negative space left, no border.
+Lighting: Low raking desk light, sharp engraving detail, warm copper highlights.
+Avoid: no readable words, no logos, no human figures, AVOID_EXTRA, no stock-photo look, no neon sci-fi.
+```
+
+**Exact prompts from existing hero images** (use as style/structure reference):
+
+**tdd** ("The Test Anvil"):
+- Scene: A heavy workbench inside an apothecary cabinet, with brass measuring instruments, drawers, glass vials, and translucent command cards.
+- Subject: A small blacksmith anvil used as a testing station, with three distinct stages represented by red wax seal, green reagent glow, and polished brass refactor tool; tiny checklist slips and code-bracket glyphs etched into metal.
+- Composition detail: anvil and three-stage testing ritual centered-right
+- Avoid extra: no generic fantasy forge, no smoke-heavy scene
+
+**jtbd** ("The Hiring Compass"):
+- Scene: A researcher's apothecary desk with interview cards, opportunity maps, tiny sample vials, brass compass, and drawer labels represented only by abstract marks.
+- Subject: A brass compass pointing through customer-job constellations, annotated review-mining cards, small scales for scoring opportunities, and translucent terminal cards with abstract brackets.
+- Composition detail: compass and opportunity map centered-right
+- Avoid extra: no corporate stock imagery, no generic charts, no bright flat UI, no blurry glow
+
+**skill-studio** ("The Automation Architect"):
+- Scene: A precise apothecary drafting bench with brass calipers, small drawers, vellum workflow maps, index cards, and translucent terminal recipe cards.
+- Subject: An architect's compass, interview question cards, a flowchart map, and small vial-like modules arranged into a structured automation blueprint.
+- Composition detail: detailed lower and right areas, some quiet negative space for page text overlay if needed
+- Avoid extra: no modern stock-photo look, no blurry glow, no readable UI text
+
+**telegram-telethon** ("The Daemon's Relay"):
+- Scene: An apothecary communications bench with relay coils, brass switches, labeled drawers with abstract marks, sealed message tubes, and glass vials.
+- Subject: A daemon relay apparatus: brass telegraph key, paper-plane-like message glyphs etched on translucent cards, audio waveform phials, and blue signal lines running between drawers and terminal cards.
+- Composition detail: relay apparatus and message tubes centered-right, darker negative space left
+- Avoid extra: no Telegram logo, no brand marks, no modern phone mockup
+
+**agency-docs-updater** ("The Publisher's Engine"):
+- Scene: A compact apothecary publishing press connected to terminal recipe cards, archive drawers, reels, and document trays.
+- Subject: A brass engine that transforms a meeting transcript scroll into three outputs: a video reel glyph, a bound documentation sheet, and a clean index card; conveyor belts, gears, redaction veil strips, and synchronized blue trace lines.
+- Composition detail: publishing engine centered-right
+- Avoid extra: no YouTube logo, no brand marks, no modern UI screenshot, no generic printer
+
+**vision-bench** ("The Judge's Loupe"):
+- Scene: A dark apothecary judging bench with comparison trays, specimen drawers, translucent image plates, and brass optical instruments.
+- Subject: A large judge's loupe examining two image plates side by side, small scoring weights and calibration vials, vision-model glyphs as abstract eye diagrams, and blue signal traces connecting evaluation cards.
+- Composition detail: loupe and image comparison plates centered-right
+- Avoid extra: no realistic eyeballs, no modern UI screenshot, no generic camera stock image
+
+**Subject crafting guidelines:**
+- Map the skill's core action to a physical apothecary/workshop metaphor
+- Each subject should have: a central object (anvil, compass, loupe, engine), supporting detail objects (cards, vials, glyphs), and subtle digital traces (blue signal lines, terminal brackets)
+- The metaphor should be immediately recognizable to someone who knows what the skill does
+- Keep subject descriptions to 1-2 sentences
+
+**Steps:**
+1. Craft all template fields (scene, subject, composition, avoid) based on the skill's purpose
+2. Invoke the `/codex` skill with the assembled prompt, requesting a 16:9 image saved to `~/ai_projects/claude-skills-site/public/images/SKILL_NAME-hero.jpg`
+3. Verify the image was created and is approximately 1672x941 pixels (the standard size for existing heroes)
+4. Update the .mdx frontmatter: change `# hero_image:` to `hero_image: "/images/SKILL_NAME-hero.jpg"`
+5. Stage the image file alongside the .mdx in Phase 8
+
+If Codex is not available or image generation fails, warn the user and continue without the image. The skill publishes fine without a hero image.
+
+### Phase 7 — Show Diff and Confirm
+
+1. Run `git -C ~/ai_projects/claude-skills-site diff` to show all changes.
+2. Present the diff to the user.
+3. Ask: "Publish these changes? This will commit and push to claude-skills-site." Wait for confirmation.
+
+### Phase 8 — Commit and Push
+
+1. Stage the changed files:
+   ```bash
+   git -C ~/ai_projects/claude-skills-site add src/content/skills/<skill-name>.mdx src/content/bundles/<bundle>.mdx
+   ```
+2. Commit with message: `feat: add <skill-name> skill to site`
+   - For `--update`: `feat: update <skill-name> skill on site`
+3. Push: `git -C ~/ai_projects/claude-skills-site push`
+4. Report the commit hash and confirm success.
+
+## Error Recovery
+
+| Error | Recovery |
+|---|---|
+| SKILL.md not found | Check both paths, report which were tried |
+| Bundle .mdx not found | List available bundles, ask user to pick |
+| .mdx already exists (no --update) | Ask user to confirm overwrite or pass --update |
+| Git push fails | Show error, suggest `git pull --rebase` first |
+| accent_color invalid | Default to `amber`, warn user |
+| Skill already in bundle array | Skip bundle update, not an error |
+
+## MDX Template
+
+```
+---
+name: "<skill-name>"
+tagline: "<tagline>"
+apothecary_name: "<apothecary_name>"
+bundle: <bundle>
+tags: [<tags>]
+accent_color: <color>
+# hero_image:
+auto_description: "<description>"
+auto_triggers: [<triggers>]
+auto_tools: []
+auto_last_synced: "<date>"
+auto_last_commit: "<date>"
+auto_activity: []
+install_command: ""
+repo_path: "<skill-name>"
+dependencies: [<deps>]
+---
+
+## What it does
+
+<body>
+
+## Key features
+
+<features>
+
+## When to use
+
+<when>
+```
