@@ -9,6 +9,10 @@
 
 # --- Visual Presets (aesthetic-focused) ---
 
+line-art:
+  description: "Monochrome line art — clean black lines on white, no fills, no shading, technical illustration feel"
+  prompt: "{subject}, minimalist monochrome line art, clean black lines on pure white background, no fills, no gradients, no shading, no color, technical illustration style, simple and elegant, even line weight, generous whitespace, no text, no labels"
+
 editorial:
   description: "Dark editorial style — thin lines on black, muted palette, technical feel"
   prompt: "on pure black background, {subject}, thin pale gray and subtle orange line art, minimalist technical diagram aesthetic, clean vector style, sparse with lots of negative space, dark moody, no text, no labels"
