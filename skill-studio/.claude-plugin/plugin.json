@@ -1,0 +1,9 @@
+{
+  "name": "skill-studio",
+  "description": "Interview-driven automation design tool. This skill should be used when the user wants to design a new skill, agent, aut",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

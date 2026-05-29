@@ -45,8 +45,6 @@ class OpenRouterProvider:
         self.system_prompt = system_prompt
 
     def ask(self, history: list[dict], max_tokens: int = 600) -> str:
-        # Convert anthropic-style history [{"role":"user","content":"..."}] -> openai format
-        # (same shape, just prepend system message)
         messages = [{"role": "system", "content": self.system_prompt}]
         messages.extend(history)
         resp = self.client.chat.completions.create(
@@ -58,8 +56,17 @@ class OpenRouterProvider:
 
 
 def get_provider(system_prompt: str) -> LLMProvider:
-    """Factory — picks provider from LLM_PROVIDER env (default: openrouter)."""
-    provider = os.environ.get("LLM_PROVIDER", "openrouter").lower()
+    """Factory — picks provider from LLM_PROVIDER env (default: auto-detect)."""
+    provider = os.environ.get("LLM_PROVIDER", "auto").lower()
+    if provider == "auto":
+        if os.environ.get("OPENROUTER_API_KEY"):
+            provider = "openrouter"
+        elif os.environ.get("ANTHROPIC_API_KEY"):
+            provider = "anthropic"
+        else:
+            raise ValueError(
+                "No LLM provider configured. Set OPENROUTER_API_KEY or ANTHROPIC_API_KEY."
+            )
     if provider == "anthropic":
         return AnthropicProvider(system_prompt=system_prompt)
     elif provider == "openrouter":

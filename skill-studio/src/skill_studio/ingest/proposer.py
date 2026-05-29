@@ -25,27 +25,77 @@ Schema (propose only fields the signals justify):
   scenarios (list of {title, vignette}),
   capabilities (list), inputs (list)
 
+The bundle now includes structured session activity:
+- agents: subagent calls with descriptions, types, and prompt snippets
+- skills: skill invocations observed during the session
+- tool_sequence: ordered list of all tool calls with descriptions
+- tool_frequency: how often each tool was used
+- workflow_patterns: repeated tool sequences (potential automatable workflows)
+
+Use these signals to infer capabilities, inputs, and scenarios. For example:
+- Agent calls reveal delegation patterns and multi-step orchestration
+- Skill calls show existing automations the user relies on
+- Workflow patterns (repeated tool sequences) suggest automatable workflows
+- Tool frequency reveals the user's primary interaction patterns
+
 Rules:
-- Every proposed value must cite which signal it came from (models_tried, pain_snippets, iterations, total_cost_usd, etc.) in the "rationale" map.
+- Every proposed value must cite which signal it came from in the "rationale" map.
 - If the bundle is empty/thin, propose {} — do not invent.
 - cost_today: only fill if total_cost_usd > 0 or the transcript clearly complains about cost.
-- scenarios: derive from prompt_change / iterations patterns, not from a single turn.
+- scenarios: derive from agent calls, workflow patterns, or iterations — not a single turn.
+- capabilities: derive from agent descriptions, skill calls, and tool sequences.
 
 Output format (valid JSON only, no prose):
 {
   "patch": { <partial DesignJSON> },
-  "rationale": { "<field.path>": "<which signal(s) justified this>" }
+  "rationale": { "<field.path>": "<which signal(s) justified this>" },
+  "skill_proposals": [
+    {
+      "name": "suggested-skill-name",
+      "description": "what this skill would do",
+      "trigger": "when to invoke it",
+      "workflow": ["tool1", "tool2", "tool3"],
+      "source_signals": ["which bundle fields support this proposal"]
+    }
+  ]
 }
+
+skill_proposals: If the session reveals repeatable multi-step workflows (from \
+workflow_patterns, agent orchestration, or repeated skill+tool sequences), \
+propose them as potential new skills. Only propose when the evidence is strong — \
+at least 2 occurrences of a pattern or a clear agent orchestration flow. \
+If no strong patterns exist, return an empty list.
 """
 
 
-def propose(bundle: Bundle, llm: LLMProvider, max_tokens: int = 1200) -> tuple[dict, dict]:
+def _extract_json(raw: str) -> dict | None:
+    start, end = raw.find("{"), raw.rfind("}")
+    if start == -1 or end == -1:
+        return None
+    try:
+        return json.loads(raw[start : end + 1])
+    except json.JSONDecodeError:
+        return None
+
+
+def _compact_bundle(bundle: Bundle) -> dict:
+    """Trim the bundle to fit in a single LLM prompt without losing signal."""
+    d = bundle.to_dict()
+    if len(d.get("tool_sequence", [])) > 30:
+        d["tool_sequence"] = d["tool_sequence"][:15] + [{"tool": "...", "description": f"({len(d['tool_sequence']) - 30} more)"}] + d["tool_sequence"][-15:]
+    for agent in d.get("agents", []):
+        if len(agent.get("prompt_snippet", "")) > 150:
+            agent["prompt_snippet"] = agent["prompt_snippet"][:150] + "..."
+    return d
+
+
+def propose(bundle: Bundle, llm: LLMProvider, max_tokens: int = 1500) -> tuple[dict, dict]:
     """Run the LLM once over the compact bundle. Returns (patch, rationale).
 
     On any failure (bad JSON, LLM error), returns ({}, {}) — caller falls back
     to starting the interview without a seed.
     """
-    body = json.dumps(bundle.to_dict(), indent=2)
+    body = json.dumps(_compact_bundle(bundle), indent=2)
     try:
         raw = llm.ask(
             history=[
@@ -56,14 +106,12 @@ def propose(bundle: Bundle, llm: LLMProvider, max_tokens: int = 1200) -> tuple[d
     except Exception:
         return {}, {}
 
-    start, end = raw.find("{"), raw.rfind("}")
-    if start == -1 or end == -1:
-        return {}, {}
-    try:
-        parsed = json.loads(raw[start : end + 1])
-    except json.JSONDecodeError:
+    parsed = _extract_json(raw)
+    if not isinstance(parsed, dict):
         return {}, {}
 
-    patch = parsed.get("patch") if isinstance(parsed, dict) else None
-    rationale = parsed.get("rationale") if isinstance(parsed, dict) else None
-    return (patch or {}), (rationale or {})
+    patch = parsed.get("patch") or {}
+    rationale = parsed.get("rationale") or {}
+    if parsed.get("skill_proposals"):
+        rationale["_skill_proposals"] = parsed["skill_proposals"]
+    return patch, rationale

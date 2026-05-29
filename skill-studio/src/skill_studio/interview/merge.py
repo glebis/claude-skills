@@ -5,8 +5,36 @@ from skill_studio.schema import DesignJSON
 def deep_merge(design: DesignJSON, patch: dict) -> None:
     """Merge a partial JSON patch into a DesignJSON model in-place.
 
-    Shared by extractor.py and updater.py — single source of truth.
+    Supports both nested dicts and dot-notation keys (e.g. "problem.what_hurts").
     """
+    expanded = _expand_dot_keys(patch)
+    _apply(design, expanded)
+
+
+def _expand_dot_keys(patch: dict) -> dict:
+    """Expand dot-notation keys into nested dicts."""
+    result: dict = {}
+    for k, v in patch.items():
+        if "." in k:
+            parts = k.split(".")
+            target = result
+            for part in parts[:-1]:
+                target = target.setdefault(part, {})
+            existing = target.get(parts[-1])
+            if isinstance(existing, dict) and isinstance(v, dict):
+                existing.update(v)
+            else:
+                target[parts[-1]] = v
+        else:
+            if k in result and isinstance(result[k], dict) and isinstance(v, dict):
+                result[k].update(v)
+            else:
+                result[k] = v
+    return result
+
+
+def _apply(design: DesignJSON, patch: dict) -> None:
+    """Apply an expanded (no dot-keys) patch to a DesignJSON model."""
     for k, v in patch.items():
         if not hasattr(design, k):
             continue
@@ -17,15 +45,11 @@ def deep_merge(design: DesignJSON, patch: dict) -> None:
                 if hasattr(current, sub_k):
                     setattr(current, sub_k, sub_v)
         elif is_submodel and isinstance(v, str):
-            # LLM returned a string for a submodel field (common for Trigger).
-            # Map to the conventional text field if present, otherwise skip.
             for candidate in ("detail", "what_hurts", "situation", "motivation"):
                 if hasattr(current, candidate):
                     setattr(current, candidate, v)
                     break
         elif isinstance(v, list):
-            # If the field is typed `list[Submodel]`, coerce dicts into submodels
-            # so pydantic doesn't warn on serialization later.
             field = type(design).model_fields.get(k)
             item_type = None
             if field is not None:
@@ -47,7 +71,6 @@ def deep_merge(design: DesignJSON, patch: dict) -> None:
             else:
                 setattr(design, k, v)
         elif is_submodel:
-            # Non-dict, non-string for a submodel — skip rather than corrupt
             continue
         else:
             setattr(design, k, v)

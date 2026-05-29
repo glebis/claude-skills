@@ -1,6 +1,6 @@
 ---
 name: skill-studio
-description: Interview-driven automation design tool. This skill should be used when the user wants to design a new skill, agent, automation, shortcut, or any other automatable workflow. Runs a coverage-driven JTBD interview (text or voice), then exports a one-page markdown spec plus an SVG design map.
+description: Interview-driven automation design tool. This skill should be used when the user wants to design a new skill, agent, automation, shortcut, or any other automatable workflow. Runs a coverage-driven JTBD interview (text or voice), then exports a one-page markdown spec plus an SVG design map. Can also analyze Claude Code sessions (current or by ID) to extract workflows, subagent patterns, and skill usage, then propose new skills based on observed patterns. Use this skill whenever the user mentions analyzing a session, extracting workflows, proposing skills from past work, reviewing what tools or agents were used, or turning a session into a skill. Triggers on "analyze this session", "what skills could I build from this", "propose skills from session", "what workflows did I use", "what did I do in this session", "extract patterns", "turn this into a skill".
 ---
 
 # Skill Studio
@@ -16,6 +16,8 @@ This skill wraps an external CLI tool (`skill-studio`) installed via pip. The CL
 ## When to use
 
 Trigger on any of: "help me design...", "build a skill for...", "design an automation for...", "I want a bot/agent/workflow that...", "scope a new shortcut". Also trigger when the user describes a recurring pain and asks how to automate it.
+
+Also trigger for session analysis: "analyze this session", "what skills could I build from this", "propose skills from session", "what workflows did I use", "what did I do in this session", "extract patterns from my work", "turn this session into a skill", "what could be automated from this". If the user references a session ID or asks about subagent activity, this skill handles it.
 
 ## Prerequisites
 
@@ -35,18 +37,55 @@ Follow these steps in order.
 If the user provides a prior session (Claude Code transcript, another skill-studio session, or arbitrary transcript path), seed the interview instead of starting blank:
 
 ```bash
+# Analyze the current running session
+skill-studio propose-from-session --current
+
+# Analyze a specific session by ID (prefix match works)
 skill-studio propose-from-session <session_id>
-# or: skill-studio propose-from-session --path <file>
-# add --bundle-only to skip the LLM call and inspect the raw extract
+
+# Analyze a session from a specific project
+skill-studio propose-from-session <session_id> --project <project-dir-name>
+
+# Analyze an arbitrary transcript file
+skill-studio propose-from-session --path <file>
+
+# Inspect the raw extracted bundle without an LLM call
+skill-studio propose-from-session --current --bundle-only
 ```
 
 This runs in two stages:
-1. **Deterministic ingest** (no LLM) — regex-extracts models tried, cost events, prompt changes, pain snippets, and hashes. A 50k-token transcript compresses to ~30 lines of JSON.
-2. **Single LLM call** — over that compact bundle only, proposes a partial DesignJSON patch with a `rationale` map citing which signals justified each field.
+1. **Deterministic ingest** (no LLM) — extracts models tried, cost events, prompt changes, pain snippets, **subagent calls** (Agent tool with descriptions, types, prompt snippets), **skill invocations**, **tool sequences** (ordered list of all tool calls), **tool frequency**, and **workflow patterns** (repeated multi-tool sequences). A 50k-token transcript compresses to a compact structured JSON bundle.
+2. **Single LLM call** — over that compact bundle only, proposes a partial DesignJSON patch with a `rationale` map citing which signals justified each field, plus **skill proposals** — potential new skills derived from observed workflow patterns and agent orchestration.
 
-**The proposal is NOT applied automatically.** Present it to the user (with the rationale) and ask for approval. Offer: `approve as-is`, `edit inline`, `discard and start fresh`, `approve partial` (keep some fields, re-interview others).
+The bundle includes these structured signals:
+- `agents` — subagent calls with `description`, `subagent_type`, and `prompt_snippet`
+- `skills` — skill invocations observed during the session
+- `tool_sequence` — ordered list of all tool calls with descriptions
+- `tool_frequency` — how often each tool was used
+- `workflow_patterns` — repeated tool sequences (e.g. "Read → Edit → Bash" appearing 3× suggests a test-fix cycle)
+
+**The proposal is NOT applied automatically.** Present it to the user (with the rationale and any skill proposals) and ask for approval. Offer: `approve as-is`, `edit inline`, `discard and start fresh`, `approve partial` (keep some fields, re-interview others).
+
+If the proposal includes `skill_proposals`, present them separately and ask if the user wants to proceed to `/skill-creator` with any of them.
 
 `propose-from-session` does not create a session. After approval, run `new-session` (Step 1) to create one, then pipe the approved patch to `apply-patch`, and continue the interview loop from the next uncovered target.
+
+### Browsing Claude Code sessions
+
+To help the user pick a session to analyze:
+
+```bash
+# List recent sessions (most recent first, all projects)
+skill-studio list-sessions
+
+# Filter to a specific project
+skill-studio list-sessions --project <project-dir-name>
+
+# Show more results
+skill-studio list-sessions --limit 50
+```
+
+Output shows session ID prefix, age, size, and title.
 
 ### Step 1 — Start the session
 
@@ -166,7 +205,9 @@ If voice mode fails due to missing API keys, fall back to text mode and inform t
 
 ## Other commands
 
-- `skill-studio list` — list all sessions
+- `skill-studio list` — list all skill-studio interview sessions
+- `skill-studio list-sessions` — list Claude Code sessions (most recent first)
+- `skill-studio list-sessions --project <name>` — filter by project
 - `skill-studio export <id> md-svg` — regenerate `design.md` + `design.svg`
 - `skill-studio coverage <id>` — per-field confidence JSON
 - `skill-studio next-target <id>` — ask-this-next hint

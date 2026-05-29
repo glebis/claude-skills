@@ -204,16 +204,26 @@ def cmd_propose_from_session(args: argparse.Namespace) -> int:
     user, collects approval/edits, then pipes the approved patch to apply-patch.
     """
     import sys
-    from skill_studio.ingest.transcript import extract, resolve_session
+    from skill_studio.ingest.transcript import (
+        extract, resolve_session, resolve_current_session,
+    )
     from skill_studio.ingest.proposer import propose
     from pathlib import Path as _P
+
+    project = getattr(args, "project", None)
 
     if args.path:
         path = _P(args.path).expanduser()
         source = "path"
         session_id = args.session_id or path.stem
+    elif getattr(args, "current", False):
+        path, session_id = resolve_current_session(project=project)
+        source = "claude-code"
     else:
-        path, source = resolve_session(args.session_id)
+        if not args.session_id:
+            print("error: provide a session_id, --current, or --path", file=sys.stderr)
+            return 1
+        path, source = resolve_session(args.session_id, project=project)
         session_id = args.session_id
 
     bundle = extract(path, session_id, source)
@@ -231,6 +241,30 @@ def cmd_propose_from_session(args: argparse.Namespace) -> int:
     }
     json.dump(out, sys.stdout, indent=2)
     sys.stdout.write("\n")
+    return 0
+
+
+def cmd_list_sessions(args: argparse.Namespace) -> int:
+    """List Claude Code sessions, optionally filtered by project."""
+    from skill_studio.ingest.transcript import list_claude_code_sessions
+    import time
+
+    project = getattr(args, "project", None)
+    limit = getattr(args, "limit", 20)
+    sessions = list_claude_code_sessions(project=project, limit=limit)
+    if not sessions:
+        print("No sessions found.")
+        return 0
+    for s in sessions:
+        age = time.time() - s["modified"]
+        if age < 3600:
+            age_str = f"{int(age / 60)}m ago"
+        elif age < 86400:
+            age_str = f"{int(age / 3600)}h ago"
+        else:
+            age_str = f"{int(age / 86400)}d ago"
+        title = s["title"][:50] if s["title"] else "(untitled)"
+        print(f"{s['session_id'][:8]}  {age_str:>8}  {s['size_kb']:>7.1f}kb  {title}")
     return 0
 
 
@@ -299,6 +333,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Ingest a prior session and propose a DesignJSON patch (user must approve before apply-patch)",
     )
     pfs_p.add_argument("session_id", nargs="?")
+    pfs_p.add_argument("--current", action="store_true",
+                        help="Use the current running Claude Code session (via CLAUDE_CODE_SESSION_ID)")
+    pfs_p.add_argument("--project", help="Scope search to a specific project directory name")
     pfs_p.add_argument("--path", help="Direct path to a transcript file")
     pfs_p.add_argument(
         "--bundle-only",
@@ -306,6 +343,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Emit just the deterministic bundle (no LLM call)",
     )
     pfs_p.set_defaults(func=cmd_propose_from_session)
+
+    # --- list-sessions (show Claude Code sessions) ---
+    ls_p = sub.add_parser(
+        "list-sessions",
+        help="List Claude Code sessions (most recent first)",
+    )
+    ls_p.add_argument("--project", help="Filter by project directory name")
+    ls_p.add_argument("--limit", type=int, default=20, help="Max sessions to show (default: 20)")
+    ls_p.set_defaults(func=cmd_list_sessions)
 
     args = parser.parse_args(argv)
     if args.cmd == "new" and getattr(args, "voice", False):
