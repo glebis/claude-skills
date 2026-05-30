@@ -8,7 +8,28 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
-### [qmd Search](./qmd-search/) ⭐ NEW
+### [Synthetic Session Generator](./synthetic-session-generator/) ⭐ NEW
+
+Generate realistic, **persona-consistent** synthetic coaching & therapy session transcripts for evals, demos, and training data — fictional but believable, and always watermarked as synthetic. Grounds each session in a chosen modality (ICF/GROW, CBT, IFS, ACT/MI) and a reusable persona, then renders to Fathom/Granola style, plain dialogue, structured JSON (with eval labels), or Obsidian markdown.
+
+**Features:**
+- 🧩 4 modalities with technique cheat-sheets: ICF/GROW coaching, CBT, IFS parts-work, ACT/Motivational Interviewing
+- 👤 Persona bible (Maya, Diego, Priya, …) so a session series stays in voice; invent-and-persist new personas
+- 📄 4 output formats (markdown always rendered) + `ground_truth` eval labels for benchmarking summarizers
+- ⏱️ Timestamp emulation from turn length (~150 wpm) — never hand-faked
+- 🌍 Setup mode: persist defaults for language (8 languages), modality, and session duration
+- 🖼️ Case-conceptualization card with an illustrative portrait via `gpt-image-2`, renderable as a Tufte-style HTML page via `tufte-report`
+- ⚠️ Always watermarked synthetic; composites only, never real people — generates, never analyzes real sessions
+- ✅ Hardened across 8 Codex audit rounds (malformed input, encoding, broken-pipe) — `VERDICT: ALL CLEAR`
+
+**Quick Start:**
+```bash
+cp -r synthetic-session-generator ~/.claude/skills/
+/synthetic-session-generator setup          # choose language / modality / duration
+/synthetic-session-generator                # generate a session
+```
+
+### [qmd Search](./qmd-search/)
 
 Semantic search over a local Obsidian vault / markdown knowledge base using the on-device [qmd](https://github.com/tobi/qmd) engine — matches **meaning**, not just keywords, and works **across languages** (a Russian query finds the relevant English note). Fully local; nothing leaves the machine.
 
