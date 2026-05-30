@@ -51,14 +51,20 @@ FORMULATIONS = {
 
 
 def portrait_prompt(persona, modality):
-    """A safe, clearly-synthetic, illustrative (non-photoreal) portrait prompt for gpt-image-2."""
+    """A safe, clearly-synthetic, courtroom-sketch line-art prompt for gpt-image-2.
+
+    Deliberately loose and gestural — a reportage sketch reads unmistakably as hand-drawn, never a
+    photo of a real person, and captures mood/posture/environment over literal likeness.
+    """
     persona = str(persona) if persona not in (None, "") else "client"
     modality = modality if isinstance(modality, str) and modality else "coaching"
     return (
-        f"Stylized editorial illustration (not a photograph) of a fictional therapy-client persona "
-        f"named '{persona}'. Warm muted palette, soft painterly texture, three-quarter portrait, "
-        f"contemplative mood evoking a {modality.upper()} session. Clearly an illustration, "
-        f"no text, no logos. Synthetic/illustrative character — not a real individual."
+        f"Loose courtroom-sketch / reportage line art of a fictional therapy-client persona "
+        f"named '{persona}'. Quick gestural pen-and-ink linework with a few light marker or "
+        f"colored-pencil washes, expressive and unfinished, sketched on the go. Capture mood, "
+        f"posture, and the session environment of a {modality.upper()} session rather than a "
+        f"literal likeness. Clearly a hand-drawn sketch — not a photograph, not a polished "
+        f"portrait. No text, no logos. Synthetic/illustrative character — not a real individual."
     )
 
 
