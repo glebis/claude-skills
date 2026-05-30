@@ -1,0 +1,17 @@
+{
+  "name": "meeting-prep",
+  "version": "1.0.0",
+  "description": "Prepare for upcoming meetings — pulls Cal.com bookings, researches participants, audits previous sessions from Obsidian vault, and creates prep notes. Also links prep notes to post-meeting session notes.",
+  "trigger": {
+    "keywords": ["meeting prep", "prep for meeting", "upcoming meetings", "session prep", "who do I have", "prepare for calls", "meeting-prep"],
+    "patterns": ["prep for", "prepare for my", "who.*coming up", "meeting prep"]
+  },
+  "capabilities": [
+    "Fetches upcoming Cal.com bookings and prepares comprehensive prep notes in Obsidian",
+    "Researches participants via web search and cross-references vault session history",
+    "Links prep notes to post-meeting session notes (link mode)",
+    "Syncs prep notes with Cal.com booking state — detects cancellations, reschedules, deletions (sync mode)",
+    "Reports status of all prep notes with ready-to-paste Dataview queries (status mode)",
+    "Supports solo and group session templates with per-attendee research"
+  ]
+}

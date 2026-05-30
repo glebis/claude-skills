@@ -1,0 +1,27 @@
+# meeting-prep skill configuration
+# All paths support ~ (home directory expansion)
+
+vault:
+  root: ~/Brains/brain
+  meetings: ~/Brains/brain/Meetings
+  # Where to search for person/contact notes (outside Meetings/)
+  people_search_depth: 2
+
+prep_notes:
+  # Filename pattern: {date}-prep-{participant_slug}.md
+  prefix: prep
+  # Frontmatter fields added to every prep note
+  type_tag: meeting-prep
+
+# Host identity — used in participant research prompts
+host:
+  name: Gleb Kalinin
+  role: AI lab instructor and consultant
+  location: Berlin
+
+# Cal.com settings
+calcom:
+  # Default lookahead for bookings when no date specified
+  lookahead_days: 7
+  timezone: Europe/Berlin
+  time_format: 24h

@@ -101,3 +101,50 @@ Analysis is appended to the transcript file as a `## Meeting Analysis` section. 
 - **Follow-up** — next meeting date if scheduled
 - **Partnership Context** — strategic alignment, technical needs, resources, challenges
 - **Opportunity Assessment** — fit (strong/medium/weak), readiness, success factors, sentiment
+
+## Step 2: Auto-Link Prep Notes
+
+After the meeting analysis is complete (Step 1), automatically link any matching meeting-prep notes to the session note. This replaces the need to manually run `/meeting-prep link`.
+
+### How It Works
+
+1. **Derive the meetings directory** from the processed session note's parent directory (do not hardcode paths).
+
+2. **Extract session metadata** from the processed note:
+   - `date` from frontmatter (YYYYMMDD format)
+   - `participants` from frontmatter (list of names)
+   - If no `participants` field, extract names from the transcript header or attendee list
+
+3. **Search for matching prep notes**:
+   ```bash
+   find <MEETINGS_DIR> -name "YYYYMMDD-prep-*" -type f 2>/dev/null
+   ```
+   Where `YYYYMMDD` is the session date.
+
+4. **Validate the match**: For each candidate prep note, read its frontmatter and confirm:
+   - The `date` field matches the session date
+   - The `participant` field matches one of the session's participants (fuzzy: check both full name and first name, case-insensitive)
+   - The `session_note` field is empty (`""`) — skip already-linked prep notes
+
+5. **Update both files** when a match is found:
+
+   **In the prep note:**
+   - Set `session_note: "[[session-note-filename]]"` (without `.md` extension)
+   - Set `status: done`
+
+   **In the session note:**
+   - If a `## See also` section exists, add `- [[YYYYMMDD-prep-participant-slug]]` to it
+   - Otherwise, append a new section at the end:
+     ```markdown
+     ## Prep Note
+     - [[YYYYMMDD-prep-participant-slug]]
+     ```
+   - Never create duplicate links — check if the link already exists before adding
+
+6. **Report** in the processing output which prep notes were linked, skipped, or not found.
+
+### Rules
+
+- Derive `MEETINGS_DIR` from the session note path, not from hardcoded values
+- If the meeting-prep `config.yaml` is available, read `prep_notes.prefix` (default: `prep`) and `prep_notes.type_tag` (default: `meeting-prep`)
+- This step is non-blocking: if it fails or finds no prep notes, processing still succeeds
