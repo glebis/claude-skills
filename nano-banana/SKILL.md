@@ -117,6 +117,36 @@ scripts/nano_banana.py --preset ink "mountain" ./mt.png --n 6
 # Creates mt-01.png ... mt-06.png + mt-contact.png
 ```
 
+### Batch generation (campaigns / multi-copy ad sets)
+When each output needs *different* text or a different prompt (e.g. a set of ads sharing one style), loop over a list. `--n` won't help here — it re-rolls the *same* prompt. Use a shared `$STYLE` string + a per-item array.
+
+```bash
+cd /abs/output/dir
+REF="_reference.png"   # optional style anchor
+STYLE="<shared visual-style description, written once>"
+
+# Each entry: pipe-delimited fields + output filename. NAME the array — see gotchas.
+ADS=(
+"CALL NOW|FOR TOTAL|CONFIDENTIALITY|ad-callnow.png"
+"REDACT|BEFORE|YOU SEND|ad-redact.png"
+)
+for entry in "${ADS[@]}"; do
+  IFS='|' read -r L1 L2 L3 OUT <<< "$entry"
+  python3 scripts/nano_banana.py \
+    "$STYLE The exact text reads, on three centered lines: '$L1' / '$L2' / '$L3'. Spell every word correctly." \
+    "$OUT" --reference "$REF" --platform youtube --model pro --no-metadata --project NAME
+done
+```
+
+**Shell gotchas (this is zsh on macOS — these bite every time):**
+- **Never name a loop array `LINES`, `COLUMNS`, `PATH`, `path`, `status`, `argv`, etc.** — zsh reserves them. `LINES=(...)` fails with `can't assign array value to non-array special`. Use `ADS`, `ITEMS`, `JOBS`.
+- **zsh does NOT word-split unquoted variables** (unlike bash). `CMD="magick montage"; $CMD ...` looks for a single command literally named "magick montage". Don't stuff multi-word commands in a var — call the command directly, or use an array (`cmd=(magick montage); "${cmd[@]}"`).
+- **Always quote expansions** — `"$OUT"`, `"${ADS[@]}"` — paths and prompts contain spaces.
+- Use **`'single quotes'` for the exact text** you want rendered, inside the double-quoted prompt, so the model reproduces it verbatim.
+- To parallelize a batch, append `&` per iteration and `wait` at the end — but cap concurrency (the API rate-limits); sequential is safest for >6 items.
+
+After a batch, assemble a review sheet by calling the tool directly (no var indirection): `magick montage ad-*.png -tile 2x3 -geometry 480x270+6+6 -background black _contact.png`.
+
 ### Edit Mode
 Pass an existing image and the prompt becomes the edit instruction:
 ```bash
