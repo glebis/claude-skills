@@ -1,0 +1,9 @@
+{
+  "name": "balanced",
+  "description": "Constructive, evidence-based dialogue mode that avoids sycophancy. This skill should be used when the user wants balance",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "lab-retro",
+  "description": "Final retrospective and self-assessment for participants of Claude Code Lab. Runs four sequential interactive parts \u2014 pr",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

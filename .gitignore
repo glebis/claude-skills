@@ -27,3 +27,10 @@ Thumbs.db
 .env
 cognitive-toolkit/
 concepts/
+
+# Local caches / build artifacts (machine-specific, not for VCS)
+.enzyme/
+.enzyme-embeddings/
+dist/
+**/disk-cleanup-workspace/
+wispr-analytics/data/

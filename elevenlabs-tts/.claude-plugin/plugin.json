@@ -1,0 +1,9 @@
+{
+  "name": "elevenlabs-tts",
+  "description": "This skill converts text to high-quality audio files using ElevenLabs API. Use this skill when users request text-to-spe",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

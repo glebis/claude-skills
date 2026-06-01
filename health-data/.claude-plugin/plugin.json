@@ -1,0 +1,9 @@
+{
+  "name": "health-data",
+  "description": "Query Apple Health SQLite database for vitals, activity, sleep, and workouts. Supports Markdown, JSON, and FHIR R4 outpu",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

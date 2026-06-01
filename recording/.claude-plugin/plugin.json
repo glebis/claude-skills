@@ -1,0 +1,9 @@
+{
+  "name": "recording",
+  "description": "Demo/recording mode that redacts personally identifiable and sensitive information from Claude Code's outputs. Use when ",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

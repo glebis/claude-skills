@@ -1,0 +1,9 @@
+{
+  "name": "temple-generator",
+  "description": "Generate a 3D interactive knowledge map (Inner Temple) from any Obsidian vault or document set. Supports multi-scale abs",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

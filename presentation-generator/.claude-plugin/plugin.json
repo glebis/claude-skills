@@ -1,0 +1,9 @@
+{
+  "name": "presentation-generator",
+  "description": "Generate interactive HTML presentations with neobrutalism styling, ASCII art decorations, and Agency brand colors. Outpu",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

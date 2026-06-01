@@ -1,0 +1,9 @@
+{
+  "name": "vision-bench",
+  "description": "Score and compare images using vision LLMs as judges. YAML-defined criteria presets for 11 use cases (text-to-image, pho",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

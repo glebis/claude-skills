@@ -1,0 +1,9 @@
+{
+  "name": "daydream",
+  "description": "daydream",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

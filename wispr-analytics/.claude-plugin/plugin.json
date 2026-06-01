@@ -1,0 +1,9 @@
+{
+  "name": "wispr-analytics",
+  "description": "This skill should be used when analyzing Wispr Flow voice dictation history for self-reflection, work patterns, mental h",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

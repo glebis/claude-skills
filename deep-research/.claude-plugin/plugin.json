@@ -1,0 +1,9 @@
+{
+  "name": "deep-research",
+  "description": "This skill should be used when conducting comprehensive research on any topic using the OpenAI Deep Research API. It aut",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

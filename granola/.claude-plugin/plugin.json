@@ -1,0 +1,9 @@
+{
+  "name": "granola",
+  "description": "This skill should be used when importing, listing, or exporting Granola meeting recordings and transcripts. Queries Gran",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

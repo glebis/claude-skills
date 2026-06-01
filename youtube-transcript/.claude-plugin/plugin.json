@@ -1,0 +1,9 @@
+{
+  "name": "youtube-transcript",
+  "description": "\"Extract YouTube video transcripts with metadata and save as Markdown to Obsidian vault. Use this skill when the user re",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

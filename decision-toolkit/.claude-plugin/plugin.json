@@ -1,0 +1,9 @@
+{
+  "name": "decision-toolkit",
+  "description": "Generate structured decision-making tools \u2014 step-by-step guides, bias checkers, scenario explorers, and interactive dash",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "retrospective",
+  "description": "retrospective",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

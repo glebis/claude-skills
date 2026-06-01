@@ -1,0 +1,23 @@
+{
+  "skill_name": "agent-cli",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have this Python CLI script at /tmp/test-agent-cli/weather.py that fetches weather data and prints it. Make it agent-friendly with --json support. Here's the script:\n\nimport argparse\nimport sys\n\ndef fetch_weather(city):\n    # simulated\n    return {\"temp\": 22, \"humidity\": 65, \"condition\": \"cloudy\"}\n\nif __name__ == \"__main__\":\n    parser = argparse.ArgumentParser(description=\"Weather CLI\")\n    parser.add_argument(\"city\", help=\"City name\")\n    args = parser.parse_args()\n    \n    data = fetch_weather(args.city)\n    if not data:\n        print(\"Error: could not fetch weather\")\n        sys.exit(1)\n    \n    print(f\"Weather for {args.city}:\")\n    print(f\"  Temperature: {data['temp']}°C\")\n    print(f\"  Humidity: {data['humidity']}%\")\n    print(f\"  Condition: {data['condition']}\")",
+      "expected_output": "Modified weather.py with --json flag, cli_utils.py generated, all prints replaced with log() calls, die() for error path",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Create a complete open-source cli-utils-agent Python package at /tmp/test-agent-cli/cli-utils-agent/ with pyproject.toml, MIT license, README, tests, and GitHub Actions CI. It should provide helpers for adding --json NDJSON output to any Python CLI script.",
+      "expected_output": "Full package scaffolded with src/ layout, pyproject.toml, LICENSE, README.md, test suite, CI workflow",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I have a WebSocket relay daemon at /tmp/test-agent-cli/relay.py. Add --json support. The daemon needs a readiness signal. Here's the script:\n\nimport asyncio\nimport json\n\nasync def handler(ws):\n    print(f'Client connected from {ws.remote_address}')\n    async for msg in ws:\n        data = json.loads(msg)\n        print(f'Received: {data[\"type\"]}')\n        await ws.send(json.dumps({\"ok\": True}))\n    print(f'Client disconnected')\n\nasync def main():\n    import websockets\n    server = await websockets.serve(handler, '0.0.0.0', 9000)\n    print(f'Relay running on port 9000')\n    print('Waiting for connections...')\n    await server.wait_closed()\n\nif __name__ == '__main__':\n    asyncio.run(main())",
+      "expected_output": "Modified relay.py with --json flag, readiness signal as first JSON line, all prints replaced, cli_utils.py generated",
+      "files": []
+    }
+  ]
+}

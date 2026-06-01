@@ -1,0 +1,9 @@
+{
+  "name": "google-image-search",
+  "description": "Search and download images via Google Custom Search API with LLM-powered selection. This skill should be used when findi",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

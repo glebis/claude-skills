@@ -1,0 +1,9 @@
+{
+  "name": "gws",
+  "description": "This skill should be used when interacting with Google Workspace services via the gws CLI \u2014 Gmail (search, triage, send,",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

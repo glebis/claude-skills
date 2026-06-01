@@ -1,0 +1,9 @@
+{
+  "name": "github-gist",
+  "description": "Publish files or Obsidian notes as GitHub Gists. Use when user wants to share code/notes publicly, create quick shareabl",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

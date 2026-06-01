@@ -1,0 +1,9 @@
+{
+  "name": "firecrawl-research",
+  "description": "This skill should be used when the user requests to research topics using FireCrawl, enrich notes with web sources, sear",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

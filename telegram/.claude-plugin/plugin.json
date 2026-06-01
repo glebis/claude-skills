@@ -1,0 +1,9 @@
+{
+  "name": "telegram",
+  "description": "This skill should be used when fetching, searching, downloading, sending, editing, or publishing messages on Telegram. U",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

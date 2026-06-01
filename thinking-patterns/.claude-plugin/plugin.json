@@ -1,0 +1,9 @@
+{
+  "name": "thinking-patterns",
+  "description": "thinking-patterns",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

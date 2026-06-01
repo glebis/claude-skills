@@ -1,0 +1,9 @@
+{
+  "name": "linear",
+  "description": "Manage Linear issues, projects, and workflows via CLI. This skill should be used when the user wants to create, list, up",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

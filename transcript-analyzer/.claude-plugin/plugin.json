@@ -1,0 +1,9 @@
+{
+  "name": "transcript-analyzer",
+  "description": "This skill analyzes meeting transcripts to extract decisions, action items, opinions, questions, and terminology using C",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

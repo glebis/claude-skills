@@ -1,0 +1,9 @@
+{
+  "name": "llm-cli",
+  "description": "Process textual and multimedia files with various LLM providers using the llm CLI. Supports both non-interactive and int",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

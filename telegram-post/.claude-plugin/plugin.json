@@ -1,0 +1,9 @@
+{
+  "name": "telegram-post",
+  "description": "telegram-post",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

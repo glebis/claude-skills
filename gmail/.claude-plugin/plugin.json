@@ -1,0 +1,9 @@
+{
+  "name": "gmail",
+  "description": "This skill should be used when searching, fetching, or downloading emails from Gmail. Use for queries like \"search Gmail",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

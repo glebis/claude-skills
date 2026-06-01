@@ -1,0 +1,9 @@
+{
+  "name": "browsing-history",
+  "description": "Query browsing history from all synced devices (iPhone, Mac, iPad, desktop). Supports natural language queries for filte",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

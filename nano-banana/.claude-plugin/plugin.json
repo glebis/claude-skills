@@ -1,0 +1,9 @@
+{
+  "name": "nano-banana",
+  "description": "Generate and edit images using Google's Gemini image generation models (Nano Banana family). Supports style presets, pla",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

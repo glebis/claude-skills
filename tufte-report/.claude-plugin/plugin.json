@@ -1,0 +1,9 @@
+{
+  "name": "tufte-report",
+  "description": "Create Tufte-inspired data reports and infographic dashboards as standalone HTML files. Uses EB Garamond for text, Monas",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "doctorg",
+  "description": "Evidence-based health research using tiered trusted sources with GRADE-inspired evidence ratings. Integrates Apple Healt",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

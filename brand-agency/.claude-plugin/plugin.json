@@ -1,0 +1,9 @@
+{
+  "name": "brand-agency",
+  "description": "Applies Agency brand colors and typography to artifacts including presentations, SVG graphics, documents, and web interf",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

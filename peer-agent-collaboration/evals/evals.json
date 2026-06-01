@@ -1,0 +1,47 @@
+{
+  "skill_name": "peer-agent-collaboration",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Help me decide how Claude Code and Codex should split work on a client feature. I want parity, not delegation.",
+      "expected_output": "A peer-framed operating model that chooses the lead by where the critical information lives, includes a concrete handoff template, and avoids hierarchy language.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Codex found a bug while implementing a spec from Claude Code. How should the agents handle the disagreement?",
+      "expected_output": "A challenge protocol where Codex pushes back with repo evidence, Claude Code evaluates against business context, and both preserve ownership instead of silently compromising.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Create a two-agent workflow for research, prototype, review, and client update.",
+      "expected_output": "A workflow that lets either Claude Code or Codex lead based on context surface, includes review checkpoints, and assigns outputs without subordinate framing.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "This is a tiny copy edit in one README. Should I involve both Claude Code and Codex because we have the skill?",
+      "expected_output": "A direct recommendation not to coordinate because this is routine single-surface work; mentions handoff overhead and suggests one agent finish it.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "I need to pass context from Claude Code to Codex, but the context includes private client details. What's the safest handoff?",
+      "expected_output": "A safe session-bridging recommendation that prefers paste or an appropriate issue tracker, warns against committing private context, and uses a task-specific local handoff file only with an explicit storage decision.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Claude Code has old context loaded, but Codex is already deep in the repo and tests. Who should lead a failing build investigation?",
+      "expected_output": "A recommendation that Codex should lead because repo/test evidence is the better operating surface; explicitly says stale loaded context should not win the tiebreaker.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Should Claude Code or Codex handle this deployment-risk decision? Answer directly, no big framework.",
+      "expected_output": "A concise direct answer that chooses the lead based on where deployment/business/integration context lives and avoids dumping the full five-part framework.",
+      "files": []
+    }
+  ]
+}

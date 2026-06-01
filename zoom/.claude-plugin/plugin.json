@@ -1,0 +1,9 @@
+{
+  "name": "zoom",
+  "description": "Create and manage Zoom meetings and access cloud recordings via the Zoom API. Use for queries like \"create a Zoom meetin",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

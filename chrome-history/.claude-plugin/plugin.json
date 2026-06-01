@@ -1,0 +1,9 @@
+{
+  "name": "chrome-history",
+  "description": "Query Chrome browsing history with natural language. Filter by date range, article type, keywords, and specific sites.",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "context-builder",
+  "description": "Generate interactive AI transformation context-builder prompts for consulting clients. Use when creating structured disc",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

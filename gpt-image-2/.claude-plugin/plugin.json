@@ -1,0 +1,9 @@
+{
+  "name": "gpt-image-2",
+  "description": "Generate and edit images using OpenAI's GPT Image 2 API. Supports style presets (including text-heavy ones like infograp",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "tdd",
+  "description": "This skill should be used when the user wants to implement features or fix bugs using test-driven development. Enforces ",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}

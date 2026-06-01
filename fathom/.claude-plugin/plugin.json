@@ -1,0 +1,9 @@
+{
+  "name": "fathom",
+  "description": "Fetch meetings, transcripts, summaries, and action items from Fathom API. Use when user asks to get Fathom recordings, s",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}
