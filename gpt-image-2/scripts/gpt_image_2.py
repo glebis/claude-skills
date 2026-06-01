@@ -130,17 +130,24 @@ def load_platforms() -> dict[str, dict]:
     return {}
 
 
-def compose_prompt(user_prompt: str, preset_name: str | None) -> tuple[str, str | None]:
-    """Return (final_prompt, preset_thinking_level)."""
+def compose_prompt(user_prompt: str, preset_name: str | None) -> tuple[str, str | None, str | None]:
+    """Return (final_prompt, preset_thinking_level, preset_reference_path).
+
+    A preset may declare a `reference:` path (relative to the skill dir); it is
+    auto-attached as a style anchor unless the user passes their own --reference.
+    """
     if not preset_name:
-        return user_prompt, None
+        return user_prompt, None, None
     presets = load_presets()
     if preset_name not in presets:
         print(f"Error: unknown preset '{preset_name}'. Available: {', '.join(presets.keys())}", file=sys.stderr)
         sys.exit(1)
     preset = presets[preset_name]
     prompt = preset["prompt"].replace("{subject}", user_prompt)
-    return prompt, preset.get("thinking")
+    ref = preset.get("reference")
+    if ref and not Path(ref).is_absolute():
+        ref = str((SKILL_DIR / ref).resolve())
+    return prompt, preset.get("thinking"), ref
 
 
 # ---------- Image I/O ----------
@@ -460,7 +467,14 @@ def cmd_generate(args):
         print(f"Set {PROVIDERS[provider]['key_env']} or run: scripts/gpt_image_2.py init", file=sys.stderr)
         sys.exit(1)
 
-    prompt, preset_thinking = compose_prompt(args.prompt, args.preset)
+    prompt, preset_thinking, preset_reference = compose_prompt(args.prompt, args.preset)
+
+    # A preset-declared reference auto-attaches unless the user supplied their own.
+    if preset_reference and not args.reference:
+        if Path(preset_reference).exists():
+            args.reference = [preset_reference]
+        else:
+            print(f"Warning: preset reference not found, skipping: {preset_reference}", file=sys.stderr)
 
     thinking = args.thinking or preset_thinking or config.get("thinking", "off")
     quality = args.quality or config.get("quality", "high")

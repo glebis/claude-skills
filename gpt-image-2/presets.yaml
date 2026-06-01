@@ -136,3 +136,13 @@ social-bold:
 social-split:
   description: "Split card — image left half, bold text right half, flat color block"
   prompt: "{subject}, split composition social media card, left half is a photograph or illustration, right half is a solid flat color block with large bold white text, clean dividing line between halves, modern editorial magazine layout, no gradients, high contrast, square format"
+
+# --- Reference-anchored preset ---
+# `vhs` auto-attaches references/vhs-infomercial.png as a style anchor.
+# Pass the ad copy as the subject; for multi-line copy, separate lines with " / ".
+
+vhs:
+  description: "1980s late-night infomercial VHS title card — scanline-striped gradient italic caps on pure black. Auto-uses bundled reference."
+  prompt: "1980s late-night infomercial VHS title card. Pure black background, total negative space. Bold heavy italic condensed sans-serif capitals, centered, stacked on multiple lines. The letters are filled with smooth retro gradients (hot orange-to-yellow on the top line, electric teal-to-cyan and lime-green on the lower lines) and cut across by crisp horizontal CRT scanline striping that breaks the type into thin bars. Subtle chromatic aberration, soft phosphor glow, faint VHS noise. No background imagery, no logos, no people — just glowing gradient infomercial text on black. The exact text reads, on centered stacked lines: '{subject}'. Spell every word correctly."
+  reference: references/vhs-infomercial.png
+  thinking: medium

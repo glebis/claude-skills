@@ -36,6 +36,9 @@ infographic, slide, diagram, poster, menu, manga
 **Community favorites:**
 trading-card, pixar, app-mockup, isometric, action-figure, cinematic, panorama
 
+**Reference-anchored:**
+`vhs` — 1980s late-night infomercial title card: scanline-striped gradient italic caps on pure black. It auto-attaches a bundled reference image (`references/vhs-infomercial.png`), so the look stays consistent batch-to-batch. Pass the ad copy as the subject; for multi-line copy separate lines with ` / ` (e.g. `--preset vhs "THEY TRUSTED YOU / NOW / PROVE IT"`).
+
 **Custom** — user describes their own style
 
 Ask: "Which style? Or describe your own."
@@ -163,6 +166,9 @@ scripts/gpt_image_2.py --seed 42 "prompt" out.png
 # Edit existing photo
 scripts/gpt_image_2.py --edit photo.png "transform into constellation style" out.png
 
+# Reference-anchored preset (auto-attaches its bundled reference image)
+scripts/gpt_image_2.py --preset vhs --platform youtube "THEY TRUSTED YOU / NOW / PROVE IT" ad.png
+
 # Variants with contact sheet
 scripts/gpt_image_2.py --n 4 --preset ink "mountain" out.png
 
@@ -179,9 +185,10 @@ scripts/gpt_image_2.py --dry-run --preset editorial "test" out.png
 ## Files
 
 - `scripts/gpt_image_2.py` — main CLI (Python, requires PyYAML)
-- `presets.yaml` — 21 style presets (visual + text-heavy + community)
+- `presets.yaml` — style presets (visual + text-heavy + community + reference-anchored). A preset may declare a `reference:` path (relative to the skill dir); it auto-attaches as a style anchor unless the user passes their own `--reference`. See the `vhs` preset.
 - `platforms.yaml` — 8 platform sizing presets
 - `references/api_reference.md` — full API documentation
+- `references/vhs-infomercial.png` — bundled style anchor for the `vhs` preset
 - `~/.config/gpt-image-2/config.yaml` — user defaults
 - `~/.config/gpt-image-2/history.jsonl` — generation log
 - `~/.config/gpt-image-2/last.json` — last run (for `again`)
