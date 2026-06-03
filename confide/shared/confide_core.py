@@ -70,13 +70,22 @@ _ID = re.compile(r"\b\d{3,4}[- ]\d{3,4}[- ]\d{2,4}(?:[- ]\d{1,4})?\b")  # policy
 _DATE_NUM = re.compile(r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b")
 _DATE_REL_EN = re.compile(r"\b(?:last|next|this)\s+(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day\b|\b\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\b", re.IGNORECASE)
 _DATE_REL_RU = re.compile(r"\b\d{1,2}\s+(?:январ|феврал|март|апрел|ма[яй]|июн|июл|август|сентябр|октябр|ноябр|декабр)\w*\b", re.IGNORECASE)
+# AGE — a quasi-identifier. Deterministic so it never depends on the (weak) LLM layer.
+# RU digit: "67 лет" / "1 год" / "3 года". EN: "67 years old" / "41-year-old".
+_AGE_RU_DIGIT = re.compile(r"\b\d{1,3}\s+(?:лет|год|года)\b", re.IGNORECASE)
+_AGE_EN = re.compile(r"\b\d{1,3}\s*[- ]?\s*years?[- ]old\b|\b\d{1,3}\s+years?\s+old\b", re.IGNORECASE)
+# RU spelled-out: "сорок лет", "шестьдесят семь лет" (tens [+ ones]) before лет/год/года.
+_RU_TENS = r"(?:двадцат|тридцат|сорок|пятьдесят|шестьдесят|семьдесят|восемьдесят|девяност)\w*"
+_RU_ONES = r"(?:один|одна|два|две|три|четыр\w+|пят\w+|шест\w+|сем\w+|восем\w+|девят\w+)"
+_AGE_RU_WORD = re.compile(rf"\b(?:{_RU_TENS}(?:\s+{_RU_ONES})?|{_RU_ONES})\s+(?:лет|год|года)\b", re.IGNORECASE)
 
 
 def detect_regex(text):
     """Deterministic detectors — no network, no deps required."""
     spans = []
     for rx, typ in [(_EMAIL, "EMAIL"), (_URL, "URL"), (_PHONE, "PHONE"), (_ID, "ID"),
-                    (_DATE_NUM, "DATE"), (_DATE_REL_EN, "DATE"), (_DATE_REL_RU, "DATE")]:
+                    (_DATE_NUM, "DATE"), (_DATE_REL_EN, "DATE"), (_DATE_REL_RU, "DATE"),
+                    (_AGE_RU_DIGIT, "AGE"), (_AGE_EN, "AGE"), (_AGE_RU_WORD, "AGE")]:
         for m in rx.finditer(text):
             s = m.group().strip()
             if typ == "PHONE" and sum(c.isdigit() for c in s) < 7:
