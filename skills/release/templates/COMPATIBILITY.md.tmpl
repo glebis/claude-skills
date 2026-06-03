@@ -1,0 +1,33 @@
+# Compatibility Policy — {{PROJECT}}
+
+{{PROJECT}} follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+This document declares the **public API** — the surfaces we promise to keep
+working — and is updated on every release.
+
+**The promise:** within a major version, anything written by an earlier `X.y.z`
+keeps working under every later `X.*`. A change that breaks a `stable` surface
+requires a new major version. (Modeled on the
+[Go 1 Compatibility Promise](https://go.dev/doc/go1compat).)
+
+Tiers: `experimental` (no promise) → `preview` (may change, with notice) →
+`stable` (the promise applies).
+
+## Surfaces
+
+| Surface | Tier | Since | Mode | Notes |
+|---|---|---|---|---|
+| {{SURFACE_NAME}} | preview | — | unversioned | — |
+
+## Deprecations
+
+| Item | Deprecated in | Removable in | Replacement |
+|---|---|---|---|
+| — | — | — | — |
+
+## 1.0 readiness gate
+
+- [ ] Every surface is `stable` with a declared compatibility mode.
+- [ ] Each `stable` surface has golden/contract tests in the release gate.
+- [ ] A deprecation process is documented and used.
+
+Last updated: 0.1.0 ({{DATE}})

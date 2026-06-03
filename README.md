@@ -8,6 +8,30 @@ A collection of skills for [Claude Code](https://claude.com/claude-code) that ex
 
 ## 📦 Available Skills
 
+### [Release (tiered compatibility & releases)](./release/) ⭐ NEW
+
+Cut a software release and maintain a **tiered compatibility policy** from one
+command. Config-driven (`release.config.json`): bumps every version file, runs
+your readiness gate, drafts a Keep-a-Changelog section from conventional commits,
+updates a `COMPATIBILITY.md` (surfaces × maturity tiers + deprecations), tags
+(→ your CI release workflow), and reports closed issues. Teaches the standards as
+it runs.
+
+**Features:**
+- 🎚️ **Surfaces × tiers** (`experimental → preview → stable`) with compatibility modes — a breaking change to a `stable` surface is *forced* to a major bump
+- 🧱 Stdlib-only engine (`scripts/release.py`) with **27 unit tests**; safe version-file rewrites (key + exact-value match, errors on ambiguity)
+- 📓 `COMPATIBILITY.md` updated every release; deprecation windows (RFC 9745/8594)
+- 📐 Grows into **Contracts & Modes**: golden/contract tests in the gate (worked DB round-trip example)
+- 📚 Encodes SemVer · Go 1 promise · Kubernetes deprecation · SRE PRR · Schema-Registry modes · Pact · MCP `protocolVersion`
+- ✅ Reference-validated on a Tauri + Rust + SvelteKit app ([Cull](https://github.com/glebis/cull)); generic by config
+
+**Quick Start:**
+```bash
+cp -r release ~/.claude/skills/          # or add this repo to your skills path
+# in a project: scaffold release.config.json from templates/, then:
+/release minor
+```
+
 ### [Synthetic Session Generator](./synthetic-session-generator/) ⭐ NEW
 
 Generate realistic, **persona-consistent** synthetic coaching & therapy session transcripts for evals, demos, and training data — fictional but believable, and always watermarked as synthetic. Grounds each session in a chosen modality (ICF/GROW, CBT, IFS, ACT/MI) and a reusable persona, then renders to Fathom/Granola style, plain dialogue, structured JSON (with eval labels), or Obsidian markdown.
