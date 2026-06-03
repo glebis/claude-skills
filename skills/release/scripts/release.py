@@ -85,27 +85,33 @@ def read_version_file(path, kind: str, *, pointer=None, key=None) -> str:
 
 
 def write_version_file(path, kind: str, new: str, *, pointer=None, key=None) -> None:
+    # Match on key AND the *current* value, and require exactly one occurrence in
+    # the whole file. This refuses to guess (and corrupt) when a same-named key
+    # exists elsewhere — it errors loudly instead. Preserves file formatting.
     path = Path(path)
+    old = read_version_file(path, kind, pointer=pointer, key=key)
+    if old == new:
+        return  # idempotent
     text = path.read_text()
     if kind == "json":
         leaf = [p for p in (pointer or "").split("/") if p][-1]
-        new_text, n = re.subn(
-            rf'("{re.escape(leaf)}"\s*:\s*)"[^"]*"', rf'\g<1>"{new}"', text, count=1
-        )
+        pat = rf'("{re.escape(leaf)}"\s*:\s*)"{re.escape(old)}"'
+        new_text, n = re.subn(pat, rf'\g<1>"{new}"', text)
         if n != 1:
-            raise ReleaseError(f"could not rewrite {pointer} in {path}")
+            raise ReleaseError(
+                f'expected exactly one "{leaf}": "{old}" in {path}, found {n} '
+                f"(ambiguous — refusing to rewrite)"
+            )
         path.write_text(new_text)
         return
     if kind == "toml":
         sect, name = key.split(".", 1)
-        new_text, n = re.subn(
-            rf'(?ms)(^\[{re.escape(sect)}\].*?^{re.escape(name)}\s*=\s*)"[^"]*"',
-            rf'\g<1>"{new}"',
-            text,
-            count=1,
-        )
+        # `[^\[]*?` refuses to cross into another [section] header, so the match
+        # is structurally confined to the target section.
+        pat = rf'(?ms)(^\[{re.escape(sect)}\][^\[]*?^{re.escape(name)}\s*=\s*)"{re.escape(old)}"'
+        new_text, n = re.subn(pat, rf'\g<1>"{new}"', text, count=1)
         if n != 1:
-            raise ReleaseError(f"could not rewrite {key} in {path}")
+            raise ReleaseError(f"could not rewrite {key}={old!r} in {path} (found {n})")
         path.write_text(new_text)
         return
     raise ReleaseError(f"unknown version-file kind {kind!r}")
@@ -176,6 +182,15 @@ def load_config(path) -> dict:
             raise ReleaseError(f"release.config.json missing '{req}'")
     if not cfg["versionFiles"]:
         raise ReleaseError("versionFiles must be non-empty")
+    for vf in cfg["versionFiles"]:
+        if "path" not in vf or "kind" not in vf:
+            raise ReleaseError("each versionFile needs 'path' and 'kind'")
+        if vf["kind"] not in ("json", "toml"):
+            raise ReleaseError(f"versionFile kind must be json|toml, got {vf['kind']!r}")
+        if vf["kind"] == "json" and not vf.get("pointer"):
+            raise ReleaseError(f"versionFile {vf['path']!r}: json kind requires 'pointer'")
+        if vf["kind"] == "toml" and not vf.get("key"):
+            raise ReleaseError(f"versionFile {vf['path']!r}: toml kind requires 'key'")
     for s in cfg["surfaces"]:
         if s.get("tier") not in _TIERS:
             raise ReleaseError(

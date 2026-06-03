@@ -18,7 +18,7 @@ Read `reference/config-schema.md` for `release.config.json` and
 
 > **Scope honesty:** reference-tested on a Tauri + Rust + SvelteKit repo (Cull).
 > Other stacks are supported *by config*, not yet validated. Treat first runs on
-> a new stack as `--dry-run` until you trust it.
+> a new stack as a dry run (see "Dry run" below) until you trust it.
 
 ## When to use
 The user says "release", "ship it", "cut a version", "bump version", "tag a
@@ -33,8 +33,9 @@ Only `stable` surfaces carry the promise. Breaking a `stable` surface forces a
 **major** bump — the engine enforces this. (Standards: see `reference/standards.md`.)
 
 ## Command
-`/release <patch|minor|major>` — run the steps below. Always offer `--dry-run`
-first on an unfamiliar repo. `--explain` expands each *why* into a short lesson.
+`/release <patch|minor|major>` — run the steps below. On an unfamiliar repo, do a
+**dry run first** (see below). When the user asks to "explain", expand each step's
+*why* into a short lesson from `reference/standards.md`.
 
 ## Steps
 
@@ -77,8 +78,12 @@ first on an unfamiliar repo. `--explain` expands each *why* into a short lesson.
    last tag (if `cfg.issueTracker` is set, e.g. bd) — those are the release notes.
 
 ## Dry run
-`--dry-run` runs steps 1–5 and prints the planned commit + tag without writing
-version files, committing, or tagging. Use it the first time on any repo.
+There is no `--dry-run` flag — a dry run is steps 1–5 done *without mutating*:
+run `python3 scripts/release.py --config <cfg> plan <kind>` (pure: prints the
+version/tag, writes nothing) and optionally run `cfg.gate` to check readiness.
+Do NOT run `bump`, commit, or tag. The `bump` subcommand is the only engine
+command that writes (version files only); commit/tag/push are git steps you take
+in step 6–7, never the engine.
 
 ## Manual fallback (no skill)
 `plan` → run gate → edit CHANGELOG + COMPATIBILITY → `bump` → commit → tag → push.

@@ -72,6 +72,31 @@ class TestVersionFiles(unittest.TestCase):
         with self.assertRaises(Exception):
             read_version_file(p, "json", pointer="/version")
 
+    def test_json_refuses_ambiguous_same_name_key(self):
+        # A sibling object with the SAME key name AND value must not be silently
+        # rewritten — the engine errors instead of guessing.
+        p = self._tmp(
+            "package.json",
+            '{\n  "version": "0.1.0",\n  "dep": { "version": "0.1.0" }\n}\n',
+        )
+        with self.assertRaises(ReleaseError):
+            write_version_file(p, "json", "0.2.0", pointer="/version")
+
+    def test_toml_does_not_touch_other_section(self):
+        p = self._tmp(
+            "Cargo.toml",
+            '[package]\nname = "x"\nversion = "0.1.0"\n\n[deps]\nversion = "0.1.0"\n',
+        )
+        write_version_file(p, "toml", "0.2.0", key="package.version")
+        txt = p.read_text()
+        self.assertIn('[package]\nname = "x"\nversion = "0.2.0"', txt)
+        self.assertIn('[deps]\nversion = "0.1.0"', txt)  # untouched even with same value
+
+    def test_write_is_idempotent_when_unchanged(self):
+        p = self._tmp("package.json", '{"version":"0.2.0"}')
+        write_version_file(p, "json", "0.2.0", pointer="/version")  # no error
+        self.assertEqual(json.loads(p.read_text())["version"], "0.2.0")
+
 
 class TestChangelog(unittest.TestCase):
     def test_buckets_by_type(self):
@@ -164,6 +189,24 @@ class TestConfig(unittest.TestCase):
 
     def test_rejects_missing_key(self):
         p = self._cfg({"gate": "true"})
+        with self.assertRaises(ReleaseError):
+            load_config(p)
+
+    def test_rejects_json_versionfile_without_pointer(self):
+        p = self._cfg({
+            "versionFiles": [{"path": "package.json", "kind": "json"}],
+            "gate": "true", "compatibility": {"path": "x"},
+            "surfaces": [], "tag": {"prefix": "v"},
+        })
+        with self.assertRaises(ReleaseError):
+            load_config(p)
+
+    def test_rejects_unknown_versionfile_kind(self):
+        p = self._cfg({
+            "versionFiles": [{"path": "x.yaml", "kind": "yaml", "pointer": "/version"}],
+            "gate": "true", "compatibility": {"path": "x"},
+            "surfaces": [], "tag": {"prefix": "v"},
+        })
         with self.assertRaises(ReleaseError):
             load_config(p)
 

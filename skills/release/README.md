@@ -10,8 +10,8 @@ runs.
 
 Reference-tested on a **Tauri 2 + Rust + SvelteKit** desktop app
 ([Cull](https://github.com/glebis/cull)). It is generic **by config**
-(`release.config.json`), but other stacks are not yet validated — treat first
-runs elsewhere as `--dry-run`.
+(`release.config.json`), but other stacks are not yet validated — on a new repo,
+do a dry run first (`scripts/release.py plan <kind>`; see `SKILL.md`).
 
 ## Install
 
