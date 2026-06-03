@@ -24,6 +24,10 @@ DEFAULTS = {
     "redaction_style": "typed_placeholder",
     "privacy": {"local_only": True, "cloud_apis": False, "cloud_only_on_synthetic": True},
     "ollama_host": "http://localhost:11434",
+    # optional ensemble layer (off by default). Add "presidio" to layers to enable.
+    # Needs `pip install presidio-analyzer` + `spacy download ru_core_news_sm`.
+    "presidio_lang": "ru",
+    "presidio_model": "ru_core_news_sm",
 }
 
 # canonical PII types
@@ -136,6 +140,35 @@ def detect_natasha(text):
     return filter_ner_scaffolding(spans)
 
 
+# ----------------------------------------------------------------- Presidio layer (optional)
+_PRESIDIO_MAP = {"PERSON": "PERSON", "LOCATION": "LOCATION", "GPE": "LOCATION", "NRP": "OTHER",
+                 "DATE_TIME": "DATE", "PHONE_NUMBER": "PHONE", "EMAIL_ADDRESS": "EMAIL",
+                 "URL": "URL", "IP_ADDRESS": "ID", "ORGANIZATION": "ORG", "ORG": "ORG"}
+_PRESIDIO_ENGINE = {}
+
+
+def detect_presidio(text, cfg=None):
+    """Optional ensemble layer: Microsoft Presidio with a spaCy model. Off by default.
+    Best at bare-domain URLs/dates/locations; complements regex+Natasha. Returns [] if
+    presidio/the spaCy model isn't installed (never hard-fails the pipeline)."""
+    cfg = cfg or DEFAULTS
+    lang = cfg.get("presidio_lang", "ru")
+    model = cfg.get("presidio_model", "ru_core_news_sm")
+    try:
+        if lang not in _PRESIDIO_ENGINE:
+            from presidio_analyzer import AnalyzerEngine
+            from presidio_analyzer.nlp_engine import NlpEngineProvider
+            nlp = NlpEngineProvider(nlp_configuration={
+                "nlp_engine_name": "spacy",
+                "models": [{"lang_code": lang, "model_name": model}]}).create_engine()
+            _PRESIDIO_ENGINE[lang] = AnalyzerEngine(nlp_engine=nlp, supported_languages=[lang])
+        results = _PRESIDIO_ENGINE[lang].analyze(text=text, language=lang)
+    except Exception:
+        return []
+    return [Span(r.start, r.end, text[r.start:r.end],
+                 _PRESIDIO_MAP.get(r.entity_type, r.entity_type), "presidio") for r in results]
+
+
 # ----------------------------------------------------------------- LLM layer (engine-agnostic)
 _LLM_PROMPT = ("Extract ALL personally identifying information including quasi-identifiers "
     "(medications, ages, professions, contextual dates/names). Return ONLY a JSON array of "
@@ -228,6 +261,7 @@ def anonymize(text, cfg=None):
     spans = []
     if "regex" in layers: spans += detect_regex(text)
     if "natasha" in layers: spans += detect_natasha(text)
+    if "presidio" in layers: spans += detect_presidio(text, cfg)
     if "llm" in layers: spans += detect_llm(text, cfg)
     merged = merge_spans(spans)
     by_type, by_layer = {}, {}
