@@ -65,6 +65,13 @@ class Span:
 # ----------------------------------------------------------------- regex layer
 _EMAIL = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 _URL = re.compile(r"\bhttps?://[^\s)>\]]+", re.IGNORECASE)
+# Bare-domain URL (no scheme): host with a known TLD + optional path — e.g. example.ru,
+# t.me/handle. ASCII-only host so Cyrillic abbreviations ("т.е.", "и т.д.") never match;
+# alpha TLD from an allowlist so decimals ("2.5") never match.
+_URL_BARE = re.compile(
+    r"\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+"
+    r"(?:ru|com|org|net|io|me|app|dev|ai|co|info|biz|tv|xyz|de|uk|fr|es|it|nl|pl|eu|su|рф)"
+    r"(?:/[^\s)>\]]*)?\b", re.IGNORECASE)
 _PHONE = re.compile(r"(?<!\w)(?:\+?\d[\d\-\s().]{7,}\d)(?!\w)")
 _ID = re.compile(r"\b\d{3,4}[- ]\d{3,4}[- ]\d{2,4}(?:[- ]\d{1,4})?\b")  # policy/SNILS/INN-like
 _DATE_NUM = re.compile(r"\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b")
@@ -83,7 +90,7 @@ _AGE_RU_WORD = re.compile(rf"\b(?:{_RU_TENS}(?:\s+{_RU_ONES})?|{_RU_ONES})\s+(?:
 def detect_regex(text):
     """Deterministic detectors — no network, no deps required."""
     spans = []
-    for rx, typ in [(_EMAIL, "EMAIL"), (_URL, "URL"), (_PHONE, "PHONE"), (_ID, "ID"),
+    for rx, typ in [(_EMAIL, "EMAIL"), (_URL, "URL"), (_URL_BARE, "URL"), (_PHONE, "PHONE"), (_ID, "ID"),
                     (_DATE_NUM, "DATE"), (_DATE_REL_EN, "DATE"), (_DATE_REL_RU, "DATE"),
                     (_AGE_RU_DIGIT, "AGE"), (_AGE_EN, "AGE"), (_AGE_RU_WORD, "AGE")]:
         for m in rx.finditer(text):
@@ -95,6 +102,26 @@ def detect_regex(text):
 
 
 # ----------------------------------------------------------------- Natasha layer
+# Transcript scaffolding that NER mis-tags as entities (esp. ORG): speaker labels +
+# timestamp words from Fathom/Granola exports. These are structure, not PII.
+_SCAFFOLD = re.compile(
+    r"^(?:speaker\s*\d+|user|host|guest|me|ai|assistant|today|yesterday|"
+    r"спикер\s*\d+|сегодня|вчера)$", re.IGNORECASE)
+
+
+def filter_ner_scaffolding(spans):
+    """Drop NER false positives from transcript structure: any span containing a
+    newline (real inline entities never do) or matching a scaffolding stopword."""
+    out = []
+    for s in spans:
+        if "\n" in s.text:
+            continue
+        if _SCAFFOLD.match(s.text.strip()):
+            continue
+        out.append(s)
+    return out
+
+
 def detect_natasha(text):
     """RU NER. Returns [] if natasha not installed."""
     try:
@@ -104,8 +131,9 @@ def detect_natasha(text):
     seg, emb = Segmenter(), NewsEmbedding()
     doc = Doc(text); doc.segment(seg); doc.tag_ner(NewsNERTagger(emb))
     m = {"PER": "PERSON", "LOC": "LOCATION", "ORG": "ORG"}
-    return [Span(sp.start, sp.stop, text[sp.start:sp.stop], m.get(sp.type, sp.type), "natasha")
-            for sp in doc.spans]
+    spans = [Span(sp.start, sp.stop, text[sp.start:sp.stop], m.get(sp.type, sp.type), "natasha")
+             for sp in doc.spans]
+    return filter_ner_scaffolding(spans)
 
 
 # ----------------------------------------------------------------- LLM layer (engine-agnostic)
