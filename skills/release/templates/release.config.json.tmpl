@@ -1,0 +1,15 @@
+{
+  "versionFiles": [
+    { "path": "package.json", "kind": "json", "pointer": "/version" }
+  ],
+  "lockfiles": [],
+  "gate": "{{GATE_COMMAND}}",
+  "extraGate": [],
+  "changelog": { "path": "CHANGELOG.md", "style": "keep-a-changelog", "from": "conventional-commits" },
+  "compatibility": { "path": "docs/COMPATIBILITY.md" },
+  "surfaces": [
+    { "id": "{{SURFACE_ID}}", "name": "{{SURFACE_NAME}}", "tier": "preview", "mode": "unversioned" }
+  ],
+  "releaseBranch": "main",
+  "tag": { "prefix": "v", "push": true }
+}

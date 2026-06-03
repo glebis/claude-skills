@@ -1,0 +1,30 @@
+# Contracts & Modes — {{PROJECT}}
+
+How we make compatibility **mechanically true** instead of merely promised. This
+is the third formulation in the release policy (after "The Promise" and "Tiers &
+Gates"): declare a compatibility **mode** per surface, then enforce it with tests
+that fail the build.
+
+## Vocabulary (from schema registries)
+
+- **Backward** — new code reads old data/messages.
+- **Forward** — old code tolerates new data (ignore unknown fields).
+- **Full** — both. **`_TRANSITIVE`** — checked against *all* prior versions.
+
+Refs: [Schema-Registry compatibility](https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html),
+[Pact (consumer-driven contracts)](https://docs.pact.io/).
+
+## The pattern (golden test)
+
+1. **Freeze** an artifact produced by an older version (a DB, an export, a recorded API exchange).
+2. **Exercise** it with current code.
+3. **Assert** it still works (opens / serves / validates).
+
+Wire each golden test into `release.config.json → extraGate` so a release can't
+ship if compatibility broke.
+
+## Add the next contract test
+
+- [ ] {{FIRST_GOLDEN_TEST}} — the worked example.
+- [ ] Export round-trip: serve a frozen package, assert it renders.
+- [ ] API: record consumer expectations; verify the provider still satisfies them.
