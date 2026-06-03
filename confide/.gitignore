@@ -1,3 +1,9 @@
 __pycache__/
 .pytest_cache/
 *.pyc
+
+# CONFIDE local-only secrets / private artifacts — NEVER commit.
+# These carry original PII (the reversible map) or embed real values.
+*.map.json
+*.view.html
+*.restored.md

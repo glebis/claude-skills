@@ -74,7 +74,8 @@ def test_process_file_writes_green_and_stats(tmp_path):
     gtext = green.read_text(encoding="utf-8")
     for leak in PLANTED:
         assert leak not in gtext
-    assert "[EMAIL]" in gtext
+    # default is now the reversible map -> unique reserved-sentinel placeholder
+    assert "[CONFIDE_EMAIL_0001]" in gtext
     # stats file is counts-only valid json
     sdata = json.loads(stats.read_text(encoding="utf-8"))
     assert "by_type" in sdata and "redaction_rate" in sdata

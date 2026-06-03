@@ -4,5 +4,6 @@ set -e
 cd "$(dirname "$0")/.."
 echo "== unit/behaviour tests (TDD) =="; python3 -m pytest tests/ -q
 echo "== integration eval (anon→red pipeline) =="; python3 evals/integration_eval.py
+echo "== rehydrate round-trip eval =="; python3 evals/rehydrate_eval.py
 echo "== trigger eval =="; python3 evals/trigger_eval.py
 echo "== ALL EVALS PASSED =="

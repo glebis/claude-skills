@@ -5,6 +5,8 @@ Shared by confide:anon and confide:red. Local-first: the deterministic regex lay
 redaction need no network; Natasha (RU NER) and the LLM layer load only if available.
 Nothing here prints or returns raw PII to any caller that doesn't already have the text.
 """
+import datetime
+import hashlib
 import json
 import os
 import re
@@ -203,3 +205,142 @@ def anonymize(text, cfg=None):
                   "by_type": by_type, "by_layer": by_layer,
                   "redaction_rate": round(masked / len(text), 4) if text else 0.0},
     }
+
+
+# ----------------------------------------------------------------- reversible (rehydrate)
+#
+# Reversible placeholders use a RESERVED SENTINEL grammar so they can never collide
+# with real transcript prose:  [CONFIDE_<TYPE>_<NNNN>]  (zero-padded 4 digits), e.g.
+# [CONFIDE_PERSON_0001]. A real document will essentially never contain that exact
+# token, and the distinctive CONFIDE_ prefix means rehydrate never matches ordinary
+# phrases like "Person 1" / "patient 1" / "section 2".
+MAP_SCHEMA_VERSION = 1
+_PH_PREFIX = "CONFIDE"
+
+# canonical sentinel placeholder produced by redaction
+_PH_CANON = re.compile(r"\[" + _PH_PREFIX + r"_([A-Z]+)_(\d{4})\]")
+
+
+def make_placeholder(typ, n):
+    """Canonical reversible placeholder for a type + 1-based index: [CONFIDE_PERSON_0001]."""
+    return f"[{_PH_PREFIX}_{typ}_{n:04d}]"
+
+
+def green_sha256(green_text):
+    """sha256 hex of the GREEN text — lets a map be verified against its document."""
+    return hashlib.sha256(green_text.encode("utf-8")).hexdigest()
+
+
+def build_map(green_text, entries, doc_id=None, created=None):
+    """Assemble the structured reversible-map dict.
+
+    entries: list of {"placeholder","type","original"}. doc_id defaults to a short
+    hash of the green text; created defaults to now (UTC, iso). Carries the green's
+    sha256 so a wrong map for a document can be detected (--verify-green)."""
+    sha = green_sha256(green_text)
+    if doc_id is None:
+        doc_id = sha[:12]
+    if created is None:
+        created = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
+    return {
+        "schema_version": MAP_SCHEMA_VERSION,
+        "doc_id": doc_id,
+        "green_sha256": sha,
+        "created": created,
+        "entries": list(entries),
+    }
+
+
+def map_lookup(mapping):
+    """Return a flat {placeholder: original} dict from either map schema (structured
+    {"entries":[...]} or a legacy flat {placeholder: original})."""
+    if isinstance(mapping, dict) and "entries" in mapping:
+        return {e["placeholder"]: e["original"] for e in mapping["entries"]}
+    return dict(mapping)
+
+
+def redact_reversible(text, spans, doc_id=None, created=None):
+    """Redact with UNIQUE, coreferent reserved-sentinel placeholders + a reversible map.
+
+    Same EXACT (type, surface value) -> same [CONFIDE_TYPE_NNNN] (this is exact-value
+    coreference, NOT entity coreference; inflected forms are distinct placeholders).
+    Returns (green_text, map_dict) where map_dict is the structured schema from
+    build_map(). The map is the secret — caller must keep it LOCAL, never ship it."""
+    merged = merge_spans(spans)
+    val2ph, counters, entries = {}, {}, []
+    out, last = [], 0
+    for s in merged:
+        orig = text[s.start:s.end]
+        key = (s.type, orig.lower())
+        ph = val2ph.get(key)
+        if ph is None:
+            counters[s.type] = counters.get(s.type, 0) + 1
+            ph = make_placeholder(s.type, counters[s.type])
+            val2ph[key] = ph
+            entries.append({"placeholder": ph, "type": s.type, "original": orig})
+        out.append(text[last:s.start]); out.append(ph); last = s.end
+    out.append(text[last:])
+    green = "".join(out)
+    return green, build_map(green, entries, doc_id=doc_id, created=created)
+
+
+def _mangled_pattern(typ, num):
+    """Regex matching the sentinel placeholder and tolerable LLM manglings that STILL
+    contain the full CONFIDE_TYPE_NNNN core: optional brackets, a single space OR
+    underscore between the 3 parts, case-insensitive on the word parts. The CONFIDE
+    prefix is REQUIRED, so naked forms ("Person 1") are never matched. `num` must not
+    be followed by another digit so 0001 never eats 0010."""
+    sep = r"[ _]"  # exactly one space or underscore between parts
+    return re.compile(
+        r"\[?\s*" + _PH_PREFIX + sep + re.escape(typ) + sep + num + r"(?!\d)\s*\]?",
+        re.IGNORECASE,
+    )
+
+
+def rehydrate(text, mapping):
+    """Replace reserved-sentinel placeholders with originals, robust to LLM mangling
+    that still contains the full CONFIDE_TYPE_NNNN core (optional brackets, single
+    space/underscore separators, case-insensitive). Does NOT match naked "Person 1".
+
+    Single-pass: all placeholders are matched in ONE scan, longest/most-specific core
+    first, so _0001 never pre-empts _0010 and an already-restored original is never
+    re-touched (idempotent — originals contain no sentinels). Accepts either map
+    schema. Returns (restored_text, {restored, unmatched}). Local-only; never transmits."""
+    flat = map_lookup(mapping)
+    # Build one combined matcher; order alternatives most-specific (longest core) first.
+    specs = []  # (pattern_str, original)
+    for ph, orig in flat.items():
+        m = _PH_CANON.match(ph)
+        if not m:
+            # legacy/non-sentinel key: literal match only (no fuzzy prose matching)
+            specs.append((re.escape(ph), orig, len(ph)))
+            continue
+        typ, num = m.group(1), m.group(2)
+        sep = r"[ _]"
+        core = _PH_PREFIX + sep + re.escape(typ) + sep + num + r"(?!\d)"
+        specs.append((r"\[?\s*" + core + r"\s*\]?", orig, len(typ) + len(num)))
+    if not specs:
+        unmatched = len(re.findall(r"\[" + _PH_PREFIX + r"_[A-Za-z]+_\d+\]", text))
+        return text, {"restored": 0, "unmatched": unmatched}
+
+    # longest core first => specific placeholders win over shorter ones
+    specs.sort(key=lambda s: -s[2])
+    repl = {}
+    parts = []
+    for i, (pat, orig, _w) in enumerate(specs):
+        g = f"p{i}"
+        parts.append(f"(?P<{g}>{pat})")
+        repl[g] = orig
+    combined = re.compile("|".join(parts), re.IGNORECASE)
+
+    restored = 0
+
+    def _sub(m):
+        nonlocal restored
+        restored += 1
+        return repl[m.lastgroup]
+
+    out = combined.sub(_sub, text)
+    # remaining sentinel-shaped tokens that weren't in the map = hallucinated/unmatched
+    unmatched = len(re.findall(r"\[" + _PH_PREFIX + r"_[A-Za-z]+_\d+\]", out))
+    return out, {"restored": restored, "unmatched": unmatched}

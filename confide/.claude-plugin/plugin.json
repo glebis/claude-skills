@@ -1,7 +1,7 @@
 {
   "name": "confide",
-  "description": "CONFIDE — local-first de-identification toolkit for session transcripts. Skills: confide:setup (install deps + choose preferences), confide:anon (anonymize/redact PII locally), confide:red (residual re-identification risk check on redacted output).",
-  "version": "0.1.0",
+  "description": "CONFIDE — local-first de-identification toolkit for session transcripts. Skills: confide:setup (install deps + choose preferences), confide:anon (redact PII locally + emit a reversible map), confide:red (residual re-identification risk check), confide:rehydrate (restore real values into a cloud analysis locally), confide:view (interactive HTML redaction diff), confide:audit (stats-only corpus PII scan), confide:vault (three-locks encrypted storage), confide:annotate (gold set + inter-annotator agreement). Privacy-first; raw text and the reversible map never leave the machine.",
+  "version": "0.2.0",
   "author": { "name": "Gleb Kalinin" },
   "repository": "https://github.com/glebis/claude-skills",
   "license": "MIT"

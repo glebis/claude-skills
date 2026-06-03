@@ -36,7 +36,7 @@
     {
       "name": "confide",
       "source": "./confide",
-      "description": "CONFIDE — local-first de-identification toolkit. Skills: confide:setup (install+configure), confide:anon (redact PII locally), confide:red (residual re-identification risk check). Privacy-first; raw text never leaves the machine."
+      "description": "CONFIDE — local-first de-identification toolkit (8 skills): confide:setup, confide:anon (redact + reversible map), confide:red (residual re-id risk), confide:rehydrate (restore locally), confide:view (HTML diff), confide:audit (stats-only corpus scan), confide:vault (three-locks storage), confide:annotate (gold + IAA). Privacy-first; raw text and the reversible map never leave the machine."
     },
     {
       "name": "context-builder",
