@@ -1,0 +1,16 @@
+{
+  "default": "automation",
+  "profiles": {
+    "automation": {
+      "binary": "/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta",
+      "user_data_dir": "~/.browser-mate/automation",
+      "port": 9222
+    },
+    "chatgpt": {
+      "binary": "/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta",
+      "user_data_dir": "~/.browser-mate/chatgpt",
+      "port": 9223,
+      "default_url": "https://chatgpt.com/"
+    }
+  }
+}
