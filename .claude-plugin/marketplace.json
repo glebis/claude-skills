@@ -5,7 +5,7 @@
     "email": "glebis@gmail.com"
   },
   "metadata": {
-    "description": "50+ Claude Code skills \u2014 meetings, research, publishing, development, and more."
+    "description": "50+ Claude Code skills — meetings, research, publishing, development, and more."
   },
   "plugins": [
     {
@@ -34,6 +34,11 @@
       "description": "Query Chrome browsing history with natural language. Filter by date range, article type, keywords, and specific sites."
     },
     {
+      "name": "confide",
+      "source": "./confide",
+      "description": "CONFIDE — local-first de-identification toolkit. Skills: confide:setup (install+configure), confide:anon (redact PII locally), confide:red (residual re-identification risk check). Privacy-first; raw text never leaves the machine."
+    },
+    {
       "name": "context-builder",
       "source": "./context-builder",
       "description": "Generate interactive AI transformation context-builder prompts for consulting clients. Use when creating structured disc"
@@ -46,7 +51,7 @@
     {
       "name": "decision-toolkit",
       "source": "./decision-toolkit",
-      "description": "Generate structured decision-making tools \u2014 step-by-step guides, bias checkers, scenario explorers, and interactive dash"
+      "description": "Generate structured decision-making tools — step-by-step guides, bias checkers, scenario explorers, and interactive dash"
     },
     {
       "name": "deep-research",
@@ -101,7 +106,7 @@
     {
       "name": "gws",
       "source": "./gws",
-      "description": "This skill should be used when interacting with Google Workspace services via the gws CLI \u2014 Gmail (search, triage, send,"
+      "description": "This skill should be used when interacting with Google Workspace services via the gws CLI — Gmail (search, triage, send,"
     },
     {
       "name": "health-data",
@@ -121,7 +126,7 @@
     {
       "name": "lab-retro",
       "source": "./lab-retro",
-      "description": "Final retrospective and self-assessment for participants of Claude Code Lab. Runs four sequential interactive parts \u2014 pr"
+      "description": "Final retrospective and self-assessment for participants of Claude Code Lab. Runs four sequential interactive parts — pr"
     },
     {
       "name": "linear",
