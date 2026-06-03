@@ -55,6 +55,24 @@ Ask where this will be used:
 - Custom size
 - No resize (use API default)
 
+### Step 3.5: Preflight prompt check (automatic)
+
+Before **any** generation spend, the script now **composes the final prompt first**
+(preset + subject + style), then **checks it for internal contradictions** — most often
+a preset that hard-codes something the subject overrides (e.g. the `editorial` preset
+forces *"on pure black background"* while your subject asks for a warm off-white ground).
+
+The check prefers a fast **Haiku** call via the `llm` CLI; if Haiku is unavailable (no
+`llm`, no Anthropic credit) it falls back to the configured `llm` default model, then to a
+built-in static heuristic. The resolved prompt and the verdict are printed. **If a conflict
+is found, generation is aborted before spending** — fix the prompt or preset and re-run, or
+override with `--force` (generate anyway) or `--no-preflight` (skip the check). This is what
+prevents the "generated on the wrong background, now regenerate" waste.
+
+When composing prompts that set a background/palette, **don't combine a background-fixing
+preset (`editorial`, `blueprint`, etc.) with a different requested background** — either drop
+the preset and specify the full style yourself, or accept the preset's background.
+
 ### Step 4: Draft first, then final
 
 **Always generate a draft first** unless the user says "skip draft" or uses `--draft false`.
@@ -180,6 +198,10 @@ scripts/gpt_image_2.py -y --n 10 "batch" out.png
 
 # Dry run (show prompt without API call)
 scripts/gpt_image_2.py --dry-run --preset editorial "test" out.png
+
+# Preflight runs automatically before spend; override if needed
+scripts/gpt_image_2.py --force "prompt with a known conflict" out.png    # generate anyway
+scripts/gpt_image_2.py --no-preflight "prompt" out.png                   # skip the check
 ```
 
 ## Files

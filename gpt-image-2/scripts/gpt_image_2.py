@@ -150,6 +150,82 @@ def compose_prompt(user_prompt: str, preset_name: str | None) -> tuple[str, str 
     return prompt, preset.get("thinking"), ref
 
 
+# ---------- Preflight: catch contradictions in the COMPOSED prompt ----------
+# Generation is expensive, so before spending we resolve the final prompt (preset
+# + subject) and check it for internal contradictions — most often a preset that
+# hard-codes something the subject overrides (e.g. the `editorial` preset forces
+# "pure black background" while the subject asks for a warm off-white ground).
+# Preferred check is a fast Haiku call via the `llm` CLI; if that isn't available
+# we fall back to a small static heuristic. Conflicts abort before any API spend
+# unless --force is passed (or --no-preflight skips the check entirely).
+
+_PREFLIGHT_Q = (
+    "You are a QA check for an image-generation prompt. The text below is the FINAL "
+    "composed prompt (a style preset may have been merged with a user subject). List ONLY "
+    "genuine internal CONTRADICTIONS that would make the output wrong — e.g. two different "
+    "backgrounds (preset says 'pure black background' but subject asks for 'warm off-white'), "
+    "clashing colour palettes, 'no text' alongside a requested headline/caption, or conflicting "
+    "orientation/aspect. Ignore mere richness or long descriptions. If there are NO real "
+    "contradictions, reply with exactly: OK. Otherwise reply with one short bullet per conflict.\n\n"
+    "PROMPT:\n"
+)
+
+
+def _llm_check(text: str) -> tuple[str | None, str]:
+    """Ask an LLM (preferring Haiku) via the `llm` CLI to QA the prompt.
+
+    Tries Haiku model aliases first; if those fail (e.g. no Anthropic credit),
+    falls back to whatever `llm` default model is configured (often a cheap
+    OpenAI model). Returns (reply, source_label); (None, "") if `llm` is
+    unavailable or every attempt errors."""
+    import shutil
+    import subprocess
+    if not shutil.which("llm"):
+        return None, ""
+    attempts = [("haiku", ["-m", "claude-haiku-4.5"]),
+                ("haiku", ["-m", "claude-3.5-haiku"]),
+                ("llm-default", [])]  # whatever `llm` is configured to use
+    for label, model_args in attempts:
+        try:
+            r = subprocess.run(["llm", *model_args, _PREFLIGHT_Q + text],
+                               capture_output=True, text=True, timeout=45)
+            if r.returncode == 0 and r.stdout.strip():
+                return r.stdout.strip(), label
+        except Exception:
+            continue
+    return None, ""
+
+
+def _heuristic_conflicts(prompt: str) -> list[str]:
+    """Dependency-free fallback: catch the common hard-coded contradictions."""
+    p = prompt.lower()
+    out = []
+    bg_dark = ("black background" in p) or ("on pure black" in p) or ("dark background" in p)
+    bg_light = any(w in p for w in ("off-white", "offwhite", "warm white", "cream",
+                                    "parchment", "white background", "light background",
+                                    "beige", "ivory"))
+    if bg_dark and bg_light:
+        out.append("Conflicting backgrounds: the prompt asks for both a dark/black background "
+                   "and a light/off-white/cream one (often a preset hard-codes 'black background').")
+    no_text = any(w in p for w in ("no text", "no labels", "no legible text"))
+    wants_text = any(w in p for w in ("headline", "title card", "caption reads",
+                                      'with the text', "the words "))
+    if no_text and wants_text:
+        out.append("Conflicting text directives: 'no text' but also a requested headline/caption.")
+    return out
+
+
+def preflight_conflicts(final_prompt: str) -> tuple[list[str], str]:
+    """Return (conflicts, source). Prefer an LLM (Haiku); fall back to a static heuristic."""
+    reply, src = _llm_check(final_prompt)
+    if reply is not None:
+        if reply.strip().upper().startswith("OK"):
+            return [], src
+        lines = [ln.strip(" -•\t*") for ln in reply.splitlines() if ln.strip()]
+        return [ln for ln in lines if ln], src
+    return _heuristic_conflicts(final_prompt), "heuristic"
+
+
 # ---------- Image I/O ----------
 
 
@@ -516,6 +592,23 @@ def cmd_generate(args):
         print(f"Estimated cost ({mode_label}): ${cost:.3f} ({n} image{'s' if n > 1 else ''} × ~${per:.3f}/image, quality={quality}, thinking={thinking})")
         return
 
+    # Preflight: resolve the prompt and check for contradictions BEFORE spending.
+    if not getattr(args, "no_preflight", False):
+        print(f"\n— resolved prompt ({len(prompt)} chars) —\n{prompt}\n", file=sys.stderr)
+        conflicts, src = preflight_conflicts(prompt)
+        if conflicts:
+            print(f"⚠ preflight ({src}) found {len(conflicts)} possible prompt conflict(s):", file=sys.stderr)
+            for c in conflicts:
+                print(f"   • {c}", file=sys.stderr)
+            if not getattr(args, "force", False):
+                print("Aborting before any generation spend. Fix the prompt (or the preset), then "
+                      "re-run — or pass --force to generate anyway, or --no-preflight to skip this check.",
+                      file=sys.stderr)
+                sys.exit(2)
+            print("   …--force set; generating anyway.", file=sys.stderr)
+        else:
+            print(f"✓ preflight ({src}): no contradictions found.", file=sys.stderr)
+
     no_confirm = getattr(args, "yes", False)
     if not no_confirm and cost >= CONFIRM_THRESHOLD:
         print(f"⚠  Estimated cost: ${cost:.2f} ({n} × ~${per:.3f}/image, {mode_label})")
@@ -687,6 +780,8 @@ def main():
     gen_parser.add_argument("--reference", action="append", help="Reference image for style (repeatable)")
     gen_parser.add_argument("--project", help="Project name for organized output")
     gen_parser.add_argument("--dry-run", action="store_true", help="Preview prompt without API call")
+    gen_parser.add_argument("--no-preflight", action="store_true", help="Skip the pre-generation prompt conflict check")
+    gen_parser.add_argument("--force", action="store_true", help="Generate even if preflight finds prompt conflicts")
     gen_parser.add_argument("--estimate", action="store_true", help="Show cost estimate only")
     gen_parser.add_argument("--draft", action="store_true", help="Draft mode: low quality, ~$0.006/image")
     gen_parser.add_argument("-y", "--yes", action="store_true", help="Skip cost confirmation prompt")
