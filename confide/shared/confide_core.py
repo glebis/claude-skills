@@ -101,6 +101,10 @@ def detect_regex(text):
             s = m.group().strip()
             if typ == "PHONE" and sum(c.isdigit() for c in s) < 7:
                 continue
+            # the phone char class includes '.', so it also matches dotted/slashed
+            # numeric dates (15.01.2026). Those are DATE, not PHONE — yield.
+            if typ == "PHONE" and _DATE_NUM.fullmatch(s):
+                continue
             spans.append(Span(m.start(), m.start() + len(s), s, typ, "regex"))
     return spans
 
