@@ -96,6 +96,16 @@ Use sparingly — max 2 per section.
 Key CSS: `tbody td` uses Monaspace Argon with `font-variant-numeric:tabular-nums`. First column reverts to EB Garamond.
 Wrap in `.table-wrapper` for mobile scroll. Add `.hide-mobile` to secondary columns.
 
+Row hover (active-row highlight — always include with data tables):
+
+```css
+td { transition: background 0.2s ease; }
+tbody tr:hover td { background: #f1ecdc; }            /* warm tint, one step past --bg-aside */
+.highlight-row td { background: #f4efe0; }            /* persistent ★ row */
+/* declare the hover rule AFTER .highlight-row so ★ rows also darken on hover */
+@media (prefers-reduced-motion: reduce) { td { transition: none; } }
+```
+
 ## 7. Ornament Separator
 
 ```html

@@ -84,7 +84,7 @@
 ## Transitions
 
 - Hover on cards/flyouts: `border-color 0.3s ease, box-shadow 0.3s ease`
-- Table row hover: `background 0.2s ease`
+- Table row hover: `background 0.2s ease` → `tbody tr:hover td { background: #f1ecdc; }` (active-row highlight; place after `.highlight-row` rule so persistent ★ rows darken on hover too)
 - Back-to-top arrow: `color 0.3s ease, transform 0.3s ease` (translateY -2px)
 - Scroll reveal: `opacity 0.6s cubic-bezier(0.25,0.1,0.25,1), transform 0.6s` (translateY 16px)
 - Reduced motion: all transitions disabled via `prefers-reduced-motion`
