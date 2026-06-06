@@ -1,0 +1,6 @@
+[{"name": "disciplined experiment passes clean",
+  "script": "good_exp.py", "results": "good_results.json",
+  "expect_codes": []},
+ {"name": "sampled perm + no prereg + leaky results all flagged",
+  "script": "bad_exp.py", "results": "bad_results.json",
+  "expect_codes": ["L1", "L3", "L3b", "L4", "L5", "L6"]}]
