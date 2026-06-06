@@ -164,16 +164,61 @@ function render(filter){
 }
 document.getElementById('q').oninput=e=>render(e.target.value);
 
-function flatTests(d){
-  let t=d.tests||[];
-  if(!Array.isArray(t))
-    t=Object.values(t).filter(Array.isArray).flat();
-  return t.filter(x=>x&&typeof x==='object');
+// mirrors Python extract_tests(): p/q-like keys, lists + standalone dicts
+const PRE=/^(p|q)(_.*)?$|^(perm_p|exact_p|pval|p_value)$/;
+function pq(x){
+  let p=null,q=null,has=false;
+  for(const [k,v] of Object.entries(x)){
+    if(typeof v!=='number'&&v!==null)continue;
+    if(k==='q'||k.startsWith('q_')){q=v;has=true;}
+    else if(PRE.test(k)){p=v;has=true;}
+  }
+  return {has,p,q};
 }
-function status(t){
-  if(t.q!=null&&t.q<0.10)return 'confirmed';
-  if(t.p!=null&&t.p<0.06)return 'lead';
-  return t.p!=null?'null':'desc';
+function findTests(o,path,acc){
+  acc=acc||[];path=path||[];
+  if(Array.isArray(o)){
+    const dicts=o.filter(x=>x&&typeof x==='object'&&!Array.isArray(x));
+    const hits=dicts.filter(x=>pq(x).has);
+    if(hits.length){
+      for(const x of hits){const r=pq(x);
+        acc.push({item:x,p:r.p,q:r.q,path:path.join('.')});}
+      return acc;
+    }
+    for(const x of o)findTests(x,path,acc);
+  }else if(o&&typeof o==='object'){
+    const r=pq(o);
+    if(r.has&&!Object.values(o).some(v=>v&&typeof v==='object')){
+      acc.push({item:o,p:r.p,q:r.q,path:path.join('.')});
+      return acc;
+    }
+    for(const [k,v] of Object.entries(o))
+      findTests(v,path.length<6?path.concat(k):path,acc);
+  }
+  return acc;
+}
+const NUMK=new Set(['r','p','q','n','effect','beta','F','tau','d','slope']);
+function testDesc(w){
+  const t=w.item;
+  const named=t.desc??t.label??t.relation;
+  if(named)return String(named);
+  if(t.from!==undefined&&t.to!==undefined)return t.from+' \u2192 '+t.to;
+  const parts=[];
+  for(const [k,v] of Object.entries(t))
+    if(typeof v==='string'&&!NUMK.has(k)&&k!=='h'&&k!=='id')parts.push(v);
+  if(parts.length)return parts.join(' \u00b7 ');
+  return w.path||'(unnamed test)';
+}
+function testEffect(w){
+  const t=w.item;
+  for(const k of ['r','effect','d','beta','F','tau','slope'])
+    if(t[k]!==undefined&&t[k]!==null)return k+'='+t[k];
+  return '';
+}
+function status(w){
+  if(w.q!=null&&w.q<0.10)return 'confirmed';
+  if(w.p!=null&&w.p<0.06)return 'lead';
+  return w.p!=null?'null':'desc';
 }
 let sortKey=null,sortAsc=true,reqToken=0;
 function show(e,keepSort){
@@ -182,16 +227,21 @@ function show(e,keepSort){
   fetch(encodeURIComponent(e.file)+'?'+Date.now()).then(r=>r.json()).then(d=>{
     if(tok!==reqToken)return; // stale response from a faster earlier click
     if(!keepSort){sortKey=null;}
-    const tests=flatTests(d);
+    const tests=findTests(d);
     if(sortKey)tests.sort((a,b)=>{
-      const av=a[sortKey],bv=b[sortKey];
+      const get=w=>sortKey==='p'?w.p:sortKey==='q'?w.q:
+        sortKey==='n'?w.item.n:sortKey==='status'?status(w):
+        sortKey==='effect'?testEffect(w):sortKey==='desc'?testDesc(w):
+        (w.item.h??w.item.id);
+      const av=get(a),bv=get(b);
       if(av==null)return 1;if(bv==null)return -1;
       return (av<bv?-1:av>bv?1:0)*(sortAsc?1:-1);});
     let h=`<h2>${esc(e.exp)} · ${esc(d.experiment||e.file)}</h2>`;
     if(d.hypothesis)h+=`<div class="meta"><b>Hypothesis:</b> ${esc(d.hypothesis)}</div>`;
     if(d.method)h+=`<div class="meta"><b>Method:</b> ${esc(d.method)}</div>`;
-    if(d.verdict)h+=`<div class="verdict"><b>Verdict:</b> ${
-      esc(typeof d.verdict==='string'?d.verdict:JSON.stringify(d.verdict))}</div>`;
+    const verd=d.verdict||d.verdict_summary;
+    if(verd)h+=`<div class="verdict"><b>Verdict:</b> ${
+      esc(typeof verd==='string'?verd:JSON.stringify(verd))}</div>`;
     if(tests.length){
       h+='<table><tr>';
       for(const k of ['h','desc','r','p','q','n'])
@@ -225,6 +275,56 @@ render('');
 """
 
 
+P_RE = re.compile(r"^(p|q)(_.*)?$|^(perm_p|exact_p|pval|p_value)$")
+
+
+def _pq(x):
+    """(p, q) values of a dict via alias keys, else (None-marker)."""
+    p = q = None
+    has = False
+    for k, v in x.items():
+        if not isinstance(v, (int, float, type(None))):
+            continue
+        if k == "q" or k.startswith("q_"):
+            q, has = v, True
+        elif P_RE.match(k):
+            p, has = v, True
+    return has, p, q
+
+
+def extract_tests(d):
+    """Universal test discovery, mirrored EXACTLY by findTests() in the
+    embedded JS: (a) every list whose dict items carry a p/q-like key
+    (p, q, p_band, perm_p, exact_p, ...); (b) standalone dicts carrying
+    a p-like key (single pre-registered tests like primary_partial),
+    named by their JSON path."""
+    found = []
+
+    def walk(o, path):
+        if isinstance(o, list):
+            dicts = [x for x in o if isinstance(x, dict)]
+            hits = [x for x in dicts if _pq(x)[0]]
+            if hits:
+                for x in hits:
+                    has, p, q = _pq(x)
+                    found.append({"_p": p, "_q": q, "raw": x,
+                                  "path": path})
+                return
+            for i, x in enumerate(o):
+                walk(x, path)
+        elif isinstance(o, dict):
+            has, p, q = _pq(o)
+            if has and not any(isinstance(v, (dict, list))
+                               for v in o.values()):
+                found.append({"_p": p, "_q": q, "raw": o, "path": path})
+                return
+            for k, v in o.items():
+                walk(v, path + [k] if len(path) < 6 else path)
+
+    walk(d, [])
+    return found
+
+
 def build_manifest(results_dir, pattern):
     if os.path.isabs(pattern) or ".." in pattern.split(os.sep):
         sys.exit("--pattern must be relative without parent traversal")
@@ -242,24 +342,22 @@ def build_manifest(results_dir, pattern):
             continue
         if not isinstance(d, dict):
             continue
-        tests = d.get("tests") or []
-        if isinstance(tests, dict):
-            tests = [t for v in tests.values() if isinstance(v, list)
-                     for t in v]
-        tests = [t for t in tests if isinstance(t, dict)]
+        tests = extract_tests(d)
         n_sig = sum(1 for t in tests
-                    if t.get("q") is not None and t["q"] < 0.10)
+                    if t["_q"] is not None and t["_q"] < 0.10)
         n_lead = sum(1 for t in tests
-                     if t.get("p") is not None and t["p"] < 0.06
-                     and (t.get("q") is None or t["q"] >= 0.10))
+                     if t["_p"] is not None and t["_p"] < 0.06
+                     and (t["_q"] is None or t["_q"] >= 0.10))
         m = re.match(r"([A-Za-z]+\d+[a-z]?)", name)
+        title = str(d.get("title") or d.get("hypothesis") or d.get("goal")
+                    or d.get("verdict_summary") or d.get("experiment")
+                    or name)[:140]
         st = os.stat(path)
         created = getattr(st, "st_birthtime", st.st_mtime)
         import datetime as _dt
         manifest.append({
             "file": name, "exp": m.group(1) if m else name,
-            "title": str(d.get("hypothesis") or d.get("goal")
-                         or d.get("experiment") or name)[:140],
+            "title": title,
             "n_tests": len(tests), "n_confirmed": n_sig,
             "n_leads": n_lead, "created": created,
             "created_h": _dt.datetime.fromtimestamp(created)
