@@ -12,16 +12,25 @@ What it does:
      confirmed/lead counts per experiment (q<0.10 / p<0.06). "Creation
      date" = st_birthtime on macOS; on filesystems without birthtime it
      falls back to mtime (re-runs reorder the list there).
-  2. Writes explorer.html into <results_dir>. The page fetches result
+  2. Links full-text reports: every *.html in the directory is scanned
+     for experiment ids; matching reports are linked from each
+     experiment's detail view.
+  3. Writes explorer.html into <results_dir>. The page fetches result
      files live (same origin), so re-running experiments updates the view
      without regenerating; regenerate only when NEW files appear.
-  3. Ensures a local http server is serving <results_dir> on --port
-     (starts one bound to 127.0.0.1 if the port is free; reuses an
-     existing one otherwise) and opens the browser.
+  4. Ensures a local http server is serving <results_dir> on --port
+     (starts one bound to 127.0.0.1 if the port is free; reuses a server
+     only after verifying it serves THIS directory) and opens the browser.
 
-LOCAL-ONLY: serves on loopback. Results files must follow the skill's
+UI: system sans-serif; resizable sidebar (drag the divider, width
+persisted); star experiments (★, persisted in localStorage per
+directory) and filter by starred; every scalar/dict/list field of a
+results JSON is rendered (facts table, definition lists like
+"approaches", bullet lists) — nothing meaningful hides in raw JSON only.
+
+LOCAL-ONLY: serves on loopback. Results files following the skill's
 conventions ({experiment, hypothesis, method, tests:[{h,desc,r,p,q,n}],
-caveats}); unknown shapes degrade to the raw-JSON view.
+caveats}) render richest; unknown shapes degrade gracefully.
 """
 
 from __future__ import annotations
@@ -40,53 +49,88 @@ HTML = """<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Experiment explorer</title>
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root{--ink:#1a1a1a;--bg:#fdfbf7;--muted:#6b6b6b;--rule:#d8d2c4;
 --green:#2a7a5a;--amber:#c89000;--red:#a02a2a;--purple:#5a5aaa}
 *{box-sizing:border-box}
-body{font-family:'EB Garamond',serif;background:var(--bg);color:var(--ink);
-margin:0;font-size:17px;line-height:1.45}
-.layout{display:grid;grid-template-columns:330px 1fr;height:100vh}
-.side{border-right:1px solid var(--rule);overflow-y:auto;padding:1rem}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Helvetica,Arial,sans-serif;
+background:var(--bg);color:var(--ink);margin:0;font-size:15px;line-height:1.5}
+.layout{display:grid;grid-template-columns:var(--sidew,420px) 6px 1fr;height:100vh}
+.side{border-right:1px solid var(--rule);overflow-y:auto;padding:1rem;min-width:240px}
+#drag{cursor:col-resize;background:transparent}
+#drag:hover{background:rgba(90,90,170,.15)}
 .main{overflow-y:auto;padding:1.4rem 2rem}
-h1{font-size:1.3rem;margin:.2rem 0 .8rem}
-input#q{width:100%;font:inherit;padding:.35rem .6rem;border:1px solid var(--rule);
-border-radius:5px;background:#fff;margin-bottom:.7rem}
-.exp{padding:.45rem .55rem;border-radius:6px;cursor:pointer;margin:.15rem 0;
-border:1px solid transparent}
+h1{font-size:1.15rem;margin:.2rem 0 .8rem;font-weight:600}
+input#q{width:100%;font:inherit;padding:.4rem .6rem;border:1px solid var(--rule);
+border-radius:6px;background:#fff;margin-bottom:.5rem}
+select#sortsel{width:100%;font:inherit;font-size:.8rem;margin-bottom:.45rem;
+padding:.3rem;border:1px solid var(--rule);border-radius:6px;background:#fff}
+#chips{display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.6rem}
+#chips button{font:inherit;font-size:.72rem;padding:.12rem .55rem;
+border:1px solid var(--rule);border-radius:10px;background:#fff;cursor:pointer}
+.exp{padding:.5rem .6rem;border-radius:7px;cursor:pointer;margin:.18rem 0;
+border:1px solid transparent;position:relative}
 .exp:hover{background:#f6f2e8}
 .exp.active{border-color:var(--purple);background:#fff}
-.exp .id{font-family:ui-monospace,monospace;font-size:.72rem;color:var(--muted)}
-.exp .t{font-size:.82rem;line-height:1.25;display:block}
-.badge{display:inline-block;font-family:ui-monospace,monospace;font-size:.65rem;
+.exp .id{font-family:ui-monospace,Menlo,monospace;font-size:.7rem;color:var(--muted)}
+.exp .t{font-size:.82rem;line-height:1.3;display:block;margin-top:.1rem}
+.star{position:absolute;top:.35rem;right:.4rem;cursor:pointer;font-size:.9rem;
+color:#c8c2b4;user-select:none}
+.star.on{color:var(--amber)}
+.badge{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-size:.65rem;
 border-radius:8px;padding:0 .4rem;margin-left:.25rem;color:#fff}
 .b-c{background:var(--green)}.b-l{background:var(--amber)}
-h2{font-size:1.35rem;margin:.2rem 0 .4rem}
-.meta{font-size:.85rem;color:var(--muted);font-style:italic;margin:.4rem 0 1rem}
-table{border-collapse:collapse;width:100%;font-size:.85rem;margin:.8rem 0}
-th{text-align:left;border-bottom:2px solid var(--ink);padding:.3rem .45rem;
-cursor:pointer;user-select:none;white-space:nowrap}
-td{border-bottom:1px solid var(--rule);padding:.3rem .45rem}
-td.num{font-family:ui-monospace,monospace;font-size:.78rem;text-align:right;
+h2{font-size:1.3rem;margin:.2rem 0 .5rem;font-weight:650}
+h3{font-size:.95rem;margin:1.4rem 0 .3rem;font-weight:650}
+.meta{font-size:.86rem;color:#444;margin:.4rem 0 .8rem}
+.meta b{color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:.82rem;
+margin:1.4rem 0 1.6rem}
+th{text-align:left;border-bottom:2px solid var(--ink);padding:.35rem .5rem;
+cursor:pointer;user-select:none;white-space:nowrap;font-size:.75rem;
+text-transform:uppercase;letter-spacing:.04em;color:#444}
+td{border-bottom:1px solid var(--rule);padding:.35rem .5rem}
+td.num{font-family:ui-monospace,Menlo,monospace;font-size:.76rem;text-align:right;
 white-space:nowrap}
-tr.confirmed td{background:rgba(42,122,90,.10)}
+tr.confirmed td{background:rgba(42,122,90,.16);font-weight:600}
+tr.confirmed td:first-child{border-left:4px solid var(--green)}
 tr.lead td{background:rgba(200,144,0,.10)}
+tr.lead td:first-child{border-left:4px solid var(--amber)}
+tr.null td{color:#777}
+tr.null td:first-child{border-left:4px solid transparent}
+.st-confirmed{color:var(--green);font-weight:700}
+.st-lead{color:var(--amber);font-weight:600}
+.st-null{color:#999}
 .caveats{border-left:3px solid var(--amber);background:#fffaf0;
-padding:.5rem .9rem;font-size:.85rem;margin:1rem 0}
+padding:.6rem 1rem;font-size:.83rem;margin:1.4rem 0}
 .verdict{border-left:3px solid var(--purple);background:#fff;
-padding:.5rem .9rem;font-size:.9rem;margin:.6rem 0}
-details{margin:1rem 0}
+padding:.6rem 1rem;font-size:.88rem;margin:.8rem 0}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:.15rem .9rem;
+font-size:.84rem;margin:.5rem 0 1rem}
+.kv dt{font-family:ui-monospace,Menlo,monospace;font-size:.74rem;
+color:var(--muted);padding-top:.1rem}
+.kv dd{margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:.3rem;margin:.6rem 0 1rem}
+.fact{font-size:.74rem;border:1px solid var(--rule);border-radius:6px;
+background:#fff;padding:.15rem .5rem}
+.fact b{font-family:ui-monospace,Menlo,monospace;font-weight:600}
+.reports{margin:.5rem 0 .9rem}
+.reports a{display:inline-block;font-size:.76rem;border:1px solid var(--purple);
+color:var(--purple);border-radius:10px;padding:.1rem .6rem;margin:0 .3rem .3rem 0;
+text-decoration:none}
+.reports a:hover{background:var(--purple);color:#fff}
+ul.plain{margin:.3rem 0 1rem;padding-left:1.2rem;font-size:.84rem}
+details{margin:1.4rem 0}
+summary{cursor:pointer;font-size:.85rem;color:var(--muted)}
 pre{background:#fff;border:1px solid var(--rule);border-radius:6px;
 padding:.8rem;font-size:.72rem;overflow-x:auto;max-height:50vh}
+.note{color:var(--muted);font-size:.88rem}
 </style></head><body>
-<div class="layout">
+<div class="layout" id="layout">
 <div class="side">
 <h1>Experiments <span style="font-size:.75rem;color:var(--muted)" id="count"></span></h1>
 <input id="q" placeholder="filter…">
-<select id="sortsel" style="width:100%;font:inherit;font-size:.8rem;
-margin-bottom:.4rem;padding:.25rem;border:1px solid var(--rule);
-border-radius:5px;background:#fff">
+<select id="sortsel">
 <option value="newest">newest first</option>
 <option value="oldest">oldest first</option>
 <option value="expnum">by experiment №</option>
@@ -94,20 +138,44 @@ border-radius:5px;background:#fff">
 <option value="confirmed">most confirmed</option>
 <option value="leads">most leads</option>
 </select>
-<div id="chips" style="display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.6rem"></div>
+<div id="chips"></div>
 <div id="list"></div>
 </div>
-<div class="main" id="main"><p style="color:var(--muted)">← pick an
-experiment. Green badge — confirmed (q&lt;0.10), amber — lead
-(p&lt;0.06).</p></div>
+<div id="drag"></div>
+<div class="main" id="main"><p class="note">← pick an experiment.
+Green badge — confirmed (q&lt;0.10), amber — lead (p&lt;0.06).
+★ stars an experiment; the «starred» chip filters to your stars.</p></div>
 </div>
 <script>
 const M=__DATA__;
 const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
   .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const list=document.getElementById('list'),main=document.getElementById('main');
-document.getElementById('count').textContent='('+M.manifest.length+')';
 let active=null;
+
+// ---- resizable sidebar (width persisted per directory)
+const WKEY='explorer-width-'+M.dir_token;
+const saved=localStorage.getItem(WKEY);
+if(saved)document.getElementById('layout').style.setProperty('--sidew',saved+'px');
+(()=>{const drag=document.getElementById('drag');let on=false;
+ drag.addEventListener('mousedown',()=>{on=true;document.body.style.userSelect='none';});
+ window.addEventListener('mousemove',e=>{if(!on)return;
+  const w=Math.max(240,Math.min(700,e.clientX));
+  document.getElementById('layout').style.setProperty('--sidew',w+'px');});
+ window.addEventListener('mouseup',()=>{if(on){on=false;
+  document.body.style.userSelect='';
+  const w=getComputedStyle(document.getElementById('layout'))
+    .getPropertyValue('--sidew').trim().replace('px','');
+  localStorage.setItem(WKEY,w);}});})();
+
+// ---- stars (persisted per directory)
+const SKEY='explorer-stars-'+M.dir_token;
+let stars=new Set(JSON.parse(localStorage.getItem(SKEY)||'[]'));
+function toggleStar(file){
+  stars.has(file)?stars.delete(file):stars.add(file);
+  localStorage.setItem(SKEY,JSON.stringify([...stars]));
+  render(document.getElementById('q').value);
+}
 
 let dir=M.sort||'newest';
 document.getElementById('sortsel').value=dir;
@@ -115,6 +183,7 @@ document.getElementById('sortsel').onchange=e=>{dir=e.target.value;
   render(document.getElementById('q').value);};
 const CHIPS=[
  ['all','all',e=>true],
+ ['starred','★ starred',e=>stars.has(e.file)],
  ['tests','with tests',e=>e.n_tests>0],
  ['confirmed','confirmed ✓',e=>e.n_confirmed>0],
  ['leads','leads',e=>e.n_leads>0],
@@ -125,8 +194,6 @@ const chipsEl=document.getElementById('chips');
 for(const [id,label] of CHIPS.map(c=>[c[0],c[1]])){
   const b=document.createElement('button');
   b.textContent=label;b.dataset.id=id;
-  b.style.cssText='font:inherit;font-size:.7rem;padding:.1rem .5rem;'+
-   'border:1px solid var(--rule);border-radius:10px;background:#fff;cursor:pointer';
   b.onclick=()=>{chip=id;render(document.getElementById('q').value);};
   chipsEl.appendChild(b);
 }
@@ -156,8 +223,13 @@ function render(filter){
     div.innerHTML=`<span class="id">${e.exp} · ${e.created_h} · ${e.n_tests} tests`+
       (e.n_confirmed?`<span class="badge b-c">${e.n_confirmed}</span>`:'')+
       (e.n_leads?`<span class="badge b-l">${e.n_leads}</span>`:'')+
-      `</span><span class="t">${esc(e.title)}</span>`;
-    div.onclick=()=>show(e);
+      `</span><span class="t">${esc(e.title)}</span>`+
+      `<span class="star${stars.has(e.file)?' on':''}" data-f="${esc(e.file)}">`+
+      (stars.has(e.file)?'★':'☆')+`</span>`;
+    div.onclick=ev=>{
+      if(ev.target.classList.contains('star')){toggleStar(e.file);
+        ev.stopPropagation();return;}
+      show(e);};
     list.appendChild(div);
   }
   document.getElementById('count').textContent='('+shown+'/'+M.manifest.length+')';
@@ -165,13 +237,14 @@ function render(filter){
 document.getElementById('q').oninput=e=>render(e.target.value);
 
 // mirrors Python extract_tests(): p/q-like keys, lists + standalone dicts
-const PRE=/^(p|q)(_.*)?$|^(perm_p|exact_p|pval|p_value)$/;
+const P_AL=new Set(['p','p_band','perm_p','exact_p','pval','p_value']);
+const Q_AL=new Set(['q','q_value','q_bh','fdr_q']);
 function pq(x){
   let p=null,q=null,has=false;
   for(const [k,v] of Object.entries(x)){
     if(typeof v!=='number'&&v!==null)continue;
-    if(k==='q'||k.startsWith('q_')){q=v;has=true;}
-    else if(PRE.test(k)){p=v;has=true;}
+    if(Q_AL.has(k)){q=v;has=true;}
+    else if(P_AL.has(k)){p=v;has=true;}
   }
   return {has,p,q};
 }
@@ -182,14 +255,14 @@ function findTests(o,path,acc){
     const hits=dicts.filter(x=>pq(x).has);
     if(hits.length){
       for(const x of hits){const r=pq(x);
-        acc.push({item:x,p:r.p,q:r.q,path:path.join('.')});}
+        acc.push({item:x,p:r.p,q:r.q,path:path.join('.'),top:path[0]||''});}
       return acc;
     }
     for(const x of o)findTests(x,path,acc);
   }else if(o&&typeof o==='object'){
     const r=pq(o);
     if(r.has&&!Object.values(o).some(v=>v&&typeof v==='object')){
-      acc.push({item:o,p:r.p,q:r.q,path:path.join('.')});
+      acc.push({item:o,p:r.p,q:r.q,path:path.join('.'),top:path[0]||''});
       return acc;
     }
     for(const [k,v] of Object.entries(o))
@@ -202,11 +275,11 @@ function testDesc(w){
   const t=w.item;
   const named=t.desc??t.label??t.relation;
   if(named)return String(named);
-  if(t.from!==undefined&&t.to!==undefined)return t.from+' \u2192 '+t.to;
+  if(t.from!==undefined&&t.to!==undefined)return t.from+' \\u2192 '+t.to;
   const parts=[];
   for(const [k,v] of Object.entries(t))
     if(typeof v==='string'&&!NUMK.has(k)&&k!=='h'&&k!=='id')parts.push(v);
-  if(parts.length)return parts.join(' \u00b7 ');
+  if(parts.length)return parts.join(' \\u00b7 ');
   return w.path||'(unnamed test)';
 }
 function testEffect(w){
@@ -220,6 +293,49 @@ function status(w){
   if(w.p!=null&&w.p<0.06)return 'lead';
   return w.p!=null?'null':'desc';
 }
+
+// ---- generic field rendering: nothing meaningful hides in raw JSON
+const HANDLED=new Set(['experiment','title','hypothesis','goal','method',
+ 'verdict','verdict_summary','caveats','tests']);
+function renderExtras(d,testTops){
+  let h='';
+  const facts=[];
+  for(const [k,v] of Object.entries(d)){
+    if(HANDLED.has(k)||testTops.has(k))continue;
+    if(v===null)continue;
+    if(typeof v==='number'||typeof v==='boolean'||
+       (typeof v==='string'&&v.length<=80)){
+      facts.push(`<span class="fact"><b>${esc(k)}</b>: ${esc(v)}</span>`);
+    }
+  }
+  if(facts.length)h+=`<h3>Facts</h3><div class="facts">${facts.join('')}</div>`;
+  for(const [k,v] of Object.entries(d)){
+    if(HANDLED.has(k)||testTops.has(k))continue;
+    if(typeof v==='string'&&v.length>80){
+      h+=`<h3>${esc(k)}</h3><p class="meta">${esc(v)}</p>`;
+    }else if(Array.isArray(v)&&v.length&&v.every(x=>typeof x==='string')){
+      h+=`<h3>${esc(k)}</h3><ul class="plain">`+
+        v.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>';
+    }else if(v&&typeof v==='object'&&!Array.isArray(v)){
+      const ent=Object.entries(v);
+      if(ent.length&&ent.every(([kk,vv])=>typeof vv==='string'||
+          typeof vv==='number'||typeof vv==='boolean')){
+        // dicts like "approaches": {A: "...", B: "..."} -> definition list
+        h+=`<h3>${esc(k)}</h3><dl class="kv">`+
+          ent.map(([kk,vv])=>`<dt>${esc(kk)}</dt><dd>${esc(vv)}</dd>`).join('')+
+          '</dl>';
+      }else if(ent.length){
+        h+=`<h3>${esc(k)}</h3><p class="note">nested object `+
+          `(${ent.length} keys) — see raw JSON below</p>`;
+      }
+    }else if(Array.isArray(v)&&v.length){
+      h+=`<h3>${esc(k)}</h3><p class="note">${v.length} records — `+
+        `see raw JSON below</p>`;
+    }
+  }
+  return h;
+}
+
 let sortKey=null,sortAsc=true,reqToken=0;
 function show(e,keepSort){
   active=e.file;render(document.getElementById('q').value);
@@ -228,6 +344,7 @@ function show(e,keepSort){
     if(tok!==reqToken)return; // stale response from a faster earlier click
     if(!keepSort){sortKey=null;}
     const tests=findTests(d);
+    const testTops=new Set(tests.map(w=>w.top).filter(Boolean));
     if(sortKey)tests.sort((a,b)=>{
       const get=w=>sortKey==='p'?w.p:sortKey==='q'?w.q:
         sortKey==='n'?w.item.n:sortKey==='status'?status(w):
@@ -236,30 +353,42 @@ function show(e,keepSort){
       const av=get(a),bv=get(b);
       if(av==null)return 1;if(bv==null)return -1;
       return (av<bv?-1:av>bv?1:0)*(sortAsc?1:-1);});
-    let h=`<h2>${esc(e.exp)} · ${esc(d.experiment||e.file)}</h2>`;
+    let h=`<h2>${esc(e.exp)} · ${esc(d.title||d.experiment||e.file)}</h2>`;
+    if(e.reports&&e.reports.length)
+      h+='<div class="reports">Reports: '+e.reports.map(r=>
+        `<a href="${esc(r)}" target="_blank">${esc(r.replace('.html',''))}</a>`)
+        .join('')+'</div>';
     if(d.hypothesis)h+=`<div class="meta"><b>Hypothesis:</b> ${esc(d.hypothesis)}</div>`;
+    else if(d.goal)h+=`<div class="meta"><b>Goal:</b> ${esc(d.goal)}</div>`;
     if(d.method)h+=`<div class="meta"><b>Method:</b> ${esc(d.method)}</div>`;
     const verd=d.verdict||d.verdict_summary;
     if(verd)h+=`<div class="verdict"><b>Verdict:</b> ${
       esc(typeof verd==='string'?verd:JSON.stringify(verd))}</div>`;
     if(tests.length){
       h+='<table><tr>';
-      for(const k of ['h','desc','r','p','q','n'])
-        h+=`<th data-k="${k}">${k}${sortKey===k?(sortAsc?' ↑':' ↓'):''}</th>`;
+      for(const k of ['h','desc','effect','p','q','n','status'])
+        h+=`<th data-k="${k}">${k}${sortKey===k?(sortAsc?' \\u2191':' \\u2193'):''}</th>`;
       h+='</tr>';
-      for(const t of tests){
-        h+=`<tr class="${status(t)}"><td class="num">${esc(t.h??t.id??'')}</td>`+
-          `<td>${esc(t.desc??t.label??'')}</td>`+
-          `<td class="num">${t.r??t.effect??''}</td>`+
-          `<td class="num">${t.p??''}</td><td class="num">${t.q??''}</td>`+
-          `<td class="num">${t.n??''}</td></tr>`;
+      const SLBL={confirmed:'\\u2713 confirmed',lead:'lead','null':'null',desc:'\\u2014'};
+      for(const w of tests){
+        const st=status(w);
+        h+=`<tr class="${st}"><td class="num">${esc(w.item.h??w.item.id??'')}</td>`+
+          `<td>${esc(testDesc(w))}</td>`+
+          `<td class="num">${esc(testEffect(w))}</td>`+
+          `<td class="num">${w.p??''}</td><td class="num">${w.q??''}</td>`+
+          `<td class="num">${w.item.n??''}</td>`+
+          `<td class="num st-${st}">${SLBL[st]}</td></tr>`;
       }
       h+='</table>';
+    }else{
+      h+='<p class="note">No inferential tests detected in this results '+
+        'file \\u2014 descriptive layer. See fields and raw JSON below.</p>';
     }
+    h+=renderExtras(d,testTops);
     if(d.caveats&&d.caveats.length)
       h+='<div class="caveats"><b>Caveats:</b><br>'+
-        d.caveats.map(c=>'• '+esc(c)).join('<br>')+'</div>';
-    h+=`<details><summary>raw JSON (${e.file})</summary><pre>${
+        d.caveats.map(c=>'\\u2022 '+esc(c)).join('<br>')+'</div>';
+    h+=`<details><summary>raw JSON (${esc(e.file)})</summary><pre>${
       JSON.stringify(d,null,1).replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .slice(0,200000)}</pre></details>`;
     main.innerHTML=h;
@@ -267,7 +396,7 @@ function show(e,keepSort){
       const k=th.dataset.k;
       if(sortKey===k)sortAsc=!sortAsc;else{sortKey=k;sortAsc=true;}
       show(e,true);});
-  }).catch(err=>{main.innerHTML='<p>failed to load '+e.file+': '+err+'</p>'});
+  }).catch(err=>{main.innerHTML='<p>failed to load '+esc(e.file)+': '+esc(err)+'</p>'});
 }
 render('');
 </script>
@@ -275,7 +404,10 @@ render('');
 """
 
 
-P_RE = re.compile(r"^(p|q)(_.*)?$|^(perm_p|exact_p|pval|p_value)$")
+# EXACT alias whitelist — broad q_*/p_* matching once swallowed feature
+# columns like q_rate (question rate) and fabricated q-values.
+P_ALIASES = {"p", "p_band", "perm_p", "exact_p", "pval", "p_value"}
+Q_ALIASES = {"q", "q_value", "q_bh", "fdr_q"}
 
 
 def _pq(x):
@@ -285,9 +417,9 @@ def _pq(x):
     for k, v in x.items():
         if not isinstance(v, (int, float, type(None))):
             continue
-        if k == "q" or k.startswith("q_"):
+        if k in Q_ALIASES:
             q, has = v, True
-        elif P_RE.match(k):
+        elif k in P_ALIASES:
             p, has = v, True
     return has, p, q
 
@@ -310,7 +442,7 @@ def extract_tests(d):
                     found.append({"_p": p, "_q": q, "raw": x,
                                   "path": path})
                 return
-            for i, x in enumerate(o):
+            for x in o:
                 walk(x, path)
         elif isinstance(o, dict):
             has, p, q = _pq(o)
@@ -323,6 +455,24 @@ def extract_tests(d):
 
     walk(d, [])
     return found
+
+
+def scan_reports(results_dir, exp_ids):
+    """Map exp id -> [report html files mentioning it]. Whole-word match
+    (exp21 must not match exp210)."""
+    links = {e: [] for e in exp_ids}
+    for path in sorted(glob.glob(os.path.join(results_dir, "*.html"))):
+        name = os.path.basename(path)
+        if name == "explorer.html":
+            continue
+        try:
+            text = open(path, encoding="utf-8", errors="ignore").read()
+        except OSError:
+            continue
+        for e in exp_ids:
+            if re.search(re.escape(e) + r"(?![0-9a-z])", text):
+                links[e].append(name)
+    return links
 
 
 def build_manifest(results_dir, pattern):
@@ -363,6 +513,10 @@ def build_manifest(results_dir, pattern):
             "created_h": _dt.datetime.fromtimestamp(created)
             .strftime("%Y-%m-%d %H:%M"),
         })
+    # link full-text reports to experiments
+    links = scan_reports(results_dir, sorted({e["exp"] for e in manifest}))
+    for e in manifest:
+        e["reports"] = links.get(e["exp"], [])
     return manifest
 
 
@@ -411,11 +565,13 @@ def main():
                           "dir_token": dir_token(rd)},
                          ensure_ascii=False)
     payload = (payload.replace("&", "\\u0026").replace("<", "\\u003c")
-               .replace(">", "\\u003e").replace("\u2028", "\\u2028")
-               .replace("\u2029", "\\u2029"))
+               .replace(">", "\\u003e").replace(" ", "\\u2028")
+               .replace(" ", "\\u2029"))
     with open(out, "w", encoding="utf-8") as f:
         f.write(HTML.replace("__DATA__", payload))
-    print(f"wrote {out} ({len(manifest)} experiments)")
+    n_linked = sum(1 for e in manifest if e["reports"])
+    print(f"wrote {out} ({len(manifest)} experiments, "
+          f"{n_linked} linked to reports)")
 
     port = a.port
     if not a.no_serve:
