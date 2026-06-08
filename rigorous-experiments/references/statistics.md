@@ -36,6 +36,17 @@ fixed family size.
   and within-regime; pool only if signs agree.
 - Granger/lead-lag on differenced series, not levels.
 
+## Series scope is part of the test definition
+
+A lagged "[t+1]" means the next unit *in the series the hypothesis is
+about* — not the next row of a pooled frame. Computing "next-session
+valence" over a POOLED therapy+coaching sequence once flipped the sign
+vs the therapy-only definition (+0.12 p=0.77 → −0.585 p=0.033): coaching
+sessions interleaved between therapy ones broke the offsets. Define the
+scope before lagging. When recomputing a prior result, FIRST reproduce a
+stored artifact (an offset value, a count) on the chosen scope as a
+sanity check; only then run the test.
+
 ## Results JSON conventions
 
 `{experiment, hypothesis, method, n_*, tests: [{h, desc, r, p, q, n}],
@@ -52,6 +63,11 @@ caveats list; every known limitation goes in.
    confirmed / lead / null / descriptive.
 2. **Impossible-p detector**: for sampled-permutation session tests,
    reported p < 1/n is unattainable exactly → flag and recompute.
+2b. **Sweep diagnostic**: for any exploratory sweep, the honest summary
+   is the p-value HISTOGRAM, not the lead list. Mostly-null → ~uniform,
+   leftmost bin at the chance line; real signal → leftmost bin far above
+   it. Report the lead count against `0.06 × n_tests` (expected by
+   chance) — if they match, you found nothing, and say so.
 3. Recompute exactly from stored per-unit data where possible; BH with
    the ORIGINAL family size; record status flips with provenance
    (`status_original`, `audited` fields) — never silently edit.

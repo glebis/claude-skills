@@ -22,6 +22,7 @@ Pick the mode matching the request; chain them for a full study.
 | **conduct** | Implementing + running the experiment | `references/statistics.md` |
 | **validate-data** | Before trusting ANY new data source | `references/data-validation.md` |
 | **cross-validate** | Findings worth defending; code review; external model review (e.g. GPT Pro) | `references/cross-validation.md` |
+| **investigate-leads** | A sweep/run produced leads (p<0.06, not FDR-confirmed) | `references/lead-investigation.md` |
 | **audit** | Re-examining past claims, registries of findings | `references/statistics.md` §Audit |
 
 ## Non-negotiable core (all modes)
@@ -37,7 +38,9 @@ Pick the mode matching the request; chain them for a full study.
    a gap-compressed series breaks the timeline; keep missingness as NaN
    masks re-applied per shift. Event indicators must be pure 0/1 with no
    gaps — missingness lives only in the outcome series.
-4. **BH with FIXED family size m**, declared at design time. Confirmatory
+4. **BH with FIXED family size m**, a LITERAL CONSTANT declared at design
+   time — never `len(tests)` (that defeats pre-registration; the linter
+   rejects it). Assert the run matches the declared m. Confirmatory
    families small and separate from exploratory sweeps; pooling everything
    into one BH buries true effects, cherry-picking families manufactures
    them. Plain BH assumes independent/positively-dependent tests; for
@@ -54,7 +57,13 @@ Pick the mode matching the request; chain them for a full study.
    "effect fake". Report the decomposition.
 8. **Honest statuses**: confirmed (q<0.10 exact) ≠ lead (p<0.06) ≠ null ≠
    descriptive. Status flips are recorded, never silently edited. Nulls
-   with adequate power are findings.
+   with adequate power are findings. **Robust ≠ significant**: a lead
+   surviving leave-one-out at small n is still underpowered — a candidate
+   for prospective test, not a finding.
+8b. **Series scope is part of the test.** A lagged "[t+1]" means the next
+   unit in the series the hypothesis is about, not the next pooled row;
+   define scope before lagging (it once flipped a sign). When recomputing
+   a prior result, reproduce a stored artifact on that scope first.
 9. **Privacy**: raw text/audio never enters output files or external
    uploads — statistics, rates and embedding-derived scores only.
 10. **Plain-language reporting**: every statistic carries its practical
@@ -72,7 +81,11 @@ Pick the mode matching the request; chain them for a full study.
 4. `cross-validate`: adversarial code review (e.g. Codex read-only) BEFORE
    trusting results; fix findings; re-run. For major claims, external
    model review with a privacy-screened archive.
-5. Verdicts in honest prose (mixed/rejected allowed); report; registry
+5. `investigate-leads` on anything that surfaced as a lead (not at the
+   same scale — the triage battery: LOO, directionality, detrend-vs-step,
+   within-cycle, prewhiten+bootstrap; consolidate same-direction leads
+   into one composite). Mark diagnostic runs `descriptive_only: true`.
+6. Verdicts in honest prose (mixed/rejected allowed); report; registry
    update with status provenance.
 
 ## Viewing results
@@ -96,5 +109,8 @@ statistics).
 
 Run `python3 evals/run_evals.py` (from the skill directory) to lint an
 experiment script/results pair against the standards (pre-registration
-present, fixed m, exact perm usage, caveats, no raw text in outputs).
-Eval cases in `evals/cases/` document expected pass/fail examples.
+present, fixed literal m, exact perm usage, caveats, no raw text in
+outputs). A diagnostic/triage run that intentionally mints no new tests
+sets `descriptive_only: true` in its results JSON to satisfy the
+"has tests" check. Eval cases in `evals/cases/` document expected
+pass/fail examples.

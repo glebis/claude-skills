@@ -12,8 +12,18 @@ A docstring-ready block containing:
    redesign).
 2. **Tests** — exact list, each with: predictor, outcome, lag structure,
    test statistic, permutation scheme. 5–10 tests max per family.
-3. **Family size m** — fixed now. Confirmatory family (1–5 tests, things
-   to be believed) separate from exploratory family (the sweep).
+3. **Family size m** — fixed now, as a LITERAL CONSTANT, never
+   `len(tests)`. Declare it; assert the run matches; pass the literal to
+   `bh()`. Computing m from the result count defeats pre-registration and
+   the linter rejects it. Idiom:
+   ```python
+   FAMILY_M = {"A": 4, "B": 4}          # pre-registered, by hand
+   got = {f: len(v) for f, v in fams.items()}
+   assert got == FAMILY_M, f"generation drift: {got} != {FAMILY_M}"
+   bh(fams["A"], m=4)                    # literal, not len()
+   ```
+   Confirmatory family (1–5 tests, things to be believed) separate from
+   exploratory family (the sweep).
 4. **Thresholds** — confirmatory: exact q<0.10; lead: exact p<0.06.
 5. **Power sanity** — n available; smallest detectable r at 80% power
    (~0.21 at n=180, ~0.15 at n=365 for daily series — iid two-sided
@@ -29,6 +39,19 @@ A docstring-ready block containing:
    must NOT move (and/or placebo dates). A predictor that "works" on the
    negative control is measuring confounding or instrumentation, not the
    mechanism.
+
+## Blind sweeps cannot beat FDR at small n
+
+A large undirected sweep (e.g. every marker × every outcome) at session
+scale (n≈20–60) will produce leads at exactly the chance rate and none
+will survive FDR — a generation burned to relearn this. Two honest
+designs instead:
+- **Small theory-tagged confirmatory families** (this is the default):
+  each test derived from a named theory, m fixed and tiny.
+- **An explicitly EXPLORATORY sweep** whose deliverable is the *p-value
+  distribution* (is the leftmost bin above the uniform line?), NOT a lead
+  list. Register it as exploratory; survivors are candidates, never
+  confirmed; downstream is `investigate-leads`, not publication.
 
 ## Design heuristics (earned the hard way)
 
