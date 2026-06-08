@@ -10,6 +10,19 @@ corrupted results until caught.
    not a missing day. Dict comprehensions over hit-counters silently drop
    zero-keys (n collapsed from 234 to 35 once). Initialize all expected
    keys explicitly.
+1b. **Degenerate units / leverage points.** A unit with a near-zero
+   denominator (empty/failed transcript, 1-token session) makes every
+   per-1k or ratio read exactly 0 — and then sits at a corner of every
+   scatter as a maximum-leverage point that can carry a whole
+   correlation. One n_tokens=1 session inflated a headline lag from
+   r=−0.32 (n.s.) to r=−0.64 (p=0.03); removing it collapsed the
+   "central finding." Filter units below a sane size threshold BEFORE any
+   per-unit analysis, and eyeball the scatter for single points pinned to
+   an axis. Also: a "size" variable that does not vary in reality (e.g.
+   transcript length when all sessions are a fixed 60 min — it measures
+   recording completeness, not dose) must NOT be used as a covariate or
+   alternative mechanism. Confirm a variable is real before controlling
+   for it.
 2. **Dedup semantics.** Know what one row means. A UNIQUE(url, device)
    constraint makes "visits/day" actually "NEW unique URLs/day" —
    revisits invisible. Rename the measure accordingly.
