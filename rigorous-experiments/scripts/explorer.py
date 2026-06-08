@@ -128,7 +128,11 @@ padding:.8rem;font-size:.72rem;overflow-x:auto;max-height:50vh}
 </style></head><body>
 <div class="layout" id="layout">
 <div class="side">
-<h1>Experiments <span style="font-size:.75rem;color:var(--muted)" id="count"></span></h1>
+<h1 id="title">Experiments <span style="font-size:.75rem;color:var(--muted)" id="count"></span></h1>
+<div id="viewtoggle" style="display:flex;gap:.25rem;margin-bottom:.5rem">
+<button data-v="exp" style="flex:1;font:inherit;font-size:.75rem;padding:.25rem;border:1px solid var(--rule);border-radius:6px;cursor:pointer">experiments</button>
+<button data-v="tests" style="flex:1;font:inherit;font-size:.75rem;padding:.25rem;border:1px solid var(--rule);border-radius:6px;cursor:pointer">all tests</button>
+</div>
 <input id="q" placeholder="filter…">
 <select id="sortsel">
 <option value="newest">newest first</option>
@@ -398,6 +402,78 @@ function show(e,keepSort){
       show(e,true);});
   }).catch(err=>{main.innerHTML='<p>failed to load '+esc(e.file)+': '+esc(err)+'</p>'});
 }
+
+// ---- ALL-TESTS view: flatten every test from every file into one table
+let view='exp', allTests=null, tSortKey='p', tSortAsc=true;
+async function loadAllTests(){
+  if(allTests)return allTests;
+  main.innerHTML='<p class="note">loading all tests…</p>';
+  const out=[];
+  await Promise.all(M.manifest.map(e=>
+    fetch(encodeURIComponent(e.file)+'?'+Date.now()).then(r=>r.json())
+      .then(d=>{for(const w of findTests(d))
+        out.push({exp:e.exp,file:e.file,desc:testDesc(w),
+          effect:testEffect(w),p:w.p,q:w.q,n:w.item.n,st:status(w)});})
+      .catch(()=>{})));
+  allTests=out; return out;
+}
+function renderTests(){
+  const f=(document.getElementById('q').value||'').toLowerCase();
+  const pred=({all:()=>1,starred:t=>stars.has(t.file),
+    tests:()=>1,confirmed:t=>t.st==='confirmed',
+    leads:t=>t.st==='lead',nulls:t=>t.st==='null',
+    notests:()=>0})[chip]||(()=>1);
+  let rows=allTests.filter(t=>pred(t)&&
+    (!f||(t.exp+' '+t.desc).toLowerCase().includes(f)));
+  const g=t=>tSortKey==='p'?(t.p==null?2:t.p):tSortKey==='q'?(t.q==null?2:t.q):
+    tSortKey==='n'?(t.n||0):tSortKey==='effect'?(parseFloat((t.effect||'').split('=')[1])||0):
+    tSortKey==='exp'?t.exp:tSortKey==='st'?t.st:t.desc;
+  rows.sort((a,b)=>{const x=g(a),y=g(b);return (x<y?-1:x>y?1:0)*(tSortAsc?1:-1);});
+  const SL={confirmed:'✓ confirmed',lead:'lead','null':'null',desc:'—'};
+  let h=`<p class="note">${rows.length} tests across ${M.manifest.length} experiments</p>`;
+  h+='<table><tr>';
+  for(const[k,lbl]of[['exp','exp'],['desc','test'],['effect','effect'],
+    ['p','p'],['q','q'],['n','n'],['st','status']])
+    h+=`<th data-k="${k}">${lbl}${tSortKey===k?(tSortAsc?' ↑':' ↓'):''}</th>`;
+  h+='</tr>';
+  for(const t of rows)
+    h+=`<tr class="${t.st}"><td class="num" style="cursor:pointer" data-f="${esc(t.file)}">${esc(t.exp)}</td>`+
+      `<td>${esc(t.desc)}</td><td class="num">${esc(t.effect)}</td>`+
+      `<td class="num">${t.p??''}</td><td class="num">${t.q??''}</td>`+
+      `<td class="num">${t.n??''}</td><td class="num st-${t.st}">${SL[t.st]}</td></tr>`;
+  h+='</table>';
+  main.innerHTML=h;
+  main.querySelectorAll('th').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;
+    if(tSortKey===k)tSortAsc=!tSortAsc;else{tSortKey=k;tSortAsc=true;}
+    renderTests();});
+  main.querySelectorAll('td[data-f]').forEach(td=>td.onclick=()=>{
+    const e=M.manifest.find(m=>m.file===td.dataset.f);
+    if(e){setView('exp');show(e);}});
+}
+function setView(v){
+  view=v;
+  for(const b of document.querySelectorAll('#viewtoggle button'))
+    b.style.background=b.dataset.v===v?'var(--purple)':'#fff',
+    b.style.color=b.dataset.v===v?'#fff':'inherit';
+  document.getElementById('list').style.display=v==='exp'?'':'none';
+  document.getElementById('sortsel').style.display=v==='exp'?'':'none';
+  document.getElementById('title').firstChild.textContent=
+    v==='exp'?'Experiments ':'All tests ';
+  if(v==='tests'){loadAllTests().then(renderTests);}
+  else{main.innerHTML='<p class="note">← pick an experiment.</p>';}
+}
+for(const b of document.querySelectorAll('#viewtoggle button'))
+  b.onclick=()=>setView(b.dataset.v);
+// route filter + chips to the active view
+const _origInput=document.getElementById('q').oninput;
+document.getElementById('q').oninput=e=>{
+  if(view==='tests')renderTests();else render(e.target.value);};
+const _chipClick=id=>{chip=id;
+  if(view==='tests')renderTests();else render(document.getElementById('q').value);};
+for(const b of chipsEl.children)b.onclick=()=>_chipClick(b.dataset.id);
+
+setView('exp');
 render('');
 </script>
 </body></html>
