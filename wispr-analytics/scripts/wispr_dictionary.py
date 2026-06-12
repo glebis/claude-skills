@@ -16,6 +16,7 @@ Usage:
     python3 wispr_dictionary.py remove "phrase"
     python3 wispr_dictionary.py list [--filter PATTERN]
     python3 wispr_dictionary.py suggest [--days 30] [--min-freq 3]
+    python3 wispr_dictionary.py propose [--days 30] [--min-freq 3] [--format text]
     python3 wispr_dictionary.py check
 """
 
@@ -23,9 +24,12 @@ import sqlite3
 import json
 import argparse
 import os
+import re
 import sys
 import subprocess
 import uuid
+import difflib
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -261,28 +265,31 @@ def cmd_list(args):
     print(f"\n{len(rows)} entries")
 
 
-def cmd_suggest(args):
-    """Analyze dictation history for potential dictionary additions."""
-    conn = get_db(readonly=True)
+def get_existing_phrases(conn):
+    """Return set of lowercased existing dictionary phrases (and replacements)."""
+    existing = set()
+    for row in conn.execute(
+        "SELECT phrase, replacement FROM Dictionary WHERE isDeleted = 0"
+    ).fetchall():
+        if row[0]:
+            existing.add(row[0].strip().lower())
+        if row[1]:
+            existing.add(row[1].strip().lower())
+    return existing
 
-    days = args.days or 30
-    min_freq = args.min_freq or 3
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
 
-    existing = {
-        row[0].lower()
-        for row in conn.execute(
-            "SELECT phrase FROM Dictionary WHERE isDeleted = 0"
-        ).fetchall()
-    }
+def find_mishears(conn, cutoff, existing):
+    """Find recurring ASR mishears (asrText vs formattedText diffs).
 
+    Returns a list of (asr, fmt, freq) tuples sorted by frequency desc.
+    Shared by both `suggest` and `propose`.
+    """
     rows = conn.execute(
         "SELECT asrText, formattedText FROM History "
         "WHERE timestamp > ? AND asrText IS NOT NULL AND formattedText IS NOT NULL "
         "AND asrText != formattedText",
         (cutoff,),
     ).fetchall()
-    conn.close()
 
     corrections = {}
     for r in rows:
@@ -296,18 +303,33 @@ def cmd_suggest(args):
         if asr.lower() in existing:
             continue
 
-        import difflib
         ratio = difflib.SequenceMatcher(None, asr.lower(), fmt.lower()).ratio()
         if ratio > 0.6 and ratio < 1.0:
             key = (asr, fmt)
             corrections[key] = corrections.get(key, 0) + 1
 
-    suggestions = sorted(corrections.items(), key=lambda x: -x[1])
+    return sorted(
+        ((asr, fmt, freq) for (asr, fmt), freq in corrections.items()),
+        key=lambda x: -x[2],
+    )
+
+
+def cmd_suggest(args):
+    """Analyze dictation history for potential dictionary additions (mishears only)."""
+    conn = get_db(readonly=True)
+
+    days = args.days or 30
+    min_freq = args.min_freq or 3
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    existing = get_existing_phrases(conn)
+    mishears = find_mishears(conn, cutoff, existing)
+    conn.close()
 
     print(f"Suggested dictionary additions (last {days} days, min {min_freq} occurrences):\n")
 
     count = 0
-    for (asr, fmt), freq in suggestions:
+    for asr, fmt, freq in mishears:
         if freq >= min_freq:
             print(f"  {asr} → {fmt}  ({freq}x)")
             count += 1
@@ -316,6 +338,224 @@ def cmd_suggest(args):
         print("  No suggestions found. Try lowering --min-freq or increasing --days.")
     else:
         print(f"\n{count} suggestions. Add with: python3 wispr_dictionary.py add \"phrase\" \"replacement\"")
+
+
+# ---------------------------------------------------------------------------
+# propose: human-style review that proposes snippets, replacement rules, vocab
+# ---------------------------------------------------------------------------
+
+URL_RE = re.compile(r"https?://[^\s<>\"')]+", re.IGNORECASE)
+EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+PHONE_RE = re.compile(r"(?<!\w)\+?\d[\d\s().-]{7,}\d(?!\w)")
+# Capitalized / technical tokens (incl. CamelCase, ALLCAPS acronyms). Latin only
+# to avoid splitting Cyrillic sentence-initial words.
+TECH_RE = re.compile(r"\b(?:[A-Z][a-z]+(?:[A-Z][a-z]+)+|[A-Z]{2,}[a-z]*|[A-Z][a-z]+\.[a-z]+)\b")
+
+
+_TRIGGER_SKIP = {
+    "https", "http", "www", "com", "org", "net", "io", "co", "in", "of",
+    "the", "me", "my", "a", "an", "to", "is", "it", "do", "we",
+}
+
+
+def _slug_trigger(text):
+    """Build a short, memorable `My X` trigger phrase for a snippet expansion.
+
+    For URLs/emails the service/domain name is the distinctive part; for
+    boilerplate sentences use the first couple of content words.
+    """
+    tokens = re.findall(r"[A-Za-z0-9]+", text)
+    content = [t for t in tokens if t.lower() not in _TRIGGER_SKIP and len(t) > 1]
+    if not content:
+        content = tokens[:2]
+    if not content:
+        return "My snippet"
+    return "My " + " ".join(content[:2]).lower()
+
+
+def _normalize_boiler(text):
+    """Normalize text for boilerplate frequency counting (whitespace/case)."""
+    return re.sub(r"\s+", " ", text.strip()).lower()
+
+
+def find_snippet_candidates(rows, existing, min_freq):
+    """Detect recurring URLs/emails/phones and repeated boilerplate sentences."""
+    contacts = Counter()       # URL/email/phone -> count (dedup per dictation)
+    boiler = Counter()         # normalized full short dictation -> count
+    boiler_display = {}        # normalized -> first-seen original text
+
+    for r in rows:
+        fmt = (r["formattedText"] or "").strip()
+        if not fmt:
+            continue
+
+        seen = set()
+        for rx in (URL_RE, EMAIL_RE, PHONE_RE):
+            for m in rx.findall(fmt):
+                m = m.strip().rstrip(".,);:")
+                if len(m) < 6:
+                    continue
+                if m.lower() in existing or m in seen:
+                    continue
+                seen.add(m)
+                contacts[m] += 1
+
+        # Boilerplate: whole dictations repeated verbatim (intros, sign-offs,
+        # bios, standard prompts). Require >= 8 words so trivial fillers like
+        # "Okay let's do it." don't surface; cap length to avoid huge one-offs.
+        words = fmt.split()
+        if 8 <= len(words) <= 60:
+            norm = _normalize_boiler(fmt)
+            if norm in existing:
+                continue
+            boiler[norm] += 1
+            boiler_display.setdefault(norm, fmt)
+
+    candidates = []
+    for value, freq in contacts.most_common():
+        if freq >= min_freq:
+            candidates.append({
+                "kind": "contact",
+                "trigger": _slug_trigger(value),
+                "expansion": value,
+                "freq": freq,
+            })
+    for norm, freq in boiler.most_common():
+        if freq >= max(min_freq, 2):
+            text = boiler_display[norm]
+            candidates.append({
+                "kind": "boilerplate",
+                "trigger": _slug_trigger(text),
+                "expansion": text,
+                "freq": freq,
+            })
+    return candidates
+
+
+def find_vocab_candidates(rows, existing, min_freq):
+    """Frequent capitalized/technical terms that may be mis-recognized."""
+    counts = Counter()
+    STOP = {
+        "I", "The", "This", "That", "And", "But", "For", "You", "We", "It",
+        "So", "If", "Or", "My", "No", "Yes", "OK", "Okay", "Also", "Then",
+    }
+    for r in rows:
+        fmt = (r["formattedText"] or "")
+        for tok in TECH_RE.findall(fmt):
+            if tok in STOP or len(tok) < 3:
+                continue
+            if tok.lower() in existing:
+                continue
+            counts[tok] += 1
+
+    return [
+        {"term": term, "freq": freq}
+        for term, freq in counts.most_common(40)
+        if freq >= min_freq
+    ]
+
+
+def _add_cmd(phrase, replacement=None):
+    """Render a ready-to-run add command line for a proposal."""
+    p = phrase.replace('"', '\\"')
+    if replacement is None:
+        return f'python3 wispr_dictionary.py add "{p}"'
+    r = replacement.replace('"', '\\"')
+    return f'python3 wispr_dictionary.py add "{p}" "{r}"'
+
+
+def cmd_propose(args):
+    """Review recent dictation logs and propose dictionary additions.
+
+    Three categories (read-only, safe while Wispr runs):
+      1. Snippet candidates    -- recurring URLs/emails/phones + boilerplate
+      2. Replacement-rule cand -- recurring ASR mishears (shared with suggest)
+      3. Vocab candidates      -- frequent capitalized/technical terms
+    """
+    conn = get_db(readonly=True)
+
+    days = args.days or 30
+    min_freq = args.min_freq or 3
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    existing = get_existing_phrases(conn)
+
+    rows = conn.execute(
+        "SELECT formattedText FROM History "
+        "WHERE timestamp > ? AND formattedText IS NOT NULL AND formattedText != ''",
+        (cutoff,),
+    ).fetchall()
+
+    snippets = find_snippet_candidates(rows, existing, min_freq)
+    mishears = [
+        {"asr": asr, "fmt": fmt, "freq": freq}
+        for asr, fmt, freq in find_mishears(conn, cutoff, existing)
+        if freq >= min_freq
+    ]
+    vocab = find_vocab_candidates(rows, existing, min_freq)
+    conn.close()
+
+    if args.format == "json":
+        out = {
+            "days": days,
+            "min_freq": min_freq,
+            "snippet_candidates": snippets,
+            "replacement_candidates": mishears,
+            "vocab_candidates": vocab,
+        }
+        print(json.dumps(out, indent=2, ensure_ascii=False))
+        return
+
+    total = len(snippets) + len(mishears) + len(vocab)
+    print(f"Dictionary proposals from the last {days} days (min {min_freq} occurrences)")
+    print(f"Analyzed {len(rows)} dictations. {total} proposals.\n")
+
+    # --- Snippets (highest leverage) ---
+    print("=" * 70)
+    print("SNIPPET CANDIDATES  (text expansion -- the highest-leverage lever)")
+    print("=" * 70)
+    if not snippets:
+        print("  none found.\n")
+    else:
+        for c in snippets:
+            tag = "URL/contact" if c["kind"] == "contact" else "boilerplate"
+            exp = c["expansion"]
+            preview = exp if len(exp) <= 80 else exp[:77] + "..."
+            print(f"  [{tag}] used {c['freq']}x")
+            print(f"    trigger:   {c['trigger']}")
+            print(f"    expansion: {preview}")
+            print(f"    add:       {_add_cmd(c['trigger'], exp)}")
+            print()
+
+    # --- Replacement rules ---
+    print("=" * 70)
+    print("REPLACEMENT-RULE CANDIDATES  (recurring ASR mishears)")
+    print("=" * 70)
+    if not mishears:
+        print("  none found.\n")
+    else:
+        for m in mishears:
+            print(f"  {m['asr']} → {m['fmt']}  ({m['freq']}x)")
+            print(f"    add: {_add_cmd(m['asr'], m['fmt'])}")
+            print()
+
+    # --- Vocab ---
+    print("=" * 70)
+    print("VOCAB CANDIDATES  (frequent technical terms -- teach recognition)")
+    print("=" * 70)
+    if not vocab:
+        print("  none found.\n")
+    else:
+        for v in vocab:
+            print(f"  {v['term']}  ({v['freq']}x)")
+            print(f"    add: {_add_cmd(v['term'])}")
+            print()
+
+    if total == 0:
+        print("No proposals. Try lowering --min-freq or increasing --days.")
+    else:
+        print("Review, then (after quitting Wispr Flow) run the `add` lines you approve,")
+        print("followed by `python3 wispr_dictionary.py check` and restart Wispr.")
 
 
 def cmd_check(args):
@@ -371,6 +611,14 @@ def main():
     p_suggest.add_argument("--days", type=int, default=30, help="Days of history to analyze")
     p_suggest.add_argument("--min-freq", type=int, default=3, help="Minimum correction frequency")
 
+    p_propose = sub.add_parser(
+        "propose",
+        help="Propose snippets, replacement rules, and vocab from dictation logs",
+    )
+    p_propose.add_argument("--days", type=int, default=30, help="Days of history to analyze")
+    p_propose.add_argument("--min-freq", type=int, default=3, help="Minimum occurrence frequency")
+    p_propose.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
+
     p_check = sub.add_parser("check", help="Check database health")
 
     args = parser.parse_args()
@@ -382,6 +630,7 @@ def main():
         "remove": cmd_remove,
         "list": cmd_list,
         "suggest": cmd_suggest,
+        "propose": cmd_propose,
         "check": cmd_check,
     }
     commands[args.command](args)

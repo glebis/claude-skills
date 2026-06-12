@@ -155,6 +155,10 @@ python3 scripts/wispr_dictionary.py export
 # Suggest new entries by analyzing ASR vs formatted text differences
 python3 scripts/wispr_dictionary.py suggest --days 30 --min-freq 3
 
+# Propose snippets + replacement rules + vocab from dictation logs (safe while running)
+python3 scripts/wispr_dictionary.py propose --days 30 --min-freq 3
+python3 scripts/wispr_dictionary.py propose --days 90 --min-freq 2 --format json
+
 # Add a single term (requires Wispr Flow to be QUIT)
 python3 scripts/wispr_dictionary.py add "Gastown"
 python3 scripts/wispr_dictionary.py add "cloud code" "Claude Code"
@@ -183,11 +187,60 @@ Writing to the SQLite database while Wispr Flow has it open causes index corrupt
 - **Replacement rules** (phrase → replacement): auto-corrects mishears (e.g., "cloud code" → "Claude Code", "клод дизайн" → "Claude Design")
 - **Snippets** (isSnippet=true): text expansion shortcuts (e.g., "my email" → "glebis@gmail.com")
 
+### Propose Replacements & Snippets
+
+`suggest` only catches ASR mishears. `propose` is the broader, human-style review:
+it reads recent dictation logs and proposes dictionary additions in **three
+categories**, skipping anything already in the dictionary. It is **read-only and
+safe while Wispr Flow is running** -- it never writes to the database.
+
+```bash
+# Default: last 30 days, terms seen >= 3 times
+python3 scripts/wispr_dictionary.py propose
+
+# Wider net, machine-readable
+python3 scripts/wispr_dictionary.py propose --days 90 --min-freq 2 --format json
+```
+
+Flags: `--days` (history window), `--min-freq` (minimum occurrences), `--format`
+(`text` default, or `json`).
+
+The three categories:
+
+1. **Snippet candidates** (highest leverage, most underused): recurring URLs,
+   emails, and phone numbers, plus repeated boilerplate sentences/intros/sign-offs
+   (>= 8 words, counted by normalized verbatim frequency). Each proposal includes a
+   short `My X` trigger phrase + the full expansion.
+2. **Replacement-rule candidates**: recurring ASR mishears (shares code with
+   `suggest` via the `find_mishears` helper).
+3. **Vocab candidates**: frequently-dictated capitalized/technical terms
+   (e.g. `HTML`, `LinkedIn`, `SDK`) that may be mis-recognized -- teach Wispr the
+   spelling.
+
+Each proposal prints a frequency count and a ready-to-run `add` command line.
+
+**Snippets are the single highest-leverage, most underused dictionary feature.**
+A user with 1,600+ dictations/month often has only a handful of snippets. One
+`My GitHub` -> URL snippet saves dictating (and mis-dictating) a URL dozens of
+times. Always foreground snippet candidates first.
+
+#### Suggested workflow
+
+1. Run analytics (`extract_wispr.py`) to understand volume and where snippets pay off.
+2. Run `propose` (safe while Wispr runs).
+3. Present the grouped proposals to the user -- snippets first, then replacement
+   rules, then vocab. Frame snippets as the big win.
+4. After the user approves and **quits Wispr Flow (Cmd+Q)**, run the approved
+   `add` lines (snippets need `add "My X" "expansion"`).
+5. Run `python3 scripts/wispr_dictionary.py check` to verify integrity.
+6. Restart Wispr Flow.
+
 ### Proactive Dictionary Improvement Workflow
 
 When running analytics, also check for dictionary improvement opportunities:
 
-1. Run `suggest` to find recurring ASR corrections
+1. Run `propose` to surface snippets, replacement rules, and vocab in one pass
+   (or `suggest` for mishears only)
 2. Compare `asrText` vs `formattedText` for patterns
 3. Look for Russian/English code-switching mishears
 4. Check for new technical terms the user started using
