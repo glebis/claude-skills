@@ -74,3 +74,27 @@ Output format:
 - Gentle reflection prompts based on observations
 
 IMPORTANT: Frame all observations as invitations for self-reflection, not diagnoses. Use language like "you might notice..." or "this pattern could suggest..." rather than definitive statements.
+
+## Prosody Mode (audio-based)
+
+Analyze the prosodic features extracted from recorded dictation audio (via `scripts/extract_prosody.py`). This is a peer of the mental mode but works from *how* things were said rather than *what* was said. It is NOT clinical diagnosis -- it is self-awareness support. Only recent dictations retain audio, so always anchor interpretation to the coverage line and treat metrics as gentle proxies, not measurements.
+
+1. **Pitch variability (monotone <-> expressive)**: F0 CV (coefficient of variation = std/mean) is the headline signal.
+   - Higher CV / wider F0 range: more varied, expressive intonation -- often tracks engagement, animation, emotional involvement.
+   - Lower CV / flatter F0: more monotone delivery -- can accompany fatigue, low energy, focused/transactional dictation, or simply terse commands.
+2. **Speaking rate & pause ratio (energy / cognitive-load proxy)**: WPM and pause ratio from timing columns.
+   - Faster rate, fewer pauses: higher energy or fluency; can also signal rush/pressure.
+   - Slower rate, longer pauses: deliberation, fatigue, or higher cognitive load (searching for words, complex thinking).
+3. **Intensity dynamics (loudness)**: Mean and range of dB. Wider intensity range tracks emphasis and expressive dynamics; compressed range can read as flat affect or quiet/tired delivery. Note: absolute dB depends on mic/environment, so trends matter more than levels.
+4. **Voice quality (HNR, jitter, shimmer)**: HNR (harmonics-to-noise ratio) is the most interpretable -- lower HNR can track vocal fatigue, strain, or a tired/hoarse voice. Jitter/shimmer are noisy on short clips; use only as weak supporting signals.
+5. **Bilingual context**: Russian and English differ in baseline F0 and rate, so always read the by-language split separately -- a higher overall F0 may just reflect more Russian that day, not a mood shift. Compare like-with-like across days.
+6. **Daily trend**: Look for within-period drift in F0 CV, WPM, and HNR. A day with notably flatter pitch, slower rate, and lower HNR than the user's recent baseline is worth gently surfacing as a possible low-energy or tired day.
+
+Output format:
+- Prosodic energy/expressiveness read (with F0 CV, rate, intensity evidence)
+- Voice-quality note (HNR trend, framed gently)
+- Language-aware comparison (don't mix RU/EN baselines)
+- Day-over-day drift observations from the trend table
+- Gentle reflection prompts grounded in the numbers
+
+IMPORTANT: Frame all observations as invitations for self-reflection, not diagnoses. Acoustic features are influenced by microphone, environment, health (a cold), and language -- name this uncertainty. Use language like "you might notice your pitch was flatter on..." or "this could reflect a tired day, or just a quieter room." Honor the bilingual context throughout. Never infer a clinical or mood state as fact.
