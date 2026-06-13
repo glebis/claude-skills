@@ -1,0 +1,9 @@
+# Merge into targets.<Name>:
+entitlements:
+  properties:
+    aps-environment: development
+settings:
+  # With GENERATE_INFOPLIST_FILE: YES the synthesized Info.plist is configured via
+  # INFOPLIST_KEY_* build settings — do NOT add a top-level `info:` block (XcodeGen
+  # requires `info.path`, which conflicts with the generated plist and fails decoding).
+  INFOPLIST_KEY_UIBackgroundModes: remote-notification
