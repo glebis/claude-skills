@@ -1,159 +1,77 @@
 ---
 name: disk-cleanup
-description: Scan and clean macOS system caches, package manager caches, and app data to reclaim disk space. Surveys ~/Library/Caches, ~/.cache, Docker, npm/pip/uv/pnpm, Homebrew, browser caches, app updater caches, Claude Desktop, Xcode DerivedData, Playwright browsers, system logs, and ML model caches. Presents a size-sorted inventory table, offers four preset cleanup levels (safe / safe+docker / full / pick-individually), executes cleanup using `trash` (never rm), and reports before/after disk usage. IMPORTANT — you MUST use this skill whenever the user's request involves any of these scenarios on macOS: freeing disk space, cleaning or clearing caches, investigating what's consuming storage, running low on disk, "disk is full", "clean up my Mac", "free up space", "clear caches", "storage cleanup", "what's eating my disk", "where did my space go", checking disk usage of caches, "disk almost full" warnings, needing space for Xcode or other large installs, or any complaint about low available storage on their Mac. This skill covers the ENTIRE workflow from survey through cleanup — do not attempt to handle these requests without it.
+description: Scan and clean macOS caches, package-manager data, crash dumps, and app caches to reclaim disk space. Deterministic — a config registry (targets.json) plus two scripts (survey.py read-only, clean.py executor) do all the measuring and deleting; the agent only relays a compressed summary and makes the few human-judgment calls. IMPORTANT — use this skill whenever the user's request on macOS involves: freeing disk space, cleaning/clearing caches, "disk is full", "clean up my Mac", "free up space", "what's eating my disk", "running low on disk", needing space for an install, or any low-storage complaint. Covers the whole workflow survey → choose → clean → empty Trash.
 ---
 
 # Disk Cleanup
 
-Clean macOS caches and temporary files to reclaim disk space. Uses `trash` (never `rm`) so files can be recovered from Trash if needed.
+**Deterministic by design.** All target knowledge lives in `targets.json`; all measuring and
+deleting lives in `scripts/survey.py` (read-only) and `scripts/clean.py` (executor, **dry-run by
+default**). They run headless with **zero dependencies** (stdlib only) — a user can run them in a
+terminal without any agent. The agent's job is small: run the scripts, relay the compressed
+output, and decide the handful of things that need human judgment.
 
-## Parameters
-
-The user may specify these inline or you can ask:
-
-- **preset**: `safe` | `docker` | `full` | `pick` (default: ask the user)
-  - `safe` — app updater caches, browser caches, package manager caches, logs, Playwright, old Claude bundles. No risk of breaking anything
-  - `docker` — everything in `safe` + `docker system prune -a`
-  - `full` — everything in `docker` + ML model caches (HuggingFace, Kokoro, etc.)
-  - `pick` — present each item individually for the user to accept/reject
-- **skip**: comma-separated list of locations to leave alone (e.g., `skip: huggingface, docker`)
-- **dry-run**: if true, only report sizes without deleting anything
-- **auto-empty-trash**: if true, empty Trash automatically after cleanup. If false (default), remind the user to empty Trash manually
-
-## Workflow
-
-### Phase 1: Disk snapshot
-
-Run these in parallel to establish baseline:
+## The two scripts
 
 ```bash
-# Overall disk usage
-df -h / | tail -1 | awk '{print "Disk: "$2" total, "$4" available, "$5" used"}'
+python3 scripts/survey.py            # read-only: sizes, risk, flags, uncategorized. Touches nothing.
+python3 scripts/survey.py --json     # same, machine-readable (preferred for the agent)
 
-# Trash size
-du -sh ~/.Trash 2>/dev/null
+python3 scripts/clean.py --preset safe              # DRY-RUN plan (default — nothing deleted)
+python3 scripts/clean.py --preset safe --go         # execute (safe risk only)
+python3 scripts/clean.py --preset full --allow-medium --go --empty-trash   # safe+medium, then empty Trash
+python3 scripts/clean.py --ids cargo-registry-cache,go-mod-cache --go       # specific targets
+python3 scripts/clean.py --preset safe --skip ollama-models --go            # exclude one
 ```
 
-### Phase 2: Survey cache locations
+`trash` is used for all file removal (never `rm`); freed space sits in Trash until emptied
+(`--empty-trash`, or the user empties it). Sizes are `du` estimates — approximate on APFS.
 
-Measure all known cache locations. Run the size checks in parallel where possible. The categories below are organized by cleanup preset — `safe` includes the first group, `docker` adds Docker, `full` adds ML models.
+## Safety model (enforced in code, not prose)
 
-#### Safe targets
+- **Risk gating:** `safe` runs automatically; `medium` needs `--allow-medium`; `never` is
+  refused even if named by id. `advisory` targets only print guidance, never execute.
+- **Preflight on every trashed path:** canonical `realpath` → must resolve under an
+  `allowed_roots` entry → must not be a symlink → never `$HOME` or `/`. Anything failing is
+  skipped and reported, not deleted.
+- **Dry-run by default:** `clean.py` prints the plan and touches nothing unless `--go`.
 
-These are always safe to clear — they're download caches, updater artifacts, or regenerable data.
+## Agent workflow
 
-| Category | Paths to check |
-|---|---|
-| App updater caches | `~/Library/Caches/ms-playwright`, `~/Library/Caches/pencil-updater`, `~/Library/Caches/superpowers`, `~/Library/Caches/com.electron.wispr-flow.ShipIt`, `~/Library/Caches/timebuzzer-updater`, `~/Library/Caches/notion.id.ShipIt`, `~/Library/Caches/@granolaelectron-updater` |
-| Browser caches | `~/Library/Caches/Google`, `~/Library/Caches/company.thebrowser.Browser`, `~/Library/Application Support/Google/Chrome/Default/Service Worker/CacheStorage`, `~/Library/Application Support/Google/Chrome Beta/Default/Service Worker/CacheStorage` |
-| Package managers | npm: `~/.npm/_cacache`; pip: `~/Library/Caches/pip`; uv: `~/Library/Caches/uv`, `~/.cache/uv`; pnpm: `~/Library/pnpm`; Homebrew: `$(brew --cache)` |
-| Claude Desktop | `~/Library/Application Support/Claude/Cache`, `~/Library/Application Support/Claude/Code Cache` |
-| System caches | `~/Library/Caches/SiriTTS`, `~/Library/Caches/CloudKit`, `~/Library/Caches/com.googlecode.iterm2`, `~/Library/Caches/com.raycast.macos`, `~/Library/Caches/com.raycast-x.macos`, `~/Library/Caches/com.obsproject.obs-studio` |
-| Dev tool caches | `~/.cache/codex-runtimes`, `~/Library/Caches/node-chromium`, `~/Library/Developer/Xcode/DerivedData` |
-| Logs | `~/Library/Logs/*` |
-| Misc app caches | `~/Library/Caches/imageview`, `~/Library/Caches/ort.pyke.io` |
+1. Run `python3 scripts/survey.py --json`. Relay the **compressed** summary: disk free,
+   `safe`/`medium` recoverable totals, any `flags` (e.g. crash-loop), and the top targets.
+   Do not dump the whole JSON.
+2. **Auto-path:** for a plain "clean up safe stuff", show the `safe` total and run
+   `clean.py --preset safe --go` (offer `--empty-trash`). Safe targets are regenerable.
+3. **Escalate to the user ONLY for** (these are genuine judgment calls the scripts deliberately
+   refuse to auto-decide):
+   - `medium` targets (ML models, device support, project `node_modules`) — confirm before `--allow-medium`.
+   - `uncategorized` discoveries — unknown dirs >100 MB; ask or investigate before adding.
+   - `advisory` notes — surface them (Telegram cache, simulators via `simctl`, `uv/tools`,
+     Chrome whole-dir, Xcode Archives); never act on them automatically.
+   - surgical Docker / simulator decisions (see below).
+4. Run `clean.py` with the resolved selection. Relay the result (`freed_human`, disk before→after).
 
-#### Docker targets (preset: docker, full)
+## Maintaining the registry
 
-| Category | Action |
-|---|---|
-| Docker prune | `docker system prune -a -f` (removes unused images, containers, networks) |
-| Docker logs | `~/Library/Containers/com.docker.docker/Data/log/*` |
+Add or correct targets by editing `targets.json` — no code change needed. Each target:
+`{id, category, risk, method, paths|find, regenerates, priority, note}`. Methods:
+- `trash` — trash literal paths (globs allowed).
+- `find-trash` — exact-name dir sweep with a `min_mb` floor (crash dumps, project `node_modules`).
+- `command` — run a CLI (`npm cache clean`…); set `scope_path` so freed bytes can be measured.
+- `simctl` — `xcrun simctl delete unavailable` (removes only sims for uninstalled runtimes; safe).
+- `downloads-scan` — config-driven (`config.json` → `downloads_scan`): files older than `age_days`
+  whose name doesn't match `exclude_patterns`. The dry-run **lists every file by name** for review.
+- `advisory` — never executes; only prints guidance.
 
-Docker prune can take a while — run it in the background.
+Keep installed software at `risk: never` (learned the hard way: `uv/tools`, `uv/python`,
+`~/.rustup/toolchains`, `~/.bun`, `~/.deno` are NOT caches). Every non-advisory target's paths
+must resolve under `allowed_roots` or preflight will (correctly) refuse them.
 
-#### ML model targets (preset: full)
+## Still agent-driven (only what genuinely can't be deterministic)
 
-| Category | Paths |
-|---|---|
-| HuggingFace | `~/.cache/huggingface` |
-| Kokoro ONNX | `~/.cache/kokoro-onnx` |
-| qmd embeddings | `~/.cache/qmd` |
-
-Warn the user before clearing ML models: "These models will need to be re-downloaded if you use them again."
-
-### Phase 3: Present inventory
-
-Build a markdown table sorted by size (largest first), showing:
-
-```
-| Location | Size | Preset | Safe to clear? |
-|---|---|---|---|
-| Docker VM disk | 7.6 GB | docker | Yes (prune) |
-| ~/.cache/huggingface | 2.2 GB | full | Re-download needed |
-| ~/Library/Caches/Google | 1.4 GB | safe | Yes |
-| ... | ... | ... | ... |
-```
-
-Also show:
-- Total recoverable per preset level
-- Current available disk space
-
-Only show items that actually exist and are non-trivially sized (>10 MB).
-
-### Phase 4: Get user choice
-
-If no preset was specified, ask the user which level they want using AskUserQuestion with these options:
-
-1. **Safe caches only** — app updaters, browser caches, package managers, logs. ~X GB. No risk
-2. **Safe + Docker prune** — everything above + Docker cleanup. ~X GB
-3. **Safe + Docker + ML models** — maximum cleanup. ~X GB. Models need re-download
-4. **Pick individually** — choose item by item
-
-Fill in the actual GB estimates from the survey.
-
-### Phase 5: Execute cleanup
-
-For each item in the chosen preset (respecting `skip` list):
-
-1. **Package managers** use their own clean commands:
-   - `npm cache clean --force`
-   - `pip cache purge`
-   - `uv cache clean`
-   - `brew cleanup -s`
-
-2. **Docker** uses `docker system prune -a -f` (run in background — it can be slow)
-
-3. **Everything else** uses `trash <path>` (never `rm`)
-
-4. **Claude Desktop VM bundles** (`~/Library/Application Support/Claude/vm_bundles`): list contents first. Only trash bundles that aren't the currently active one. If there's only one bundle, skip it.
-
-If `dry-run` is true, skip this phase and just report what would be cleaned.
-
-### Phase 6: Handle Trash
-
-After cleanup, measure Trash size. If `auto-empty-trash` is true, empty it via AppleScript:
-
-```bash
-osascript -e 'tell application "Finder" to empty the trash'
-```
-
-If false, remind the user: "X GB is now in Trash. Empty it to actually free the space."
-
-### Phase 7: Report results
-
-Show before/after comparison:
-
-```
-## Cleanup Summary
-- Before: X GB available (Y% used)
-- After:  X GB available (Y% used)
-- Freed:  X GB
-```
-
-If Docker prune ran in background, note that additional space may be freed once it completes.
-
-### Bonus: Telegram note
-
-Telegram's media cache (often 1-3 GB) can't be safely cleared from the terminal — the `postbox` directory contains the message database. Tell the user: "Telegram media cache can be cleared from Telegram Settings > Data and Storage > Storage Usage."
-
-## Discovery of new cache locations
-
-The categories above are based on a real macOS workstation as of mid-2026. Cache locations change as apps are installed/removed. At the start of Phase 2, also run a broad sweep to catch unlisted large items:
-
-```bash
-du -sh ~/Library/Caches/* 2>/dev/null | sort -rh | head -25
-du -sh ~/.cache/* 2>/dev/null | sort -rh | head -15
-```
-
-If any item over 100 MB appears that isn't in the known categories, include it in the inventory with a note that it's an "uncategorized cache" and let the user decide.
+- **Docker only** — surgical and stateful: survey with `docker images` / `docker ps -as` /
+  `docker system df -v`, let the user pick per-name (`docker rm`/`rmi`/`volume rm`/`builder prune`),
+  or blunt `docker system prune -a -f`. A named volume removed = data gone; confirm by name.
+  (Everything else — simulators via the `simctl` method, Downloads via `downloads-scan`,
+  crash dumps, all caches — now runs through the scripts.)
