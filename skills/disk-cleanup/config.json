@@ -1,0 +1,40 @@
+{
+  "defaults": {
+    "preset": "safe",
+    "min_size_mb": 10,
+    "auto_empty_trash": false
+  },
+  "downloads_scan": {
+    "root": "~/Downloads",
+    "age_days": 180,
+    "min_mb": 0,
+    "exclude_patterns": [
+      "genome",
+      "scheidung",
+      "kalinin",
+      "steuer",
+      "\\btax\\b",
+      "passport",
+      "visa",
+      "vertrag",
+      "contract",
+      "rechnung",
+      "invoice",
+      "\\bakt\\b",
+      "cert",
+      "\\.pem$",
+      "\\.pfx$",
+      "bank",
+      "insurance",
+      "versicherung",
+      "medical",
+      "health",
+      "legal",
+      "notar",
+      "bescheid",
+      "elster",
+      "__Organized"
+    ]
+  },
+  "_doc": "preset: safe|full. min_size_mb hides trivia. downloads_scan drives the downloads-old target: only files older than age_days whose name does NOT match exclude_patterns (genome/legal/financial/personal stay forever). auto_empty_trash applies only with clean.py --go."
+}
