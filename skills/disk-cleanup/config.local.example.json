@@ -1,0 +1,10 @@
+{
+  "_doc": "Copy this to config.local.json (gitignored, never committed) to extend the shared config with PERSONAL and LOCALE-specific terms. Lists are UNIONED with config.json (additive — these only add protection); scalars override. Replace the examples below with your own names, family names, and your language's tax/legal/financial vocabulary so those Downloads files are never swept.",
+  "downloads_scan": {
+    "exclude_patterns": [
+      "yourname", "familyname",
+      "steuer", "rechnung", "vertrag", "versicherung", "notar", "bescheid", "elster",
+      "genome", "passport-scan"
+    ]
+  }
+}

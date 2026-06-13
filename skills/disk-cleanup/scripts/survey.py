@@ -10,8 +10,10 @@ Sizes are APPROXIMATE (du block counts on APFS). Output is deterministically sor
 
 import argparse
 import json
+import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # import lib regardless of CWD
 import lib
 
 
@@ -61,7 +63,7 @@ def discover(reg: dict, min_mb: int) -> list[dict]:
 
 def build(args) -> dict:
     reg = lib.load_json("targets.json")
-    cfg = lib.load_json("config.json")["defaults"]
+    cfg = lib.load_config()["defaults"]
     min_mb = args.min_mb or cfg.get("min_size_mb", 10)
     rows = measure_targets(reg)
     totals = {}
@@ -111,5 +113,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, str(lib.HERE))
     main()

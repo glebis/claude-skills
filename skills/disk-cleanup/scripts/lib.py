@@ -22,6 +22,31 @@ def load_json(name: str) -> dict:
     return json.loads((SKILL_DIR / name).read_text(encoding="utf-8"))
 
 
+def _deep_merge(base: dict, over: dict) -> None:
+    """Recursive merge: dicts recurse, lists union (base order first), scalars override."""
+    for k, v in over.items():
+        if isinstance(v, dict) and isinstance(base.get(k), dict):
+            _deep_merge(base[k], v)
+        elif isinstance(v, list) and isinstance(base.get(k), list):
+            base[k] = base[k] + [x for x in v if x not in base[k]]
+        else:
+            base[k] = v
+
+
+def load_config() -> dict:
+    """config.json with an optional gitignored config.local.json deep-merged over it, so a
+    user can add personal/locale exclude terms and machine-specific settings without touching
+    the shared, committed config. Lists are UNIONED (additive — local terms add protection)."""
+    cfg = load_json("config.json")
+    local = SKILL_DIR / "config.local.json"
+    if local.exists():
+        try:
+            _deep_merge(cfg, json.loads(local.read_text(encoding="utf-8")))
+        except json.JSONDecodeError:
+            pass  # malformed local override → fall back to committed config, don't crash
+    return cfg
+
+
 def expand(p: str) -> Path:
     """Expand ~ and env vars; do NOT resolve symlinks yet (preflight does that)."""
     return Path(os.path.expandvars(os.path.expanduser(p)))
@@ -105,6 +130,7 @@ def find_dirs(root: str, name: str, maxdepth: int, min_mb: int) -> list[Path]:
                 p = Path(dirpath) / d
                 if du_bytes(p) >= min_mb * 1024 * 1024:
                     hits.append(p)
+                dirnames.remove(d)  # don't descend into a match (no nested re-match / double-count)
     return sorted(hits, key=lambda x: str(x))
 
 
@@ -168,18 +194,26 @@ def resolve_target_paths(target: dict) -> list[Path]:
         f = target["find"]
         out = find_dirs(f["root"], f["name"], f.get("maxdepth", 4), f.get("min_mb", 50))
     elif method == "downloads-scan":
-        out = scan_downloads(load_json("config.json").get("downloads_scan", {}))
+        out = scan_downloads(load_config().get("downloads_scan", {}))
     elif method == "simctl":
         return []  # action, not paths
     else:
+        import glob as _glob
         for p in target.get("paths", []):
             ep = expand(p)
             if "*" in p or "?" in p:
-                out.extend(sorted(ep.parent.glob(ep.name)))
+                # stdlib glob handles wildcards at ANY depth (e.g. /private/var/folders/*/*/C/clang);
+                # Path.parent.glob(name) only globs the last component and silently missed mid-path *.
+                out.extend(Path(m) for m in sorted(_glob.glob(str(ep))))
             elif ep.exists():
                 out.append(ep)
-    # dedupe by canonical path, drop nested overlaps, deterministic order
+    # dedupe by canonical path, then drop any path nested under another already kept (no double-count)
     seen: dict[str, Path] = {}
     for p in out:
         seen[str(canonical(p))] = p
-    return [seen[k] for k in sorted(seen)]
+    kept: list[str] = []
+    for c in sorted(seen):  # parents sort before children, so a kept parent absorbs its children
+        if any(c == k or c.startswith(k + "/") for k in kept):
+            continue
+        kept.append(c)
+    return [seen[c] for c in kept]

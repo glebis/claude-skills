@@ -68,6 +68,26 @@ Keep installed software at `risk: never` (learned the hard way: `uv/tools`, `uv/
 `~/.rustup/toolchains`, `~/.bun`, `~/.deno` are NOT caches). Every non-advisory target's paths
 must resolve under `allowed_roots` or preflight will (correctly) refuse them.
 
+## Customization & setup (per-machine, never committed)
+
+`config.json` ships **generic, public-safe defaults**. Anything personal — names, family
+names, a non-English tax/legal/financial vocabulary — or machine-specific goes in
+**`config.local.json`** (gitignored). `load_config()` deep-merges it over `config.json`:
+**lists are unioned** (local terms only *add* protection to the Downloads exclude list), scalars
+override. See `config.local.example.json` for the shape.
+
+**Setup mode** — when the user first uses the skill, asks to personalize it, or has sensitive
+files in `~/Downloads`, offer to build `config.local.json` by asking (one short batch):
+1. Names/keywords in Downloads filenames that must **never** be swept (own name, family names).
+2. Their language's tax/legal/financial terms (e.g. German `steuer`, `rechnung`, `vertrag`).
+3. Their projects directory (for the `node_modules` sweep) and any extra app caches.
+Then write `config.local.json` (copy `config.local.example.json` and fill it in). Confirm what
+was saved. Never commit it.
+
+Per-machine paths in `targets.json` (`allowed_roots`, the `node-modules-projects` find root
+`~/ai_projects`) are examples — adjust them to the user's layout. Targets whose paths don't
+exist on this machine simply measure 0 and are skipped.
+
 ## Still agent-driven (only what genuinely can't be deterministic)
 
 - **Docker only** — surgical and stateful: survey with `docker images` / `docker ps -as` /

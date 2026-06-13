@@ -9,32 +9,11 @@
     "age_days": 180,
     "min_mb": 0,
     "exclude_patterns": [
-      "genome",
-      "scheidung",
-      "kalinin",
-      "steuer",
-      "\\btax\\b",
-      "passport",
-      "visa",
-      "vertrag",
-      "contract",
-      "rechnung",
-      "invoice",
-      "\\bakt\\b",
-      "cert",
-      "\\.pem$",
-      "\\.pfx$",
-      "bank",
-      "insurance",
-      "versicherung",
-      "medical",
-      "health",
-      "legal",
-      "notar",
-      "bescheid",
-      "elster",
-      "__Organized"
+      "tax", "invoice", "receipt", "contract", "agreement",
+      "passport", "visa", "license", "\\bid\\b",
+      "cert", "\\.pem$", "\\.pfx$", "\\.key$",
+      "bank", "statement", "insurance", "medical", "health", "legal", "notary"
     ]
   },
-  "_doc": "preset: safe|full. min_size_mb hides trivia. downloads_scan drives the downloads-old target: only files older than age_days whose name does NOT match exclude_patterns (genome/legal/financial/personal stay forever). auto_empty_trash applies only with clean.py --go."
+  "_doc": "GENERIC, SHARED defaults — safe to commit publicly. preset: safe|full. min_size_mb hides trivia. downloads_scan drives the downloads-old target: only files older than age_days whose name does NOT match exclude_patterns are candidates (the dry-run lists them first). The exclude list here is deliberately broad/English. Personal names and locale-specific terms (e.g. another language's tax/legal vocabulary) belong in config.local.json — see config.local.example.json. config.local.json is gitignored and its lists are UNIONED on top of these, so local terms only ADD protection. auto_empty_trash applies only with clean.py --go."
 }
