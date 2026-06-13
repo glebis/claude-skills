@@ -1,0 +1,27 @@
+{
+  "name": "tidepool",
+  "hook": "Capture a fleeting idea by voice and get a buildable spec before the moment fades.",
+  "jtbd": {
+    "situation": "a founder has an idea away from their desk",
+    "motivation": "articulate it clearly enough for agents to act on",
+    "outcome": "a structured spec exists within minutes, no re-explaining"
+  },
+  "problem": { "what_hurts": "static tools don't feed forward", "cost_today": "hours of re-explanation per project" },
+  "needs": {
+    "functional": ["voice-friendly capture", "structured JSON output"],
+    "emotional": ["feel like talking to a sharp thinker"],
+    "social": ["share a credible one-pager"]
+  },
+  "switch_forces": {
+    "push": "the gap between idea and spec kills momentum",
+    "pull": "specs that feed forward into code",
+    "habit": "Figma/Docs muscle memory",
+    "anxiety": "trusting an AI-framed spec over real empathy"
+  },
+  "before_after": { "before": "idea lives in your head", "after": "a spec that IS the handoff" },
+  "scenarios": [ { "title": "Bike commute", "vignette": "speaks the idea while riding; parks with a spec" } ],
+  "guardrails": ["one project per session", "never fabricate switch forces"],
+  "evidence": { "source": "interview", "quotes": ["\"I want to do it while riding the bike.\""], "weaknesses": [] },
+  "open_questions": ["is /plan needed between brainstorm and code?"],
+  "version": 1
+}

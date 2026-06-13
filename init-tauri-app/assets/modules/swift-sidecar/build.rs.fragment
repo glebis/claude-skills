@@ -1,0 +1,7 @@
+// --- swift-sidecar module (macOS only) ---
+#[cfg(target_os = "macos")]
+{
+    use swift_rs::SwiftLinker;
+    SwiftLinker::new("13.0").with_package("AppSidecar", "swift").link();
+    println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift");
+}

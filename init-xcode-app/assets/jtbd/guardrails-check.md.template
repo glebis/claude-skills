@@ -1,0 +1,9 @@
+# Guardrails review checklist
+
+Manual pre-release pass. One box per JTBD guardrail — confirm the release does not violate it.
+
+<!-- each:guardrails -->
+- [ ] {{item}}
+<!-- /each -->
+
+Source JTBD: {{__source_path__}}

@@ -1,0 +1,61 @@
+# {{name}} — Product Brief
+
+> {{hook}}
+
+## The Job
+- **When** {{jtbd.situation}}
+- **I want to** {{jtbd.motivation}}
+- **So I can** {{jtbd.outcome}}
+
+## Problem
+- **What hurts:** {{problem.what_hurts}}
+- **Cost today:** {{problem.cost_today}}
+
+## Needs
+**Functional**
+<!-- each:needs.functional -->
+- {{item}}
+<!-- /each -->
+
+**Emotional**
+<!-- each:needs.emotional -->
+- {{item}}
+<!-- /each -->
+
+**Social**
+<!-- each:needs.social -->
+- {{item}}
+<!-- /each -->
+
+## Switch forces
+- **Push:** {{switch_forces.push}}
+- **Pull:** {{switch_forces.pull}}
+- **Habit:** {{switch_forces.habit}}
+- **Anxiety:** {{switch_forces.anxiety}}
+
+## Before / After
+- **Before:** {{before_after.before}}
+- **After:** {{before_after.after}}
+
+## Scenarios
+<!-- each:scenarios -->
+- **{{item.title}}** — {{item.vignette}}
+<!-- /each -->
+
+## Guardrails (must NOT do)
+<!-- each:guardrails -->
+- {{item}}
+<!-- /each -->
+
+## Evidence
+<!-- each:evidence.quotes -->
+- {{item}}
+<!-- /each -->
+
+## Open questions
+<!-- each:open_questions -->
+- {{item}}
+<!-- /each -->
+
+---
+Source JTBD: {{__source_path__}} (schema v{{version}})

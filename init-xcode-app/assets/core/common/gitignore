@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+# Xcode
+build/
+**/xcuserdata/
+**/DerivedData/
+*.xcuserstate
+# SwiftPM
+.build/
+# Agent/tooling caches
+.enzyme/
+.enzyme-embeddings/
+docs/internal/
+# NOTE: the XcodeGen-generated <Name>.xcodeproj IS committed (deterministic output).

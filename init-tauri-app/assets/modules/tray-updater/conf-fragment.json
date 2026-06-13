@@ -1,0 +1,12 @@
+{
+  "plugins": {
+    "updater": {
+      "endpoints": ["https://github.com/glebis/<name>/releases/latest/download/latest.json"],
+      "pubkey": "REPLACE_WITH_MINISIGN_PUBKEY"
+    }
+  },
+  "bundle": {
+    "createUpdaterArtifacts": true,
+    "macOS": { "hardenedRuntime": true, "minimumSystemVersion": "12.0" }
+  }
+}

@@ -50,6 +50,7 @@ python3 scripts/extract_wispr.py --period week --format markdown --output /path/
 - `soft` -- filters to communication/writing dictations
 - `trends` -- focus on volume/frequency patterns
 - `mental` -- all text, framed for wellbeing reflection
+- `prosody` -- audio-based: pitch/intensity/voice-quality from recorded WAV (separate script `scripts/extract_prosody.py`; recent dictations only). See "Prosody Mode" below.
 
 ### Comparison & Graphs
 - `--compare` -- auto-compare with the equivalent previous period (week vs previous week, month vs previous month)
@@ -65,6 +66,63 @@ python3 scripts/extract_wispr.py --period week --compare --graphs /tmp/wispr-wee
 # Compare and save both markdown + graphs
 python3 scripts/extract_wispr.py --period month --compare --format markdown --output report.md --graphs report.html
 ```
+
+## Prosody Mode (audio-based)
+
+A standalone analysis mode -- a peer of `technical`/`soft`/`trends`/`mental` -- that analyzes *how* dictations sounded, not just *what* was said. It reads the recorded WAV audio stored in `History.audio` and uses Praat (via `parselmouth`) to extract prosodic features as gentle affect/energy proxies for self-reflection. Run it via the dedicated script `scripts/extract_prosody.py`.
+
+### Dependency
+
+```bash
+pip install praat-parselmouth
+```
+
+`librosa`/`scipy`/`soundfile` are acceptable fallbacks but the script uses parselmouth (Praat) as the gold standard.
+
+### Audio-retention caveat (read this first)
+
+Wispr keeps the recorded audio **only for recent dictations** -- roughly the last ~900 of 16,000+ history rows. Older rows have their `audio` blob pruned after upload (and `builtInAudio` is always empty). So prosody is available for **recent dictations only**; for older periods the audio is gone and only timing-based metrics (rate, pauses) could ever be recovered. The script surfaces this honestly: every report opens with a coverage line (`X of Y dictations in this period had retained audio`) and logs when `--limit` truncates coverage.
+
+### What it measures
+
+- **Pitch (F0)** via Praat `to_pitch()`, unvoiced frames ignored: mean, median, min, max, range, std, and **CV (std/mean)** as a monotone <-> expressive proxy.
+- **Intensity (dB)**: mean, range, std -- loudness dynamics.
+- **Voice quality**: jitter (local), shimmer (local), and **HNR** (harmonics-to-noise ratio). Computed in try/except -- short/noisy clips that fail are skipped and counted (`feature_failures`).
+- **Tempo** (from DB timing columns, not audio): speaking rate `numWords / (speechDuration/60)` WPM, and pause ratio `(duration - speechDuration)/duration` (clamped >= 0).
+- **By-language split** (Russian vs English F0/rate differ -- kept separate so bilingual mixing doesn't muddy the signal) and a **per-day trend table** for multi-day periods.
+
+### Commands
+
+```bash
+# Prosody report for the last week (text)
+python3 scripts/extract_prosody.py --period week
+
+# Last month as JSON
+python3 scripts/extract_prosody.py --period month --format json
+
+# Specific day, raise the clip cap so coverage isn't truncated
+python3 scripts/extract_prosody.py --period 2026-06-11 --limit 600
+
+# Save to a file
+python3 scripts/extract_prosody.py --period week --output /tmp/prosody-week.md
+```
+
+Args: `--period` (same semantics as `extract_wispr.py`: today/yesterday/week/month/`YYYY-MM-DD`/`YYYY-MM-DD:YYYY-MM-DD`), `--format text|json`, `--limit N` (cap clips processed, default 300 to bound runtime -- logs to stderr when it truncates), `--output PATH`. The DB is opened strictly read-only (`mode=ro&immutable=1`).
+
+Performance: audio analysis is ~15-20s for 300 clips (slow vs SQL). The default `--limit 300` keeps single runs fast; raise it for full coverage of a busy period.
+
+### Sanity expectations
+
+Gleb is male, so expect mean F0 roughly 95-150 Hz (observed ~120 Hz). Russian typically shows slightly higher F0 and CV than English in the by-language split. F0 CV usually lands ~0.2-0.3.
+
+### How it ties into mental mode
+
+Prosody complements the text-based `mental` mode with acoustic affect/energy proxies, framed the same way -- as reflection invitations, never diagnoses:
+- **F0 CV** (pitch variability) as an engagement/expressiveness proxy: flatter = possibly tired/transactional, more varied = more animated.
+- **Speaking rate & pause ratio** as energy / cognitive-load proxies.
+- **HNR drops** can track vocal fatigue or strain.
+
+Acoustic features are also shaped by microphone, room, a cold, and language -- so always name that uncertainty and compare like-with-like (same language, against the user's recent baseline). See the **Prosody Mode** template in `references/analysis-prompts.md` for the full interpretive prompt.
 
 ## Workflow
 
@@ -155,6 +213,10 @@ python3 scripts/wispr_dictionary.py export
 # Suggest new entries by analyzing ASR vs formatted text differences
 python3 scripts/wispr_dictionary.py suggest --days 30 --min-freq 3
 
+# Propose snippets + replacement rules + vocab from dictation logs (safe while running)
+python3 scripts/wispr_dictionary.py propose --days 30 --min-freq 3
+python3 scripts/wispr_dictionary.py propose --days 90 --min-freq 2 --format json
+
 # Add a single term (requires Wispr Flow to be QUIT)
 python3 scripts/wispr_dictionary.py add "Gastown"
 python3 scripts/wispr_dictionary.py add "cloud code" "Claude Code"
@@ -183,11 +245,60 @@ Writing to the SQLite database while Wispr Flow has it open causes index corrupt
 - **Replacement rules** (phrase → replacement): auto-corrects mishears (e.g., "cloud code" → "Claude Code", "клод дизайн" → "Claude Design")
 - **Snippets** (isSnippet=true): text expansion shortcuts (e.g., "my email" → "glebis@gmail.com")
 
+### Propose Replacements & Snippets
+
+`suggest` only catches ASR mishears. `propose` is the broader, human-style review:
+it reads recent dictation logs and proposes dictionary additions in **three
+categories**, skipping anything already in the dictionary. It is **read-only and
+safe while Wispr Flow is running** -- it never writes to the database.
+
+```bash
+# Default: last 30 days, terms seen >= 3 times
+python3 scripts/wispr_dictionary.py propose
+
+# Wider net, machine-readable
+python3 scripts/wispr_dictionary.py propose --days 90 --min-freq 2 --format json
+```
+
+Flags: `--days` (history window), `--min-freq` (minimum occurrences), `--format`
+(`text` default, or `json`).
+
+The three categories:
+
+1. **Snippet candidates** (highest leverage, most underused): recurring URLs,
+   emails, and phone numbers, plus repeated boilerplate sentences/intros/sign-offs
+   (>= 8 words, counted by normalized verbatim frequency). Each proposal includes a
+   short `My X` trigger phrase + the full expansion.
+2. **Replacement-rule candidates**: recurring ASR mishears (shares code with
+   `suggest` via the `find_mishears` helper).
+3. **Vocab candidates**: frequently-dictated capitalized/technical terms
+   (e.g. `HTML`, `LinkedIn`, `SDK`) that may be mis-recognized -- teach Wispr the
+   spelling.
+
+Each proposal prints a frequency count and a ready-to-run `add` command line.
+
+**Snippets are the single highest-leverage, most underused dictionary feature.**
+A user with 1,600+ dictations/month often has only a handful of snippets. One
+`My GitHub` -> URL snippet saves dictating (and mis-dictating) a URL dozens of
+times. Always foreground snippet candidates first.
+
+#### Suggested workflow
+
+1. Run analytics (`extract_wispr.py`) to understand volume and where snippets pay off.
+2. Run `propose` (safe while Wispr runs).
+3. Present the grouped proposals to the user -- snippets first, then replacement
+   rules, then vocab. Frame snippets as the big win.
+4. After the user approves and **quits Wispr Flow (Cmd+Q)**, run the approved
+   `add` lines (snippets need `add "My X" "expansion"`).
+5. Run `python3 scripts/wispr_dictionary.py check` to verify integrity.
+6. Restart Wispr Flow.
+
 ### Proactive Dictionary Improvement Workflow
 
 When running analytics, also check for dictionary improvement opportunities:
 
-1. Run `suggest` to find recurring ASR corrections
+1. Run `propose` to surface snippets, replacement rules, and vocab in one pass
+   (or `suggest` for mishears only)
 2. Compare `asrText` vs `formattedText` for patterns
 3. Look for Russian/English code-switching mishears
 4. Check for new technical terms the user started using

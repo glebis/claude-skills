@@ -1,0 +1,75 @@
+name: <Name>
+options:
+  bundleIdPrefix: <bundlePrefix>
+  deploymentTarget:
+    iOS: "17.0"
+    watchOS: "10.0"
+settings:
+  DEVELOPMENT_TEAM: "<TEAM>"
+  CODE_SIGN_STYLE: Automatic
+targets:
+  <Name>Shared:
+    type: framework
+    platform: iOS
+    sources: [{ path: Sources/Shared }]
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: <bundlePrefix>.<name>.shared
+      GENERATE_INFOPLIST_FILE: YES
+  <Name>SharedWatch:
+    type: framework
+    platform: watchOS
+    sources: [{ path: Sources/Shared }]
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: <bundlePrefix>.<name>.shared.watch
+      GENERATE_INFOPLIST_FILE: YES
+  <Name>:
+    type: application
+    platform: iOS
+    sources: [{ path: Sources/iPhone }]
+    dependencies:
+      - target: <Name>Shared
+        embed: true
+      - target: <Name>Watch
+        embed: true
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: <bundlePrefix>.<name>
+      GENERATE_INFOPLIST_FILE: YES
+      INFOPLIST_KEY_UILaunchScreen_Generation: YES
+  <Name>Watch:
+    type: application
+    platform: watchOS
+    sources: [{ path: Sources/Watch }]
+    dependencies:
+      - target: <Name>SharedWatch
+        embed: true
+    info:
+      path: Sources/Watch/Info.plist
+      properties:
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: <bundlePrefix>.<name>
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: <bundlePrefix>.<name>.watch
+      LD_RUNPATH_SEARCH_PATHS: ["$(inherited)", "@executable_path/Frameworks"]
+  <Name>Tests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [{ path: Tests }]
+    dependencies:
+      - target: <Name>Shared
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+schemes:
+  <Name>:
+    build:
+      targets:
+        <Name>: all
+        <Name>Shared: all
+        <Name>Tests: [test]
+    run: { config: Debug }
+    test: { config: Debug, targets: [<Name>Tests] }
+  <Name>Watch:
+    build:
+      targets:
+        <Name>Watch: all
+        <Name>SharedWatch: all
+    run: { config: Debug }

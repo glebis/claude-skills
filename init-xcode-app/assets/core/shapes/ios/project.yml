@@ -1,0 +1,38 @@
+name: <Name>
+options:
+  bundleIdPrefix: <bundlePrefix>
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  DEVELOPMENT_TEAM: "<TEAM>"
+  CODE_SIGN_STYLE: Automatic
+targets:
+  <Name>:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources/App
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: <bundlePrefix>.<name>
+      GENERATE_INFOPLIST_FILE: YES
+      INFOPLIST_KEY_UILaunchScreen_Generation: YES
+  <Name>Tests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: <Name>
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
+schemes:
+  <Name>:
+    build:
+      targets:
+        <Name>: all
+        <Name>Tests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [<Name>Tests]
