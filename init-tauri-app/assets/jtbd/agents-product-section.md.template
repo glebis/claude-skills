@@ -1,0 +1,12 @@
+## Product context
+
+> {{hook}}
+
+**For** {{jtbd.situation}} — **so that** {{jtbd.outcome}}.
+
+**Must NOT do (from JTBD guardrails):**
+<!-- each:guardrails -->
+- {{item}}
+<!-- /each -->
+
+Full brief: [docs/PRODUCT.md](./docs/PRODUCT.md) · Source JTBD: {{__source_path__}}

@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "mcp",
+  "description": "Capability for MCP-driven windows",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

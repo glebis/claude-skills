@@ -1,0 +1,36 @@
+# OS
+.DS_Store
+# Node / frontend
+node_modules/
+/build
+/dist
+dist-ssr
+.svelte-kit/
+src-tauri/.svelte-kit/
+*.local
+vite.config.js.timestamp-*
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/schemas
+# Swift (sidecar module)
+src-tauri/swift/.build/
+**/xcuserdata/
+**/DerivedData/
+# Env & secrets
+.env
+.env.*
+!.env.example
+# Local data
+*.db
+*.db-shm
+*.db-wal
+# Logs
+*.log
+logs
+# Internal working docs — never shipped
+docs/internal/
+# Agent/tooling caches
+.enzyme/
+.enzyme-embeddings/
+.beads/
+.worktrees/
