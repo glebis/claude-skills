@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [{{default_branch}}]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: {{test_cmd}}
+
+  # CRA-friendly supply-chain step (enable for commercial / "product" repos):
+  # audit:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: npm audit --audit-level=high
+  #     - run: npm sbom --sbom-format cyclonedx > sbom.json

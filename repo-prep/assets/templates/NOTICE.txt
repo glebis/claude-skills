@@ -1,0 +1,12 @@
+{{project}}
+Copyright {{year}}-present {{author}}
+
+{{project}} is licensed under the {{license_name}}.
+
+Implementation was assisted by AI coding tools under human architectural,
+product, and code-review direction. See AUTHORSHIP.md for the current
+authorship record.
+
+Third-party packages and runtime dependencies are distributed under their own
+licenses. The source tree does not intentionally vendor GPL, AGPL, or LGPL
+code.

@@ -1,0 +1,36 @@
+# repo-prep centralised profile — single source of truth for authorship + promo.
+#
+# Lives at ~/.config/personal-os/repo-prep/profile.toml (override REPO_PREP_PROFILE).
+# repo-prep reads this to fill LICENSE copyright, AUTHORS, package metadata,
+# and the README "promo" block — so every repo stays consistent and you never
+# retype your identity. Edit freely; re-run the skill to propagate changes.
+
+[author]
+name  = "Gleb Kalinin"
+email = "glebis@gmail.com"
+github = "glebis"                       # github username (no @)
+url   = "https://glebkalinin.com"       # personal site / canonical link
+# Optional extras used in profile sections / funding:
+# mastodon = "@gleb@mastodon.social"
+# x = "glebkalinin"
+# sponsor = "https://github.com/sponsors/glebis"
+
+# "Ads" — promotional links surfaced in a README footer ("More from <author>").
+# Set promo.enabled = false per-repo to suppress. Keep the list short (3–6).
+[promo]
+enabled = true
+heading = "More from Gleb"
+tagline = "I build focus tools, AI workflows, and write about creativity & tech."
+# Each project: name, url, and a one-line blurb.
+projects = [
+  { name = "pos",          url = "https://github.com/glebis/pos",            blurb = "Focus-aligned terminal cockpit over cmux + tmux" },
+  { name = "claude-skills", url = "https://github.com/glebis/claude-skills", blurb = "A library of Claude Code skills" },
+]
+
+# Default choices applied unless overridden interactively per repo.
+[defaults]
+license = "Apache-2.0"                   # SPDX id; see references/licenses.md
+code_of_conduct = true                   # Contributor Covenant
+security_md = true
+github_templates = true                  # issue + PR templates
+ci = "auto"                              # auto | python | node | none
