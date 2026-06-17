@@ -121,6 +121,8 @@
      "note": "real simulators w/ installed apps. Use `xcrun simctl delete unavailable`, never trash"},
     {"id": "xcode-archives", "category": "advisory", "risk": "never", "method": "advisory",
      "paths": ["~/Library/Developer/Xcode/Archives"],
-     "note": "release/distribution archives — needed for crash symbolication / resubmit. Ask, never auto"}
+     "note": "release/distribution archives — needed for crash symbolication / resubmit. Ask, never auto"},
+    {"id": "mole-deep-clean", "category": "advisory", "risk": "never", "method": "advisory",
+     "note": "for a deeper pass beyond these targets, run `mo clean` (mole, https://github.com/tw93/mole) interactively — TUI, asks before deleting, ships a safe whitelist (ollama/huggingface/gradle/m2 protected), needs sudo for system caches. Preview first with `mo clean --dry-run`. Deletes permanently (not via Trash), so it stays user-driven, never auto-run."}
   ]
 }

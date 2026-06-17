@@ -48,7 +48,9 @@ python3 scripts/clean.py --preset safe --skip ollama-models --go            # ex
    - `medium` targets (ML models, device support, project `node_modules`) — confirm before `--allow-medium`.
    - `uncategorized` discoveries — unknown dirs >100 MB; ask or investigate before adding.
    - `advisory` notes — surface them (Telegram cache, simulators via `simctl`, `uv/tools`,
-     Chrome whole-dir, Xcode Archives); never act on them automatically.
+     Chrome whole-dir, Xcode Archives, `mo clean` deep-clean); never act on them automatically.
+     For `mole-deep-clean`: suggest the user run `mo clean` themselves (interactive TUI, permanent
+     deletes, sudo for system caches) — never invoke it from the agent.
    - surgical Docker / simulator decisions (see below).
 4. Run `clean.py` with the resolved selection. Relay the result (`freed_human`, disk before→after).
 
