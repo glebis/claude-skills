@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# lm — quick local LLM access via llama.cpp, reusing Ollama's downloaded GGUF blobs.
+#
+# Text/embeddings load Ollama blobs directly (no re-download). Vision uses
+# llama.cpp's HuggingFace auto-fetch because Ollama does not store an mmproj.
+#
+# Run `lm help` for the command list.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RESOLVE="$HERE/ollama_blob.py"
+
+# Defaults (override with env): general text, structured/reasoning, embeddings.
+# NB: Ollama's gemma3 GGUF does NOT load in stock llama.cpp (custom metadata
+# keys), and qwen3 emits <think> blocks — so default to qwen2.5:3b for clean,
+# fast one-shot output.
+TEXT_MODEL="${LM_TEXT_MODEL:-qwen2.5:3b}"
+REASON_MODEL="${LM_REASON_MODEL:-qwen2.5:3b}"
+EMBED_MODEL="${LM_EMBED_MODEL:-jeffh/intfloat-multilingual-e5-large:f16}"
+# Vision: Ollama has no projector blob, so pull a bundled GGUF (model+mmproj) once.
+VISION_HF="${LM_VISION_HF:-ggml-org/Qwen2.5-VL-3B-Instruct-GGUF}"
+
+# Hide llama.cpp's noisy load logs unless LM_DEBUG is set.
+if [[ -n "${LM_DEBUG:-}" ]]; then ERR=/dev/stderr; else ERR=/dev/null; fi
+
+die() { echo "lm: $*" >&2; exit 1; }
+
+# Read task input: a readable file path, else inline text, else stdin.
+read_input() {
+  if [[ $# -gt 0 && -f "$1" ]]; then cat "$1"
+  elif [[ $# -gt 0 ]]; then printf '%s' "$*"
+  else cat
+  fi
+}
+
+# Extract the assistant reply from llama-completion's rendered chat template.
+# With --simple-io the template prints role markers (system/user/assistant) on
+# their own lines; the reply is everything after the last 'assistant' line.
+clean() {
+  awk '
+    { buf[NR]=$0; if ($0=="assistant") start=NR }
+    END {
+      for (i=start+1; i<=NR; i++) out = out buf[i] "\n"
+      sub(/ ?\[end of text\][ \n]*$/, "", out)
+      sub(/^\n+/, "", out); sub(/\n+$/, "", out)
+      if (length(out)) print out
+    }'
+}
+
+# Core one-shot generation. $1=model $2=system $3=temp $4=max_tokens; prompt on stdin.
+# Uses llama-completion in single-turn conversation mode so the chat template is
+# applied (instruct behaviour); llama-cli's interactive UI is not subprocess-safe.
+gen() {
+  local model="$1" sys="$2" temp="$3" ntok="$4" blob prompt
+  blob="$($RESOLVE path "$model")" || die "could not resolve model '$model'"
+  prompt="$(cat)"
+  llama-completion -m "$blob" \
+    ${sys:+-sys "$sys"} \
+    -p "$prompt" \
+    -st --simple-io --no-warmup \
+    --temp "$temp" -n "$ntok" 2>"$ERR" | clean
+}
+
+# Run a preset: $1=model $2=system $3=temp ; remaining args = input source.
+preset() {
+  local model="$1" sys="$2" temp="$3"; shift 3
+  read_input "$@" | gen "$model" "$sys" "$temp" "${LM_NTOK:-2048}"
+}
+
+vision() {  # $1=image $2=prompt
+  local img="$1" prompt="$2"
+  [[ -f "$img" ]] || die "image not found: $img"
+  llama-mtmd-cli -hf "$VISION_HF" --image "$img" -p "$prompt" \
+    --no-display-prompt -n "${LM_NTOK:-512}" 2>"$ERR"
+}
+
+usage() {
+cat <<'EOF'
+lm — local LLM via llama.cpp (reuses Ollama models)
+
+  lm models                       list available local models
+  lm ask [MODEL] "PROMPT"         one-shot prompt (default: qwen2.5:3b)
+  lm chat [MODEL]                 interactive REPL
+
+Text presets (accept a file path, inline text, or stdin):
+  lm summarize  [SRC]             concise summary
+  lm tldr       [SRC]             one-sentence TL;DR
+  lm keywords   [SRC]             comma-separated keywords
+  lm anonymize  [SRC]             redact PII with [NAME]/[EMAIL]/... placeholders
+  lm proofread  [SRC]             fix grammar/spelling, keep voice
+  lm translate  LANG [SRC]        translate into LANG
+  lm classify   "L1,L2,.." [SRC]  pick exactly one label
+  lm extract    "WHAT" [SRC]      pull structured data as JSON
+
+Vision (downloads model+projector once via HuggingFace):
+  lm describe-image IMG           caption the image
+  lm tag-image      IMG           comma-separated visual tags
+  lm vision IMG "PROMPT"          arbitrary visual question
+
+Embeddings & serving:
+  lm embed [MODEL] "TEXT"         print embedding vector (JSON)
+  lm serve [MODEL] [PORT]         OpenAI-compatible server (default :8080)
+
+Env overrides: LM_TEXT_MODEL LM_REASON_MODEL LM_EMBED_MODEL LM_VISION_HF
+               LM_NTOK (max tokens)  LM_DEBUG=1 (show llama.cpp logs)
+EOF
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  help|-h|--help) usage ;;
+  models)
+    printf "%-42s %7s  %-7s\n" "MODEL" "SIZE_GB" "KIND"
+    "$RESOLVE" list | while IFS=$'\t' read -r name size kind _; do
+      printf "%-42s %7s  %-7s\n" "$name" "$size" "$kind"
+    done ;;
+
+  ask)
+    if [[ ${1:-} == *:* || ( -n "${1:-}" && $# -gt 1 ) ]] && "$RESOLVE" path "${1:-}" >/dev/null 2>&1; then
+      m="$1"; shift; else m="$TEXT_MODEL"; fi
+    printf '%s' "$*" | gen "$m" "" 0.7 "${LM_NTOK:-2048}" ;;
+
+  chat)
+    m="${1:-$TEXT_MODEL}"; blob="$("$RESOLVE" path "$m")" || die "no model '$m'"
+    exec llama-cli -m "$blob" -cnv ;;
+
+  summarize)  preset "$TEXT_MODEL" "Summarize the text concisely. Output only the summary." 0.3 "$@" ;;
+  tldr)       preset "$TEXT_MODEL" "Give a single-sentence TL;DR. Output only that sentence." 0.3 "$@" ;;
+  keywords)   preset "$TEXT_MODEL" "Extract 5-10 salient keywords. Output a comma-separated list only." 0.2 "$@" ;;
+  proofread)  preset "$TEXT_MODEL" "Correct grammar, spelling and punctuation while preserving meaning and voice. Output only the corrected text." 0.2 "$@" ;;
+  anonymize)  preset "$TEXT_MODEL" "Replace every piece of personally identifying information (names, emails, phone numbers, addresses, account numbers, dates of birth) with a bracketed placeholder such as [NAME], [EMAIL], [PHONE], [ADDRESS]. Preserve all other text exactly. Output only the redacted text." 0.1 "$@" ;;
+
+  translate)
+    [[ $# -ge 1 ]] || die "usage: lm translate LANG [SRC]"
+    lang="$1"; shift
+    preset "$TEXT_MODEL" "Translate the text into $lang. Output only the translation, no notes." 0.2 "$@" ;;
+
+  classify)
+    [[ $# -ge 1 ]] || die "usage: lm classify \"L1,L2,...\" [SRC]"
+    labels="$1"; shift
+    preset "$REASON_MODEL" "Classify the text into exactly one of these labels: $labels. Reply with only the chosen label." 0 "$@" ;;
+
+  extract)
+    [[ $# -ge 1 ]] || die "usage: lm extract \"WHAT\" [SRC]"
+    what="$1"; shift
+    preset "$REASON_MODEL" "Extract the following from the text: $what. Output only minified valid JSON, no commentary." 0 "$@" ;;
+
+  describe-image) [[ ${1:-} ]] || die "usage: lm describe-image IMG"; vision "$1" "Describe this image in detail." ;;
+  tag-image)      [[ ${1:-} ]] || die "usage: lm tag-image IMG"; vision "$1" "List 5-15 visual tags for this image as a comma-separated list. Output only the tags." ;;
+  vision)         [[ ${2:-} ]] || die "usage: lm vision IMG \"PROMPT\""; vision "$1" "$2" ;;
+
+  embed)
+    if [[ ${1:-} ]] && "$RESOLVE" path "${1:-}" >/dev/null 2>&1 && [[ $# -gt 1 ]]; then
+      m="$1"; shift; else m="$EMBED_MODEL"; fi
+    blob="$("$RESOLVE" path "$m")" || die "no embed model '$m'"
+    printf '%s' "$*" | llama-embedding -m "$blob" --pooling mean \
+      --embd-output-format json -p - 2>"$ERR" ;;
+
+  serve)
+    m="${1:-$TEXT_MODEL}"; port="${2:-8080}"
+    blob="$("$RESOLVE" path "$m")" || die "no model '$m'"
+    echo "Serving $m on http://localhost:$port (OpenAI-compatible: POST /v1/chat/completions)" >&2
+    exec llama-server -m "$blob" --port "$port" ;;
+
+  *) die "unknown command '$cmd' (try: lm help)" ;;
+esac
