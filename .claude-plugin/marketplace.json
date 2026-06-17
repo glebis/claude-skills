@@ -59,6 +59,11 @@
       "description": "This skill should be used when conducting comprehensive research on any topic using the OpenAI Deep Research API. It aut"
     },
     {
+      "name": "disk-cleanup",
+      "source": "./skills/disk-cleanup",
+      "description": "Scan and clean macOS caches, package-manager data, crash dumps, and app caches to reclaim disk space. Deterministic — a config registry (targets.json) plus survey.py (read-only) and clean.py (executor) do all measuring and deleting. Use for: freeing disk space, \"disk is full\", \"clean up my Mac\", \"what's eating my disk\"."
+    },
+    {
       "name": "doctorg",
       "source": "./doctorg",
       "description": "Evidence-based health research using tiered trusted sources with GRADE-inspired evidence ratings. Integrates Apple Healt"

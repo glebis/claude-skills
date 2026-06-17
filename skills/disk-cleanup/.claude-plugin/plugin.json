@@ -1,0 +1,9 @@
+{
+  "name": "disk-cleanup",
+  "description": "Scan and clean macOS caches, package-manager data, crash dumps, and app caches to reclaim disk space.",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT"
+}
