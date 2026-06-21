@@ -114,6 +114,11 @@
       "description": "This skill should be used when interacting with Google Workspace services via the gws CLI — Gmail (search, triage, send,"
     },
     {
+      "name": "hermes-tweet-launch-monitor",
+      "source": "./hermes-tweet-launch-monitor",
+      "description": "Read-first X/Twitter launch and community monitoring with Hermes Tweet. Use when tracking launch chatter, developer feedback, release sentiment, support questions, or X/Twitter mentions."
+    },
+    {
       "name": "health-data",
       "source": "./health-data",
       "description": "Query Apple Health SQLite database for vitals, activity, sleep, and workouts. Supports Markdown, JSON, and FHIR R4 outpu"
