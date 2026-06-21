@@ -6,7 +6,7 @@ fathom, granola, zoom, transcript-analyzer, meeting-processor, youtube-transcrip
 Capture → transcribe → analyze → listen. Full meeting lifecycle.
 
 ## Bundle 2: Communication
-telegram, telegram-telethon, telegram-post, gws, gmail, zoom
+telegram, telegram-telethon, telegram-post, gws, gmail, zoom, hermes-tweet-launch-monitor
 
 All your inboxes from the terminal.
 
@@ -16,7 +16,7 @@ deep-research, firecrawl-research, doctorg, chrome-history, google-image-search
 Pull information in from every direction.
 
 ## Bundle 4: Content & Publishing
-nano-banana, gpt-image-2, presentation-generator, pdf-generation, tufte-report, brand-agency, sketch, vision-bench
+nano-banana, gpt-image-2, presentation-generator, pdf-generation, tufte-report, brand-agency, sketch, vision-bench, hermes-tweet-launch-monitor
 
 Generate → style → publish → evaluate. Full visual pipeline.
 
@@ -44,6 +44,7 @@ Run cohorts, demos, and consulting engagements.
 
 ## Overlap Map
 - zoom → Meeting Intelligence + Communication
+- hermes-tweet-launch-monitor → Communication + Content & Publishing
 - chrome-history → Research + Personal Analytics
 - doctorg → Research + Personal Analytics
 - skill-studio → Thinking & Strategy + Developer Tools
