@@ -1,0 +1,58 @@
+import pathlib
+
+from dtokens import export_preview_html, model, resolve
+
+FIXTURES = pathlib.Path(__file__).parent / "fixtures"
+
+
+def _resolved():
+    tree = model.load(str(FIXTURES / "design-md-source.tokens.json"))
+    return resolve.resolve(tree)
+
+
+def test_preview_is_standalone_html():
+    out = export_preview_html.to_preview_html(_resolved(), "Test Brand")
+    assert out.startswith("<!doctype html>")
+    assert out.rstrip().endswith("</body></html>")
+    assert "Test Brand" in out
+    # no external resources
+    assert "http://" not in out and "https://" not in out
+
+
+def test_preview_renders_color_chip_with_value():
+    out = export_preview_html.to_preview_html(_resolved(), "X")
+    assert "<h2>Colors</h2>" in out
+    assert "background: #1A73E8" in out
+
+
+def test_preview_renders_type_specimen_with_inline_font():
+    out = export_preview_html.to_preview_html(_resolved(), "X")
+    assert "<h2>Typography</h2>" in out
+    assert "font-size: 16px" in out
+    # generic fallback appended so specimens don't drop to serif
+    assert "font-family: Inter, sans-serif" in out
+
+
+def test_preview_mono_family_gets_monospace_fallback():
+    resolved = {
+        "type.code": {
+            "type": "typography",
+            "value": {"fontFamily": "Space Mono", "fontSize": {"value": 14, "unit": "px"}},
+        }
+    }
+    out = export_preview_html.to_preview_html(resolved, "X")
+    assert "font-family: Space Mono, monospace" in out
+
+
+def test_preview_renders_spacing_and_rounded():
+    out = export_preview_html.to_preview_html(_resolved(), "X")
+    assert "<h2>Spacing</h2>" in out
+    assert "width: 8px" in out
+    assert "<h2>Rounded</h2>" in out
+    assert "border-radius: 4px" in out
+
+
+def test_preview_escapes_name():
+    out = export_preview_html.to_preview_html({}, "<script>")
+    assert "<script>" not in out
+    assert "&lt;script&gt;" in out

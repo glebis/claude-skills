@@ -62,6 +62,9 @@ def test_use_writes_css_and_design_md(tmp_path):
     assert design.startswith("---\nversion: alpha")
     assert 'action-primary: "#1A73E8"' in design
     assert "## Colors" in design
+    preview = (tmp_path / "preview.html").read_text()
+    assert preview.startswith("<!doctype html>")
+    assert "background: #1A73E8" in preview
 
 
 def test_design_md_command_emits_to_stdout(capsys):

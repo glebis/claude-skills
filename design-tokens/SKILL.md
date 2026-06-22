@@ -35,7 +35,8 @@ Run via `scripts/tokens <command>` (or `PYTHONPATH=scripts python3 -m dtokens.cl
 | `resolve <file> [-o OUT]` | Flatten aliases to concrete values (JSON map). |
 | `export-css <file> [--selector SEL] [-o OUT]` | Emit CSS custom properties. |
 | `design-md <file> [--name N] [--description D] [-o OUT]` | Emit a Google-Labs [DESIGN.md](https://github.com/google-labs-code/design.md) (alpha) — YAML token frontmatter + prose body. |
-| `use <file> [--name N] [--description D] [--out-dir DIR]` | Validate + resolve, then write `tokens.css` and `DESIGN.md`. |
+| `preview <file> [--name N] [-o OUT]` | Emit a standalone HTML swatch page (colors, type specimens, spacing, rounded, shadow). |
+| `use <file> [--name N] [--description D] [--out-dir DIR]` | Validate + resolve, then write `tokens.css`, `DESIGN.md`, and `preview.html`. |
 
 ## DESIGN.md output
 

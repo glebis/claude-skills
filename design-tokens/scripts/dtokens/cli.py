@@ -7,6 +7,7 @@ import pathlib
 from . import TokenError
 from . import export_css as export_css_mod
 from . import export_design_md as design_md_mod
+from . import export_preview_html as preview_mod
 from . import merge as merge_mod
 from . import model
 from . import resolve as resolve_mod
@@ -73,6 +74,13 @@ def _cmd_design_md(args):
     return 0
 
 
+def _cmd_preview(args):
+    resolved = resolve_mod.resolve(model.load(args.file))
+    name = args.name or pathlib.Path(args.file).stem
+    _emit(preview_mod.to_preview_html(resolved, name), args.out)
+    return 0
+
+
 def _cmd_use(args):
     tree = model.load(args.file)
     errors = validate_mod.validate(tree)
@@ -88,7 +96,10 @@ def _cmd_use(args):
     (out_dir / "DESIGN.md").write_text(
         design_md_mod.to_design_md(resolved, name, args.description), encoding="utf-8"
     )
-    print(f"wrote {out_dir / 'tokens.css'} and {out_dir / 'DESIGN.md'}")
+    (out_dir / "preview.html").write_text(
+        preview_mod.to_preview_html(resolved, name), encoding="utf-8"
+    )
+    print(f"wrote {out_dir / 'tokens.css'}, {out_dir / 'DESIGN.md'} and {out_dir / 'preview.html'}")
     return 0
 
 
@@ -127,6 +138,12 @@ def _build_parser():
     sd.add_argument("--description")
     sd.add_argument("-o", "--out")
     sd.set_defaults(func=_cmd_design_md)
+
+    sp = sub.add_parser("preview")
+    sp.add_argument("file")
+    sp.add_argument("--name")
+    sp.add_argument("-o", "--out")
+    sp.set_defaults(func=_cmd_preview)
 
     su = sub.add_parser("use")
     su.add_argument("file")
