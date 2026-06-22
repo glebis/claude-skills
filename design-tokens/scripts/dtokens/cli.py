@@ -3,11 +3,13 @@
 import argparse
 import json
 import pathlib
+import sys
 
 from . import TokenError
 from . import export_css as export_css_mod
 from . import export_design_md as design_md_mod
 from . import export_preview_html as preview_mod
+from . import import_css as import_css_mod
 from . import merge as merge_mod
 from . import model
 from . import resolve as resolve_mod
@@ -71,6 +73,22 @@ def _cmd_design_md(args):
     resolved = resolve_mod.resolve(model.load(args.file))
     name = args.name or pathlib.Path(args.file).stem
     _emit(design_md_mod.to_design_md(resolved, name, args.description), args.out)
+    return 0
+
+
+def _cmd_import(args):
+    css = pathlib.Path(args.file).read_text(encoding="utf-8")
+    tree, skipped = import_css_mod.to_tokens(css)
+    errors = validate_mod.validate(tree)
+    if errors:
+        for e in errors:
+            print(e)
+        return 1
+    out_json = json.dumps(tree, indent=2, ensure_ascii=False) + "\n"
+    _emit(out_json, args.out)
+    print(f"imported {len(tree)} tokens; skipped {len(skipped)}", file=sys.stderr)
+    for name, value, reason in skipped:
+        print(f"  skipped --{name}: {reason} ({value})", file=sys.stderr)
     return 0
 
 
@@ -138,6 +156,11 @@ def _build_parser():
     sd.add_argument("--description")
     sd.add_argument("-o", "--out")
     sd.set_defaults(func=_cmd_design_md)
+
+    si = sub.add_parser("import")
+    si.add_argument("file", help="a CSS file with :root custom properties")
+    si.add_argument("-o", "--out", help="write DTCG tokens here (default: stdout)")
+    si.set_defaults(func=_cmd_import)
 
     sp = sub.add_parser("preview")
     sp.add_argument("file")

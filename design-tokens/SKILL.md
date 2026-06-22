@@ -18,10 +18,12 @@ validate, merge (global base + project override), resolve aliases, and export CS
 ## v1 scope
 
 Supported `$type`: `color` (string values), `dimension`, `duration`, `fontFamily`,
-`fontWeight`, `number`, `typography`, `shadow`. Outputs: CSS custom properties and a
-Google-Labs **DESIGN.md** (alpha). Not in v1: JSON Pointer `$ref`, `$root`,
-structured color objects, name-restriction enforcement, Style Dictionary, importers,
-share bundles, `skillify` (see the phased spec).
+`fontWeight`, `number`, `typography`, `shadow`. Outputs: CSS custom properties, a
+Google-Labs **DESIGN.md** (alpha), and a standalone HTML preview. CSS **import**
+covers color/dimension/duration/fontFamily/number; composite values (box-shadow,
+gradients, multi-part typography) are skipped and reported. Not in v1: JSON Pointer
+`$ref`, `$root`, structured color objects, name-restriction enforcement, Style
+Dictionary, Figma/Pencil importers, share bundles, `skillify` (see the phased spec).
 
 ## Commands
 
@@ -30,6 +32,7 @@ Run via `scripts/tokens <command>` (or `PYTHONPATH=scripts python3 -m dtokens.cl
 | Command | What it does |
 | --- | --- |
 | `setup-edit <dest>` | Scaffold a template token file at `<dest>` and validate it (refuses to overwrite). |
+| `import <css> [-o OUT]` | Import a CSS file's `:root` custom properties into DTCG, preserving variable names. Skips composites (shadow/gradient) and reports them on stderr. |
 | `validate <file>` | Print `OK` or a list of errors; exit 1 if invalid. |
 | `merge <base> <override> [-o OUT]` | Layer project override on global base. |
 | `resolve <file> [-o OUT]` | Flatten aliases to concrete values (JSON map). |
