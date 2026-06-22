@@ -1,0 +1,62 @@
+import json
+import pathlib
+
+from dtokens import cli
+
+FIXTURES = pathlib.Path(__file__).parent / "fixtures"
+
+
+def test_validate_ok(capsys):
+    rc = cli.main(["validate", str(FIXTURES / "global.base.tokens.json")])
+    assert rc == 0
+    assert "OK" in capsys.readouterr().out
+
+
+def test_validate_reports_errors(tmp_path, capsys):
+    bad = tmp_path / "bad.tokens.json"
+    bad.write_text(json.dumps({"a": {"$type": "color", "$value": "{missing}"}}))
+    rc = cli.main(["validate", str(bad)])
+    assert rc == 1
+    assert "missing" in capsys.readouterr().out
+
+
+def test_merge_then_export_matches_golden(tmp_path):
+    merged = tmp_path / "merged.tokens.json"
+    cli.main([
+        "merge",
+        str(FIXTURES / "global.base.tokens.json"),
+        str(FIXTURES / "project.override.tokens.json"),
+        "-o", str(merged),
+    ])
+    out_css = tmp_path / "out.css"
+    cli.main(["export-css", str(merged), "-o", str(out_css)])
+    expected = (FIXTURES / "expected.tokens.css").read_text()
+    assert out_css.read_text() == expected
+
+
+def test_setup_edit_scaffolds_and_validates(tmp_path, capsys):
+    dest = tmp_path / "new.tokens.json"
+    rc = cli.main(["setup-edit", str(dest)])
+    assert rc == 0
+    assert dest.exists()
+    assert "color" in json.loads(dest.read_text())
+
+
+def test_setup_edit_refuses_overwrite(tmp_path):
+    dest = tmp_path / "exists.tokens.json"
+    dest.write_text("{}")
+    rc = cli.main(["setup-edit", str(dest)])
+    assert rc == 1
+
+
+def test_use_writes_css_and_context(tmp_path):
+    rc = cli.main([
+        "use",
+        str(FIXTURES / "global.base.tokens.json"),
+        "--out-dir", str(tmp_path),
+    ])
+    assert rc == 0
+    assert (tmp_path / "tokens.css").exists()
+    context = (tmp_path / "tokens.context.md").read_text()
+    assert "color.action.primary" in context
+    assert "#1A73E8" in context

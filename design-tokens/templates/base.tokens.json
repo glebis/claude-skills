@@ -1,0 +1,24 @@
+{
+  "color": {
+    "$type": "color",
+    "blue-600": { "$value": "#1A73E8" },
+    "ink-900": { "$value": "#0B0B0C" },
+    "action": { "primary": { "$value": "{color.blue-600}" } }
+  },
+  "space": {
+    "$type": "dimension",
+    "sm": { "$value": { "value": 8, "unit": "px" } },
+    "md": { "$value": { "value": 16, "unit": "px" } }
+  },
+  "type": {
+    "body": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": { "value": 16, "unit": "px" },
+        "fontWeight": 400,
+        "lineHeight": 1.5
+      }
+    }
+  }
+}
