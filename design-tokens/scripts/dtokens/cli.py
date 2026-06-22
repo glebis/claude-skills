@@ -6,6 +6,7 @@ import pathlib
 
 from . import TokenError
 from . import export_css as export_css_mod
+from . import export_design_md as design_md_mod
 from . import merge as merge_mod
 from . import model
 from . import resolve as resolve_mod
@@ -65,20 +66,11 @@ def _cmd_setup_edit(args):
     return 0
 
 
-def _context_md(source, resolved):
-    lines = [
-        f"# Design tokens: {pathlib.Path(source).stem}",
-        "",
-        f"Resolved from `{source}`. {len(resolved)} tokens.",
-        "",
-        "| Token | Type | Value |",
-        "| --- | --- | --- |",
-    ]
-    for path in sorted(resolved):
-        entry = resolved[path]
-        value = json.dumps(entry["value"], ensure_ascii=False) if isinstance(entry["value"], (dict, list)) else entry["value"]
-        lines.append(f"| {path} | {entry['type']} | {value} |")
-    return "\n".join(lines) + "\n"
+def _cmd_design_md(args):
+    resolved = resolve_mod.resolve(model.load(args.file))
+    name = args.name or pathlib.Path(args.file).stem
+    _emit(design_md_mod.to_design_md(resolved, name, args.description), args.out)
+    return 0
 
 
 def _cmd_use(args):
@@ -89,11 +81,14 @@ def _cmd_use(args):
             print(e)
         return 1
     resolved = resolve_mod.resolve(tree)
+    name = args.name or pathlib.Path(args.file).stem
     out_dir = pathlib.Path(args.out_dir) if args.out_dir else pathlib.Path(args.file).parent / "resolved"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "tokens.css").write_text(export_css_mod.export_css(resolved), encoding="utf-8")
-    (out_dir / "tokens.context.md").write_text(_context_md(args.file, resolved), encoding="utf-8")
-    print(f"wrote {out_dir / 'tokens.css'} and {out_dir / 'tokens.context.md'}")
+    (out_dir / "DESIGN.md").write_text(
+        design_md_mod.to_design_md(resolved, name, args.description), encoding="utf-8"
+    )
+    print(f"wrote {out_dir / 'tokens.css'} and {out_dir / 'DESIGN.md'}")
     return 0
 
 
@@ -126,8 +121,17 @@ def _build_parser():
     ss.add_argument("dest")
     ss.set_defaults(func=_cmd_setup_edit)
 
+    sd = sub.add_parser("design-md")
+    sd.add_argument("file")
+    sd.add_argument("--name")
+    sd.add_argument("--description")
+    sd.add_argument("-o", "--out")
+    sd.set_defaults(func=_cmd_design_md)
+
     su = sub.add_parser("use")
     su.add_argument("file")
+    su.add_argument("--name")
+    su.add_argument("--description")
     su.add_argument("--out-dir")
     su.set_defaults(func=_cmd_use)
 

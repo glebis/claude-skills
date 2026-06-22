@@ -49,14 +49,24 @@ def test_setup_edit_refuses_overwrite(tmp_path):
     assert rc == 1
 
 
-def test_use_writes_css_and_context(tmp_path):
+def test_use_writes_css_and_design_md(tmp_path):
     rc = cli.main([
         "use",
         str(FIXTURES / "global.base.tokens.json"),
+        "--name", "Base",
         "--out-dir", str(tmp_path),
     ])
     assert rc == 0
     assert (tmp_path / "tokens.css").exists()
-    context = (tmp_path / "tokens.context.md").read_text()
-    assert "color.action.primary" in context
-    assert "#1A73E8" in context
+    design = (tmp_path / "DESIGN.md").read_text()
+    assert design.startswith("---\nversion: alpha")
+    assert 'action-primary: "#1A73E8"' in design
+    assert "## Colors" in design
+
+
+def test_design_md_command_emits_to_stdout(capsys):
+    rc = cli.main(["design-md", str(FIXTURES / "design-md-source.tokens.json"), "--name", "Test Brand"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert out.startswith("---\nversion: alpha")
+    assert "## Typography" in out

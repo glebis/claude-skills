@@ -18,7 +18,8 @@ validate, merge (global base + project override), resolve aliases, and export CS
 ## v1 scope
 
 Supported `$type`: `color` (string values), `dimension`, `duration`, `fontFamily`,
-`fontWeight`, `number`, `typography`, `shadow`. Not in v1: JSON Pointer `$ref`, `$root`,
+`fontWeight`, `number`, `typography`, `shadow`. Outputs: CSS custom properties and a
+Google-Labs **DESIGN.md** (alpha). Not in v1: JSON Pointer `$ref`, `$root`,
 structured color objects, name-restriction enforcement, Style Dictionary, importers,
 share bundles, `skillify` (see the phased spec).
 
@@ -33,7 +34,20 @@ Run via `scripts/tokens <command>` (or `PYTHONPATH=scripts python3 -m dtokens.cl
 | `merge <base> <override> [-o OUT]` | Layer project override on global base. |
 | `resolve <file> [-o OUT]` | Flatten aliases to concrete values (JSON map). |
 | `export-css <file> [--selector SEL] [-o OUT]` | Emit CSS custom properties. |
-| `use <file> [--out-dir DIR]` | Validate + resolve, then write `tokens.css` and `tokens.context.md`. |
+| `design-md <file> [--name N] [--description D] [-o OUT]` | Emit a Google-Labs [DESIGN.md](https://github.com/google-labs-code/design.md) (alpha) — YAML token frontmatter + prose body. |
+| `use <file> [--name N] [--description D] [--out-dir DIR]` | Validate + resolve, then write `tokens.css` and `DESIGN.md`. |
+
+## DESIGN.md output
+
+`use` and `design-md` emit a **DESIGN.md** — the agent-facing format read by Claude
+Code, Cursor, v0, Lovable, Stitch. It is complementary to DTCG: DTCG `.tokens.json`
+is the rigorous source of truth; DESIGN.md is the prose+tokens artifact agents apply.
+Our resolved tokens map to its frontmatter as: `color` → `colors`, `typography` →
+`typography`, `dimension` under `space*` → `spacing`, `dimension` under
+`radius/rounded*` → `rounded`. Names are flattened (drop the top group, dots → `-`).
+Types without a DESIGN.md home (`duration`, `shadow`, `number`, `fontFamily`,
+`fontWeight` standalone) are noted in the Overview, not the frontmatter. This
+name/bucket mapping is a skill convention over the DESIGN.md alpha schema.
 
 ## Storage convention
 
