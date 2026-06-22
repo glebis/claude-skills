@@ -55,9 +55,15 @@ name/bucket mapping is a skill convention over the DESIGN.md alpha schema.
 
 ## Storage convention
 
+Token files are **canonical source — keep them visible and committed, never in a
+hidden dotdir** (a leading dot reads as ignorable tool state; Style Dictionary uses
+`tokens/`, DESIGN.md lives at repo root, DTCG mandates the extension but no path).
+
 - Global sets: `~/.claude/design-tokens/<set>/base.tokens.json`
-- Project deltas: `<project>/.design-tokens/project.tokens.json` (override of a global set)
+- Project, single set: `<project>/design.tokens.json` + `<project>/DESIGN.md` at root
+- Project, multi-scope: `<project>/tokens/base.tokens.json` + `<project>/tokens/<name>.tokens.json`
 - Multiple themes (light/dark): keep one override file per theme and merge it before `use`.
+- Reserve a dotdir, if any, only for *generated* output (`tokens.css`, `preview.html`).
 
 ## Tests
 

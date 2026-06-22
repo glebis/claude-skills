@@ -44,9 +44,20 @@ Global brand base + per-project deltas, resolved by layering.
 ~/.claude/design-tokens/
   registry.json                 # named sets: lab, confide, personal, …
   <set>/base.tokens.json        # global brand source of truth
-<project>/.design-tokens/
-  project.tokens.json           # $extends a global set; overrides only what differs
+
+# Project-local — VISIBLE, committed source (NOT a hidden dotdir; a leading dot
+# signals ignorable tool state, but token files are canonical source):
+<project>/design.tokens.json    # single set: DTCG source at repo root
+<project>/DESIGN.md             # agent-facing format, repo root
+# OR, multi-scope:
+<project>/tokens/base.tokens.json
+<project>/tokens/<name>.tokens.json   # override of a global or local base
 ```
+
+Rationale: Style Dictionary uses `tokens/`, DESIGN.md lives at repo root, and DTCG
+mandates the `.tokens.json` extension but no path. A hidden `.design-tokens/` reads
+as machine state (often git-ignored) — wrong for committed source. Reserve a dotdir,
+if any, only for *generated* output (`tokens.css`, `preview.html`).
 
 `registry.json` maps set-name → path and metadata. A project file names its parent
 set and overrides only the deltas; resolution merges parent + child.
