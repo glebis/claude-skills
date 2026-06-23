@@ -1,0 +1,19 @@
+/* tufte-report theme for The Dalí Museum — Giraffes on Horseback Salad
+   Maps brand token roles onto /tufte-report's CSS variables (SKILL
+   CONVENTION, not DTCG). Paste into the report's :root, or hand to
+   /tufte-report as the palette. Roles with no matching token fall back
+   to tufte-report's own defaults. */
+:root {
+  --ink: #fefefe;   /* near-black primary text (from token) */
+  --bg: #070613;   /* warm-white background (from token) */
+  --spark-primary: #e4501b;   /* primary data stream / effort (from token) */
+  --spark-secondary: #2a7a5a;   /* growth / health signal (tufte default) */
+  --spark-tertiary: #2fb9ca;   /* social / secondary stream (from token) */
+  --status-red: #c4151f;   /* alerts, negative trend (from token) */
+  --status-amber: #faff00;   /* watch-level signal (from token) */
+  --status-green: #2a7a3a;   /* healthy baseline (tufte default) */
+  --accent: #2fb9ca;   /* aside markers, flyout diamonds (from token) */
+}
+
+/* tufte-report uses EB Garamond (text) + Monaspace Argon (numbers).
+   Brand fonts available to swap in: Inter, Playfair Display, Oswald. */

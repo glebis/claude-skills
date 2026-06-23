@@ -1,0 +1,19 @@
+/* tufte-report theme for Halcyon
+   Maps brand token roles onto /tufte-report's CSS variables (SKILL
+   CONVENTION, not DTCG). Paste into the report's :root, or hand to
+   /tufte-report as the palette. Roles with no matching token fall back
+   to tufte-report's own defaults. */
+:root {
+  --ink: #13201F;   /* near-black primary text (from token) */
+  --bg: #FBF7F0;   /* warm-white background (from token) */
+  --spark-primary: #0E7C7B;   /* primary data stream / effort (from token) */
+  --spark-secondary: #3E8E5A;   /* growth / health signal (from token) */
+  --spark-tertiary: #F2714E;   /* social / secondary stream (from token) */
+  --status-red: #C24330;   /* alerts, negative trend (from token) */
+  --status-amber: #D99A2B;   /* watch-level signal (from token) */
+  --status-green: #3E8E5A;   /* healthy baseline (from token) */
+  --accent: #F2714E;   /* aside markers, flyout diamonds (from token) */
+}
+
+/* tufte-report uses EB Garamond (text) + Monaspace Argon (numbers).
+   Brand fonts available to swap in: Inter, Fraunces. */

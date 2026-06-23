@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REVERIE — where reality burns away</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Oswald:wght@300;400;500;600;700&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      colors: {
+        void:'#070613', abyss:'#082224', ink:'#0b0e12', teal:'#02708d',
+        coral:'#e4501b', cyan:'#2fb9ca', orchid:'#fbbbfe', acid:'#faff00',
+        gold:'#de8103', crimson:'#c4151f', paper:'#fefefe', slate:'#5f5f60'
+      },
+      fontFamily: {
+        display:['"Playfair Display"','Georgia','serif'],
+        head:['Oswald','system-ui','sans-serif'],
+        body:['Outfit','system-ui','sans-serif']
+      }
+    }}
+  }
+</script>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+  // Pin JSX to the classic runtime (React.createElement) so the inline script
+  // stays a plain <script> — the automatic runtime emits ES `import`s that die
+  // without a bundler. Registered before Babel auto-transforms text/babel tags.
+  Babel.registerPreset("react-classic", {
+    presets: [[Babel.availablePresets["react"], { runtime: "classic" }]]
+  });
+</script>
+<script type="module">
+  // anime.js v4 is ESM-only; bridge it onto window so the classic Babel script
+  // below can use it. Fire an event so React effects that mount first can wait.
+  import { animate, stagger, createTimeline, eases } from "https://esm.sh/animejs@4";
+  window.Anime = { animate, stagger, createTimeline, eases };
+  window.dispatchEvent(new Event("anime:ready"));
+</script>
+
+<style>
+  html { scroll-behavior: smooth; }
+  body { background:#070613; color:#fefefe; }
+  /* token-derived brand color as CSS var so the page is provably token-driven */
+  :root { --coral:#e4501b; --cyan:#2fb9ca; --orchid:#fbbbfe; --acid:#faff00; --void:#070613; }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .marquee-track { animation: marquee 32s linear infinite; }
+  .grain::before {
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:60; opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .reveal-word { opacity:.12; transition: opacity .2s; }
+  .accordion-slice { transition: flex-grow .6s cubic-bezier(.22,1,.36,1); }
+</style>
+</head>
+<body class="grain font-body antialiased overflow-x-hidden">
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react-classic">
+const { useState, useEffect, useRef } = React;
+const gsap = window.gsap;
+const ScrollTrigger = window.ScrollTrigger;
+gsap.registerPlugin(ScrollTrigger);
+
+// ---- anime.js v4 bridge (loaded as an ES module on window.Anime) ----
+function whenAnime(cb) {
+  if (window.Anime) return cb(window.Anime);
+  window.addEventListener("anime:ready", () => cb(window.Anime), { once: true });
+}
+// Run an anime.js entrance once `el` scrolls into view, then disconnect.
+function onEnter(el, run, threshold = 0.2) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { run(); io.disconnect(); } });
+  }, { threshold });
+  io.observe(el);
+  return () => io.disconnect();
+}
+
+// ---- treated imagery helper (picsum + brand color wash) ----
+const pic = (seed, w=1600, h=1000) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
+
+const FRAME_SEEDS = [
+  "surreal1","dream2","fire3","ocean4","portrait5","melt6","desert7","mirror8",
+  "veil9","ember10","tide11","mask12","bloom13","smoke14","glass15","dusk16",
+  "ritual17","coral18","ghost19","pearl20","ash21","wave22","crown23","flame24"
+];
+
+// ============================ NAV ============================
+function Nav() {
+  return (
+    <nav className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[min(1200px,92vw)]">
+      <div className="flex items-center justify-between rounded-full border border-white/10 bg-white/5 backdrop-blur-xl px-6 py-3">
+        <a href="#top" className="font-head font-semibold tracking-[.34em] text-paper text-sm">REVERIE</a>
+        <div className="hidden md:flex items-center gap-9 font-body text-[13px] tracking-wide text-paper/60">
+          <a href="#film" className="hover:text-cyan transition-colors">The Film</a>
+          <a href="#scenes" className="hover:text-cyan transition-colors">Scenes</a>
+          <a href="#archive" className="hover:text-cyan transition-colors">Archive</a>
+        </div>
+        <a href="#enter" className="rounded-full bg-coral text-void font-head font-semibold tracking-[.16em] text-xs uppercase px-5 py-2.5 hover:brightness-110 transition">
+          Watch
+        </a>
+      </div>
+    </nav>
+  );
+}
+
+// ============================ HERO ============================
+function Hero() {
+  return (
+    <header id="top" className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden">
+      <div className="absolute inset-0">
+        <img src={pic("hero-face-wet",2000,1300)} alt=""
+             className="w-full h-full object-cover object-center contrast-125 saturate-150" />
+        <div className="absolute inset-0"
+             style={{background:"radial-gradient(70% 60% at 50% 42%, rgba(7,6,19,.15), rgba(7,6,19,.78) 72%, #070613 100%)"}} />
+        <div className="absolute inset-0 mix-blend-color"
+             style={{background:"radial-gradient(60% 50% at 28% 32%, rgba(47,185,202,.55), transparent 60%), radial-gradient(55% 55% at 78% 74%, rgba(228,80,27,.55), transparent 60%)"}} />
+      </div>
+
+      <div className="relative z-10 px-6 max-w-6xl mx-auto">
+        <p className="font-head tracking-[.5em] text-paper/70 text-xs md:text-sm uppercase mb-8">
+          A surrealist film, completed across time
+        </p>
+        <h1 className="font-display font-medium text-paper leading-[.92]"
+            style={{fontSize:"clamp(3rem,8vw,8rem)"}}>
+          Giraffes on <span className="italic text-orchid">Horseback</span> Salad
+        </h1>
+        <p className="font-body text-paper/75 text-lg md:text-xl max-w-xl mx-auto mt-8">
+          A screenplay abandoned in 1937, long thought unfilmable — finished by machines that learned to dream.
+        </p>
+
+        <div className="flex items-center justify-center gap-4 mt-12 flex-wrap">
+          <a href="#enter" className="rounded-full bg-coral text-void font-head font-semibold uppercase tracking-[.16em] text-sm px-8 py-4 hover:brightness-110 transition">
+            Enter the film
+          </a>
+          <a href="#film" className="rounded-full border border-paper/40 text-paper font-head font-medium uppercase tracking-[.16em] text-sm px-8 py-4 hover:bg-paper/10 transition">
+            Read the story
+          </a>
+        </div>
+      </div>
+
+      {/* play button */}
+      <button className="group relative z-10 mt-16 grid place-items-center w-20 h-20 rounded-full border border-paper/50 hover:border-paper transition">
+        <span className="absolute inset-0 rounded-full bg-paper/0 group-hover:bg-paper/10 transition" />
+        <span className="ml-1 w-0 h-0 border-y-[11px] border-y-transparent border-l-[18px] border-l-paper" />
+      </button>
+
+      <a href="#film" className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 text-paper/70 text-3xl animate-bounce">↓</a>
+    </header>
+  );
+}
+
+// ===================== PROSE (scrub reveal) =====================
+function Prose() {
+  const ref = useRef(null);
+  const text = "We did not replicate a story. We completed one that never was. A language model expanded the script in the artist's own voice. An image model conjured visuals from his iconography. A video model set them breathing with fluid, dreamlike motion. A human composer wrote the score, to keep the feeling honest.";
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const words = ref.current.querySelectorAll(".reveal-word");
+      gsap.to(words, {
+        opacity: 1, stagger: 0.5, ease: "none",
+        scrollTrigger: { trigger: ref.current, start: "top 75%", end: "bottom 60%", scrub: 1 }
+      });
+    }, ref);
+    return () => ctx.revert();
+  }, []);
+  return (
+    <section id="film" className="relative py-32 md:py-48 px-6">
+      <div ref={ref} className="max-w-4xl mx-auto">
+        <p className="font-display text-3xl md:text-5xl leading-[1.25] text-paper">
+          {text.split(" ").map((w,i) => <span key={i} className="reveal-word">{w} </span>)}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// ===================== BENTO (gapless dense) =====================
+function Bento() {
+  const gridRef = useRef(null);
+  useEffect(() => {
+    let cleanup = () => {};
+    whenAnime(({ animate, stagger }) => {
+      const cards = gridRef.current.children;
+      animate(cards, { translateY: 28, opacity: 0, duration: 0 });
+      cleanup = onEnter(gridRef.current, () => {
+        animate(cards, {
+          translateY: 0, opacity: 1, duration: 800, ease: "outCubic",
+          delay: stagger(110)
+        });
+      });
+    });
+    return () => cleanup();
+  }, []);
+  const Card = ({className, children}) =>
+    <div className={"group relative overflow-hidden rounded-2xl border border-white/10 "+className}>{children}</div>;
+  return (
+    <section className="relative py-24 md:py-40 px-6">
+      <div className="max-w-6xl mx-auto">
+        <h2 className="font-display text-4xl md:text-6xl leading-tight mb-14 max-w-3xl">
+          A collaboration <span className="italic text-cyan">across time</span>
+        </h2>
+        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-4 auto-rows-[200px] gap-3 grid-flow-row-dense">
+          <Card className="md:col-span-2 md:row-span-2">
+            <img src={pic("veo-motion",1400,1400)} alt="" className="absolute inset-0 w-full h-full object-cover saturate-150 contrast-110 group-hover:scale-105 transition-transform duration-700 ease-out" />
+            <div className="absolute inset-0 bg-gradient-to-t from-void via-void/30 to-transparent" />
+            <div className="absolute bottom-0 p-7">
+              <p className="font-head tracking-[.2em] text-cyan text-xs uppercase mb-2">Generative video</p>
+              <h3 className="font-display text-3xl">Images, set breathing</h3>
+            </div>
+          </Card>
+          <Card className="md:col-span-2 bg-abyss p-7 flex flex-col justify-between">
+            <p className="font-head tracking-[.2em] text-coral text-xs uppercase">The screenplay</p>
+            <p className="font-display text-2xl md:text-3xl leading-snug">
+              A surrealist text, expanded in the painter's own voice — sentence by sentence.
+            </p>
+          </Card>
+          <Card className="md:col-span-1 bg-ink p-6 flex flex-col justify-end">
+            <p className="font-head tracking-[.2em] text-orchid text-xs uppercase mb-1">Imagery</p>
+            <h3 className="font-display text-xl">Drawn from his iconography</h3>
+          </Card>
+          <Card className="md:col-span-1">
+            <img src={pic("score-piano",900,900)} alt="" className="absolute inset-0 w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition duration-700" />
+            <div className="absolute inset-0 bg-void/40" />
+            <div className="absolute bottom-0 p-6">
+              <p className="font-head tracking-[.2em] text-paper/70 text-xs uppercase mb-1">Human score</p>
+              <h3 className="font-display text-xl">Emotional depth, preserved</h3>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============== INLINE TYPOGRAPHY IMAGE statement ==============
+function Statement() {
+  const ref = useRef(null);
+  useEffect(() => {
+    let cleanup = () => {};
+    whenAnime(({ animate, stagger }) => {
+      const toks = ref.current.querySelectorAll(".tok");
+      const zoomers = ref.current.querySelectorAll(".zoomer");
+      // scroll-reveal: words + pills rise and fade in, staggered
+      animate(toks, { translateY: "0.7em", opacity: 0, duration: 0 });
+      cleanup = onEnter(ref.current, () => {
+        animate(toks, { translateY: 0, opacity: 1, duration: 700, ease: "outCubic", delay: stagger(55) });
+      });
+      // continuous Ken-Burns zoom inside each pill, offset per pill
+      animate(zoomers, {
+        scale: [1, 1.3], duration: 7000, ease: "inOutSine",
+        loop: true, alternate: true, delay: stagger(1200)
+      });
+    });
+    return () => cleanup();
+  }, []);
+  const Pill = ({ seed }) => (
+    <span className="tok relative inline-block align-middle mx-2 w-[clamp(3rem,7vw,7rem)] h-[clamp(2rem,4vw,3.6rem)] overflow-hidden rounded-full border border-white/15">
+      <span className="zoomer absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${pic(seed,400,240)})` }} />
+    </span>
+  );
+  const parts = [
+    {w:"We"},{w:"taught"},{w:"machines"},{p:"eye-dream"},
+    {w:"to"},{w:"dream"},{w:"in"},{w:"a"},{p:"hand-paint"},
+    {w:"painter's"},{p:"clock-melt"},{w:"hand."}
+  ];
+  return (
+    <section className="py-24 md:py-40 px-6">
+      <h2 ref={ref} className="max-w-5xl mx-auto font-display text-4xl md:text-6xl leading-[1.3] text-center">
+        {parts.map((part,i) => part.p
+          ? <Pill key={i} seed={part.p} />
+          : <span key={i} className="tok inline-block mr-[0.28em]">{part.w}</span>)}
+      </h2>
+    </section>
+  );
+}
+
+// ===================== HORIZONTAL ACCORDION =====================
+function Scenes() {
+  const slices = [
+    { t:"The Banquet", s:"banquet-surreal", c:"text-coral" },
+    { t:"The Burning Boat", s:"boat-fire", c:"text-acid" },
+    { t:"The Underwater Ball", s:"underwater-ball", c:"text-cyan" },
+    { t:"The Giraffes", s:"giraffe-flame", c:"text-gold" },
+    { t:"The Dissolve", s:"face-dissolve", c:"text-orchid" },
+  ];
+  const [active, setActive] = useState(1);
+  return (
+    <section id="scenes" className="py-24 md:py-40 px-6">
+      <div className="max-w-6xl mx-auto">
+        <h2 className="font-display text-4xl md:text-6xl mb-12">Five scenes that never were</h2>
+        <div className="flex flex-col md:flex-row gap-3 h-[420px]">
+          {slices.map((sl,i) => (
+            <div key={i}
+              onMouseEnter={() => setActive(i)}
+              className="accordion-slice relative overflow-hidden rounded-2xl cursor-pointer border border-white/10"
+              style={{ flexGrow: active===i ? 6 : 1 }}>
+              <img src={pic(sl.s,1400,900)} alt="" className="absolute inset-0 w-full h-full object-cover contrast-125 saturate-150" />
+              <div className="absolute inset-0 bg-gradient-to-t from-void via-void/40 to-transparent" />
+              <div className="absolute bottom-0 p-6 w-[60vw] md:w-auto">
+                <span className={"font-head tracking-[.2em] text-xs uppercase "+sl.c}>{String(i+1).padStart(2,"0")}</span>
+                <h3 className="font-display text-2xl md:text-3xl mt-1 whitespace-nowrap">{sl.t}</h3>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ===================== POSTER / TITLE ART + CREDITS =====================
+function Poster() {
+  const credits = [
+    ["Original screenplay","A surrealist, 1937"],
+    ["Generative film","Across five models"],
+    ["Original score","Composed by hand"],
+    ["Sound design","Spatial, dimensional"],
+    ["Post production","Restored and graded"],
+    ["Presented by","An imagined archive"],
+  ];
+  return (
+    <section className="relative py-32 md:py-52 px-6 overflow-hidden">
+      <div className="absolute inset-0">
+        <img src={pic("mirror-faces-tophat",2000,1200)} alt="" className="w-full h-full object-cover opacity-50 contrast-125" />
+        <div className="absolute inset-0" style={{background:"radial-gradient(60% 70% at 50% 45%, rgba(7,6,19,.2), #070613 78%)"}} />
+        <div className="absolute inset-0" style={{background:"radial-gradient(40% 30% at 50% 62%, rgba(228,80,27,.45), transparent 70%)"}} />
+      </div>
+      <div className="relative z-10 max-w-5xl mx-auto text-center">
+        <p className="font-head tracking-[.4em] text-paper/60 text-xs uppercase mb-6">Inspired by an original screenplay</p>
+        <h2 className="font-display text-orchid leading-[.9]" style={{fontSize:"clamp(2.5rem,10vw,7.5rem)"}}>
+          Giraffes <span className="italic">on</span> Horseback Salad
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-6 mt-16 text-left max-w-3xl mx-auto">
+          {credits.map(([k,v],i) => (
+            <div key={i} className="border-t border-white/15 pt-3">
+              <p className="font-head tracking-[.18em] text-paper/50 text-[10px] uppercase">{k}</p>
+              <p className="font-body text-paper text-sm mt-1">{v}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ===================== PINNED HORIZONTAL ARCHIVE =====================
+function Archive() {
+  const sectionRef = useRef(null);
+  const trackRef = useRef(null);
+  const titleRef = useRef(null);
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const track = trackRef.current;
+      const amount = () => track.scrollWidth - window.innerWidth;
+      gsap.to(track, {
+        x: () => -amount(),
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current, start: "top top",
+          end: () => "+=" + amount(), scrub: 1, pin: true, invalidateOnRefresh: true
+        }
+      });
+      // header fades out over the first third of the pinned scroll
+      gsap.to(titleRef.current, {
+        opacity: 0, ease: "none",
+        scrollTrigger: {
+          trigger: sectionRef.current, start: "top top",
+          end: () => "+=" + amount() * 0.35, scrub: true, invalidateOnRefresh: true
+        }
+      });
+    }, sectionRef);
+    return () => ctx.revert();
+  }, []);
+  return (
+    <section id="archive" ref={sectionRef} className="relative h-screen overflow-hidden bg-void">
+      <div ref={titleRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-6 pointer-events-none">
+        <div className="absolute w-[80vw] h-[60vh] rounded-full"
+             style={{background:"radial-gradient(closest-side, rgba(7,6,19,.82), transparent 80%)"}} />
+        <h2 className="relative font-display leading-[.95]" style={{fontSize:"clamp(3.5rem,11vw,9rem)"}}>The archive</h2>
+        <p className="relative font-body text-paper/70 mt-4 whitespace-nowrap" style={{fontSize:"clamp(.7rem,2.1vw,1.2rem)"}}>Thousands of frames, generated and culled. A wall of dreams.</p>
+      </div>
+      <div ref={trackRef} className="absolute top-0 left-0 h-full flex items-center gap-4 pl-6 md:pl-10 pr-[40vw] will-change-transform">
+        {FRAME_SEEDS.map((s,i) => (
+          <div key={i} className="group relative shrink-0 w-[clamp(220px,26vw,380px)] aspect-video overflow-hidden border border-white/10">
+            <img src={pic(s,800,500)} alt="" className="w-full h-full object-cover contrast-125 saturate-150 group-hover:scale-110 transition-transform duration-700" />
+            <div className="absolute inset-0 bg-void/10 group-hover:bg-void/0 transition" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ===================== FRAME WALL (scale/fade reveal) =====================
+function Wall() {
+  const ref = useRef(null);
+  const COLS = 6, ROWS = 5;            // md grid is 6 wide; 30 cells -> 5 rows
+  useEffect(() => {
+    let cleanup = () => {};
+    whenAnime(({ animate, stagger }) => {
+      const cells = ref.current.querySelectorAll(".cell");
+      // Hide only once anime is confirmed present, so a CDN failure leaves the
+      // wall visible rather than blank.
+      animate(cells, { scale: 0.2, opacity: 0, duration: 0 });
+      // grid stagger from center — the anime.js "Advanced staggering" effect
+      cleanup = onEnter(ref.current, () => {
+        animate(cells, {
+          scale: 1,
+          opacity: 1,
+          duration: 900,
+          ease: "outElastic(1, .8)",
+          delay: stagger(45, { grid: [COLS, ROWS], from: "center" })
+        });
+      });
+    });
+    return () => cleanup();
+  }, []);
+  return (
+    <section className="py-24 md:py-40 px-6">
+      <div ref={ref} className="max-w-6xl mx-auto grid grid-cols-3 md:grid-cols-6 gap-2 grid-flow-row-dense">
+        {FRAME_SEEDS.concat(FRAME_SEEDS.slice(0,6)).map((s,i) => (
+          <div key={i} className="cell group relative aspect-video overflow-hidden rounded-md">
+            <img src={pic(s+"-wall",500,320)} alt="" className="w-full h-full object-cover contrast-125 saturate-150 group-hover:scale-110 transition-transform duration-700" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ===================== REALITY band =====================
+function RealityBand() {
+  return (
+    <section className="relative h-[80vh] flex items-center justify-center overflow-hidden">
+      <img src={pic("burning-boat-desert",2000,1100)} alt="" className="absolute inset-0 w-full h-full object-cover contrast-125" />
+      <div className="absolute inset-0" style={{background:"linear-gradient(180deg, rgba(2,51,80,.55), rgba(7,6,19,.5))"}} />
+      <h2 className="relative z-10 font-display text-paper text-center px-6 flex flex-wrap items-baseline justify-center gap-x-6"
+          style={{fontSize:"clamp(2rem,7vw,5rem)"}}>
+        <span className="text-2xl md:text-4xl font-normal">where</span>
+        <span className="text-acid font-bold tracking-tight" style={{fontSize:"clamp(3rem,12vw,9rem)"}}>REALITY</span>
+        <span className="text-2xl md:text-4xl font-normal">burns</span>
+        <span className="text-2xl md:text-4xl font-normal italic">away</span>
+      </h2>
+    </section>
+  );
+}
+
+// ===================== MARQUEE + FOOTER (action) =====================
+function Marquee() {
+  const items = ["Original screenplay","Generative film","Imagined archive","Original score","Sound design","Post production"];
+  const row = [...items, ...items];
+  return (
+    <div className="py-10 border-y border-white/10 overflow-hidden">
+      <div className="marquee-track flex gap-16 whitespace-nowrap w-max">
+        {row.map((t,i) => (
+          <span key={i} className="font-head tracking-[.18em] uppercase text-paper/40 text-lg flex items-center gap-16">
+            {t} <span className="text-coral">✶</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Footer() {
+  return (
+    <footer id="enter" className="relative">
+      <section className="py-32 md:py-52 px-6 text-center relative overflow-hidden">
+        <div className="absolute inset-0" style={{background:"radial-gradient(50% 60% at 50% 50%, rgba(228,80,27,.25), transparent 70%)"}} />
+        <div className="relative z-10 max-w-5xl mx-auto">
+          <h2 className="font-display leading-[.95]" style={{fontSize:"clamp(2.8rem,9vw,7rem)"}}>
+            See where <span className="italic text-acid">reality</span> burns away
+          </h2>
+          <a href="#top" className="inline-block mt-12 rounded-full bg-coral text-void font-head font-semibold uppercase tracking-[.18em] text-sm px-10 py-5 hover:brightness-110 transition">
+            Enter the film
+          </a>
+        </div>
+      </section>
+      <Marquee />
+      <div className="max-w-6xl mx-auto px-6 py-14 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <span className="font-head tracking-[.34em] text-paper text-lg">REVERIE</span>
+        <div className="flex gap-8 font-body text-sm text-paper/50">
+          <a href="#film" className="hover:text-cyan transition">The Film</a>
+          <a href="#scenes" className="hover:text-cyan transition">Scenes</a>
+          <a href="#archive" className="hover:text-cyan transition">Archive</a>
+        </div>
+        <p className="font-body text-xs text-paper/35">A token-driven concept · not affiliated with any institution</p>
+      </div>
+    </footer>
+  );
+}
+
+// ============================ APP ============================
+function App() {
+  useEffect(() => {
+    const t = setTimeout(() => ScrollTrigger.refresh(), 600);
+    window.addEventListener("load", () => ScrollTrigger.refresh());
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <main className="overflow-x-hidden w-full max-w-full bg-void">
+      <Nav />
+      <Hero />
+      <Prose />
+      <Bento />
+      <Statement />
+      <Scenes />
+      <Poster />
+      <Archive />
+      <Wall />
+      <RealityBand />
+      <Footer />
+    </main>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

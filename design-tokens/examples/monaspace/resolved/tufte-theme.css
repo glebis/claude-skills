@@ -1,0 +1,19 @@
+/* tufte-report theme for Monaspace
+   Maps brand token roles onto /tufte-report's CSS variables (SKILL
+   CONVENTION, not DTCG). Paste into the report's :root, or hand to
+   /tufte-report as the palette. Roles with no matching token fall back
+   to tufte-report's own defaults. */
+:root {
+  --ink: #FFFFFF;   /* near-black primary text (from token) */
+  --bg: #0D1117;   /* warm-white background (from token) */
+  --spark-primary: #F5B8A5;   /* primary data stream / effort (from token) */
+  --spark-secondary: #B6D162;   /* growth / health signal (from token) */
+  --spark-tertiary: #BC9AFA;   /* social / secondary stream (from token) */
+  --status-red: #a02a2a;   /* alerts, negative trend (tufte default) */
+  --status-amber: #F1E170;   /* watch-level signal (from token) */
+  --status-green: #B6D162;   /* healthy baseline (from token) */
+  --accent: #BC9AFA;   /* aside markers, flyout diamonds (from token) */
+}
+
+/* tufte-report uses EB Garamond (text) + Monaspace Argon (numbers).
+   Brand fonts available to swap in: Monaspace Argon, ui-monospace, monospace, Monaspace Krypton, Monaspace Neon, Monaspace Radon, cursive, Monaspace Xenon, serif. */

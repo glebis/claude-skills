@@ -1,0 +1,49 @@
+{
+  "color": {
+    "$type": "color",
+    "teal-600": { "$value": "#0E7C7B" },
+    "coral-500": { "$value": "#F2714E" },
+    "ink-900": { "$value": "#13201F" },
+    "paper-50": { "$value": "#FBF7F0" },
+    "moss-500": { "$value": "#3E8E5A" },
+    "amber-500": { "$value": "#D99A2B" },
+    "rust-500": { "$value": "#C24330" },
+    "primary": { "$value": "{color.teal-600}" },
+    "accent": { "$value": "{color.coral-500}" },
+    "text": { "$value": "{color.ink-900}" },
+    "background": { "$value": "{color.paper-50}" },
+    "success": { "$value": "{color.moss-500}" },
+    "warning": { "$value": "{color.amber-500}" },
+    "danger": { "$value": "{color.rust-500}" }
+  },
+  "space": {
+    "$type": "dimension",
+    "sm": { "$value": { "value": 8, "unit": "px" } },
+    "md": { "$value": { "value": 16, "unit": "px" } },
+    "lg": { "$value": { "value": 32, "unit": "px" } }
+  },
+  "radius": {
+    "$type": "dimension",
+    "md": { "$value": { "value": 12, "unit": "px" } }
+  },
+  "type": {
+    "display": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Fraunces",
+        "fontSize": { "value": 40, "unit": "px" },
+        "fontWeight": 600,
+        "lineHeight": 1.1
+      }
+    },
+    "body": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": { "value": 16, "unit": "px" },
+        "fontWeight": 400,
+        "lineHeight": 1.5
+      }
+    }
+  }
+}
