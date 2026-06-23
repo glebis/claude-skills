@@ -19,7 +19,9 @@ validate, merge (global base + project override), resolve aliases, and export CS
 
 Supported `$type`: `color` (string values), `dimension`, `duration`, `fontFamily`,
 `fontWeight`, `number`, `typography`, `shadow`. Outputs: CSS custom properties, a
-Google-Labs **DESIGN.md** (alpha), and a standalone HTML preview. CSS **import**
+Google-Labs **DESIGN.md** (alpha), a standalone HTML preview, and **generation
+prompts** (gpt-image-2 / nano-banana CLI lines + a `/tufte-report` theme) via the
+prompt door. CSS **import**
 covers color/dimension/duration/fontFamily/number; composite values (box-shadow,
 gradients, multi-part typography) are skipped and reported. Not in v1: JSON Pointer
 `$ref`, `$root`, structured color objects, name-restriction enforcement, Style
@@ -31,15 +33,39 @@ Run via `scripts/tokens <command>` (or `PYTHONPATH=scripts python3 -m dtokens.cl
 
 | Command | What it does |
 | --- | --- |
-| `setup-edit <dest>` | Scaffold a template token file at `<dest>` and validate it (refuses to overwrite). |
+| `setup-edit <dest> [--from SRC]` | Scaffold a token file at `<dest>` and validate it (refuses to overwrite). With `--from`, deterministically clone an existing set's structure + content to edit (byte-stable for a given source) instead of the blank template. |
 | `import <css> [-o OUT]` | Import a CSS file's `:root` custom properties into DTCG, preserving variable names. Skips composites (shadow/gradient) and reports them on stderr. |
 | `validate <file>` | Print `OK` or a list of errors; exit 1 if invalid. |
 | `merge <base> <override> [-o OUT]` | Layer project override on global base. |
 | `resolve <file> [-o OUT]` | Flatten aliases to concrete values (JSON map). |
 | `export-css <file> [--selector SEL] [-o OUT]` | Emit CSS custom properties. |
 | `design-md <file> [--name N] [--description D] [-o OUT]` | Emit a Google-Labs [DESIGN.md](https://github.com/google-labs-code/design.md) (alpha) — YAML token frontmatter + prose body. |
-| `preview <file> [--name N] [-o OUT]` | Emit a standalone HTML swatch page (colors, type specimens, spacing, rounded, shadow). |
-| `use <file> [--name N] [--description D] [--out-dir DIR]` | Validate + resolve, then write `tokens.css`, `DESIGN.md`, and `preview.html`. |
+| `preview <file> [--name N] [-o OUT]` | Emit a standalone HTML swatch page (colors, type specimens, spacing, rounded, shadow). Type specimens load their families via a deterministic Google Fonts `@import` so brand faces render (degrades to a generic fallback offline / for non-Google fonts). |
+| `prompt <file> [--target gpt-image-2\|nano-banana\|tufte\|all] [--preset P ...] [--platform P] [--subject S] [--name N] [-o OUT]` | The **prompt door**: turn resolved tokens into ready-to-paste generation prompts. Image targets emit per-preset CLI invocations with the brand's hex/fonts/shape baked into the subject; `tufte` emits a CSS `:root` theme mapping brand roles onto `/tufte-report`'s variables. |
+| `use <file> [--name N] [--description D] [--out-dir DIR]` | Validate + resolve, then write `tokens.css`, `DESIGN.md`, `preview.html`, `image-prompts.md`, and `tufte-theme.css`. |
+
+## Prompt door (tokens → generation)
+
+The spine ends at CSS/DESIGN.md; the **prompt door** carries the brand onward
+into image and report generation so it never needs hand-translating. All of this
+is **skill convention**, not DTCG — colour *roles*, the curated preset picks, and
+the tufte variable map are generation aids layered on the standard.
+
+- **Brand summary** (`brand_summary.py`): distils resolved tokens into palette
+  (with roles inferred from token names: `primary`, `text`, `background`,
+  `accent`, `success`, `warning`, `danger`, `muted`), fonts, type specimens, and
+  a shape word from the largest corner radius (`sharp`/`soft`/`rounded`/`pill`).
+- **`gpt-image-2`**: emits CLI lines across that tool's **unique** presets
+  (`editorial`, `bauhaus`, `isometric`, `poster`) so one brand yields distinct
+  moods; the brand's exact hex/fonts/shape are baked into each subject.
+- **`nano-banana`**: steers to *its* edge — accurate in-image text (`--model
+  pro`) and reference-image anchoring — over the shared presets. (It has no
+  presets unique to itself; its set is a subset of gpt-image-2's shared eight.)
+- **`tufte`**: emits a `:root` block mapping brand roles onto `/tufte-report`'s
+  own variables (`--ink`, `--bg`, `--spark-primary/secondary/tertiary`,
+  `--status-red/amber/green`, `--accent`). Roles with no matching token fall back
+  to tufte-report's defaults, labelled inline. (`/tufte-report` consumes a theme,
+  not a DESIGN.md.)
 
 ## DESIGN.md output
 

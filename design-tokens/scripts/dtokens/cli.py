@@ -9,6 +9,7 @@ from . import TokenError
 from . import export_css as export_css_mod
 from . import export_design_md as design_md_mod
 from . import export_preview_html as preview_mod
+from . import export_prompt as prompt_mod
 from . import import_css as import_css_mod
 from . import merge as merge_mod
 from . import model
@@ -58,14 +59,34 @@ def _cmd_setup_edit(args):
     if dest.exists():
         print(f"refusing to overwrite existing file: {dest}")
         return 1
+    if args.source:
+        # Generate from a previous set: a deterministic, validated clone of an
+        # existing token file's structure + content to edit. Insertion order is
+        # preserved and serialization is fixed, so a given source always yields
+        # byte-identical output.
+        src = pathlib.Path(args.source)
+        if not src.exists():
+            print(f"--from source not found: {src}")
+            return 1
+        src_errors = validate_mod.validate(model.load(str(src)))
+        if src_errors:
+            print(f"--from source is not a valid token set: {src}")
+            for e in src_errors:
+                print(e)
+            return 1
+        content = json.dumps(
+            json.loads(src.read_text(encoding="utf-8")), indent=2, ensure_ascii=False
+        ) + "\n"
+    else:
+        content = _TEMPLATE.read_text(encoding="utf-8")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(_TEMPLATE.read_text(encoding="utf-8"), encoding="utf-8")
+    dest.write_text(content, encoding="utf-8")
     errors = validate_mod.validate(model.load(str(dest)))
     if errors:
         for e in errors:
             print(e)
         return 1
-    print(f"scaffolded {dest}")
+    print(f"scaffolded {dest}" + (f" from {args.source}" if args.source else ""))
     return 0
 
 
@@ -99,6 +120,23 @@ def _cmd_preview(args):
     return 0
 
 
+def _cmd_prompt(args):
+    resolved = resolve_mod.resolve(model.load(args.file))
+    name = args.name or pathlib.Path(args.file).stem
+    targets = ["gpt-image-2", "nano-banana", "tufte"] if args.target == "all" else [args.target]
+    chunks = []
+    for target in targets:
+        if target == "tufte":
+            chunks.append(prompt_mod.to_tufte_theme(resolved, name))
+        else:
+            chunks.append(prompt_mod.to_image_prompts(
+                resolved, name, target, presets=args.preset,
+                platform=args.platform, subject=args.subject,
+            ))
+    _emit("\n".join(chunks), args.out)
+    return 0
+
+
 def _cmd_use(args):
     tree = model.load(args.file)
     errors = validate_mod.validate(tree)
@@ -117,7 +155,20 @@ def _cmd_use(args):
     (out_dir / "preview.html").write_text(
         preview_mod.to_preview_html(resolved, name), encoding="utf-8"
     )
-    print(f"wrote {out_dir / 'tokens.css'}, {out_dir / 'DESIGN.md'} and {out_dir / 'preview.html'}")
+    # Bridge artifacts: tokens -> downstream generation (the prompt door).
+    image_prompts = "\n".join(
+        prompt_mod.to_image_prompts(resolved, name, t)
+        for t in ("gpt-image-2", "nano-banana")
+    )
+    (out_dir / "image-prompts.md").write_text(image_prompts, encoding="utf-8")
+    (out_dir / "tufte-theme.css").write_text(
+        prompt_mod.to_tufte_theme(resolved, name), encoding="utf-8"
+    )
+    print(
+        f"wrote {out_dir / 'tokens.css'}, {out_dir / 'DESIGN.md'}, "
+        f"{out_dir / 'preview.html'}, {out_dir / 'image-prompts.md'} and "
+        f"{out_dir / 'tufte-theme.css'}"
+    )
     return 0
 
 
@@ -148,6 +199,8 @@ def _build_parser():
 
     ss = sub.add_parser("setup-edit")
     ss.add_argument("dest")
+    ss.add_argument("--from", dest="source",
+                    help="generate from an existing token set (deterministic validated clone)")
     ss.set_defaults(func=_cmd_setup_edit)
 
     sd = sub.add_parser("design-md")
@@ -167,6 +220,18 @@ def _build_parser():
     sp.add_argument("--name")
     sp.add_argument("-o", "--out")
     sp.set_defaults(func=_cmd_preview)
+
+    spr = sub.add_parser("prompt", help="emit generation prompts / theme from tokens")
+    spr.add_argument("file")
+    spr.add_argument("--target", choices=["gpt-image-2", "nano-banana", "tufte", "all"],
+                     default="all")
+    spr.add_argument("--preset", action="append",
+                     help="override curated presets (image targets; repeatable)")
+    spr.add_argument("--platform", default="square")
+    spr.add_argument("--subject", help="override the brand mood-board subject")
+    spr.add_argument("--name")
+    spr.add_argument("-o", "--out")
+    spr.set_defaults(func=_cmd_prompt)
 
     su = sub.add_parser("use")
     su.add_argument("file")

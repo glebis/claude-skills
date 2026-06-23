@@ -15,8 +15,18 @@ def test_preview_is_standalone_html():
     assert out.startswith("<!doctype html>")
     assert out.rstrip().endswith("</body></html>")
     assert "Test Brand" in out
-    # no external resources
-    assert "http://" not in out and "https://" not in out
+    # The only permitted external reference is the Google Fonts @import (so the
+    # brand typefaces actually render); no external CSS/JS files or <img>.
+    assert "<script src" not in out and '<link rel="stylesheet"' not in out
+    assert "<img" not in out
+    for url in [u for u in out.split("'") if u.startswith(("http://", "https://"))]:
+        assert url.startswith("https://fonts.googleapis.com/css2?"), url
+
+
+def test_preview_imports_brand_fonts_deterministically():
+    out = export_preview_html.to_preview_html(_resolved(), "X")
+    # families + weights sorted -> byte-stable URL; fixture uses Inter 400
+    assert "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap')" in out
 
 
 def test_preview_renders_color_chip_with_value():

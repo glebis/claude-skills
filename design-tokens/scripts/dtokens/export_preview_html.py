@@ -31,6 +31,36 @@ def _esc(s):
     return html.escape(str(s), quote=True)
 
 
+def _google_fonts_import(typography):
+    """Deterministic Google Fonts @import for the families/weights in use.
+
+    A brand preview must render the actual typefaces; without this the
+    specimens silently fall back to the browser's generic sans/serif and the
+    type is "not represented". Non-Google families simply return nothing from
+    the request and the generic fallback in `_type_section` still applies, so
+    this degrades gracefully (incl. offline). Families and weights are sorted
+    so the URL is byte-stable across runs.
+    """
+    fams = {}  # family -> set(weights)
+    for t in typography.values():
+        fam = t.get("fontFamily")
+        if not fam or "," in fam:  # skip explicit multi-font stacks
+            continue
+        weights = fams.setdefault(fam, set())
+        w = t.get("fontWeight")
+        if w is not None:
+            weights.add(str(w))
+    if not fams:
+        return ""
+    specs = []
+    for fam in sorted(fams):
+        name = fam.replace(" ", "+")
+        weights = sorted(fams[fam], key=lambda x: (not x.isdigit(), x.zfill(3)))
+        specs.append(f"family={name}:wght@{';'.join(weights)}" if weights else f"family={name}")
+    url = "https://fonts.googleapis.com/css2?" + "&".join(specs) + "&display=swap"
+    return f"  @import url('{url}');\n"
+
+
 def _color_section(colors):
     cells = []
     for name, value in colors.items():
@@ -106,7 +136,7 @@ def to_preview_html(resolved, name):
         '<html lang="en"><head><meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
         f"<title>{_esc(name)} &mdash; token preview</title>",
-        f"<style>\n{_PAGE_CSS}</style></head><body>",
+        f"<style>\n{_google_fonts_import(typography)}{_PAGE_CSS}</style></head><body>",
         f"<h1>{_esc(name)}</h1>",
         '<p class="sub">design-tokens preview &middot; generated</p>',
     ]

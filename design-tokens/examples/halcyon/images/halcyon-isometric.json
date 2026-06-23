@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-23T17:27:53.800250",
+  "prompt": "abstract brand mood board for Halcyon, geometric composition expressing the brand's character, color palette: primary #0E7C7B, accent #F2714E, text #13201F, background #FBF7F0, success #3E8E5A, warning #D99A2B, danger #C24330, typography: Inter, Fraunces, rounded corners",
+  "preset": "isometric",
+  "platform": "square",
+  "thinking": "low",
+  "quality": "high",
+  "provider": "openai",
+  "n": 1,
+  "seed": null,
+  "output": "/Users/glebkalinin/ai_projects/claude-skills/design-tokens/examples/halcyon/images/halcyon-isometric.png",
+  "project": null,
+  "estimated_cost": 0.25
+}
