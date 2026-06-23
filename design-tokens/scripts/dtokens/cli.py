@@ -14,6 +14,7 @@ from . import import_css as import_css_mod
 from . import merge as merge_mod
 from . import model
 from . import resolve as resolve_mod
+from . import serve as serve_mod
 from . import validate as validate_mod
 
 _TEMPLATE = pathlib.Path(__file__).resolve().parents[2] / "templates" / "base.tokens.json"
@@ -24,6 +25,26 @@ def _emit(text, out):
         pathlib.Path(out).write_text(text, encoding="utf-8")
     else:
         print(text, end="" if text.endswith("\n") else "\n")
+
+
+def _maybe_serve(args, directory, open_path):
+    """Serve previews over HTTP by default when interactive (avoids file:// origin
+    breakage). `--serve`/`--no-serve` force it; non-TTY (scripts/CI) defaults off."""
+    want = getattr(args, "serve", None)
+    if want is None:
+        want = sys.stdout.isatty()
+    if want:
+        serve_mod.serve(directory, open_path, port=getattr(args, "port", None),
+                        open_browser=not getattr(args, "no_open", False))
+
+
+def _add_serve_flags(parser):
+    parser.add_argument("--serve", dest="serve", action="store_true", default=None,
+                        help="serve the output over HTTP and open it (default: on when interactive)")
+    parser.add_argument("--no-serve", dest="serve", action="store_false",
+                        help="just write files; do not serve")
+    parser.add_argument("--port", type=int, help="port for --serve (default: first free from 8787)")
+    parser.add_argument("--no-open", action="store_true", help="serve but do not open a browser")
 
 
 def _cmd_validate(args):
@@ -116,7 +137,22 @@ def _cmd_import(args):
 def _cmd_preview(args):
     resolved = resolve_mod.resolve(model.load(args.file))
     name = args.name or pathlib.Path(args.file).stem
-    _emit(preview_mod.to_preview_html(resolved, name), args.out)
+    if args.full:
+        html = preview_mod.to_full_preview_html(resolved, name, args.description)
+    else:
+        html = preview_mod.to_preview_html(resolved, name)
+    # Default to a served file when interactive: write next to the source if no
+    # -o was given, so the preview opens over http (not file://).
+    out = args.out
+    if out is None and (getattr(args, "serve", None) or
+                        (args.serve is None and sys.stdout.isatty())):
+        out = str(pathlib.Path(args.file).with_suffix("").as_posix() + ".preview.html")
+    if out:
+        pathlib.Path(out).write_text(html, encoding="utf-8")
+        print(f"wrote {out}")
+        _maybe_serve(args, pathlib.Path(out).resolve().parent, pathlib.Path(out))
+    else:
+        _emit(html, None)
     return 0
 
 
@@ -134,6 +170,19 @@ def _cmd_prompt(args):
                 platform=args.platform, subject=args.subject,
             ))
     _emit("\n".join(chunks), args.out)
+    return 0
+
+
+def _cmd_serve(args):
+    path = pathlib.Path(args.path)
+    if not path.exists():
+        print(f"not found: {path}")
+        return 1
+    if path.is_dir():
+        directory, open_path = path, None
+    else:
+        directory, open_path = path.parent, path
+    serve_mod.serve(directory, open_path, port=args.port, open_browser=not args.no_open)
     return 0
 
 
@@ -155,6 +204,9 @@ def _cmd_use(args):
     (out_dir / "preview.html").write_text(
         preview_mod.to_preview_html(resolved, name), encoding="utf-8"
     )
+    (out_dir / "preview-full.html").write_text(
+        preview_mod.to_full_preview_html(resolved, name, args.description), encoding="utf-8"
+    )
     # Bridge artifacts: tokens -> downstream generation (the prompt door).
     image_prompts = "\n".join(
         prompt_mod.to_image_prompts(resolved, name, t)
@@ -166,9 +218,10 @@ def _cmd_use(args):
     )
     print(
         f"wrote {out_dir / 'tokens.css'}, {out_dir / 'DESIGN.md'}, "
-        f"{out_dir / 'preview.html'}, {out_dir / 'image-prompts.md'} and "
-        f"{out_dir / 'tufte-theme.css'}"
+        f"{out_dir / 'preview.html'}, {out_dir / 'preview-full.html'}, "
+        f"{out_dir / 'image-prompts.md'} and {out_dir / 'tufte-theme.css'}"
     )
+    _maybe_serve(args, out_dir, out_dir / "preview-full.html")
     return 0
 
 
@@ -218,7 +271,11 @@ def _build_parser():
     sp = sub.add_parser("preview")
     sp.add_argument("file")
     sp.add_argument("--name")
+    sp.add_argument("--full", action="store_true",
+                    help="render a full landing-page mockup (brand in situ) instead of a swatch sheet")
+    sp.add_argument("--description", help="lede/about copy for --full")
     sp.add_argument("-o", "--out")
+    _add_serve_flags(sp)
     sp.set_defaults(func=_cmd_preview)
 
     spr = sub.add_parser("prompt", help="emit generation prompts / theme from tokens")
@@ -238,7 +295,14 @@ def _build_parser():
     su.add_argument("--name")
     su.add_argument("--description")
     su.add_argument("--out-dir")
+    _add_serve_flags(su)
     su.set_defaults(func=_cmd_use)
+
+    sserve = sub.add_parser("serve", help="serve a file or directory over HTTP and open it")
+    sserve.add_argument("path", help="a generated .html file or an output directory")
+    sserve.add_argument("--port", type=int)
+    sserve.add_argument("--no-open", action="store_true")
+    sserve.set_defaults(func=_cmd_serve)
 
     return p
 

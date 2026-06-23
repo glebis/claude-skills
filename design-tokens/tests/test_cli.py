@@ -49,6 +49,23 @@ def test_setup_edit_refuses_overwrite(tmp_path):
     assert rc == 1
 
 
+def test_setup_edit_from_clones_source_deterministically(tmp_path):
+    src = FIXTURES / "global.base.tokens.json"
+    a = tmp_path / "a.tokens.json"
+    b = tmp_path / "b.tokens.json"
+    assert cli.main(["setup-edit", str(a), "--from", str(src)]) == 0
+    assert cli.main(["setup-edit", str(b), "--from", str(src)]) == 0
+    # same source -> byte-identical output, and content matches the source tree
+    assert a.read_text() == b.read_text()
+    assert json.loads(a.read_text()) == json.loads(src.read_text())
+
+
+def test_setup_edit_from_rejects_missing_source(tmp_path, capsys):
+    rc = cli.main(["setup-edit", str(tmp_path / "x.tokens.json"), "--from", str(tmp_path / "nope.json")])
+    assert rc == 1
+    assert "not found" in capsys.readouterr().out
+
+
 def test_use_writes_css_and_design_md(tmp_path):
     rc = cli.main([
         "use",
