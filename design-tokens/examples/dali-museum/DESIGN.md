@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: "The Dalí Museum — Giraffes on Horseback Salad"
-description: "Surrealist, cinematic landing/presentation brand: near-black cosmic base, coral fire as primary, cyan as cool counterweight, with orchid/acid/crimson dream accents."
+description: "A surrealist screenplay Dalí abandoned in 1937, long considered unfilmable — completed by AI in collaboration with Google and the Dalí Museum. A dialogue between human and machine, artist and algorithm."
 colors:
   abyss-900: "#082224"
   accent: "#2fb9ca"
@@ -67,7 +67,7 @@ spacing:
 
 ## Overview
 
-Surrealist, cinematic landing/presentation brand: near-black cosmic base, coral fire as primary, cyan as cool counterweight, with orchid/acid/crimson dream accents.
+A surrealist screenplay Dalí abandoned in 1937, long considered unfilmable — completed by AI in collaboration with Google and the Dalí Museum. A dialogue between human and machine, artist and algorithm.
 
 ## Colors
 
