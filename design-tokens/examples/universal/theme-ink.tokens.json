@@ -1,0 +1,27 @@
+{
+  "$description": "INK theme — override file (skill convention: global base + project override via `merge`). Merged onto base.tokens.json it flips paper→ink: the dark Monaspace developer look. This is the entire theme delta — colours, the three font roles, texture density, and the accent glow. Structure (scale, space, type sizes, layout) is inherited unchanged.",
+  "color": {
+    "$type": "color",
+    "surface":        { "$value": "#0D1117" },
+    "surface-raised": { "$value": "#11161D" },
+    "ink":            { "$value": "#FFFFFF" },
+    "ink-muted":      { "$value": "#B7BFC8" },
+    "accent":         { "$value": "#F5B8A5" },
+    "accent-soft":    { "$value": "#BC9AFA" },
+    "border":         { "$value": "#2F353C" },
+    "rule":           { "$value": "#2F353C" }
+  },
+  "font": {
+    "$type": "fontFamily",
+    "display": { "$value": ["Monaspace Xenon", "ui-serif", "serif"] },
+    "body":    { "$value": ["Monaspace Neon", "ui-monospace", "monospace"] },
+    "mono":    { "$value": ["Monaspace Argon", "ui-monospace", "monospace"] }
+  },
+  "texture": {
+    "gap":     { "$type": "dimension", "$value": { "value": 22, "unit": "px" } },
+    "opacity": { "$type": "number",    "$value": 0.05 }
+  },
+  "elevation": {
+    "glow-opacity": { "$type": "number", "$value": 0.4 }
+  }
+}

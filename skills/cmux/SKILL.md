@@ -48,8 +48,8 @@ cmux new-pane --type browser --direction right --url http://localhost:8080/<file
 When dispatching parallel agents (via `superpowers:dispatching-parallel-agents` or similar), give each agent its own named cmux workspace so it's visible in the sidebar:
 
 ```bash
-# Create a workspace per agent
-cmux new-workspace --cwd /path/to/project --command "claude --dangerously-skip-permissions"
+# Create a workspace per agent (new-workspace has no --cwd — cd inside --command)
+cmux new-workspace --command "cd /path/to/project && claude --dangerously-skip-permissions"
 cmux rename-workspace "agent: fix-auth"
 
 # Set status so the sidebar shows what the agent is doing
@@ -117,6 +117,39 @@ cmux resize-pane --pane <id> -D --amount 20   # shrink height by 20 rows
 | "below" / "at the bottom" | `--direction down` |
 | "above" / "at the top" | `--direction up` |
 | "in a new tab" / "new workspace" | `cmux new-workspace` |
+
+---
+
+### 5. Workspace & Tab Actions
+
+`workspace-action` and `tab-action` expose the right-click context-menu actions.
+Full table with flags in `references/api_reference.md` — the available action names are:
+
+**`cmux workspace-action --action <name>`** (sidebar workspaces):
+`pin` · `unpin` · `rename` (needs `--title`) · `clear-name` · `move-up` · `move-down` ·
+`move-top` · `mark-read` · `mark-unread` · `close-others` · `close-above` · `close-below`
+
+**`cmux tab-action --action <name>`** (horizontal tabs):
+`rename` · `clear-name` · `pin` · `unpin` · `reload` · `duplicate` ·
+`new-terminal-right` · `new-browser-right` · `mark-read` · `mark-unread` ·
+`close-left` · `close-right` · `close-others`
+
+> ⚠️ **Destructive actions act on OTHER tabs, not the one you name.**
+> `close-others` / `close-above` / `close-below` (workspace) and
+> `close-left` / `close-right` / `close-others` (tab) close everything *except* the
+> target. `close-others` spares **pinned** workspaces only. Never run these to
+> "test" — they will close the user's live tabs. Prefer `close-workspace --workspace <id>`
+> to close one specific workspace.
+
+**Renaming / selecting (common gotchas):**
+- Rename the sidebar/switcher label → `cmux workspace-action --action rename --title "<name>"`
+  (or `cmux rename-workspace <name>`). `rename-tab` only renames an inner tab and does
+  **not** change the switcher label.
+- Select/focus a workspace → `cmux select-workspace --workspace <id>`. There is no
+  `--action select` (it errors "Unknown workspace action").
+
+When unsure of a command's exact flags, run `cmux <command> --help` — every command
+embeds full usage.
 
 ---
 
@@ -208,7 +241,7 @@ Run demos based on Screen 1 answer. Each demo: announce what's happening, execut
 4. Suggest: "Watch this sidebar during your next vault scan or research sweep"
 
 **C — Subagent workspaces** (coding agent manager, show everything)
-1. `cmux new-workspace --cwd ~ --command "echo 'agent: fix-auth'"` + rename
+1. `cmux new-workspace --command "echo 'agent: fix-auth'"` + rename
 2. `cmux set-status` with agent name + color
 3. `cmux notify` simulating completion
 4. `cmux close-workspace` cleanup

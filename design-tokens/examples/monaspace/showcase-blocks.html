@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<!--
+  Monaspace — nine blocks, generated from showcase.tokens.json.
+  Styling is LINKED (showcase.tokens.css), not hand-written: edit the tokens,
+  re-run `tokens export-css examples/monaspace/showcase.tokens.json
+  -o examples/monaspace/showcase.tokens.css`, reload — the page restyles itself.
+  Every "how it looks" decision below resolves to a CSS var. The "tokens" badge
+  on each block names the vars it consumes — design talking in code.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monaspace — nine blocks from tokens</title>
+<link rel="stylesheet" href="showcase.tokens.css">
+<style>
+  @font-face{font-family:"Monaspace Neon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceNeon-Regular.woff2") format("woff2");font-weight:200 800;font-display:swap}
+  @font-face{font-family:"Monaspace Argon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceArgon-Regular.woff2") format("woff2");font-weight:200 800;font-display:swap}
+  @font-face{font-family:"Monaspace Xenon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceXenon-Regular.woff2") format("woff2");font-weight:200 800;font-display:swap}
+  @font-face{font-family:"Monaspace Radon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceRadon-Regular.woff2") format("woff2");font-weight:200 800;font-display:swap}
+  @font-face{font-family:"Monaspace Krypton";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceKrypton-Regular.woff2") format("woff2");font-weight:200 800;font-display:swap}
+  /* variable face for the playground editor — exposes the wght / wdth / slnt axes the sliders drive */
+  @font-face{font-family:"Mono VF";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceNeonVarVF%5Bwght,wdth,slnt%5D.woff2") format("woff2");font-weight:200 800;font-stretch:100% 125%;font-style:oblique 0deg 11deg;font-display:swap}
+
+  /* ---- everything below reads from the token vars; no literal values ---- */
+  *{box-sizing:border-box}
+  :root{ --block-accent:var(--color-primary); }
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--color-background); color:var(--color-text);
+    font-family:var(--type-body-font-family),ui-monospace,monospace;
+    font-size:var(--type-body-font-size); font-weight:var(--type-body-font-weight);
+    line-height:var(--type-body-line-height);
+    font-feature-settings:"liga" 1,"calt" 1; -webkit-font-smoothing:antialiased;
+    /* texture: the dotted grid, every parameter a token */
+    background-image:radial-gradient(rgba(183,191,200,var(--texture-dot-opacity)) var(--texture-dot-size),transparent var(--texture-dot-size));
+    background-size:var(--texture-dot-gap) var(--texture-dot-gap);
+  }
+  .wrap{max-width:var(--layout-content-max); margin:0 auto;
+    padding-inline:clamp(var(--space-lg),5vw,var(--layout-gutter));}
+  section.block{padding-block:var(--layout-rhythm); border-top:1px solid var(--color-border);}
+  a{color:var(--color-primary)}
+
+  /* type scale — the "how large is the header" answer, straight from tokens */
+  .eyebrow{display:inline-block; font-family:var(--type-eyebrow-font-family); font-size:var(--type-eyebrow-font-size);
+    font-weight:var(--type-eyebrow-font-weight); line-height:var(--type-eyebrow-line-height);
+    color:var(--block-accent); border:1px solid var(--block-accent); border-radius:var(--radius-xl);
+    padding:var(--space-xs) var(--space-md); letter-spacing:.04em;}
+  h1,.h1{font-family:var(--type-h1-font-family); font-size:clamp(40px,7vw,var(--type-h1-font-size));
+    font-weight:var(--type-h1-font-weight); line-height:var(--type-h1-line-height); margin:.2em 0;}
+  h2,.h2{font-family:var(--type-h2-font-family); font-size:clamp(30px,4.5vw,var(--type-h2-font-size));
+    font-weight:var(--type-h2-font-weight); line-height:var(--type-h2-line-height); margin:.3em 0;}
+  h3,.h3{font-family:var(--type-h3-font-family); font-size:var(--type-h3-font-size);
+    font-weight:var(--type-h3-font-weight); line-height:var(--type-h3-line-height); margin:.3em 0;}
+  .lead{font-family:var(--type-lead-font-family); font-size:var(--type-lead-font-size);
+    font-weight:var(--type-lead-font-weight); line-height:var(--type-lead-line-height); color:var(--color-muted);}
+  .caption{font-size:var(--type-caption-font-size); color:var(--color-muted);}
+  .display-mono{font-family:var(--type-h1-font-family)}
+
+  /* the accent-glow treatment — blur/spread/opacity are tokens, colour is per-block */
+  .glow{box-shadow:0 0 var(--elevation-glow-blur) var(--elevation-glow-spread)
+    color-mix(in srgb,var(--block-accent) calc(var(--elevation-glow-opacity)*100%),transparent);}
+  .text-glow{text-shadow:0 0 var(--elevation-glow-blur)
+    color-mix(in srgb,var(--block-accent) calc(var(--elevation-glow-opacity)*100%),transparent);}
+
+  /* the text+illustration arrangement — RATIO + GAP are tokens (recipe: text left, media right, media bleeds) */
+  .media-row{display:grid; gap:var(--layout-media-gap); align-items:center;
+    grid-template-columns:calc(var(--layout-media-split)*100%) 1fr;}
+  @media(max-width:720px){.media-row{grid-template-columns:1fr}}
+
+  .panel{background:var(--color-panel); border:1px solid var(--color-border); border-radius:var(--radius-lg);}
+  .btn{font-family:var(--type-body-font-family); font-weight:500; border-radius:var(--radius-md);
+    padding:var(--space-md) var(--space-lg); border:1px solid var(--color-border); cursor:pointer;
+    background:transparent; color:var(--color-text); transition:all var(--motion-fast) ease;}
+  .btn.primary{background:var(--color-ink); color:var(--color-canvas); border-color:var(--color-ink);}
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:var(--layout-media-gap);}
+  @media(max-width:720px){.cols{grid-template-columns:1fr}}
+
+  /* hero */
+  .hero{min-height:78vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:var(--space-lg);}
+  .wordmark{font-family:var(--type-h1-font-family); font-weight:700; font-size:clamp(56px,12vw,140px);
+    color:transparent; -webkit-text-stroke:1.2px var(--color-muted); letter-spacing:-.02em; position:relative;}
+  .wordmark .ver{font-family:var(--type-body-font-family); font-size:.18em; color:var(--block-accent);
+    -webkit-text-stroke:0; text-decoration:line-through; vertical-align:super; margin-left:.2em;}
+  .rain{margin-top:var(--space-xl); display:flex; flex-direction:column; gap:var(--space-xs); width:100%; text-align:left; font-family:var(--type-code-font-family); font-size:var(--type-code-font-size); opacity:.85;}
+  .rain code{opacity:.55}
+  .n{color:var(--color-neon)} .a{color:var(--color-argon)} .x{color:var(--color-xenon)}
+  .r{color:var(--color-radon)} .k{color:var(--color-krypton)}
+
+  /* element cards */
+  .elements{display:grid; grid-template-columns:repeat(5,1fr); gap:var(--space-md); margin-top:var(--space-xl);}
+  @media(max-width:720px){.elements{grid-template-columns:repeat(2,1fr)}}
+  .el{padding:var(--space-lg); text-align:center; cursor:default; transition:border-color var(--motion-base) ease, box-shadow var(--motion-base) ease;}
+  .el .sym{font-size:48px; font-weight:700; line-height:1;}
+  .el .nm{margin-top:var(--space-sm); font-size:18px;}
+  .el .cls{margin-top:var(--space-xs); color:var(--color-muted); font-size:var(--type-caption-font-size);}
+  .el:hover,.el.active{border-color:var(--el-accent); box-shadow:0 0 var(--elevation-glow-blur) var(--elevation-glow-spread) color-mix(in srgb,var(--el-accent) calc(var(--elevation-glow-opacity)*100%),transparent);}
+  .el .sym,.el:hover .nm,.el.active .nm{color:var(--el-accent)}
+
+  /* editor + controls */
+  .editor{font-family:"Mono VF",var(--type-code-font-family),ui-monospace,monospace; background:var(--color-panel-2); border:1px solid var(--color-border);
+    border-radius:var(--radius-lg); padding:var(--space-lg); overflow:auto; counter-reset:l; font-size:var(--editor-size,14px);
+    font-variation-settings:"wght" var(--ed-wght,400),"wdth" var(--ed-wdth,100),"slnt" var(--ed-slnt,0);}
+  .editor .ln{display:block; white-space:pre;}
+  .editor .ln::before{counter-increment:l; content:counter(l); color:var(--color-border); width:2.5ch; display:inline-block; margin-right:var(--space-md); text-align:right;}
+  .kw{color:var(--color-krypton)} .fn{color:var(--color-radon)} .str{color:var(--color-xenon)} .com{color:var(--color-muted)} .num{color:var(--color-neon)}
+  .ctl{display:flex; flex-direction:column; gap:var(--space-md);}
+  .ctl label{display:flex; justify-content:space-between; align-items:center; gap:var(--space-md); font-size:var(--type-caption-font-size);}
+  .ctl input[type=range]{accent-color:var(--block-accent); flex:1}
+  .ctl .val{color:var(--color-muted)}
+  select,.copyline{font-family:var(--type-code-font-family); background:var(--color-panel-2); color:var(--color-text); border:1px solid var(--color-border); border-radius:var(--radius-md); padding:var(--space-sm);}
+
+  /* texture-healing demo */
+  .heal{font-family:var(--type-code-font-family); font-size:40px; letter-spacing:.18em; transition:letter-spacing var(--motion-slow) ease, word-spacing var(--motion-slow) ease;}
+  .heal.on{letter-spacing:.02em;}
+  .grid-word{display:inline-flex; gap:2px; font-size:40px; font-family:var(--type-code-font-family);}
+  .grid-word span{width:1ch; text-align:center; border:1px dashed var(--color-border);}
+  .grid-word.on span.swap{color:var(--block-accent); border-color:var(--block-accent);}
+
+  /* styles axis tables + carousels */
+  .axis{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--layout-media-gap); margin-block:var(--space-xl);}
+  @media(max-width:720px){.axis{grid-template-columns:1fr}}
+  .axis dl{margin:0} .axis dt{color:var(--block-accent); font-size:var(--type-caption-font-size); margin-bottom:var(--space-sm)}
+  .axis dd{margin:0; color:var(--color-muted); font-size:var(--type-caption-font-size); line-height:1.9}
+  .carousel{display:flex; gap:var(--space-lg); overflow-x:auto; scroll-snap-type:x mandatory; padding-block:var(--space-md);}
+  .carousel .word{scroll-snap-align:start; font-size:36px; flex:0 0 auto;}
+  .track{margin-block:var(--space-md)} .track .label{font-family:var(--type-eyebrow-font-family); font-size:var(--type-caption-font-size); letter-spacing:.08em;}
+
+  /* ligatures */
+  .liga-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:var(--space-md); margin-top:var(--space-lg);}
+  .liga{font-family:var(--type-code-font-family); font-size:24px; text-align:center; padding:var(--space-md);}
+  .copyline{display:flex; justify-content:space-between; gap:var(--space-md); align-items:center; margin-top:var(--space-md); font-size:var(--type-caption-font-size);}
+
+  /* footer CTA — full-bleed with edge glow */
+  .cta{position:relative; text-align:center; border-radius:var(--radius-xl); padding:var(--layout-rhythm) var(--space-lg);
+    background:radial-gradient(120% 140% at 50% 120%, color-mix(in srgb,var(--block-accent) 22%,transparent), transparent 60%), var(--color-panel);}
+
+  /* the "tokens" reveal badge — design talking in code */
+  .toks{margin-top:var(--space-lg); font-family:var(--type-code-font-family); font-size:11px; color:var(--color-muted);
+    border-top:1px dashed var(--color-border); padding-top:var(--space-sm); display:none;}
+  body.show-tokens .toks{display:block}
+  .toks b{color:var(--block-accent); font-weight:400}
+
+  /* switcher bar */
+  .bar{position:sticky; top:0; z-index:9; display:flex; flex-wrap:wrap; gap:var(--space-md); align-items:center;
+    padding:var(--space-md) clamp(var(--space-lg),5vw,var(--layout-gutter)); background:color-mix(in srgb,var(--color-canvas) 88%,transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--color-border); font-size:var(--type-caption-font-size);}
+  .bar .dot{width:16px; height:16px; border-radius:var(--radius-sm); border:1px solid var(--color-border); cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="caption">Accent →</span>
+  <span class="dot" style="background:var(--color-neon)"    onclick="setAccent('--color-neon')"></span>
+  <span class="dot" style="background:var(--color-argon)"   onclick="setAccent('--color-argon')"></span>
+  <span class="dot" style="background:var(--color-xenon)"   onclick="setAccent('--color-xenon')"></span>
+  <span class="dot" style="background:var(--color-radon)"   onclick="setAccent('--color-radon')"></span>
+  <span class="dot" style="background:var(--color-krypton)" onclick="setAccent('--color-krypton')"></span>
+  <button class="btn" style="padding:var(--space-xs) var(--space-md)" onclick="document.body.classList.toggle('show-tokens')">Reveal tokens</button>
+  <span class="caption" style="margin-left:auto">styled by <b>showcase.tokens.css</b></span>
+</div>
+
+<div class="wrap">
+
+<!-- 1 · HERO -->
+<section class="block hero" id="hero" style="border-top:0">
+  <div class="wordmark text-glow">monaspace<span class="ver">v1.400</span></div>
+  <p class="lead">An innovative superfamily of fonts for code</p>
+  <div style="display:flex; gap:var(--space-md)">
+    <button class="btn primary">Download ›</button>
+    <button class="btn">Learn more ›</button>
+  </div>
+  <div class="rain">
+    <code class="n">console.log(`Terminal: ${t.width} x ${t.height}`)</code>
+    <code class="a">$opt = $timing-&gt;get_optimized_time($i_terminal_time);</code>
+    <code class="x">adjusted = [t.to_millis() for t in log_lines if t &gt;= today]</code>
+    <code class="r">std::transform(vec.begin(), vec.end(), vec.begin(), sq);</code>
+    <code class="k">let sum: u32 = (1..=10).filter(|x| x % 2 == 0).sum();</code>
+  </div>
+  <div class="toks">tokens · <b>type.h1</b> wordmark · <b>type.lead</b> tagline · <b>texture.*</b> grid · <b>elevation.glow-*</b> text-glow · <b>radius.md</b> buttons · <b>font.{neon…krypton}</b> code rain</div>
+</section>
+
+<!-- 2 · SUPERFAMILY -->
+<section class="block" id="superfamily">
+  <h1>One superfamily.<br>Five fonts.<br>Three variable axes.</h1>
+  <div class="cols" style="margin-top:var(--space-xl)">
+    <p>Since the earliest days of the teletype machine, code has been set in monospaced type — letters, on a grid. Monaspace is a new type system that advances the state of the art for the display of code on screen.</p>
+    <p>Even today, we have limited options to layer meaning on top of code. <span style="color:var(--color-primary)">Monaspace offers a more expressive palette for code and the tools we use to work with it.</span></p>
+  </div>
+  <div class="elements">
+    <div class="panel el active" style="--el-accent:var(--color-neon)"><div class="sym" style="font-family:var(--font-neon)">Ne</div><div class="nm">Neon</div><div class="cls">Neo-grotesque sans</div></div>
+    <div class="panel el" style="--el-accent:var(--color-argon)"><div class="sym" style="font-family:var(--font-argon)">Ar</div><div class="nm">Argon</div><div class="cls">Humanist sans</div></div>
+    <div class="panel el" style="--el-accent:var(--color-xenon)"><div class="sym" style="font-family:var(--font-xenon)">Xe</div><div class="nm">Xenon</div><div class="cls">Slab serif</div></div>
+    <div class="panel el" style="--el-accent:var(--color-radon)"><div class="sym" style="font-family:var(--font-radon)">Rn</div><div class="nm">Radon</div><div class="cls">Handwriting</div></div>
+    <div class="panel el" style="--el-accent:var(--color-krypton)"><div class="sym" style="font-family:var(--font-krypton)">Kr</div><div class="nm">Krypton</div><div class="cls">Mechanical sans</div></div>
+  </div>
+  <div class="toks">tokens · <b>type.h1</b> headline · <b>color.primary</b> highlight · <b>layout.columns</b>→5-up · <b>color.panel</b>+<b>radius.lg</b> cards · <b>elevation.glow-*</b> active/hover · per-card <b>font.*</b> + accent</div>
+</section>
+
+<!-- 3 · PLAYGROUND -->
+<section class="block" id="playground">
+  <span class="eyebrow">Font playground</span>
+  <div class="media-row" style="margin-top:var(--space-lg); align-items:start">
+    <div class="editor" id="editor">
+<span class="ln"><span class="com">// Optimized function to test the timing mechanism</span></span>
+<span class="ln"><span class="kw">const</span> <span class="fn">some_function_w_</span> = () =&gt; {</span>
+<span class="ln">  <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i &lt; <span class="num">999999</span>; i++) {</span>
+<span class="ln">    <span class="com">// Some operation</span></span>
+<span class="ln">  }</span>
+<span class="ln">};</span>
+<span class="ln"><span class="kw">let</span> my_terminal = <span class="kw">new</span> <span class="fn">Terminal_Dimensions</span>();</span>
+<span class="ln"><span class="fn">console</span>.<span class="fn">log</span>(<span class="str">`dims: ${my_terminal.width} x ${my_terminal.height}`</span>);</span>
+    </div>
+    <div class="ctl panel" style="padding:var(--space-lg)">
+      <label>Font size <input type="range" min="12" max="28" value="14" oninput="setSize(this)"><span class="val">14</span></label>
+      <label>Weight <input type="range" min="200" max="800" step="50" value="400" oninput="setAxis('--ed-wght',this)"><span class="val">400</span></label>
+      <label>Width <input type="range" min="100" max="125" step="0.5" value="100" oninput="setAxis('--ed-wdth',this)"><span class="val">100</span></label>
+      <label>Slant <input type="range" min="-11" max="0" value="0" oninput="setAxis('--ed-slnt',this)"><span class="val">0</span></label>
+      <label><span>Texture healing</span> <input type="checkbox" id="cb-heal" checked onchange="setFeat()"></label>
+      <label><span>Ligatures</span> <input type="checkbox" id="cb-liga" checked onchange="setFeat()"></label>
+      <label><span>Grid</span> <input type="checkbox" onchange="document.body.style.backgroundImage=this.checked?'':'none'"></label>
+      <label><span>Theme</span> <select><option>GitHub Dark</option><option>Dracula</option><option>VS Code Dark</option></select></label>
+    </div>
+  </div>
+  <div class="toks">tokens · <b>type.eyebrow</b> tag · <b>layout.media-split</b> 0.58→editor/controls · <b>layout.media-gap</b> · <b>color.panel-2</b> editor · accents map syntax: kw=<b>krypton</b> fn=<b>radon</b> str=<b>xenon</b> num=<b>neon</b> · sliders write <b>--editor-size/weight</b></div>
+</section>
+
+<!-- 4 · MIX & MATCH -->
+<section class="block" id="mix">
+  <span class="eyebrow">Mix &amp; Match</span>
+  <h1>What if?</h1>
+  <p style="max-width:60ch">Monospaced fonts are generally incompatible. Each Monaspace font shares metrics, so you can mix them to carry meaning — a palette that goes beyond colour and weight.</p>
+  <button class="btn" style="margin-block:var(--space-lg)" onclick="shuffleMix()">Shuffle font combination</button>
+  <div class="editor" id="mixcode">
+<span class="ln"><span class="com" id="m-com" style="font-family:var(--font-radon)">// What if tentative ideas looked handwritten?</span></span>
+<span class="ln"><span class="str" id="m-doc" style="font-family:var(--font-xenon)">/** What if docstrings looked authoritative? */</span></span>
+<span class="ln"><span class="kw">const</span> [isClicked, setClicked] = React.<span class="fn">useState</span>(<span id="m-ai" style="font-family:var(--font-krypton); color:var(--color-krypton)">false</span>);</span>
+  </div>
+  <div class="toks">tokens · <b>type.eyebrow</b>+<b>type.h1</b> · roles→families: comment=<b>font.radon</b>, docstring=<b>font.xenon</b>, AI-span=<b>font.krypton</b>/<b>color.accent</b>. Shuffle re-rolls the role→font map (a recipe; the families are tokens).</div>
+</section>
+
+<!-- 5 · TEXTURE HEALING -->
+<section class="block" id="healing">
+  <span class="eyebrow">Feature</span>
+  <h2>Texture healing</h2>
+  <p style="max-width:62ch">Monospaced type suffers from uneven texture — some areas dense, some with excess whitespace. Texture healing evens out the density while preserving the grid, using the OpenType <code>calt</code> feature.</p>
+  <div class="media-row" style="margin-top:var(--space-xl)">
+    <div>
+      <div class="caption">TEXTURE HEALING <span id="heal-state">ON</span></div>
+      <div class="heal on" id="healword">TIME_limit</div>
+      <button class="btn" style="margin-top:var(--space-lg); padding:var(--space-xs) var(--space-md)" onclick="toggleHeal()">Toggle</button>
+    </div>
+    <p class="caption">Narrow characters are swapped for ones that cede whitespace; wide characters extend to the edge of their box. The swap is powered by contextual alternates — widely supported, no plugin needed.</p>
+  </div>
+  <div class="toks">tokens · <b>type.eyebrow</b>+<b>type.h2</b> · <b>layout.media-split</b> demo/prose · <b>motion.slow</b> 800ms drives the heal transition · <b>color.muted</b> labels</div>
+</section>
+
+<!-- 6 · STEP BY STEP -->
+<section class="block" id="steps">
+  <h2>Step by step</h2>
+  <p>Let’s unpack how texture healing is applied. In “calming”, the <b>l</b> has space to give and the <b>m</b> wants more.</p>
+  <div style="display:flex; gap:var(--space-xl); align-items:center; flex-wrap:wrap; margin-top:var(--space-lg)">
+    <div class="grid-word" id="calming">
+      <span>c</span><span>a</span><span class="swap">l</span><span class="swap">m</span><span>i</span><span>n</span><span>g</span>
+    </div>
+    <button class="btn" onclick="document.getElementById('calming').classList.toggle('on')">Heal pairs</button>
+  </div>
+  <p class="caption" style="margin-top:var(--space-lg)">The generic <b>l</b> is replaced with a narrower one shifted away from the <b>m</b>; the <b>m</b> then extends to fill. The result still obeys the monospaced grid.</p>
+  <div class="toks">tokens · <b>type.h2</b> · grid cells use <b>color.border</b>; healed pair lights with <b>--block-accent</b>; cell width = 1ch keeps the monospace grid honest</div>
+</section>
+
+<!-- 7 · STYLES -->
+<section class="block" id="styles">
+  <span class="eyebrow">Styles</span>
+  <h2>640k styles ought to be enough for anyone</h2>
+  <div class="axis">
+    <dl><dt>WEIGHT · 200–800</dt><dd>200 Extra Light<br>300 Light<br>400 Regular<br>500 Medium<br>600 Semibold<br>700 Bold<br>800 ExtraBold</dd></dl>
+    <dl><dt>SLANT · 0 to −11°</dt><dd>0 Normal<br>−5.5° obliques → italic<br>−11° Italic</dd></dl>
+    <dl><dt>WIDTH · 100–125</dt><dd>100 Normal<br>112.5 Semiwide<br>125 Wide</dd></dl>
+  </div>
+  <label class="caption"><input type="checkbox" onchange="document.querySelectorAll('.carousel .word').forEach(w=>w.style.fontStyle=this.checked?'italic':'normal')"> Italic</label>
+  <div class="track"><span class="label" style="color:var(--color-neon)">MONASPACE NEON</span>
+    <div class="carousel" style="color:var(--color-neon)"><span class="word" style="font-family:var(--font-neon)">verbatim</span><span class="word" style="font-family:var(--font-neon)">nimblest</span><span class="word" style="font-family:var(--font-neon)">foothill</span><span class="word" style="font-family:var(--font-neon)">metaphor</span><span class="word" style="font-family:var(--font-neon)">effusive</span></div></div>
+  <div class="track"><span class="label" style="color:var(--color-argon)">MONASPACE ARGON</span>
+    <div class="carousel" style="color:var(--color-argon)"><span class="word" style="font-family:var(--font-argon)">sanguine</span><span class="word" style="font-family:var(--font-argon)">platypus</span><span class="word" style="font-family:var(--font-argon)">cosmical</span><span class="word" style="font-family:var(--font-argon)">zoetrope</span><span class="word" style="font-family:var(--font-argon)">mirthful</span></div></div>
+  <div class="track"><span class="label" style="color:var(--color-xenon)">MONASPACE XENON</span>
+    <div class="carousel" style="color:var(--color-xenon)"><span class="word" style="font-family:var(--font-xenon)">halflife</span><span class="word" style="font-family:var(--font-xenon)">luminary</span><span class="word" style="font-family:var(--font-xenon)">ornithic</span><span class="word" style="font-family:var(--font-xenon)">newfound</span><span class="word" style="font-family:var(--font-xenon)">ambulate</span></div></div>
+  <div class="track"><span class="label" style="color:var(--color-radon)">MONASPACE RADON</span>
+    <div class="carousel" style="color:var(--color-radon)"><span class="word" style="font-family:var(--font-radon)">epigrams</span><span class="word" style="font-family:var(--font-radon)">panorama</span><span class="word" style="font-family:var(--font-radon)">humanist</span><span class="word" style="font-family:var(--font-radon)">wavemark</span><span class="word" style="font-family:var(--font-radon)">coiffure</span></div></div>
+  <div class="track"><span class="label" style="color:var(--color-krypton)">MONASPACE KRYPTON</span>
+    <div class="carousel" style="color:var(--color-krypton)"><span class="word" style="font-family:var(--font-krypton)">moondust</span><span class="word" style="font-family:var(--font-krypton)">kenotron</span><span class="word" style="font-family:var(--font-krypton)">bedazzle</span><span class="word" style="font-family:var(--font-krypton)">rhomboid</span><span class="word" style="font-family:var(--font-krypton)">futurist</span></div></div>
+  <div class="toks">tokens · <b>type.h2</b> · <b>axis dt</b>=<b>--block-accent</b> · five tracks each a <b>font.*</b> + matching <b>color.*</b> · carousel scroll-snap is a recipe</div>
+</section>
+
+<!-- 8 · LIGATURES -->
+<section class="block" id="ligatures">
+  <span class="eyebrow">Feature</span>
+  <h2>Code ligatures</h2>
+  <p style="max-width:62ch">Monaspace includes code ligatures organized into stylistic sets (<code>ss01</code>–<code>ss10</code>) you can enable per language, plus <code>calt</code> (texture healing) and <code>liga</code> (repeat-character spacing).</p>
+  <div class="panel" style="padding:var(--space-lg); margin-top:var(--space-lg)">
+    <div class="caption">Visual Studio Code — settings.json</div>
+    <div class="copyline"><code id="ligset">"editor.fontLigatures": "'calt','ss01','ss02','ss05','liga'"</code><button class="btn" style="padding:var(--space-xs) var(--space-md)" onclick="navigator.clipboard?.writeText(document.getElementById('ligset').textContent)">Copy</button></div>
+  </div>
+  <div class="liga-grid" style="font-feature-settings:'calt' 1,'liga' 1,'ss01' 1,'ss02' 1,'ss03' 1,'ss05' 1">
+    <div class="panel liga">==</div><div class="panel liga">!==</div><div class="panel liga">--&gt;</div><div class="panel liga">&lt;=&gt;</div>
+    <div class="panel liga">|&gt;</div><div class="panel liga">///</div><div class="panel liga">!=</div><div class="panel liga">&lt;-</div>
+  </div>
+  <div class="toks">tokens · <b>type.eyebrow</b>+<b>type.h2</b> · <b>color.panel</b>+<b>radius.lg</b> cards · primary-flash on copy uses <b>color.primary</b> · ligatures via font-feature-settings (a recipe)</div>
+</section>
+
+<!-- 9 · CONTRIBUTORS + CTA -->
+<section class="block" id="footer">
+  <h3>Made with ♥ — Contributors</h3>
+  <p style="max-width:62ch">Monaspace was made to improve all code, for all developers. GitHub Next partnered with the type foundry Lettermatic — a marriage of form and function. For the full list and the fonts themselves, visit the <a href="https://github.com/githubnext/monaspace">Monaspace repo</a>.</p>
+  <div class="cta glow" style="margin-top:var(--space-xl)">
+    <h1 class="display-mono">What will you make<br>with Monaspace?</h1>
+    <button class="btn primary" style="margin-top:var(--space-lg)">Download</button>
+    <p class="caption" style="margin-top:var(--space-lg)">© 2026 GitHub. Demo styled entirely by showcase.tokens.css.</p>
+  </div>
+  <div class="toks">tokens · <b>type.h3</b> credits · <b>type.h1</b> CTA · <b>radius.xl</b> banner · edge glow = <b>--block-accent</b> via <b>elevation.glow-opacity</b> · <b>color.panel</b> base</div>
+</section>
+
+</div>
+
+<script>
+  const ed = document.getElementById('editor');
+  function setSize(el){ ed.style.setProperty('--editor-size', el.value+'px'); el.nextElementSibling.textContent = el.value; }
+  function setAxis(name, el){ ed.style.setProperty(name, el.value); el.nextElementSibling.textContent = el.value; }
+  function setFeat(){
+    const f = [`'calt' ${document.getElementById('cb-heal').checked?1:0}`,
+               `'liga' ${document.getElementById('cb-liga').checked?1:0}`];
+    ed.style.fontFeatureSettings = f.join(',');
+  }
+  function setAccent(varName){
+    const v = getComputedStyle(document.documentElement).getPropertyValue(varName);
+    document.documentElement.style.setProperty('--block-accent', v);
+  }
+  function toggleHeal(){
+    const w = document.getElementById('healword');
+    w.classList.toggle('on');
+    document.getElementById('heal-state').textContent = w.classList.contains('on') ? 'ON' : 'OFF';
+  }
+  const FAMS = ['--font-neon','--font-argon','--font-xenon','--font-radon','--font-krypton'];
+  function shuffleMix(){
+    const pick = () => 'var(' + FAMS[Math.floor(Math.random()*FAMS.length)] + ')';
+    ['m-com','m-doc','m-ai'].forEach(id => document.getElementById(id).style.fontFamily = pick());
+  }
+</script>
+</body>
+</html>

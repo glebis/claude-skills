@@ -1,0 +1,86 @@
+{
+  "$description": "Universal content base — theme-NEUTRAL roles + structure. Defaults to the PAPER (light) theme so it is usable standalone. Type tokens carry size/weight/lineHeight only; the face comes from the font.* role tokens, so a theme override is a tiny delta (colours + 3 font roles + texture), not a restatement of the scale. Tier-2 groups (layout/texture/elevation/motion) are skill convention, NOT DTCG.",
+  "color": {
+    "$type": "color",
+    "surface":        { "$value": "#F5F1E8" },
+    "surface-raised": { "$value": "#ECE6D8" },
+    "ink":            { "$value": "#1B1A16" },
+    "ink-muted":      { "$value": "#6E6557" },
+    "accent":         { "$value": "#8A3324" },
+    "accent-soft":    { "$value": "#B5654D" },
+    "border":         { "$value": "#2B2820" },
+    "rule":           { "$value": "#D8D0BE" },
+    "text":           { "$value": "{color.ink}" },
+    "background":     { "$value": "{color.surface}" },
+    "primary":        { "$value": "{color.accent}" }
+  },
+  "font": {
+    "$type": "fontFamily",
+    "$description": "Three roles a theme swaps. display = headings, body = reading text, mono = eyebrows/meta/code.",
+    "display": { "$value": ["Spectral", "Georgia", "serif"] },
+    "body":    { "$value": ["Spectral", "Georgia", "serif"] },
+    "mono":    { "$value": ["IBM Plex Mono", "ui-monospace", "monospace"] }
+  },
+  "space": {
+    "$type": "dimension",
+    "xs":  { "$value": { "value": 4,  "unit": "px" } },
+    "sm":  { "$value": { "value": 8,  "unit": "px" } },
+    "md":  { "$value": { "value": 16, "unit": "px" } },
+    "lg":  { "$value": { "value": 24, "unit": "px" } },
+    "xl":  { "$value": { "value": 48, "unit": "px" } },
+    "xxl": { "$value": { "value": 96, "unit": "px" } }
+  },
+  "radius": {
+    "$type": "dimension",
+    "none": { "$value": { "value": 0,   "unit": "px" } },
+    "sm":   { "$value": { "value": 4,   "unit": "px" } },
+    "md":   { "$value": { "value": 8,   "unit": "px" } },
+    "lg":   { "$value": { "value": 16,  "unit": "px" } },
+    "pill": { "$value": { "value": 999, "unit": "px" } }
+  },
+  "type": {
+    "$description": "Tier 1 (DTCG): size/weight/lineHeight only — the header-size answer. Face is applied from font.* in CSS so themes need not restate the scale.",
+    "eyebrow": { "$type": "typography", "$value": { "fontSize": { "value": 13, "unit": "px" }, "fontWeight": 500, "lineHeight": 1.2 } },
+    "caption": { "$type": "typography", "$value": { "fontSize": { "value": 13, "unit": "px" }, "fontWeight": 400, "lineHeight": 1.4 } },
+    "small":   { "$type": "typography", "$value": { "fontSize": { "value": 14, "unit": "px" }, "fontWeight": 400, "lineHeight": 1.5 } },
+    "body":    { "$type": "typography", "$value": { "fontSize": { "value": 17, "unit": "px" }, "fontWeight": 400, "lineHeight": 1.6 } },
+    "lead":    { "$type": "typography", "$value": { "fontSize": { "value": 21, "unit": "px" }, "fontWeight": 400, "lineHeight": 1.5 } },
+    "code":    { "$type": "typography", "$value": { "fontSize": { "value": 14, "unit": "px" }, "fontWeight": 400, "lineHeight": 1.6 } },
+    "h3":      { "$type": "typography", "$value": { "fontSize": { "value": 22, "unit": "px" }, "fontWeight": 600, "lineHeight": 1.2 } },
+    "h2":      { "$type": "typography", "$value": { "fontSize": { "value": 30, "unit": "px" }, "fontWeight": 600, "lineHeight": 1.15 } },
+    "h1":      { "$type": "typography", "$value": { "fontSize": { "value": 52, "unit": "px" }, "fontWeight": 600, "lineHeight": 1.05 } }
+  },
+  "scale": {
+    "$type": "number",
+    "$description": "Skill convention (NOT DTCG): the modular ratio the type scale steps by.",
+    "ratio": { "$value": 1.5 }
+  },
+  "layout": {
+    "$description": "Skill convention (NOT DTCG): composition values. ARRANGEMENT recipes live in DESIGN.md.",
+    "content-max": { "$type": "dimension", "$value": { "value": 1080, "unit": "px" } },
+    "measure":     { "$type": "dimension", "$description": "ideal reading column width", "$value": { "value": 680, "unit": "px" } },
+    "gutter":      { "$type": "dimension", "$value": { "value": 48, "unit": "px" } },
+    "rhythm":      { "$type": "dimension", "$description": "vertical space between sections", "$value": { "value": 72, "unit": "px" } },
+    "media-split": { "$type": "number", "$description": "text column fraction in a text+media row", "$value": 0.58 },
+    "media-gap":   { "$type": "dimension", "$value": { "value": 40, "unit": "px" } },
+    "columns":     { "$type": "number", "$value": 12 }
+  },
+  "texture": {
+    "$description": "Skill convention (NOT DTCG): backdrop params. The KIND (ruled lines vs dots) is a per-theme recipe; gap + opacity are values.",
+    "gap":     { "$type": "dimension", "$value": { "value": 32, "unit": "px" } },
+    "opacity": { "$type": "number",    "$value": 0.6 }
+  },
+  "elevation": {
+    "$description": "Skill convention (NOT DTCG): accent-glow treatment. Paper sets glow-opacity 0 (flat); the ink theme raises it.",
+    "glow-blur":    { "$type": "dimension", "$value": { "value": 40, "unit": "px" } },
+    "glow-spread":  { "$type": "dimension", "$value": { "value": 0,  "unit": "px" } },
+    "glow-opacity": { "$type": "number",    "$value": 0 }
+  },
+  "motion": {
+    "$type": "duration",
+    "$description": "Skill convention (NOT DTCG): timing. Easing is a recipe in DESIGN.md.",
+    "fast": { "$value": { "value": 200, "unit": "ms" } },
+    "base": { "$value": { "value": 350, "unit": "ms" } },
+    "slow": { "$value": { "value": 800, "unit": "ms" } }
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "color": {
+    "$type": "color",
+    "neon": { "$value": "#F5B8A5" },
+    "neon-dark": { "$value": "#86412E" },
+    "argon": { "$value": "#F1E170" },
+    "argon-dark": { "$value": "#7D6E2F" },
+    "xenon": { "$value": "#B6D162" },
+    "xenon-dark": { "$value": "#4D5C2A" },
+    "radon": { "$value": "#82D2CF" },
+    "radon-dark": { "$value": "#3B5E60" },
+    "krypton": { "$value": "#BC9AFA" },
+    "krypton-dark": { "$value": "#3B2772" },
+    "canvas": { "$value": "#0D1117" },
+    "panel": { "$value": "#11161D" },
+    "panel-2": { "$value": "#0B0F14" },
+    "ink": { "$value": "#FFFFFF" },
+    "muted": { "$value": "#B7BFC8" },
+    "border": { "$value": "#2F353C" },
+    "primary": { "$value": "{color.neon}" },
+    "accent": { "$value": "{color.krypton}" },
+    "success": { "$value": "{color.xenon}" },
+    "warning": { "$value": "{color.argon}" },
+    "text": { "$value": "{color.ink}" },
+    "background": { "$value": "{color.canvas}" }
+  },
+  "font": {
+    "$type": "fontFamily",
+    "neon": { "$value": ["Monaspace Neon", "ui-monospace", "monospace"] },
+    "argon": { "$value": ["Monaspace Argon", "ui-monospace", "monospace"] },
+    "xenon": { "$value": ["Monaspace Xenon", "ui-monospace", "serif"] },
+    "radon": { "$value": ["Monaspace Radon", "cursive"] },
+    "krypton": { "$value": ["Monaspace Krypton", "ui-monospace", "monospace"] }
+  },
+  "space": {
+    "$type": "dimension",
+    "xs": { "$value": { "value": 4, "unit": "px" } },
+    "sm": { "$value": { "value": 8, "unit": "px" } },
+    "md": { "$value": { "value": 16, "unit": "px" } },
+    "lg": { "$value": { "value": 24, "unit": "px" } },
+    "xl": { "$value": { "value": 48, "unit": "px" } }
+  },
+  "radius": {
+    "$type": "dimension",
+    "sm": { "$value": { "value": 4, "unit": "px" } },
+    "md": { "$value": { "value": 8, "unit": "px" } },
+    "lg": { "$value": { "value": 16, "unit": "px" } },
+    "xl": { "$value": { "value": 24, "unit": "px" } }
+  },
+  "type": {
+    "$description": "Tier 1 (DTCG): the header-size question lives here as a type scale. eyebrow<caption<body<lead<h3<h2<h1, ratio ~1.5.",
+    "eyebrow": {
+      "$type": "typography",
+      "$value": { "fontFamily": "Monaspace Krypton", "fontSize": { "value": 13, "unit": "px" }, "fontWeight": 500, "lineHeight": 1.2 }
+    },
+    "caption": {
+      "$type": "typography",
+      "$value": { "fontFamily": "Monaspace Neon", "fontSize": { "value": 13, "unit": "px" }, "fontWeight": 300, "lineHeight": 1.4 }
+    },
+    "body": {
+      "$type": "typography",
+      "$value": { "fontFamily": "Monaspace Neon", "fontSize": { "value": 16, "unit": "px" }, "fontWeight": 300, "lineHeight": 1.5 }
+    },
+    "lead": {
+      "$type": "typography",
+      "$value": { "fontFamily": "Monaspace Neon", "fontSize": { "value": 20, "unit": "px" }, "fontWeight": 300, "lineHeight": 1.5 }
+    },
+    "code": {
+      "$type": "typography",
+      "$value": { "fontFamily": "Monaspace Argon", "fontSize": { "value": 14, "unit": "px" }, "fontWeight": 400, "lineHeight": 1.6 }
+    },
+    "h3": {
+      "$type": "typography",
+      "$value": { "fontFamily": "Monaspace Xenon", "fontSize": { "value": 32, "unit": "px" }, "fontWeight": 700, "lineHeight": 1.1 }
+    },
+    "h2": {
+      "$type": "typography",
+      "$value": { "fontFamily": "Monaspace Xenon", "fontSize": { "value": 40, "unit": "px" }, "fontWeight": 700, "lineHeight": 1.1 }
+    },
+    "h1": {
+      "$type": "typography",
+      "$value": { "fontFamily": "Monaspace Xenon", "fontSize": { "value": 64, "unit": "px" }, "fontWeight": 700, "lineHeight": 1.05 }
+    }
+  },
+  "scale": {
+    "$type": "number",
+    "$description": "Skill convention (NOT DTCG): the modular ratio the type scale steps by. A value that documents the rule behind the sizes.",
+    "ratio": { "$value": 1.5 }
+  },
+  "layout": {
+    "$description": "Skill convention (NOT DTCG): composition as values. The ARRANGEMENT recipe (which side the illustration sits on, that it bleeds off-grid) is prose in DESIGN.md; the RATIO + GAP + widths are values here.",
+    "content-max": { "$type": "dimension", "$value": { "value": 1080, "unit": "px" } },
+    "gutter": { "$type": "dimension", "$value": { "value": 72, "unit": "px" } },
+    "rhythm": { "$type": "dimension", "$description": "vertical breathing room between sections", "$value": { "value": 96, "unit": "px" } },
+    "media-split": { "$type": "number", "$description": "text column fraction in a text+illustration row; illustration gets 1 - this", "$value": 0.58 },
+    "media-gap": { "$type": "dimension", "$value": { "value": 32, "unit": "px" } },
+    "columns": { "$type": "number", "$value": 12 }
+  },
+  "texture": {
+    "$description": "Skill convention (NOT DTCG): the dotted-grid backdrop as values. dot-opacity is unitless.",
+    "dot-size": { "$type": "dimension", "$value": { "value": 1, "unit": "px" } },
+    "dot-gap": { "$type": "dimension", "$value": { "value": 22, "unit": "px" } },
+    "dot-opacity": { "$type": "number", "$value": 0.05 }
+  },
+  "elevation": {
+    "$description": "Skill convention (NOT DTCG): the accent-glow treatment as values. The colour is supplied per block (--block-accent); blur/spread/opacity are the reusable part.",
+    "glow-blur": { "$type": "dimension", "$value": { "value": 40, "unit": "px" } },
+    "glow-spread": { "$type": "dimension", "$value": { "value": 0, "unit": "px" } },
+    "glow-opacity": { "$type": "number", "$value": 0.45 }
+  },
+  "mask": {
+    "$description": "Skill convention (NOT DTCG): mask radius + feather are values. The mask TREATMENT (mask media with the wordmark outline, fade media to the canvas at edges) is a recipe in DESIGN.md.",
+    "radius": { "$type": "dimension", "$value": "{radius.xl}" },
+    "feather": { "$type": "dimension", "$description": "fade distance where media dissolves into the canvas", "$value": { "value": 64, "unit": "px" } }
+  },
+  "motion": {
+    "$type": "duration",
+    "$description": "Skill convention (NOT DTCG): timing values. Easing curves are a recipe in DESIGN.md (not a v1 token type).",
+    "fast": { "$value": { "value": 200, "unit": "ms" } },
+    "base": { "$value": { "value": 350, "unit": "ms" } },
+    "slow": { "$value": { "value": 800, "unit": "ms" } }
+  }
+}
