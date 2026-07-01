@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<!--
+  Monaspace — design-token template showcase.
+  Tokens extracted from monaspace.githubnext.com (templates/monaspace.tokens.json):
+  the five-font superfamily as accent colours over the GitHub dark canvas.
+  Live theme switcher swaps background x accent; every block is var-driven.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monaspace — token template</title>
+<style>
+  @font-face{font-family:"Monaspace Neon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceNeon-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"Monaspace Neon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceNeon-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+  @font-face{font-family:"Monaspace Argon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceArgon-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"Monaspace Xenon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceXenon-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"Monaspace Xenon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceXenon-Bold.woff2") format("woff2");font-weight:700;font-display:swap}
+  @font-face{font-family:"Monaspace Radon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceRadon-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+  @font-face{font-family:"Monaspace Krypton";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceKrypton-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+
+  :root{
+    /* fixed superfamily accents */
+    --neon:#F5B8A5; --argon:#F1E170; --xenon:#B6D162; --radon:#82D2CF; --krypton:#BC9AFA;
+    /* switchable theme (JS overrides) */
+    --bg:#0D1117; --panel:#11161d; --panel-2:#0b0f14; --ink:#FFFFFF;
+    --muted:#B7BFC8; --border:#2F353C; --dot:rgba(201,209,217,.05); --accent:#F5B8A5;
+    --r-sm:4px; --r-md:8px; --r-lg:16px; --r-xl:24px;
+    --mono:"Monaspace Neon",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --display:"Monaspace Xenon",ui-serif,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);font-weight:300;
+    line-height:1.6;font-feature-settings:"liga" 1,"calt" 1;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:22px 22px;
+    transition:background-color .35s ease,color .35s ease}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 clamp(24px,5vw,72px) 120px}
+  code{font-family:var(--mono)}
+
+  /* ---- theme switcher ---- */
+  .switch{position:sticky;top:0;z-index:20;margin:0 calc(-1*clamp(24px,5vw,72px));
+    padding:14px clamp(24px,5vw,72px);background:color-mix(in srgb,var(--bg) 86%,transparent);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--border);display:flex;gap:26px;flex-wrap:wrap;align-items:center}
+  .switch .grp{display:flex;gap:8px;align-items:center}
+  .switch .lab{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+  .switch button{appearance:none;cursor:pointer;border:1px solid var(--border);background:var(--panel);
+    color:var(--ink);font-family:var(--mono);font-size:.74rem;padding:5px 11px;border-radius:var(--r-sm);
+    transition:border-color .15s ease,background .15s ease}
+  .switch button:hover{border-color:var(--muted)}
+  .switch button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+  .switch .acc{width:13px;height:13px;border-radius:50%;border:0;padding:0}
+
+  header{padding:56px 0 30px;border-bottom:1px solid var(--border);margin-bottom:8px}
+  .kicker{font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(3rem,9vw,5.6rem);line-height:.96;
+    letter-spacing:-.02em;margin:0}
+  h1 .b{color:var(--accent)}
+  .dek{color:var(--muted);max-width:62ch;margin:18px 0 0;font-size:1.05rem}
+  .dek b{color:var(--ink);font-weight:400}
+
+  /* ---- huge header banner ---- */
+  .huge-wrap{margin:56px 0 0;border-block:1px solid var(--border);padding:40px 0}
+  .huge{font-family:var(--display);font-weight:700;font-size:clamp(2.6rem,13vw,10.5rem);line-height:.84;
+    letter-spacing:-.03em;margin:0;color:var(--ink)}
+  .huge .o{color:transparent;-webkit-text-stroke:2px var(--accent)}
+  .huge-sub{font-size:.8rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:18px 0 0}
+
+  h2{font-family:var(--display);font-weight:700;font-size:1.5rem;margin:64px 0 4px}
+  h2 .n{display:block;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+    margin-bottom:8px;font-weight:400;font-family:var(--mono)}
+  .sub{color:var(--muted);font-size:.92rem;margin:0 0 24px}
+
+  /* faces */
+  .faces{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  .face{border:1px solid var(--border);border-radius:var(--r-lg);padding:20px 18px;background:var(--panel);
+    position:relative;overflow:hidden;transition:transform .2s ease,border-color .2s ease}
+  .face:hover{transform:translateY(-3px);border-color:currentColor}
+  .face .glow{font-size:3.6rem;line-height:1;margin-bottom:14px}
+  .face .nm{font-size:1.05rem;color:var(--ink)} .face .ds{font-size:.78rem;color:var(--muted);margin-top:3px}
+  .face.neon{font-family:"Monaspace Neon"} .face.neon .glow{color:var(--neon);text-shadow:0 0 22px color-mix(in srgb,var(--neon) 55%,transparent)}
+  .face.argon{font-family:"Monaspace Argon"} .face.argon .glow{color:var(--argon);text-shadow:0 0 22px color-mix(in srgb,var(--argon) 50%,transparent)}
+  .face.xenon{font-family:"Monaspace Xenon"} .face.xenon .glow{color:var(--xenon);text-shadow:0 0 22px color-mix(in srgb,var(--xenon) 50%,transparent)}
+  .face.radon{font-family:"Monaspace Radon"} .face.radon .glow{color:var(--radon);text-shadow:0 0 22px color-mix(in srgb,var(--radon) 50%,transparent)}
+  .face.krypton{font-family:"Monaspace Krypton"} .face.krypton .glow{color:var(--krypton);text-shadow:0 0 22px color-mix(in srgb,var(--krypton) 55%,transparent)}
+
+  /* ---- vertical-header + multicolumn ---- */
+  .vsection{display:grid;grid-template-columns:auto 1fr;gap:34px;align-items:start;margin-top:8px}
+  .vhead{writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--display);font-weight:700;
+    font-size:2rem;letter-spacing:-.01em;color:var(--accent);margin:0;align-self:stretch;
+    border-left:1px solid var(--border);padding-left:14px}
+  .multicol{columns:2;column-gap:36px;font-size:.96rem;color:var(--muted)}
+  .multicol p{margin:0 0 1em;break-inside:avoid} .multicol p:first-child{margin-top:0}
+  .multicol b{color:var(--ink);font-weight:400} .multicol .ac{color:var(--accent)}
+
+  /* palette */
+  .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .sw{border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;background:var(--panel)}
+  .sw .chip{height:64px} .sw .m{padding:9px 12px;display:flex;flex-direction:column;gap:1px}
+  .sw .nm{font-size:.84rem;text-transform:capitalize} .sw .hx{font-size:.72rem;color:var(--muted)}
+
+  /* code */
+  .code{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;background:var(--panel-2)}
+  .code .bar{display:flex;gap:7px;padding:13px 16px;border-bottom:1px solid var(--border)}
+  .code .bar i{width:11px;height:11px;border-radius:50%}
+  .code pre{margin:0;padding:20px 22px;font-family:"Monaspace Neon";font-size:.92rem;line-height:1.75;
+    font-feature-settings:"liga" 1,"calt" 1,"ss01" 1;overflow:auto}
+  .c-key{color:var(--krypton)}.c-fn{color:var(--radon)}.c-str{color:var(--xenon)}
+  .c-num{color:var(--neon)}.c-com{color:var(--muted)}.c-op{color:var(--argon)}
+  .ligs{color:var(--muted);font-size:.82rem;margin-top:10px}
+
+  /* ---- table ---- */
+  .table-wrap{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;background:var(--panel)}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  th{text-align:left;font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+    padding:13px 16px;border-bottom:2px solid var(--border);white-space:nowrap}
+  td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr{transition:background .15s ease} tbody tr:hover{background:var(--panel-2)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .tdot{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:8px}
+
+  /* ---- graphs (SVG/CSS bars + sparkline) ---- */
+  .graphs{display:grid;grid-template-columns:1.1fr .9fr;gap:26px}
+  .card{border:1px solid var(--border);border-radius:var(--r-lg);background:var(--panel);padding:20px 22px}
+  .card h3{font-family:var(--display);font-size:1.04rem;margin:0 0 2px}
+  .card .csub{font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+  .bars .row{display:grid;grid-template-columns:108px 1fr 42px;gap:14px;align-items:center;padding:7px 0}
+  .bars .track{height:12px;background:var(--panel-2);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+  .bars .fill{height:100%;background:var(--accent);border-radius:6px;transition:width .5s cubic-bezier(.25,.1,.25,1)}
+  .bars .lab{font-size:.82rem} .bars .val{text-align:right;font-variant-numeric:tabular-nums;font-size:.8rem;color:var(--muted)}
+  .spark{width:100%;height:120px;display:block}
+
+  /* ---- minimalist illustrations ---- */
+  .illos{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .illo{border:1px solid var(--border);border-radius:var(--r-lg);background:var(--panel);padding:24px;
+    display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
+  .illo svg{width:100%;height:120px}
+  .illo .cap{font-size:.78rem;color:var(--muted)}
+  .illo [stroke]{stroke:var(--accent)} .illo .fill{fill:var(--accent)} .illo .mut{stroke:var(--muted)}
+
+  /* scale */
+  .scale > div{border-top:1px solid var(--border);padding:14px 0;display:flex;align-items:baseline;gap:18px}
+  .scale > div:first-child{border-top:0}
+  .scale .lbl{font-size:.72rem;color:var(--muted);width:130px;flex:0 0 auto}
+
+  /* tufte theme */
+  .theme{border:1px solid var(--border);border-radius:var(--r-lg);padding:22px 24px;margin-top:24px;background:var(--panel)}
+  .theme h3{font-family:var(--display);margin:0 0 4px;font-size:1.2rem}
+  .theme p{color:var(--muted);font-size:.88rem;margin:0 0 16px;max-width:62ch}
+  .vars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+  .v{display:grid;grid-template-columns:26px 1fr;gap:11px;align-items:center;padding:9px 11px;
+    background:var(--panel-2);border:1px solid var(--border);border-radius:var(--r-md)}
+  .v .d{width:26px;height:26px;border-radius:6px} .v .vm{display:flex;flex-direction:column;min-width:0}
+  .v .vn{font-size:.72rem}.v .vh{font-size:.64rem;color:var(--muted)}
+
+  footer{margin-top:72px;border-top:1px solid var(--border);padding-top:18px;color:var(--muted);font-size:.76rem}
+  footer a{color:var(--accent)}
+  a{color:var(--accent)}
+
+  @media(max-width:860px){.faces{grid-template-columns:repeat(2,1fr)} .graphs{grid-template-columns:1fr}
+    .vars{grid-template-columns:1fr} .illos{grid-template-columns:1fr} .multicol{columns:1}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="switch">
+    <div class="grp"><span class="lab">Bg</span>
+      <button data-bg="dark" aria-pressed="true">Dark</button>
+      <button data-bg="void">Void</button>
+      <button data-bg="slate">Slate</button>
+      <button data-bg="paper">Paper</button>
+    </div>
+    <div class="grp"><span class="lab">Accent</span>
+      <button class="acc" data-acc="neon" style="background:#F5B8A5" aria-label="Neon" aria-pressed="true"></button>
+      <button class="acc" data-acc="argon" style="background:#F1E170" aria-label="Argon"></button>
+      <button class="acc" data-acc="xenon" style="background:#B6D162" aria-label="Xenon"></button>
+      <button class="acc" data-acc="radon" style="background:#82D2CF" aria-label="Radon"></button>
+      <button class="acc" data-acc="krypton" style="background:#BC9AFA" aria-label="Krypton"></button>
+    </div>
+  </div>
+
+  <header>
+    <p class="kicker">design-tokens · extracted template</p>
+    <h1>Mona<span class="b">space</span></h1>
+    <p class="dek">A token set reverse-engineered from <b>monaspace.githubnext.com</b> — the five-font superfamily as accent colours over GitHub's dark canvas, on a 4/8/16/24 scale. One <code>monaspace.tokens.json</code>, the whole system. <b>Switch the background and accent above</b> — every block below re-themes from the tokens.</p>
+  </header>
+
+  <div class="huge-wrap">
+    <p class="huge">TEXTURE <span class="o">HEALING</span></p>
+    <p class="huge-sub">monospace that breathes — even when proportional</p>
+  </div>
+
+  <section>
+    <h2><span class="n">§01 — superfamily</span>Five faces, one metric</h2>
+    <p class="sub">Each face carries its own accent colour, exactly as the site assigns them.</p>
+    <div class="faces">
+      <div class="face neon"><div class="glow">Ne</div><div class="nm">Neon</div><div class="ds">Neo-grotesque sans</div></div>
+      <div class="face argon"><div class="glow">Ar</div><div class="nm">Argon</div><div class="ds">Humanist sans</div></div>
+      <div class="face xenon"><div class="glow">Xe</div><div class="nm">Xenon</div><div class="ds">Slab serif</div></div>
+      <div class="face radon"><div class="glow">Rn</div><div class="nm">Radon</div><div class="ds">Handwriting</div></div>
+      <div class="face krypton"><div class="glow">Kr</div><div class="nm">Krypton</div><div class="ds">Mechanical sans</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">§02 — the idea</span>One family, five voices</h2>
+    <div class="vsection">
+      <h3 class="vhead">SUPERFAMILY</h3>
+      <div class="multicol">
+        <p>Monaspace is a <b>monospaced superfamily</b>: five faces that share one metric grid yet read in five registers — from neo-grotesque to handwriting.</p>
+        <p>Because the cell width is constant, you can <span class="ac">mix faces inline</span> without the layout shifting a pixel — a comment in Radon beside code in Neon.</p>
+        <p>The token set captures this as five <b>fontFamily</b> tokens plus a <span class="ac">type</span> group that assigns Xenon to display, Neon to body, Argon to code.</p>
+        <p>Texture healing nudges narrow glyph pairs apart so the grey value of a block of text evens out — the calm you feel reading it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">§03 — palette</span>Accents over canvas</h2>
+    <p class="sub">The font accents plus the surface roles — every value extracted from the live CSS.</p>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#F5B8A5"></div><div class="m"><span class="nm">neon</span><span class="hx">#F5B8A5</span></div></div>
+      <div class="sw"><div class="chip" style="background:#F1E170"></div><div class="m"><span class="nm">argon</span><span class="hx">#F1E170</span></div></div>
+      <div class="sw"><div class="chip" style="background:#B6D162"></div><div class="m"><span class="nm">xenon</span><span class="hx">#B6D162</span></div></div>
+      <div class="sw"><div class="chip" style="background:#82D2CF"></div><div class="m"><span class="nm">radon</span><span class="hx">#82D2CF</span></div></div>
+      <div class="sw"><div class="chip" style="background:#BC9AFA"></div><div class="m"><span class="nm">krypton</span><span class="hx">#BC9AFA</span></div></div>
+      <div class="sw"><div class="chip" style="background:#0D1117;border-bottom:1px solid var(--border)"></div><div class="m"><span class="nm">canvas</span><span class="hx">#0D1117</span></div></div>
+      <div class="sw"><div class="chip" style="background:#FFFFFF"></div><div class="m"><span class="nm">ink</span><span class="hx">#FFFFFF</span></div></div>
+      <div class="sw"><div class="chip" style="background:#B7BFC8"></div><div class="m"><span class="nm">muted</span><span class="hx">#B7BFC8</span></div></div>
+      <div class="sw"><div class="chip" style="background:#2F353C"></div><div class="m"><span class="nm">border</span><span class="hx">#2F353C</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">§04 — in use</span>The reason it exists: code</h2>
+    <p class="sub">Monaspace Neon with ligatures + texture healing — the working face for the <code>type.code</code> role.</p>
+    <div class="code">
+      <div class="bar"><i style="background:#F5B8A5"></i><i style="background:#F1E170"></i><i style="background:#B6D162"></i></div>
+<pre><span class="c-com"># resolve a brand, then carry it into generation</span>
+<span class="c-key">from</span> dtokens <span class="c-key">import</span> resolve, export_prompt
+
+resolved <span class="c-op">=</span> resolve.resolve(model.load(<span class="c-str">"monaspace.tokens.json"</span>))
+theme    <span class="c-op">=</span> export_prompt.<span class="c-fn">to_tufte_theme</span>(resolved, <span class="c-str">"Monaspace"</span>)
+
+<span class="c-key">if</span> contrast(ink, canvas) <span class="c-op">&gt;=</span> <span class="c-num">7.0</span> <span class="c-op">&amp;&amp;</span> roles <span class="c-op">!=</span> <span class="c-num">0</span>:
+    ship(theme)   <span class="c-op">=&gt;</span> <span class="c-str">"AAA, by construction"</span>
+</pre>
+    </div>
+    <p class="ligs">Note the <code>=&gt;</code>, <code>&gt;=</code>, <code>!=</code>, <code>&amp;&amp;</code> ligatures and the even rhythm — that's texture healing.</p>
+  </section>
+
+  <section>
+    <h2><span class="n">§05 — data</span>The family, as a table</h2>
+    <p class="sub">Hex right-aligned for digit comparison (the one place numbers earn it).</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Face</th><th>Classification</th><th>Accent</th><th class="num">Hex</th><th class="num">Styl. sets</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tdot" style="background:#F5B8A5"></span>Neon</td><td>Neo-grotesque sans</td><td>salmon</td><td class="num">#F5B8A5</td><td class="num">8</td><td>Body, UI</td></tr>
+          <tr><td><span class="tdot" style="background:#F1E170"></span>Argon</td><td>Humanist sans</td><td>yellow</td><td class="num">#F1E170</td><td class="num">8</td><td>Code, prose</td></tr>
+          <tr><td><span class="tdot" style="background:#B6D162"></span>Xenon</td><td>Slab serif</td><td>lime</td><td class="num">#B6D162</td><td class="num">8</td><td>Display, headings</td></tr>
+          <tr><td><span class="tdot" style="background:#82D2CF"></span>Radon</td><td>Handwriting</td><td>teal</td><td class="num">#82D2CF</td><td class="num">6</td><td>Comments, notes</td></tr>
+          <tr><td><span class="tdot" style="background:#BC9AFA"></span>Krypton</td><td>Mechanical sans</td><td>purple</td><td class="num">#BC9AFA</td><td class="num">8</td><td>Labels, keys</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">§06 — graphs</span>Themed data ink</h2>
+    <p class="sub">Bars and the sparkline below paint in the live <code>--accent</code> — change it above.</p>
+    <div class="graphs">
+      <div class="card">
+        <h3>Glyph coverage</h3><div class="csub">per face · relative</div>
+        <div class="bars">
+          <div class="row"><span class="lab">Neon</span><span class="track"><span class="fill" style="width:96%"></span></span><span class="val">96</span></div>
+          <div class="row"><span class="lab">Argon</span><span class="track"><span class="fill" style="width:94%"></span></span><span class="val">94</span></div>
+          <div class="row"><span class="lab">Xenon</span><span class="track"><span class="fill" style="width:92%"></span></span><span class="val">92</span></div>
+          <div class="row"><span class="lab">Radon</span><span class="track"><span class="fill" style="width:78%"></span></span><span class="val">78</span></div>
+          <div class="row"><span class="lab">Krypton</span><span class="track"><span class="fill" style="width:90%"></span></span><span class="val">90</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Adoption</h3><div class="csub">stars · 6 releases</div>
+        <svg class="spark" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true">
+          <polyline class="fill" style="fill:var(--accent);opacity:.12;stroke:none"
+            points="0,120 0,96 60,80 120,58 180,40 240,20 300,8 300,120"></polyline>
+          <polyline points="0,96 60,80 120,58 180,40 240,20 300,8" fill="none"
+            stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+          <circle cx="300" cy="8" r="4" class="fill" style="fill:var(--accent)"></circle>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">§07 — marks</span>Minimalist illustrations</h2>
+    <p class="sub">Monoline, single-accent — the kind of glyph that lives next to monospaced text.</p>
+    <div class="illos">
+      <div class="illo">
+        <svg viewBox="0 0 120 90" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="8" y="12" width="104" height="66" rx="8" stroke="var(--accent)"></rect>
+          <path d="M24 36 L40 47 L24 58" stroke="var(--accent)"></path>
+          <rect x="52" y="52" width="22" height="6" rx="2" class="fill" style="fill:var(--accent);stroke:none"></rect>
+        </svg>
+        <span class="cap">prompt + cursor</span>
+      </div>
+      <div class="illo">
+        <svg viewBox="0 0 120 90" fill="none" stroke-width="2" aria-hidden="true">
+          <path class="mut" d="M20 10 V80 M50 10 V80 M80 10 V80 M110 10 V80 M10 25 H120 M10 50 H120 M10 75 H120" stroke="var(--muted)" opacity=".5"></path>
+          <rect x="50" y="50" width="30" height="25" class="fill" style="fill:var(--accent);stroke:none" opacity=".9"></rect>
+        </svg>
+        <span class="cap">constant cell grid</span>
+      </div>
+      <div class="illo">
+        <svg viewBox="0 0 120 90" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M30 18 L14 45 L30 72" stroke="var(--accent)"></path>
+          <path d="M90 18 L106 45 L90 72" stroke="var(--accent)"></path>
+          <path d="M52 30 L68 60" stroke="var(--accent)"></path>
+        </svg>
+        <span class="cap">&lt; / &gt; ligature</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">§08 — scale</span>Type &amp; space</h2>
+    <p class="sub">Display in Xenon; the 4/8/16/24 base scale drives spacing and radius.</p>
+    <div class="scale">
+      <div><span class="lbl">display · 32 / 700</span><span style="font-family:var(--display);font-size:32px;font-weight:700">Texture healing</span></div>
+      <div><span class="lbl">body · 16 / 300</span><span style="font-family:var(--mono);font-size:16px">Monospace that breathes — even when proportional.</span></div>
+      <div><span class="lbl">code · 14 / 400</span><span style="font-family:'Monaspace Argon';font-size:14px">const radius = [4, 8, 16, 24];</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">§09 — report bridge</span>Tufte theme</h2>
+    <p class="sub">The same template maps onto <code>/tufte-report</code>'s variables — the prompt door's tufte target.</p>
+    <div class="theme">
+      <h3>tufte-theme.css</h3>
+      <p>Brand roles bound to tufte-report's variable names. Most resolve straight from a Monaspace token; missing semantic roles fall back to tufte defaults.</p>
+      <div class="vars">
+        <div class="v"><span class="d" style="background:#FFFFFF"></span><span class="vm"><span class="vn">--ink</span><span class="vh">#FFFFFF</span></span></div>
+        <div class="v"><span class="d" style="background:#0D1117;border:1px solid #2F353C"></span><span class="vm"><span class="vn">--bg</span><span class="vh">#0D1117</span></span></div>
+        <div class="v"><span class="d" style="background:#F5B8A5"></span><span class="vm"><span class="vn">--spark-primary</span><span class="vh">#F5B8A5</span></span></div>
+        <div class="v"><span class="d" style="background:#B6D162"></span><span class="vm"><span class="vn">--spark-secondary</span><span class="vh">#B6D162</span></span></div>
+        <div class="v"><span class="d" style="background:#BC9AFA"></span><span class="vm"><span class="vn">--spark-tertiary</span><span class="vh">#BC9AFA</span></span></div>
+        <div class="v"><span class="d" style="background:#F1E170"></span><span class="vm"><span class="vn">--status-amber</span><span class="vh">#F1E170</span></span></div>
+        <div class="v"><span class="d" style="background:#B6D162"></span><span class="vm"><span class="vn">--status-green</span><span class="vh">#B6D162</span></span></div>
+        <div class="v"><span class="d" style="background:#BC9AFA"></span><span class="vm"><span class="vn">--accent</span><span class="vh">#BC9AFA</span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    design-tokens · template extracted from <a href="https://monaspace.githubnext.com/">monaspace.githubnext.com</a> · faces © GitHub Next (SIL OFL) · values are the source of truth
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var BG = {
+      dark:  {bg:"#0D1117", panel:"#11161d", "panel-2":"#0b0f14", ink:"#FFFFFF", muted:"#B7BFC8", border:"#2F353C", dot:"rgba(201,209,217,.05)"},
+      void:  {bg:"#000000", panel:"#0b0b0b", "panel-2":"#060606", ink:"#FFFFFF", muted:"#9aa0a6", border:"#1d1d1d", dot:"rgba(255,255,255,.04)"},
+      slate: {bg:"#161b22", panel:"#1c232c", "panel-2":"#10151b", ink:"#FFFFFF", muted:"#aeb6c0", border:"#30363d", dot:"rgba(201,209,217,.05)"},
+      paper: {bg:"#FBF7F0", panel:"#FFFFFF", "panel-2":"#F3EFE7", ink:"#13201F", muted:"#5d6a66", border:"#e0dacd", dot:"rgba(19,32,31,.05)"}
+    };
+    var ACC = {neon:"#F5B8A5", argon:"#F1E170", xenon:"#B6D162", radon:"#82D2CF", krypton:"#BC9AFA"};
+    var root = document.documentElement.style;
+    function setBg(k){ var t = BG[k]; for (var p in t) root.setProperty("--" + p, t[p]); }
+    function press(sel, el){ document.querySelectorAll(sel).forEach(function(b){ b.setAttribute("aria-pressed", b === el ? "true" : "false"); }); }
+    document.querySelectorAll("[data-bg]").forEach(function(b){
+      b.addEventListener("click", function(){ setBg(b.dataset.bg); press("[data-bg]", b); });
+    });
+    document.querySelectorAll("[data-acc]").forEach(function(b){
+      b.addEventListener("click", function(){ root.setProperty("--accent", ACC[b.dataset.acc]); press("[data-acc]", b); });
+    });
+  })();
+</script>
+</body>
+</html>

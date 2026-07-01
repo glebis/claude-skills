@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<!--
+  Halcyon — style-exploration spread (design-tokens prompt door demo).
+  An editorial page generated around one DTCG token set: masthead, hero,
+  multi-column narrative with sidebars/insets, a mood gallery with legends,
+  a token-mathematics section (KaTeX), type specimens, and the Tufte theme.
+  Images live at images/halcyon-<preset>.png; regenerate via resolved/image-prompts.md.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halcyon — style exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css">
+<script defer src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+<style>
+  :root{
+    --primary:#0E7C7B; --accent:#F2714E; --ink:#13201F; --paper:#FBF7F0;
+    --success:#3E8E5A; --warning:#D99A2B; --danger:#C24330;
+    --ink-60:#4a5957; --ink-40:#65716d; --rule:rgba(19,32,31,.14); --radius:12px;
+    --serif:"Fraunces",Georgia,"Times New Roman",serif;
+    --sans:"Inter",system-ui,-apple-system,sans-serif;
+    --mono:"Spline Sans Mono",ui-monospace,Menlo,monospace;
+    --measure:66ch;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+    font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    font-feature-settings:"kern" 1,"liga" 1;overflow-x:hidden}
+  a:focus-visible,.btn:focus-visible,select:focus-visible,input:focus-visible,
+  textarea:focus-visible,th[tabindex]:focus-visible,.doc nav a:focus-visible{
+    outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+  .page{max-width:1180px;margin:0 auto;padding:0 clamp(32px,6vw,96px) 120px}
+
+  /* ---- masthead ---- */
+  .masthead{border-bottom:2px solid var(--ink);padding:34px 0 18px;margin-bottom:34px;
+    display:grid;grid-template-columns:1fr auto;gap:14px;align-items:end}
+  .masthead .kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--primary);margin:0 0 10px}
+  .masthead h1{font-family:var(--serif);font-weight:600;font-size:clamp(3rem,9vw,6.2rem);
+    line-height:.9;letter-spacing:-.02em;margin:0;font-optical-sizing:auto}
+  .masthead .dek{font-family:var(--serif);font-style:italic;font-size:1.35rem;color:var(--ink-60);
+    max-width:34ch;margin:14px 0 0;line-height:1.35}
+  .colophon{font-family:var(--mono);font-size:.7rem;color:var(--ink-40);text-align:left;
+    line-height:1.7;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .colophon b{color:var(--ink);font-weight:500}
+
+  /* ---- hero ---- */
+  figure{margin:0}
+  .hero{margin:0 0 16px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--rule);
+    position:relative;background:#0c1413}
+  .hero img{display:block;width:100%;height:auto}
+  .legend{display:flex;gap:14px;align-items:baseline;color:var(--ink-40);
+    font-family:var(--mono);font-size:.74rem;padding:10px 2px 0;border-top:0}
+  .legend .lead{color:var(--accent);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+  .legend .txt{color:var(--ink-60);font-family:var(--sans);font-size:.86rem;line-height:1.45}
+
+  h2{font-family:var(--serif);font-weight:600;font-size:2rem;letter-spacing:-.01em;
+    margin:64px 0 6px;line-height:1.05}
+  h2 .num{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;color:var(--accent);
+    text-transform:uppercase;display:block;margin-bottom:8px;font-weight:500}
+  .standfirst{font-family:var(--serif);font-size:1.18rem;font-style:italic;color:var(--ink-60);
+    max-width:54ch;margin:0 0 26px}
+
+  /* ---- 3-col editorial body: text | text | sidebar ---- */
+  .body-grid{display:grid;grid-template-columns:1fr 1fr 270px;gap:34px;align-items:start}
+  .body-grid p{margin:0 0 1em;max-width:var(--measure)}
+  .dropcap::first-letter{font-family:var(--serif);font-weight:600;float:left;
+    font-size:4.6rem;line-height:.72;padding:6px 10px 0 0;color:var(--primary)}
+  .smallcaps{font-variant:small-caps;letter-spacing:.04em;color:var(--ink)}
+  .pull{font-family:var(--serif);font-size:1.5rem;font-weight:500;line-height:1.25;
+    color:var(--ink);border-left:3px solid var(--accent);padding-left:16px;margin:8px 0 18px}
+  aside.side{font-size:.86rem;background:#fff;border:1px solid var(--rule);border-radius:var(--radius);
+    padding:18px;position:sticky;top:20px}
+  aside.side h3{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-40);margin:0 0 12px}
+  .swatch-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--rule)}
+  .swatch-row:first-of-type{border-top:0}
+  .dot{width:22px;height:22px;border-radius:6px;flex:0 0 auto;border:1px solid rgba(0,0,0,.08)}
+  .swatch-row .role{font-weight:600;text-transform:capitalize;min-width:90px}
+  .swatch-row .hex{font-family:var(--mono);font-size:.74rem;color:var(--ink-40);
+    font-variant-numeric:tabular-nums}
+
+  /* ---- mood gallery: clean numbered plates, 3-up folding to 1 ---- */
+  .shared-note{font-family:var(--mono);font-size:.74rem;color:var(--ink-40);margin:-12px 0 22px;
+    padding-bottom:14px;border-bottom:1px solid var(--rule)}
+  .shared-note code{color:var(--primary)}
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:8px}
+  .card figure{margin:0}
+  .card .plate{border-radius:var(--radius);overflow:hidden;border:1px solid var(--rule);
+    background:#fff;box-shadow:0 1px 2px rgba(19,32,31,.05)}
+  .card img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover}
+  .card figcaption{display:flex;align-items:baseline;gap:10px;padding:11px 2px 0}
+  .card .pl-num{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;color:var(--accent);
+    flex:0 0 auto}
+  .card .name{font-family:var(--serif);font-weight:600;font-size:1.1rem}
+  .card .tool{font-family:var(--mono);font-size:.62rem;color:var(--ink-40);text-transform:uppercase;
+    letter-spacing:.08em;flex:0 0 auto}
+
+  /* ---- token mathematics: text + margin notes ---- */
+  .math-grid{display:grid;grid-template-columns:1fr 300px;gap:40px;align-items:start}
+  .math-block{background:#fff;border:1px solid var(--rule);border-radius:var(--radius);
+    padding:20px 24px;margin:0 0 18px}
+  .math-block .lbl{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:10px}
+  .math-block .katex-display{margin:.4em 0}
+  .math-note{font-size:.88rem;color:var(--ink-60);margin-top:8px}
+  .marginnote{font-size:.84rem;color:var(--ink-60);border-top:1px solid var(--rule);padding-top:12px;
+    margin-bottom:22px}
+  .marginnote b{font-family:var(--serif);color:var(--ink);font-weight:600;font-style:italic}
+
+  /* ---- type specimens ---- */
+  .specimens{display:grid;grid-template-columns:repeat(2,1fr);gap:30px}
+  .spec{border-top:2px solid var(--ink);padding-top:14px}
+  .spec .display{font-family:var(--serif);font-weight:600;font-size:2.6rem;line-height:1.05;
+    letter-spacing:-.01em}
+  .spec .body-sample{margin-top:.5rem;max-width:42ch}
+  .spec .tag{font-family:var(--mono);font-size:.7rem;color:var(--ink-40);margin-top:10px;
+    font-variant-numeric:tabular-nums}
+  .oldstyle{font-feature-settings:"onum" 1,"liga" 1}
+
+  /* ---- tufte theme inset ---- */
+  .theme-inset{background:var(--ink);border-radius:var(--radius);padding:24px 26px;
+    margin-top:24px;color:#dfe7e4}
+  .theme-inset h3{font-family:var(--serif);color:#fff;margin:0 0 4px;font-weight:600;font-size:1.3rem}
+  .theme-inset p{color:#9fb0ac;font-size:.9rem;margin:0 0 16px;max-width:60ch}
+  .theme-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .var{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;align-items:center;
+    padding:11px 13px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:9px}
+  .var .vdot{width:30px;height:30px;border-radius:7px;border:1px solid rgba(255,255,255,.14)}
+  .var .vmeta{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .var .vname{color:#eaf2ef;font-family:var(--mono);font-size:.74rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .var .vhex{color:#8fa39e;font-family:var(--mono);font-size:.66rem;font-variant-numeric:tabular-nums}
+
+  footer{margin-top:72px;border-top:2px solid var(--ink);padding-top:16px;
+    font-family:var(--mono);font-size:.72rem;color:var(--ink-40);display:flex;
+    justify-content:flex-start;flex-wrap:wrap;gap:8px 28px}
+
+  /* ---- pictogram marks (Isotype row) ---- */
+  .icons{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:8px}
+  .icon{background:#fff;border:1px solid var(--rule);border-radius:var(--radius);overflow:hidden;
+    position:relative;aspect-ratio:1/1}
+  .icon img{display:block;width:100%;height:100%;object-fit:cover}
+  .icon .pend{position:absolute;inset:0;display:grid;place-items:center;
+    background:repeating-linear-gradient(45deg,#f3efe7,#f3efe7 7px,#ece5da 7px,#ece5da 14px);
+    font-family:var(--mono);font-size:.58rem;color:var(--ink-40);text-transform:uppercase;letter-spacing:.12em}
+  .icon-caps{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:9px}
+  .icon-caps span{font-family:var(--mono);font-size:.62rem;color:var(--ink-40);text-align:center;
+    text-transform:uppercase;letter-spacing:.05em}
+
+  /* ---- centered large image + multiline legend ---- */
+  .figure-center{margin:52px auto 0;max-width:540px;text-align:center}
+  .figure-center .plate{border-radius:var(--radius);overflow:hidden;border:1px solid var(--rule);background:#fff}
+  .figure-center img{display:block;width:100%}
+  .figure-center figcaption{margin:16px auto 0;font-family:var(--serif);font-style:italic;color:var(--ink-60);
+    font-size:1.06rem;line-height:1.5;max-width:44ch}
+  .figure-center figcaption .src{display:block;font-family:var(--mono);font-style:normal;font-size:.68rem;
+    color:var(--ink-40);margin-top:10px;text-transform:uppercase;letter-spacing:.09em}
+
+  /* ---- magazine quotation (full-bleed) ---- */
+  .mag-quote{margin:80px calc(50% - 50vw);padding:66px 24px;background:var(--primary);color:var(--paper);
+    text-align:center}
+  .mag-quote .mark{font-family:var(--serif);font-size:3rem;line-height:.4;color:rgba(251,247,240,.5);
+    display:block;margin-bottom:10px}
+  .mag-quote blockquote{margin:0 auto;max-width:20ch;font-family:var(--serif);font-weight:500;
+    font-size:clamp(2rem,5.5vw,3.3rem);line-height:1.08;letter-spacing:-.015em}
+  .mag-quote .cite{display:block;margin-top:24px;font-family:var(--mono);font-size:.72rem;
+    text-transform:uppercase;letter-spacing:.16em;color:rgba(251,247,240,.72)}
+
+  /* ---- code block with live preview ---- */
+  .codeprev{display:grid;grid-template-columns:1.05fr .95fr;border:1px solid var(--rule);
+    border-radius:var(--radius);overflow:hidden;margin-top:8px}
+  .codeprev pre{margin:0;background:var(--ink);color:#dfe7e4;padding:22px 24px;overflow:auto;
+    font-family:var(--mono);font-size:.78rem;line-height:1.7;tab-size:2}
+  .codeprev pre .c{color:#7f928d}.codeprev pre .k{color:#f2a48e}.codeprev pre .v{color:#8fd3c8}
+  .codeprev .render{padding:24px;background:#fff;display:flex;flex-direction:column;gap:11px;justify-content:center}
+  .codeprev .render .label{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:2px}
+  .codeprev .render .rrow{display:flex;align-items:center;gap:11px}
+  .codeprev .render .rdot{width:26px;height:26px;border-radius:7px;border:1px solid rgba(0,0,0,.08);flex:0 0 auto}
+  .codeprev .render .rname{font-family:var(--mono);font-size:.72rem;color:var(--ink-60);min-width:150px}
+  .codeprev .render .rtag{font-family:var(--mono);font-size:.66rem;color:var(--ink-40);
+    font-variant-numeric:tabular-nums}
+
+  /* ---- form block ---- */
+  .formblock{background:#fff;border:1px solid var(--rule);border-radius:var(--radius);padding:28px;
+    display:grid;grid-template-columns:1fr 1fr;gap:18px 22px;margin-top:8px}
+  .formblock .full{grid-column:1/-1}
+  .formblock label{display:block;font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-40);margin-bottom:7px}
+  .formblock input,.formblock select,.formblock textarea{width:100%;font-family:var(--sans);font-size:.95rem;
+    padding:11px 13px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);
+    outline:none;transition:border-color .15s ease,box-shadow .15s ease}
+  .formblock input:focus,.formblock select:focus,.formblock textarea:focus{border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(14,124,123,.16)}
+  .formblock textarea{resize:vertical;min-height:82px}
+  .formblock .radios{display:flex;gap:18px;flex-wrap:wrap;padding-top:2px}
+  .formblock .radios label{display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;
+    font-family:var(--sans);font-size:.92rem;color:var(--ink);margin:0;cursor:pointer}
+  .formblock .radios input{width:auto;accent-color:var(--primary);margin:0}
+  .formblock .actions{display:flex;gap:12px;align-items:center}
+  .btn{font-family:var(--sans);font-weight:600;font-size:.95rem;padding:11px 22px;border-radius:8px;
+    border:1px solid var(--primary);background:var(--primary);color:#fff;cursor:pointer;
+    transition:transform .12s ease,filter .15s ease}
+  .btn:hover{filter:brightness(1.07)}.btn:active{transform:translateY(1px)}
+  .btn.ghost{background:transparent;color:var(--primary)}
+
+  /* ---- layout demos: centered medium + multi-column ---- */
+  .centered-block{max-width:620px;margin:8px auto 0}
+  .centered-block p{font-family:var(--serif);font-size:1.24rem;line-height:1.62;color:var(--ink);margin:0 0 1em}
+  .centered-block .by{font-family:var(--mono);font-size:.7rem;color:var(--ink-40);text-transform:uppercase;letter-spacing:.1em}
+  .multicol{columns:3;column-gap:36px;column-rule:1px solid var(--rule);margin-top:8px;font-size:.95rem}
+  .multicol p{margin:0 0 1em;break-inside:avoid}
+  .multicol p:first-child{margin-top:0}
+
+  /* ---- technical docs + syntax-highlighted code ---- */
+  .doc{display:grid;grid-template-columns:188px 1fr;gap:34px;margin-top:8px;align-items:start}
+  .doc nav{position:sticky;top:20px;font-family:var(--mono);font-size:.73rem}
+  .doc nav a{display:block;color:var(--ink-60);text-decoration:none;padding:5px 0 5px 12px;
+    border-left:2px solid var(--rule)}
+  .doc nav a:hover,.doc nav a.active{color:var(--primary);border-left-color:var(--primary)}
+  .doc article h3{font-family:var(--serif);font-size:1.32rem;margin:0 0 8px;scroll-margin-top:20px}
+  .doc article h3:not(:first-child){margin-top:34px}
+  .doc article p{font-size:.96rem;max-width:64ch}
+  .doc .inline{font-family:var(--mono);font-size:.85em;background:rgba(14,124,123,.09);color:var(--primary);
+    padding:1px 6px;border-radius:5px}
+  .doc pre{margin:14px 0;border-radius:10px;overflow:auto;border:1px solid rgba(255,255,255,.06)}
+  .doc pre code.hljs{font-family:var(--mono);font-size:.8rem;line-height:1.65;padding:18px 20px;border-radius:10px}
+
+  /* ---- tables (numeric right-aligned + sortable) ---- */
+  .table-wrap{margin-top:8px;border:1px solid var(--rule);border-radius:var(--radius);overflow:hidden;background:#fff}
+  table{width:100%;border-collapse:collapse;font-size:.92rem}
+  thead th{font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-40);text-align:left;padding:12px 16px;border-bottom:2px solid var(--ink);background:#fff;white-space:nowrap}
+  tbody td{padding:11px 16px;border-bottom:1px solid var(--rule)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr{transition:background .15s ease}
+  tbody tr:hover{background:#faf6ee}
+  .tnum{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+  th.tnum{text-align:right}
+  .trend-up{color:var(--success)}.trend-dn{color:var(--danger)}
+  table.sortable thead th{cursor:pointer;user-select:none}
+  table.sortable thead th::after{content:"⇅";opacity:.32;margin-left:6px;font-size:.85em}
+  table.sortable thead th.asc::after{content:"↑";opacity:.95;color:var(--primary)}
+  table.sortable thead th.desc::after{content:"↓";opacity:.95;color:var(--primary)}
+
+  /* ---- charts (tufte-report style) ---- */
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:8px}
+  .chartcard{border:1px solid var(--rule);border-radius:var(--radius);background:#fff;padding:18px 20px}
+  .chartcard h3{font-family:var(--serif);font-size:1.06rem;margin:0 0 2px}
+  .chartcard .csub{font-family:var(--mono);font-size:.64rem;color:var(--ink-40);text-transform:uppercase;
+    letter-spacing:.08em;margin-bottom:12px}
+  .chartcard .cwrap{position:relative;height:208px}
+  .sparkrow{display:grid;grid-template-columns:1fr 132px 60px;gap:14px;align-items:center;
+    padding:10px 0;border-top:1px solid var(--rule)}
+  .sparkrow:first-of-type{border-top:0}
+  .sparkrow .lab{font-size:.92rem}
+  .sparkrow svg{width:132px;height:28px;display:block}
+  .sparkrow .val{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.86rem;text-align:right}
+
+  /* ---- presentation slides (reveal.js embed + preview strip) ---- */
+  .deckwrap{border:1px solid var(--rule);border-radius:var(--radius);overflow:hidden;margin-top:8px;
+    background:var(--ink)}
+  .reveal-embed{width:100%;height:500px}
+  .reveal-embed .reveal{font-family:var(--sans);color:var(--paper);font-size:30px}
+  .reveal-embed .reveal h1,.reveal-embed .reveal h2{font-family:var(--serif);color:var(--paper);
+    font-weight:600;letter-spacing:-.01em;margin:0 0 .32em;line-height:1.02}
+  .reveal-embed .reveal h1{font-size:2.7em}
+  .reveal-embed .reveal h2{font-size:1.95em}
+  .reveal-embed .reveal p{font-size:.94em}
+  .reveal-embed .reveal .eyebrow{font-family:var(--mono);font-size:.56em;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--accent);margin-bottom:.7em}
+  .reveal-embed .reveal ul{display:inline-block;text-align:left;font-size:1em;line-height:1.8}
+  .reveal-embed .reveal .accent{color:var(--accent)}
+  .reveal-embed .reveal .huge{font-family:var(--serif);font-weight:600;font-size:5.4em;line-height:.84;margin:0}
+  .reveal-embed .reveal .kick{font-family:var(--mono);font-size:.62em;text-transform:uppercase;
+    letter-spacing:.18em;color:rgba(251,247,240,.8);margin-top:.5em}
+  .reveal-embed .reveal .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:1.7em;text-align:left;font-size:.82em;width:100%;max-width:820px;margin:1.4em auto 0}
+  .reveal-embed .reveal .cols b{display:block;font-family:var(--serif);color:var(--accent);font-size:1.4em;margin-bottom:.12em}
+  .reveal-embed .reveal .cols span{color:rgba(251,247,240,.85)}
+  .reveal-embed .reveal .imgslide{display:grid;grid-template-columns:.82fr 1fr;gap:1.2em;align-items:center}
+  .reveal-embed .reveal .imgslide img{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.12);display:block}
+  .reveal-embed .reveal .imgslide h2{text-align:left;margin-bottom:.18em}
+  .reveal-embed .reveal .imgslide p{text-align:left;color:rgba(251,247,240,.82)}
+  .slide-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px}
+  .slide{aspect-ratio:16/9;border-radius:10px;overflow:hidden;position:relative;padding:18px;
+    display:flex;flex-direction:column;justify-content:center;border:1px solid var(--rule)}
+  .slide .sn{position:absolute;top:9px;left:12px;font-family:var(--mono);font-size:.58rem;
+    letter-spacing:.1em;text-transform:uppercase;opacity:.6}
+  .slide.s-title{background:var(--ink);color:var(--paper)}
+  .slide.s-title .ey{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+  .slide.s-title b{font-family:var(--serif);font-size:1.5rem;font-weight:600;line-height:1.1}
+  .slide.s-agenda{background:var(--paper);color:var(--ink)}
+  .slide.s-agenda b{font-family:var(--serif);font-size:1.05rem;margin-bottom:6px}
+  .slide.s-agenda span{font-size:.72rem;color:var(--ink-60);line-height:1.7}
+  .slide.s-accent{background:var(--primary);color:var(--paper);justify-content:flex-end}
+  .slide.s-accent b{font-family:var(--serif);font-size:1.2rem;line-height:1.15}
+  .slide.s-accent span{font-family:var(--mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(251,247,240,.75);margin-top:6px}
+
+  /* ---- scroll-reveal animation ---- */
+  .reveal-up{opacity:0;transform:translateY(20px);
+    transition:opacity .6s cubic-bezier(.25,.1,.25,1),transform .6s cubic-bezier(.25,.1,.25,1)}
+  .reveal-up.in{opacity:1;transform:none}
+
+  /* ---- mobile folding ---- */
+  @media(max-width:880px){
+    .body-grid{grid-template-columns:1fr}
+    .math-grid{grid-template-columns:1fr}
+    .codeprev{grid-template-columns:1fr}
+    .formblock{grid-template-columns:1fr}
+    .doc{grid-template-columns:1fr}
+    .doc nav{position:static;display:flex;gap:6px;flex-wrap:wrap}
+    .charts{grid-template-columns:1fr}
+    .theme-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    aside.side{position:static}
+  }
+  @media(max-width:620px){
+    body{font-size:16px}
+    .page{padding:0 18px 80px}
+    .masthead{grid-template-columns:1fr}
+    .colophon{text-align:left;white-space:normal}
+    .gallery,.specimens{grid-template-columns:1fr}
+    .icons,.icon-caps{grid-template-columns:repeat(3,1fr)}
+    .mag-quote{padding:48px 20px}
+    .multicol{columns:1}
+    .slide-strip{grid-template-columns:1fr}
+    .theme-grid{grid-template-columns:1fr}
+  }
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div>
+      <p class="kicker">design-tokens · prompt door · field notes</p>
+      <h1>Halcyon</h1>
+      <p class="dek">One token set, carried untranslated all the way into image generation and Tufte reports.</p>
+    </div>
+    <div class="colophon">
+      <b>7</b> colors · <b>2</b> typefaces<br>
+      <b>4</b> plates · <b>6</b> marks<br>
+      source · <b>halcyon.tokens.json</b><br>
+      engine · <b>gpt-image-2</b>
+    </div>
+  </header>
+
+  <figure class="hero">
+    <img src="images/halcyon-bauhaus.png" alt="Halcyon bauhaus brand poster">
+  </figure>
+  <div class="legend">
+    <span class="lead">Plate I · bauhaus</span>
+    <span class="txt">The brand stated as a Bauhaus composition — the seven token colors become the whole vocabulary, even the palette legend at the foot is token-exact.</span>
+  </div>
+
+  <section>
+    <h2><span class="num">§01 — the argument</span>From values to vectors</h2>
+    <p class="standfirst">A design system earns its keep only when it travels. Halcyon's spine — color, type, shape — never leaves the JSON until it must.</p>
+    <div class="body-grid">
+      <div>
+        <p class="dropcap">Most token sets stop at CSS variables. They describe a brand to a stylesheet and then go quiet, leaving every <span class="smallcaps">downstream</span> act of making — a thumbnail, a poster, a report — to a human who re-types the hex codes from memory and hopes the teal is the right teal.</p>
+        <p>The prompt door closes that gap. It reads the resolved tokens, infers a <em>role</em> for each color from its name, and writes the brand out in the idiom each generator wants: a CLI line for gpt-image-2, a reference-anchored call for nano-banana, a variable map for Tufte.</p>
+      </div>
+      <div>
+        <p class="pull">The same teal that paints a button now paints the primary stream of a chart and the dominant mass of a poster.</p>
+        <p>Nothing here is sorcery. <span class="smallcaps">Roles</span> are guessed, not declared — a skill convention layered over <span class="oldstyle">DTCG 2025.10</span>, labelled as such wherever it surfaces. But the guess is enough to make one brand speak in four registers without a single value being hand-copied.</p>
+        <p>The four plates below were generated from this page's tokens, draft quality, in a single pass.</p>
+      </div>
+      <aside class="side">
+        <h3>Palette · roles inferred</h3>
+        <div class="swatch-row"><span class="dot" style="background:#0E7C7B"></span><span class="role">primary</span><span class="hex">#0E7C7B</span></div>
+        <div class="swatch-row"><span class="dot" style="background:#F2714E"></span><span class="role">accent</span><span class="hex">#F2714E</span></div>
+        <div class="swatch-row"><span class="dot" style="background:#13201F"></span><span class="role">text</span><span class="hex">#13201F</span></div>
+        <div class="swatch-row"><span class="dot" style="background:#FBF7F0"></span><span class="role">background</span><span class="hex">#FBF7F0</span></div>
+        <div class="swatch-row"><span class="dot" style="background:#3E8E5A"></span><span class="role">success</span><span class="hex">#3E8E5A</span></div>
+        <div class="swatch-row"><span class="dot" style="background:#D99A2B"></span><span class="role">warning</span><span class="hex">#D99A2B</span></div>
+        <div class="swatch-row"><span class="dot" style="background:#C24330"></span><span class="role">danger</span><span class="hex">#C24330</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">§02 — the plates</span>Four moods, one brand</h2>
+    <p class="standfirst">Each plate uses a preset unique to gpt-image-2; the brand's exact hex and fonts ride inside every subject.</p>
+    <p class="shared-note">Plate I (bauhaus) opens the spread above. Below, three more — all gpt-image-2, <code>--platform square</code>, commands in <code>resolved/image-prompts.md</code>.</p>
+    <div class="gallery">
+      <div class="card"><figure>
+        <div class="plate"><img src="images/halcyon-isometric.png" alt="Halcyon isometric diorama"></div>
+        <figcaption><span class="pl-num">Pl. II</span><span class="name">Isometric</span><span class="tool">gpt-image-2</span></figcaption>
+      </figure></div>
+      <div class="card"><figure>
+        <div class="plate"><img src="images/halcyon-poster.png" alt="Halcyon event poster"></div>
+        <figcaption><span class="pl-num">Pl. III</span><span class="name">Poster</span><span class="tool">gpt-image-2</span></figcaption>
+      </figure></div>
+      <div class="card"><figure>
+        <div class="plate"><img src="images/halcyon-editorial.png" alt="Halcyon editorial diagram tiles"></div>
+        <figcaption><span class="pl-num">Pl. IV</span><span class="name">Editorial</span><span class="tool">shared</span></figcaption>
+      </figure></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">§03 — the marks</span>An Isotype alphabet</h2>
+    <p class="standfirst">Focused pictograms in the manner of Gerd Arntz — solid shapes, straight edges, sanded paper, the brand's four colors and nothing else.</p>
+    <div class="icons">
+      <div class="icon"><img src="images/icon-lighthouse.png" alt="lighthouse pictogram" onerror="this.parentNode.innerHTML='&lt;div class=pend&gt;soon&lt;/div&gt;'"></div>
+      <div class="icon"><img src="images/icon-sprout.png" alt="sprout pictogram" onerror="this.parentNode.innerHTML='&lt;div class=pend&gt;soon&lt;/div&gt;'"></div>
+      <div class="icon"><img src="images/icon-hourglass.png" alt="hourglass pictogram" onerror="this.parentNode.innerHTML='&lt;div class=pend&gt;soon&lt;/div&gt;'"></div>
+      <div class="icon"><img src="images/icon-mountain.png" alt="mountain pictogram" onerror="this.parentNode.innerHTML='&lt;div class=pend&gt;soon&lt;/div&gt;'"></div>
+      <div class="icon"><img src="images/icon-book.png" alt="book pictogram" onerror="this.parentNode.innerHTML='&lt;div class=pend&gt;soon&lt;/div&gt;'"></div>
+      <div class="icon"><img src="images/icon-compass.png" alt="compass pictogram" onerror="this.parentNode.innerHTML='&lt;div class=pend&gt;soon&lt;/div&gt;'"></div>
+    </div>
+    <div class="icon-caps">
+      <span>Lighthouse</span><span>Sprout</span><span>Hourglass</span><span>Mountain</span><span>Book</span><span>Compass</span>
+    </div>
+
+    <figure class="figure-center">
+      <div class="plate"><img src="images/icon-lighthouse.png" alt="Halcyon lighthouse pictogram, enlarged"></div>
+      <figcaption>
+        The lighthouse, enlarged — one coral beam cutting the fog.<br>
+        The brand's promise in a single mark: orientation without noise.<br>
+        Teal tower, moss headland, coral light, on sanded paper.
+        <span class="src">icon-lighthouse · gpt-image-2 · quality high</span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="mag-quote">
+    <span class="mark">“</span>
+    <blockquote>Define&nbsp;once. Inherit everywhere.</blockquote>
+    <span class="cite">Halcyon · the prompt door</span>
+  </section>
+
+  <section>
+    <h2><span class="num">§04 — the mathematics</span>What the tokens encode</h2>
+    <p class="standfirst">Three relations turn flat values into a system. They are computed from Halcyon's own tokens.</p>
+    <div class="math-grid">
+      <div>
+        <div class="math-block">
+          <div class="lbl">Modular type scale · ratio r = 1.25</div>
+          <div data-tex-display="t_n = t_0 \cdot r^{\,n}, \quad t_0 = 16\text{px},\; r = 1.25 \;\Rightarrow\; \{16,\,20,\,25,\,31,\,39,\,40\}\,\text{px}"></div>
+          <p class="math-note">Body sits at <span class="oldstyle">t₀ = 16px</span>; the display step lands near 40px, matching <code style="font-family:var(--mono)">type.display</code>.</p>
+        </div>
+        <div class="math-block">
+          <div class="lbl">Spacing · geometric, base 8</div>
+          <div data-tex-display="s_n = 8 \cdot 2^{\,n} \;\Rightarrow\; s_0{=}8,\; s_1{=}16,\; s_2{=}32\;\text{(sm, md, lg)}"></div>
+          <p class="math-note">Each rung doubles the last — the density the brand reads as “calm”.</p>
+        </div>
+        <div class="math-block">
+          <div class="lbl">WCAG contrast · ink on paper</div>
+          <div data-tex-display="C = \dfrac{L_{\text{paper}} + 0.05}{L_{\text{ink}} + 0.05} = \dfrac{0.96 + 0.05}{0.012 + 0.05} \approx 16.3 : 1"></div>
+          <p class="math-note">Text <code style="font-family:var(--mono)">#13201F</code> on background <code style="font-family:var(--mono)">#FBF7F0</code> clears <span class="smallcaps">aaa</span> (≥ 7:1) comfortably.</p>
+        </div>
+      </div>
+      <div>
+        <p class="marginnote"><b>Why a ratio, not a list.</b> A modular scale means any new size is derivable, so generated layouts never invent an off-system value.</p>
+        <p class="marginnote"><b>Why base-8 doubling.</b> Powers of two keep optical rhythm on any pixel grid and make the “airy” feel reproducible across media.</p>
+        <p class="marginnote"><b>Why carry contrast.</b> The prompt door can refuse or warn on palettes that would render text illegibly — accessibility travels with the brand, not bolted on after.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">§05 — the voices</span>Type specimens</h2>
+    <div class="specimens">
+      <div class="spec">
+        <div class="display">Clarity in a complex world.</div>
+        <p class="body-sample">Fraunces carries the voice — high-contrast, optically sized, a little literary. Set in <span class="smallcaps">small caps</span> it labels; set large it sings.</p>
+        <p class="tag oldstyle">Fraunces · 600 · display 40px · oldstyle 0123456789</p>
+      </div>
+      <div class="spec">
+        <div class="display" style="font-family:var(--sans);font-weight:600;font-size:2.1rem">Quiet tools for focused work.</div>
+        <p class="body-sample">Inter does the reading — 16px at a 1.5 leading, neutral, legible at any size, with tabular <span style="font-variant-numeric:tabular-nums">0123456789</span> for data.</p>
+        <p class="tag">Inter · 400 / 600 · body 16px / 1.5</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">§06 — components</span>The brand, interactive</h2>
+    <p class="standfirst">Tokens compiled to CSS drive real UI — focus rings in primary teal, buttons in the brand, inputs on paper.</p>
+    <form class="formblock" onsubmit="return false">
+      <div><label for="f-name">Name</label><input id="f-name" type="text" placeholder="Ada Lovelace"></div>
+      <div><label for="f-email">Email</label><input id="f-email" type="email" placeholder="ada@halcyon.so"></div>
+      <div class="full"><label for="f-plan">Plan</label><select id="f-plan"><option>Focus — solo</option><option>Studio — team</option><option>Atlas — organisation</option></select></div>
+      <div class="full"><label>Digest cadence</label><div class="radios">
+        <label><input type="radio" name="cad" checked> Daily</label>
+        <label><input type="radio" name="cad"> Weekly</label>
+        <label><input type="radio" name="cad"> Monthly</label>
+      </div></div>
+      <div class="full"><label for="f-note">What would you like to make calmer?</label><textarea id="f-note" placeholder="A sentence is plenty…"></textarea></div>
+      <div class="full actions"><button class="btn" type="submit">Start a project</button><button class="btn ghost" type="button">Preview tokens</button></div>
+    </form>
+  </section>
+
+  <section>
+    <h2><span class="num">§07 — the report bridge</span>Tokens, compiled</h2>
+    <p class="standfirst">The token set exports to plain CSS variables, and maps onto <code style="font-family:var(--mono);font-size:.9rem">/tufte-report</code>'s own variables — a theme, not a DESIGN.md.</p>
+    <div class="codeprev">
+<pre><span class="c">/* tokens.css — exported from halcyon.tokens.json */</span>
+<span class="k">:root</span> {
+  <span class="v">--color-primary</span>: #0E7C7B;
+  <span class="v">--color-accent</span>:  #F2714E;
+  <span class="v">--color-text</span>:    #13201F;
+  <span class="v">--radius-md</span>:     12px;
+  <span class="v">--space-md</span>:      16px;
+}</pre>
+      <div class="render">
+        <div class="label">live · rendered from the code at left</div>
+        <div class="rrow"><span class="rdot" style="background:#0E7C7B"></span><span class="rname">--color-primary</span><span class="rtag">#0E7C7B</span></div>
+        <div class="rrow"><span class="rdot" style="background:#F2714E"></span><span class="rname">--color-accent</span><span class="rtag">#F2714E</span></div>
+        <div class="rrow"><span class="rdot" style="background:#13201F"></span><span class="rname">--color-text</span><span class="rtag">#13201F</span></div>
+        <button class="btn" style="margin-top:6px;border-radius:12px;padding:9px 18px;font-size:.86rem">Button · radius-md</button>
+      </div>
+    </div>
+    <div class="theme-inset">
+      <h3>tufte-theme.css</h3>
+      <p>Brand roles bound to tufte-report's variable names. Every value here resolved from a Halcyon token — no defaults needed.</p>
+      <div class="theme-grid">
+        <div class="var"><span class="vdot" style="background:#13201F"></span><span class="vmeta"><span class="vname">--ink</span><span class="vhex">#13201F</span></span></div>
+        <div class="var"><span class="vdot" style="background:#FBF7F0"></span><span class="vmeta"><span class="vname">--bg</span><span class="vhex">#FBF7F0</span></span></div>
+        <div class="var"><span class="vdot" style="background:#0E7C7B"></span><span class="vmeta"><span class="vname">--spark-primary</span><span class="vhex">#0E7C7B</span></span></div>
+        <div class="var"><span class="vdot" style="background:#3E8E5A"></span><span class="vmeta"><span class="vname">--spark-secondary</span><span class="vhex">#3E8E5A</span></span></div>
+        <div class="var"><span class="vdot" style="background:#F2714E"></span><span class="vmeta"><span class="vname">--spark-tertiary</span><span class="vhex">#F2714E</span></span></div>
+        <div class="var"><span class="vdot" style="background:#C24330"></span><span class="vmeta"><span class="vname">--status-red</span><span class="vhex">#C24330</span></span></div>
+        <div class="var"><span class="vdot" style="background:#D99A2B"></span><span class="vmeta"><span class="vname">--status-amber</span><span class="vhex">#D99A2B</span></span></div>
+        <div class="var"><span class="vdot" style="background:#3E8E5A"></span><span class="vmeta"><span class="vname">--status-green</span><span class="vhex">#3E8E5A</span></span></div>
+        <div class="var"><span class="vdot" style="background:#F2714E"></span><span class="vmeta"><span class="vname">--accent</span><span class="vhex">#F2714E</span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">§08 — layouts</span>Reading widths</h2>
+    <p class="standfirst">The same tokens carry across very different measures — a centered essay column and a dense three-column run.</p>
+    <div class="centered-block">
+      <p class="dropcap">Centered, medium measure — the single column built for argument. Sixty-odd characters a line, Fraunces for warmth, generous leading. This is the width you read slowly.</p>
+      <p>Nothing here is hand-tuned: the measure is <span class="smallcaps">66ch</span>, the rhythm is the base-8 scale, the color is token ink on token paper.</p>
+      <p class="by">Centered · ~620px · serif</p>
+    </div>
+    <div class="multicol">
+      <p><b>Three columns</b> change the voice entirely — newsprint density, scannable, for reference rather than reading.</p>
+      <p>The column rule is a single hairline in token <span class="inline">--rule</span>; the gutter is base-8 × 4.</p>
+      <p>Break-inside is guarded so paragraphs never split awkwardly across a boundary.</p>
+      <p>Same ink, same paper, same scale — only the measure and the column count differ.</p>
+      <p>A system that travels has to survive both the essay and the index.</p>
+      <p>These two blocks are one stylesheet apart.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">§09 — documentation</span>How the door works</h2>
+    <p class="standfirst">Technical docs, with real multi-colour syntax highlighting via highlight.js.</p>
+    <div class="doc">
+      <nav>
+        <a href="#d-install">Install</a>
+        <a href="#d-prompt">prompt</a>
+        <a href="#d-python">Python API</a>
+      </nav>
+      <article>
+        <h3 id="d-install">Install</h3>
+        <p>The core is dependency-free Python. Every command runs through <span class="inline">scripts/tokens</span>.</p>
+        <pre><code class="language-bash"># scaffold a token file, then compile a brand
+scripts/tokens setup-edit design.tokens.json
+scripts/tokens use design.tokens.json --name "Halcyon"</code></pre>
+        <h3 id="d-prompt">The prompt door</h3>
+        <p>Turn resolved tokens into a generation prompt for any target:</p>
+        <pre><code class="language-bash">scripts/tokens prompt design.tokens.json \
+  --target gpt-image-2 --preset bauhaus --platform square</code></pre>
+        <h3 id="d-python">Python API</h3>
+        <p>Or call the modules directly — <span class="inline">summarize()</span> distils the brand into roles, fonts, and shape language:</p>
+        <pre><code class="language-python">from dtokens import resolve, model, brand_summary, export_prompt
+
+resolved = resolve.resolve(model.load("design.tokens.json"))
+summary  = brand_summary.summarize(resolved)        # palette, fonts, shape
+theme    = export_prompt.to_tufte_theme(resolved, "Halcyon")
+print(theme)  # -> :root { --ink: #13201F; ... }</code></pre>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">§10 — tables</span>Tokens as data</h2>
+    <p class="standfirst">Numbers right-align for digit comparison; click any header to sort.</p>
+    <div class="table-wrap">
+      <table class="sortable" id="tok-table">
+        <thead><tr>
+          <th data-type="text">Token</th>
+          <th data-type="text">Role</th>
+          <th class="tnum" data-type="text">Hex</th>
+          <th class="tnum" data-type="num">Usage&nbsp;%</th>
+          <th class="tnum" data-type="num">Contrast</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>primary</td><td>action</td><td class="tnum">#0E7C7B</td><td class="tnum">38</td><td class="tnum">4.9</td></tr>
+          <tr><td>accent</td><td>highlight</td><td class="tnum">#F2714E</td><td class="tnum">12</td><td class="tnum">2.8</td></tr>
+          <tr><td>text</td><td>ink</td><td class="tnum">#13201F</td><td class="tnum">28</td><td class="tnum">16.3</td></tr>
+          <tr><td>background</td><td>surface</td><td class="tnum">#FBF7F0</td><td class="tnum">0</td><td class="tnum">1.0</td></tr>
+          <tr><td>success</td><td>positive</td><td class="tnum">#3E8E5A</td><td class="tnum">8</td><td class="tnum">3.6</td></tr>
+          <tr><td>warning</td><td>caution</td><td class="tnum">#D99A2B</td><td class="tnum">6</td><td class="tnum">2.1</td></tr>
+          <tr><td>danger</td><td>negative</td><td class="tnum">#C24330</td><td class="tnum">8</td><td class="tnum">4.4</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">§11 — charts</span>Tufte-style graphs</h2>
+    <p class="standfirst">The brand palette drives the data ink — the same colours <code style="font-family:var(--mono);font-size:.9rem">/tufte-report</code> uses.</p>
+    <div class="charts">
+      <div class="chartcard">
+        <h3>Adoption by surface</h3>
+        <div class="csub">tokens applied · last 6 releases</div>
+        <div class="cwrap"><canvas id="ch-bar"></canvas></div>
+      </div>
+      <div class="chartcard">
+        <h3>Contrast vs. usage</h3>
+        <div class="csub">each role · ratio over share</div>
+        <div class="cwrap"><canvas id="ch-line"></canvas></div>
+      </div>
+    </div>
+    <div class="chartcard" style="margin-top:28px">
+      <h3>Per-role sparklines</h3>
+      <div class="csub">six-release trend · inline SVG</div>
+      <div class="sparkrow"><span class="lab">primary</span><svg data-spark="6,9,14,18,24,31" data-color="#0E7C7B"></svg><span class="val">+31</span></div>
+      <div class="sparkrow"><span class="lab">accent</span><svg data-spark="3,4,6,6,9,12" data-color="#F2714E"></svg><span class="val">+12</span></div>
+      <div class="sparkrow"><span class="lab">success</span><svg data-spark="1,2,3,5,6,8" data-color="#3E8E5A"></svg><span class="val">+8</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">§12 — slides</span>Brand on stage</h2>
+    <p class="standfirst">A live deck rendered with reveal.js, themed entirely from tokens — with static previews beneath.</p>
+    <div class="deckwrap">
+      <div class="reveal-embed"><div class="reveal"><div class="slides">
+        <section data-background-color="#13201F">
+          <p class="eyebrow">Halcyon · the prompt door</p>
+          <h1>Define once.<br><span class="accent">Inherit everywhere.</span></h1>
+        </section>
+        <section data-background-color="#0E7C7B">
+          <p class="huge">16.3<span style="font-size:.4em">:1</span></p>
+          <p class="kick">ink on paper · AAA by construction</p>
+        </section>
+        <section data-background-color="#13201F">
+          <h2>One token set →</h2>
+          <ul>
+            <li>CSS variables</li>
+            <li><span class="accent">Image prompts</span> — gpt-image-2, nano-banana</li>
+            <li>Tufte report theme</li>
+            <li>Isotype pictograms</li>
+          </ul>
+        </section>
+        <section data-background-color="#13201F">
+          <h2>Four registers, one source</h2>
+          <div class="cols">
+            <div><b>CSS</b><span>variables for the app shell</span></div>
+            <div><b>Images</b><span>gpt-image-2 · nano-banana presets</span></div>
+            <div><b>Report</b><span>tufte-report theme + charts</span></div>
+          </div>
+        </section>
+        <section data-background-color="#13201F">
+          <div class="imgslide">
+            <img src="images/icon-lighthouse.png" alt="Halcyon lighthouse pictogram">
+            <div><h2>One mark,<br>many media</h2><p>The Isotype set — generated from the very same tokens, no hand-translation.</p></div>
+          </div>
+        </section>
+        <section data-background-image="images/halcyon-bauhaus.png" data-background-size="cover" data-background-color="#13201F">
+          <h2 style="background:rgba(19,32,31,.6);display:inline-block;padding:.22em .55em;border-radius:12px">Brand as a system</h2>
+        </section>
+        <section data-background-color="#F2714E">
+          <h1 style="color:#13201F">Define once.<br>Inherit everywhere.</h1>
+        </section>
+      </div></div></div>
+    </div>
+    <div class="slide-strip">
+      <div class="slide s-title"><span class="sn">01 · title</span><span class="ey">Halcyon</span><b>Define once.<br>Inherit everywhere.</b></div>
+      <div class="slide s-agenda"><span class="sn">02 · agenda</span><b>One set →</b><span>CSS · prompts · report · icons</span></div>
+      <div class="slide s-accent"><span class="sn">03 · close</span><b>16.3 : 1</b><span>AAA by construction</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>design-tokens · prompt door · Halcyon example</span>
+    <span class="oldstyle">generated 2026 · gpt-image-2 · tokens are source of truth</span>
+  </footer>
+
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script>
+  window.addEventListener("load", function () {
+    var $ = function (s, r) { return (r || document).querySelector(s); };
+    var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+    // 1. KaTeX display formulas
+    if (window.katex) $$("[data-tex-display]").forEach(function (el) {
+      try { katex.render(el.getAttribute("data-tex-display"), el, { displayMode: true, throwOnError: false }); }
+      catch (e) { el.textContent = el.getAttribute("data-tex-display"); }
+    });
+
+    // 2. Syntax highlighting
+    if (window.hljs) $$("pre code").forEach(function (b) { try { hljs.highlightElement(b); } catch (e) {} });
+
+    // 3. Tufte-style charts
+    if (window.Chart) {
+      Chart.defaults.font.family = "'Spline Sans Mono', ui-monospace, monospace";
+      Chart.defaults.font.size = 10;
+      Chart.defaults.color = "#7c8987";
+      var axis = { x: { grid: { display: false }, border: { display: false } },
+                   y: { grid: { color: "#ececec" }, border: { display: false }, beginAtZero: true } };
+      var bar = $("#ch-bar"); if (bar) new Chart(bar, {
+        type: "bar",
+        data: { labels: ["r1","r2","r3","r4","r5","r6"], datasets: [{ data: [8,14,19,24,30,38],
+          backgroundColor: "rgba(14,124,123,.26)", borderColor: "#0E7C7B", borderWidth: 1, borderRadius: 1 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: axis }
+      });
+      var line = $("#ch-line"); if (line) new Chart(line, {
+        type: "line",
+        data: { labels: ["prim","accent","text","bg","succ","warn","dang"], datasets: [{ data: [4.9,2.8,16.3,1.0,3.6,2.1,4.4],
+          borderColor: "#F2714E", backgroundColor: "rgba(242,113,78,.12)", borderWidth: 1.5, pointRadius: 2, tension: .3, fill: true }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: axis }
+      });
+    }
+
+    // 4. Inline SVG sparklines
+    $$("svg[data-spark]").forEach(function (svg) {
+      var pts = svg.getAttribute("data-spark").split(",").map(Number);
+      var col = svg.getAttribute("data-color") || "#0E7C7B";
+      var w = 132, h = 28, pad = 3, min = Math.min.apply(null, pts), max = Math.max.apply(null, pts), rng = (max - min) || 1;
+      var step = (w - pad * 2) / (pts.length - 1);
+      var co = pts.map(function (v, i) { return [pad + i * step, h - pad - ((v - min) / rng) * (h - pad * 2)]; });
+      var line = co.map(function (c) { return c[0].toFixed(1) + "," + c[1].toFixed(1); }).join(" ");
+      var last = co[co.length - 1];
+      svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+      svg.innerHTML =
+        '<polyline points="' + pad + "," + (h - pad) + " " + line + " " + last[0].toFixed(1) + "," + (h - pad) +
+        '" fill="' + col + '" opacity="0.10"/>' +
+        '<polyline points="' + line + '" fill="none" stroke="' + col + '" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="2.1" fill="' + col + '"/>';
+    });
+
+    // 5. Sortable tables (keyboard + aria-sort accessible)
+    $$("table.sortable").forEach(function (t) {
+      var ths = t.tHead.rows[0].cells;
+      Array.prototype.forEach.call(ths, function (th, idx) {
+        th.setAttribute("tabindex", "0");
+        th.setAttribute("role", "button");
+        th.setAttribute("aria-sort", "none");
+        th.setAttribute("title", "Sort by " + th.textContent.trim());
+        function sortBy() {
+          var type = th.getAttribute("data-type") || "text";
+          var asc = !th.classList.contains("asc");
+          Array.prototype.forEach.call(ths, function (h) {
+            h.classList.remove("asc", "desc"); h.setAttribute("aria-sort", "none");
+          });
+          th.classList.add(asc ? "asc" : "desc");
+          th.setAttribute("aria-sort", asc ? "ascending" : "descending");
+          var rows = Array.prototype.slice.call(t.tBodies[0].rows);
+          rows.sort(function (a, b) {
+            var x = a.cells[idx].textContent.trim(), y = b.cells[idx].textContent.trim();
+            if (type === "num") {
+              x = parseFloat(x.replace(/[^0-9.\-]/g, "")); y = parseFloat(y.replace(/[^0-9.\-]/g, ""));
+              if (isNaN(x)) x = -Infinity; if (isNaN(y)) y = -Infinity; return asc ? x - y : y - x;
+            }
+            return asc ? x.localeCompare(y) : y.localeCompare(x);
+          });
+          rows.forEach(function (r) { t.tBodies[0].appendChild(r); });
+        }
+        th.addEventListener("click", sortBy);
+        th.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sortBy(); }
+        });
+      });
+    });
+
+    // 6. reveal.js embedded deck
+    if (window.Reveal) {
+      try {
+        var deck = new Reveal($(".reveal-embed .reveal"), {
+          embedded: true, controls: true, progress: true, hash: false, transition: "slide",
+          width: 960, height: 600, margin: 0.13
+        });
+        deck.initialize();
+      } catch (e) {}
+    }
+
+    // 7. Scroll-reveal (JS-only so no-JS keeps content visible)
+    var reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
+    if (!reduce && "IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+      }, { threshold: 0.08, rootMargin: "0px 0px -40px 0px" });
+      $$(".page > section").forEach(function (el) { el.classList.add("reveal-up"); io.observe(el); });
+    }
+
+    // 8. Doc nav active-state on scroll
+    var docLinks = $$(".doc nav a");
+    if (docLinks.length) {
+      var targets = docLinks.map(function (a) { return $(a.getAttribute("href")); });
+      window.addEventListener("scroll", function () {
+        var y = window.scrollY + 120, cur = 0;
+        targets.forEach(function (t, i) { if (t && t.offsetTop <= y) cur = i; });
+        docLinks.forEach(function (a, i) { a.classList.toggle("active", i === cur); });
+      }, { passive: true });
+    }
+  });
+</script>
+</body>
+</html>

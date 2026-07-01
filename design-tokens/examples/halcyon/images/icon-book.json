@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-23T17:01:10.519480",
+  "prompt": "flat geometric pictogram in the style of Gerd Arntz and the Isotype system, a single open book, solid minimalist shapes, straight clean edges, bold silhouette, restricted palette of teal #0E7C7B coral #F2714E moss green #3E8E5A and near-black #13201F on warm sanded paper background #FBF7F0, visible paper grain and sanded texture, linocut woodcut feel, no gradients, no shading, no text, centered with generous negative space",
+  "preset": null,
+  "platform": "square",
+  "thinking": "off",
+  "quality": "high",
+  "provider": "openai",
+  "n": 1,
+  "seed": null,
+  "output": "/Users/glebkalinin/ai_projects/claude-skills/design-tokens/examples/halcyon/images/icon-book.png",
+  "project": null,
+  "estimated_cost": 0.21
+}

@@ -1,0 +1,15 @@
+:root {
+  --primary: oklch(0.6489 0.2370 26.9728);   /* brand red */
+  --background: #ffffff;
+  --radius: 0px;
+  --spacing: 0.25rem;
+  --letter-spacing: 0em;
+  --font-sans: DM Sans, sans-serif;
+  --shadow-opacity: 1;
+  --duration-fast: 200ms;
+  --hero-gradient: linear-gradient(90deg, #fff, #000);
+}
+
+.dark {
+  --background: #000000;
+}
