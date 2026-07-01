@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<!--
+  Universal content blocks — one token-driven kit for wikis, docs, presentations
+  and non-technical demos. Styling is LINKED, not hand-written:
+    paper.css  → :root            (light editorial theme = base.tokens.json)
+    ink.css    → [data-theme=ink] (dark Monaspace theme = base + theme-ink override)
+  Toggle the theme in the top bar; the SAME markup re-renders light↔dark.
+  Re-theme = edit a tokens file, re-export, reload. Nothing here hardcodes a colour.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Universal blocks — themed by tokens</title>
+<link rel="stylesheet" href="paper.css">
+<link rel="stylesheet" href="ink.css">
+<style>
+  /* paper faces */
+  @import url("https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400;1,600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+  /* ink faces */
+  @font-face{font-family:"Monaspace Neon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceNeon-Regular.woff2") format("woff2");font-weight:200 800;font-display:swap}
+  @font-face{font-family:"Monaspace Argon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceArgon-Regular.woff2") format("woff2");font-weight:200 800;font-display:swap}
+  @font-face{font-family:"Monaspace Xenon";src:url("https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceXenon-Regular.woff2") format("woff2");font-weight:200 800;font-display:swap}
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--color-surface); color:var(--color-text);
+    font-family:var(--font-body); font-size:var(--type-body-font-size);
+    font-weight:var(--type-body-font-weight); line-height:var(--type-body-line-height);
+    -webkit-font-smoothing:antialiased; transition:background-color var(--motion-base) ease,color var(--motion-base) ease;}
+  /* texture — KIND is a per-theme recipe; gap + opacity are tokens */
+  body{background-image:repeating-linear-gradient(to bottom,
+      color-mix(in srgb,var(--color-rule) calc(var(--texture-opacity)*100%),transparent) 0 1px,
+      transparent 1px var(--texture-gap));}
+  html[data-theme="ink"] body{background-image:radial-gradient(
+      color-mix(in srgb,var(--color-ink-muted) calc(var(--texture-opacity)*100%),transparent) 1px,transparent 1px);
+    background-size:var(--texture-gap) var(--texture-gap);}
+
+  .wrap{max-width:var(--layout-content-max); margin:0 auto; padding-inline:clamp(var(--space-lg),5vw,var(--layout-gutter));}
+  .measure{max-width:var(--layout-measure)}
+  a{color:var(--color-accent); text-underline-offset:3px}
+
+  /* ---- type scale: face from font.* role, metrics from type.* ---- */
+  .eyebrow{font-family:var(--font-mono); font-size:var(--type-eyebrow-font-size); font-weight:var(--type-eyebrow-font-weight);
+    text-transform:uppercase; letter-spacing:.14em; color:var(--color-ink-muted);}
+  h1,.h1{font-family:var(--font-display); font-size:clamp(34px,6vw,var(--type-h1-font-size));
+    font-weight:var(--type-h1-font-weight); line-height:var(--type-h1-line-height); margin:.15em 0;}
+  h2,.h2{font-family:var(--font-display); font-size:clamp(26px,3.5vw,var(--type-h2-font-size));
+    font-weight:var(--type-h2-font-weight); line-height:var(--type-h2-line-height); margin:.4em 0;}
+  h3,.h3{font-family:var(--font-display); font-size:var(--type-h3-font-size);
+    font-weight:var(--type-h3-font-weight); line-height:var(--type-h3-line-height); margin:.5em 0;}
+  .lead{font-family:var(--font-body); font-size:var(--type-lead-font-size); line-height:var(--type-lead-line-height); color:var(--color-ink-muted);}
+  .meta{font-family:var(--font-mono); font-size:var(--type-caption-font-size); text-transform:uppercase; letter-spacing:.1em; color:var(--color-ink-muted);}
+  p{margin:0 0 1em}
+
+  /* hero display is italic in paper, upright in ink */
+  .hero h1{font-style:italic}
+  html[data-theme="ink"] .hero h1{font-style:normal}
+
+  /* section header: small-caps + rule */
+  .sec{display:flex; align-items:baseline; gap:var(--space-md); margin:var(--layout-rhythm) 0 var(--space-lg);}
+  .sec h2{font-variant:small-caps; letter-spacing:.03em; margin:0; white-space:nowrap;}
+  .sec::after{content:""; flex:1; height:1px; background:var(--color-border); opacity:.5;}
+
+  /* layout helpers */
+  section.block{padding-block:var(--space-lg)}
+  .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-lg);}
+  .media-row{display:grid; gap:var(--layout-media-gap); align-items:center; grid-template-columns:calc(var(--layout-media-split)*100%) 1fr;}
+  @media(max-width:760px){.grid-3{grid-template-columns:1fr} .media-row{grid-template-columns:1fr}}
+
+  /* buttons */
+  .btn{font-family:var(--font-mono); font-size:var(--type-small-font-size); border:1px solid var(--color-border);
+    border-radius:var(--radius-md); padding:var(--space-sm) var(--space-lg); background:transparent; color:var(--color-ink);
+    cursor:pointer; text-transform:uppercase; letter-spacing:.08em; transition:all var(--motion-fast) ease; text-decoration:none; display:inline-block;}
+  .btn.primary{background:var(--color-accent); color:var(--color-surface); border-color:var(--color-accent);}
+  .btn:hover{box-shadow:0 0 var(--elevation-glow-blur) var(--elevation-glow-spread)
+    color-mix(in srgb,var(--color-accent) calc(var(--elevation-glow-opacity)*100%),transparent);}
+
+  /* numbered card */
+  .card{border:1px solid var(--color-border); border-radius:var(--radius-sm); background:var(--color-surface-raised);
+    padding:var(--space-lg); position:relative;}
+  .card h3{font-style:italic; margin:0 0 var(--space-sm)}
+  .card .num{position:absolute; top:var(--space-lg); right:var(--space-lg);}
+  .card p{margin:0; color:var(--color-ink-muted); font-size:var(--type-small-font-size)}
+
+  /* list rows */
+  .rows{display:flex; flex-direction:column; gap:var(--space-md)}
+  .row{border:1px solid var(--color-border); border-radius:var(--radius-sm); background:var(--color-surface-raised); padding:var(--space-md) var(--space-lg);}
+  .row h3{font-style:italic; margin:0 0 var(--space-xs); font-size:var(--type-h3-font-size)}
+
+  /* callout — full border + leading label (no side-stripe) */
+  .callout{border:1px solid var(--color-border); background:var(--color-surface-raised);
+    border-radius:var(--radius-md); padding:var(--space-lg); margin-block:var(--space-lg);}
+  .callout .eyebrow{color:var(--color-accent); display:block; margin-bottom:var(--space-sm)}
+
+  /* steps */
+  ol.steps{list-style:none; counter-reset:s; padding:0; margin:0; display:flex; flex-direction:column; gap:var(--space-lg)}
+  ol.steps li{display:grid; grid-template-columns:auto 1fr; gap:var(--space-lg); align-items:start}
+  ol.steps li::before{counter-increment:s; content:counter(s); font-family:var(--font-display); font-size:var(--type-h2-font-size);
+    color:var(--color-accent); line-height:1; min-width:1.4em;}
+
+  /* pull quote */
+  blockquote.pull{font-family:var(--font-display); font-style:italic; font-size:var(--type-h2-font-size);
+    line-height:1.25; color:var(--color-ink); border:0; margin:var(--layout-rhythm) 0; padding:0; max-width:18ch;}
+  blockquote.pull cite{display:block; font-family:var(--font-mono); font-style:normal; font-size:var(--type-caption-font-size);
+    text-transform:uppercase; letter-spacing:.1em; color:var(--color-ink-muted); margin-top:var(--space-md)}
+
+  /* code */
+  pre{font-family:var(--font-mono); background:var(--color-surface-raised); border:1px solid var(--color-border);
+    border-radius:var(--radius-md); padding:var(--space-lg); overflow:auto; font-size:var(--type-code-font-size); line-height:var(--type-code-line-height);}
+
+  /* table */
+  table{width:100%; border-collapse:collapse; font-size:var(--type-small-font-size); margin-block:var(--space-lg)}
+  th,td{text-align:left; padding:var(--space-sm) var(--space-md); border-bottom:1px solid var(--color-border)}
+  th{font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.08em; font-size:var(--type-caption-font-size); color:var(--color-ink-muted)}
+
+  /* figure */
+  figure{margin:var(--space-lg) 0}
+  figure .ph{border:1px solid var(--color-border); border-radius:var(--radius-md); background:var(--color-surface-raised);
+    aspect-ratio:16/7; display:grid; place-items:center; color:var(--color-ink-muted);}
+  figcaption{font-family:var(--font-mono); font-size:var(--type-caption-font-size); color:var(--color-ink-muted); margin-top:var(--space-sm)}
+
+  /* closing colophon — a strong rule, not a boxed banner */
+  .cta{border-top:2px solid var(--color-ink); padding-top:var(--space-xl); margin-top:var(--layout-rhythm); max-width:var(--layout-measure);}
+
+  /* top bar */
+  .bar{position:sticky; top:0; z-index:9; display:flex; align-items:center; gap:var(--space-lg);
+    padding:var(--space-md) clamp(var(--space-lg),5vw,var(--layout-gutter));
+    background:color-mix(in srgb,var(--color-surface) 90%,transparent); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--color-border);}
+  .bar .logo{font-family:var(--font-display); font-style:italic; font-size:var(--type-h3-font-size)}
+  .bar nav{display:flex; gap:var(--space-lg); margin-left:auto}
+  .bar nav a{font-family:var(--font-mono); font-size:var(--type-caption-font-size); text-transform:uppercase; letter-spacing:.1em; color:var(--color-ink-muted); text-decoration:none}
+  .switch{font-family:var(--font-mono); font-size:var(--type-caption-font-size); border:1px solid var(--color-border); border-radius:var(--radius-pill);
+    padding:var(--space-xs) var(--space-md); background:transparent; color:var(--color-ink); cursor:pointer; text-transform:uppercase; letter-spacing:.08em}
+
+  .toks{font-family:var(--font-mono); font-size:11px; color:var(--color-ink-muted); border-top:1px dashed var(--color-border);
+    padding-top:var(--space-sm); margin-top:var(--space-md); display:none}
+  body.show-tokens .toks{display:block}
+  .toks b{color:var(--color-accent); font-weight:400}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="logo">Universal</span>
+  <nav><a href="#">Index</a><a href="#">Docs</a><a href="#">Guide</a></nav>
+  <button class="switch" onclick="toggleTheme()" id="switch">◑ Paper</button>
+  <button class="switch" onclick="document.body.classList.toggle('show-tokens')">Tokens</button>
+</div>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <section class="block hero">
+    <p class="eyebrow">Design tokens · content kit</p>
+    <h1 class="measure">These blocks own no colours.</h1>
+    <p class="lead measure">Every value comes from a token file. Point the page at a different one and the same markup re-sets: a light editorial wiki, or a dark developer site. Nothing below hard-codes a colour or a typeface.</p>
+    <p style="margin-top:var(--space-lg)"><a class="btn primary" href="#reference">How the merge works</a> <button class="btn" onclick="toggleTheme()">Switch the theme</button></p>
+    <div class="toks">tokens · <b>type.eyebrow</b>/<b>h1</b>/<b>lead</b> · face from <b>font.display</b>/<b>font.body</b>/<b>font.mono</b> · <b>layout.measure</b> caps line length · <b>color.accent</b> button</div>
+  </section>
+
+  <!-- CARD GRID -->
+  <div class="sec"><h2>Domains</h2></div>
+  <section class="block">
+    <div class="grid-3">
+      <div class="card"><span class="meta num">№ 01</span><h3>Roles, not colours</h3><p>A token names a job: surface, ink, accent, border. The value behind it can change per theme without anything renaming.</p></div>
+      <div class="card"><span class="meta num">№ 02</span><h3>Themes as deltas</h3><p>The ink theme restates four groups and inherits everything else.</p></div>
+      <div class="card"><span class="meta num">№ 03</span><h3>One merge, one sheet</h3><p>Override layers onto base; the result exports to a single stylesheet, scoped to its theme.</p></div>
+    </div>
+    <div class="toks">tokens · <b>color.surface-raised</b> + <b>color.border</b> + <b>radius.sm</b> cards · <b>№</b> in <b>font.mono</b> · title <b>font.display</b> italic · grid via <b>layout.columns</b></div>
+  </section>
+
+  <!-- PROSE -->
+  <div class="sec"><h2>Prose</h2></div>
+  <section class="block measure">
+    <p>Running text sits in a column no wider than <code>layout.measure</code>, so a line never outruns the eye. Headings step the type scale by <code>scale.ratio</code>; links carry the accent; the reading face comes from <code>font.body</code>.</p>
+    <h3>Why size is a token but placement is not</h3>
+    <p>How large a heading runs is a value, so it lives in <code>type.h1</code> through <code>type.caption</code>. Where an illustration sits relative to its text is a pattern, so it lives in prose, not the token file. The line between the two is the whole discipline.</p>
+    <p>Switch the theme and this paragraph re-sets in Monaspace Neon on the dark canvas, same markup. The reference is the <a href="https://www.designtokens.org/tr/drafts/format/">DTCG draft format</a>.</p>
+    <div class="toks">tokens · <b>layout.measure</b> column · <b>type.body</b> · <b>type.h3</b> · <b>color.accent</b> links</div>
+  </section>
+
+  <!-- LIST ROWS -->
+  <div class="sec"><h2>Scenarios — practice runway</h2></div>
+  <section class="block">
+    <div class="rows">
+      <div class="row"><h3>Author a new theme override</h3><span class="meta">№ 01 · Difficulty: Easy</span></div>
+      <div class="row"><h3>Map a brand onto the role tokens</h3><span class="meta">№ 02 · Difficulty: Moderate</span></div>
+      <div class="row"><h3>Export a section to slides</h3><span class="meta">№ 03 · Difficulty: Hard</span></div>
+    </div>
+    <div class="toks">tokens · <b>color.surface-raised</b> rows · meta in <b>font.mono</b> small-caps · <b>space.md</b> rhythm</div>
+  </section>
+
+  <!-- CALLOUT + STEPS -->
+  <div class="sec"><h2>Guidance</h2></div>
+  <section class="block">
+    <div class="callout measure">
+      <span class="eyebrow">Note</span>
+      <p style="margin:0">A theme override is a <i>delta</i>, not a copy. The ink theme restates four groups (colours, the three font roles, texture, glow) and inherits the rest of the base unchanged.</p>
+    </div>
+    <ol class="steps measure" style="margin-top:var(--space-xl)">
+      <li><div><h3 style="margin:0">Define the neutral base</h3><p style="color:var(--color-ink-muted)">Roles + structure, no brand.</p></div></li>
+      <li><div><h3 style="margin:0">Write a theme override</h3><p style="color:var(--color-ink-muted)">Only what differs.</p></div></li>
+      <li><div><h3 style="margin:0">Merge and export</h3><p style="color:var(--color-ink-muted)">One CSS file per theme.</p></div></li>
+    </ol>
+    <div class="toks">tokens · callout border = <b>color.accent</b> · step numerals <b>font.display</b> + <b>color.accent</b>, sized at <b>type.h2</b></div>
+  </section>
+
+  <!-- PULL QUOTE -->
+  <section class="block">
+    <blockquote class="pull">Values become tokens. Patterns become prose.<cite>the rule this kit is built on</cite></blockquote>
+  </section>
+
+  <!-- CODE + TABLE -->
+  <div class="sec"><h2>Reference</h2></div>
+  <section class="block">
+    <pre>tokens merge base.tokens.json theme-ink.tokens.json -o ink.json
+tokens export-css ink.json --selector '[data-theme="ink"]' -o ink.css</pre>
+    <table>
+      <thead><tr><th>Role</th><th>Paper</th><th>Ink</th></tr></thead>
+      <tbody>
+        <tr><td>surface</td><td>#F5F1E8</td><td>#0D1117</td></tr>
+        <tr><td>ink</td><td>#1B1A16</td><td>#FFFFFF</td></tr>
+        <tr><td>accent</td><td>#8A3324</td><td>#F5B8A5</td></tr>
+        <tr><td>display</td><td>Spectral</td><td>Monaspace Xenon</td></tr>
+      </tbody>
+    </table>
+    <div class="toks">tokens · <b>code</b>/<b>font.mono</b> block · table header <b>font.mono</b> small-caps · borders <b>color.border</b></div>
+  </section>
+
+  <!-- FIGURE -->
+  <section class="block">
+    <figure>
+      <div class="ph">16 : 7 image / diagram placeholder</div>
+      <figcaption>Fig 1 — captions ride in the mono role at caption size.</figcaption>
+    </figure>
+  </section>
+
+  <!-- CLOSING COLOPHON -->
+  <section class="block">
+    <div class="cta">
+      <span class="eyebrow">Colophon</span>
+      <h2 style="margin-top:var(--space-sm)">Three files make a theme.</h2>
+      <p>A neutral <code>base.tokens.json</code>, one override that states only the difference, and one <code>merge</code> that joins them. The page you are reading is two such builds, <code>paper.css</code> and <code>ink.css</code>, behind a single switch.</p>
+      <p style="margin-top:var(--space-lg)"><a class="btn" href="#">Read the README</a></p>
+    </div>
+    <p class="meta" style="padding-bottom:var(--layout-rhythm); margin-top:var(--space-xl)">No value on this page is hard-coded. Edit a token, re-export, reload.</p>
+  </section>
+
+</div>
+
+<script>
+  function toggleTheme(){
+    const ink = document.documentElement.getAttribute('data-theme') === 'ink';
+    document.documentElement.setAttribute('data-theme', ink ? 'paper' : 'ink');
+    document.getElementById('switch').textContent = ink ? '◑ Paper' : '◐ Ink';
+  }
+</script>
+</body>
+</html>

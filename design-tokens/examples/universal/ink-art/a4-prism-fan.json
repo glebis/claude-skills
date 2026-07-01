@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-29T20:18:05.721640",
+  "prompt": "a single horizontal line on the left fanning out into five diverging thin rays toward the right",
+  "preset": "editorial",
+  "platform": "x",
+  "thinking": "off",
+  "quality": "low",
+  "provider": "openai",
+  "n": 1,
+  "seed": null,
+  "output": "ink-art/a4-prism-fan.png",
+  "project": null,
+  "estimated_cost": 0.006
+}

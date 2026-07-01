@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-29T20:34:43.656685",
+  "prompt": "a person holding a single large square swatch card up to the light, rendered as a single continuous white line drawing with even thin line weight on a pure black background, clean vector one-line illustration, no shading, no hatching, no fills on the figure itself, accented by a few solid-filled flat geometric shapes (a circle, a triangle, an arc) in bright coral #F5B8A5, violet #BC9AFA, lime #B6D162 and teal #82D2CF arranged behind and around the subject, a thin dashed curve and a small circle as minimal accents, one tiny orange detail, generous negative space, minimal editorial illustration, no text",
+  "preset": null,
+  "platform": "square",
+  "thinking": "off",
+  "quality": "low",
+  "provider": "openai",
+  "n": 1,
+  "seed": null,
+  "output": "ink-art/c5-swatch.png",
+  "project": null,
+  "estimated_cost": 0.006
+}

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-29T20:17:31.266104",
+  "prompt": "three flat rectangular planes stacked at an offset, a base plane with two layers floating above it",
+  "preset": "wireframe",
+  "platform": "square",
+  "thinking": "off",
+  "quality": "low",
+  "provider": "openai",
+  "n": 1,
+  "seed": null,
+  "output": "ink-art/a2-layer-stack.png",
+  "project": null,
+  "estimated_cost": 0.006
+}

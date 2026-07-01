@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-29T20:17:11.466210",
+  "prompt": "a grid of evenly spaced dots with nested curly braces and angle brackets overlaid, sparse",
+  "preset": "editorial",
+  "platform": "square",
+  "thinking": "off",
+  "quality": "low",
+  "provider": "openai",
+  "n": 1,
+  "seed": null,
+  "output": "ink-art/a1-brackets-grid.png",
+  "project": null,
+  "estimated_cost": 0.006
+}
