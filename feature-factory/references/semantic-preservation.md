@@ -21,7 +21,7 @@ Treat each as a hard fact that must survive a rewrite:
 
 ## Acceptance check (before keeping a rewrite)
 1. Extract every sentence in the baseline containing a strong cue word: `must`, `required`, `never`, `do not`, `only`, `stop`, `before`, `after`, `cap`, `fail rule`.
-2. Confirm each survives the candidate (rephrasing is fine; deletion is not). Rough threshold: ~60% content-word overlap per anchor, a few misses allowed for long docs.
+2. Confirm each survives the candidate recognizably — rephrasing is fine; deletion is not. Judge each anchor directly; don't invent a numeric overlap score.
 3. Reject the candidate if too many anchors are dropped — **even if it reads better or scored higher.**
 
 ## Why this is here at N=1
