@@ -37,12 +37,13 @@ This is a **behavior guide, not an engine.** Do not build generic config, execut
 
 ### 3. TDD implementation loop
 Work on a **feature branch or worktree** — the merge gate is only a real decision point if the work isn't already on the mainline. Then red → green → refactor, in a **single focused loop. No swarm, no parallel fan-out, no speculative abstraction, no silent scope expansion.** Write the failing test first. Use any available TDD skill (e.g. `superpowers:test-driven-development`); otherwise just follow red → green → refactor directly.
+- **No test harness in the repo?** Bootstrap the stack's standard runner minimally (one config, one test dir — see `references/stack-discovery.md`); the harness is part of the feature's cost, and if bootstrapping it is a day of work, re-triage the size.
 - **Spike escape hatch:** if you don't yet know enough to write the failing test (unfamiliar library, unclear API behavior), timebox a throwaway spike, discard the spike code, then start red → green with what you learned. Don't fake a test, and don't let the spike quietly become the implementation.
 - **Determinism:** no wall-clock/sleep-based test assertions — use synchronous barriers/callbacks.
 - **Contract change ⇒ verify all call-sites:** changing a shared function's contract requires enumerating every caller/parallel path and proving each honors it.
 
 ### 4. Verification & audit discipline
-Run the target repo's **real** verify commands (test · lint · typecheck · build, plus secrets-scan if available) — identical locally and in CI. If the repo has a `factory verify` / project verify command, call it; **if not, use the repo's actual commands and record them (the exact commands + output) in `evidence/verify.log` under the feature dir. Do not invent a universal wrapper before the repo earns it.**
+Run the target repo's **real** verify commands (test · lint · typecheck · build, plus secrets-scan if available) — identical locally and in CI. If the repo has a `factory verify` / project verify command, call it; **if not, use the repo's actual commands and record them (the exact commands + output) in `evidence/verify.log` under the feature dir. Do not invent a universal wrapper before the repo earns it.** Not sure what the repo's real commands are? Discover them — CI workflows, Makefile/justfile, contributor docs, then ecosystem manifests, in that order — per `references/stack-discovery.md`.
 - **Flake = failure, not retry.** Any intermittent fail blocks merge until root-caused or rewritten deterministically. No quarantine.
 - **Audit (independent fresh-context review) is a standard step, not an afterthought.** A separate agent or model with fresh context (e.g. Codex, or a different model) reviews the work at two touchpoints: **(a) plan audit** before building (see step 2) and **(b) diff audit** before the merge gate. How it scales with size/risk — when it's required, when it's skippable, timeout + self-review fallback — is defined once in `references/process-budget.md`; follow that table rather than re-deriving it. Persist findings in `evidence/audit-*.md`; fold them back into the plan/diff before proceeding (an audit you don't act on is theatre). The human gates still decide — an audit informs them, it doesn't replace goal/merge approval.
 
@@ -62,11 +63,11 @@ This is the entire self-improvement mechanism at small N — manual, human-reada
 ## Semantic-preservation guard (when editing this method's own artifacts)
 This guard applies when editing the method itself — the Goal Contract template, the risk rubric, or the verify checks — **not** during ordinary feature work. When any edit, optimizer, or rewrite touches those artifacts, **do not let polished prose delete load-bearing constraints.** Before accepting a rewrite, confirm it preserves: required fields, the `≤N` caps, the fail rule, stop condition, smallest shippable slice, risk classification, evidence mapping, no-silent-rewrite, and no-engine/config-abstraction. On conflict, **preserve operational utility over readability.** Details: `references/semantic-preservation.md`.
 
-## Issue tracking — bd or Linear, per feature (no abstraction)
-Tracking is **conditional**: create an epic + issues **only if the feature genuinely decomposes into >1 tracked task.** A single-task S/M feature needs no tracker. The human picks one ledger per feature in the Goal Contract's `## Tracker` section (`bd | linear | none`) — there is **no adapter layer**.
-- **`bd` (beads)** — default for local/solo, git-native, dependency-aware: `bd init` if no `.beads` store; epic = parent bead, tasks = child beads, deps via `bd link`.
-- **Linear** — when work must be visible to others or already lives there: use whatever Linear access this environment provides (a Linear CLI or MCP); epic = project/parent issue, tasks = issues. If Linear was the human's explicit choice but isn't available here, **stop and ask** — switching to `bd`/`none` is a Goal Amendment, not a silent downgrade.
-- Never open both a Linear project **and** a beads epic for the same work.
+## Issue tracking — one ledger, per feature (no abstraction)
+Tracking is **conditional**: create an epic + issues **only if the feature genuinely decomposes into >1 tracked task.** A single-task S/M feature needs no tracker. The human picks **one** ledger per feature in the Goal Contract's `## Tracker` section — a tool actually available in the environment (e.g. `bd`, Linear, GitHub Issues) or `none` — there is **no adapter layer**.
+- **`bd` (beads)** — good default for local/solo, git-native, dependency-aware: `bd init` if no `.beads` store; epic = parent bead, tasks = child beads, deps via `bd link`.
+- **Hosted trackers (Linear, GitHub Issues, …)** — when work must be visible to others or already lives there: use whatever access this environment provides (CLI or MCP); epic = project/parent issue, tasks = issues. If the human's explicit tracker choice isn't available here, **stop and ask** — switching trackers or dropping to `none` is a Goal Amendment, not a silent downgrade.
+- Never open two ledgers (e.g. a Linear project **and** a beads epic) for the same work.
 
 ## What stays manual / out of scope (do not build)
 GEPA/template optimization · artifact-usage telemetry · generic `pipeline.config` · executor abstraction · automatic tracker wiring · visual-evidence matrix · bake-off automation · risk governance beyond self-assessment prompts · auto-updating the agent-instructions file (`AGENTS.md` / `CLAUDE.md`) · **anything that smells like "the engine."** The method earns an engine only after 5–10 real features, not before.
@@ -83,7 +84,7 @@ When asked to build/ship a single feature, or to "write a goal contract", read
 <path-to>/feature-factory/assets/goal-contract.md to docs/factory/<date>-<slug>/goal.md.
 ```
 
-When following this without a skill-runner, read `references/process-budget.md` (size/risk triggers) and `references/semantic-preservation.md` (only when editing the method's own artifacts) directly.
+When following this without a skill-runner, read `references/process-budget.md` (size/risk triggers), `references/stack-discovery.md` (finding the repo's verify commands; bootstrapping a missing test harness), and `references/semantic-preservation.md` (only when editing the method's own artifacts) directly.
 
 When copying this skill into another repo, copy only its content files (`SKILL.md`, `assets/`, `references/`) — local tool state (e.g. `.enzyme/`, `.claude/`) may sit alongside them and must not ship.
 

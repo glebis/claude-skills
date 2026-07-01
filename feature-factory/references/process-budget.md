@@ -23,7 +23,8 @@ Process scales to feature **size**, not just risk. When the process exceeds the 
 - **Blocking** only when the change touches user-visible **layout, styling, onboarding, or auth/safety** flows.
 - **Advisory** (informs review, doesn't block) for other user-visible behavior.
 - **None** for pure backend/logic.
-- Smallest representative evidence: the *changed flow* at **one primary viewport** by default. Widen to a device/orientation/theme matrix only when the Goal Contract says those surfaces matter or the bug is known to vary by them. Baseline-snapshot updates are approved in the diff/PR review, not as a separate gate.
+- Smallest representative evidence: the *changed flow* at **one primary viewport** by default. Widen to a device/orientation/theme matrix only when the Goal Contract says those surfaces matter or the bug is known to vary by them.
+- "Screenshot" means the surface's native capture: browser screenshot for web, simulator/device screenshot for mobile, a terminal transcript or capture for CLI/TUI, a recorded request/response pair for user-facing API behavior. Same trigger rule regardless of surface. Baseline-snapshot updates are approved in the diff/PR review, not as a separate gate.
 
 ## v0 budget (tripwire, not sacred)
 Goal Contract ≈ 15–30 min · ≤3 core generated docs · visual ≤1 changed flow / 1 viewport by default · audit per the size/risk table (S/M: ≤once, timeout-bound; L: plan + diff) · human gates = goal approval + final merge (plan approval only if a trigger fires). When you exceed this for an S/M feature, that is the signal the process is outrunning the feature — cut, don't add.

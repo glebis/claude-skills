@@ -29,7 +29,7 @@
 EU AI Act (or jurisdiction equivalent): Art 5 prohibited use? <no/N/A> · Art 50 labelling? <no/N/A>
 
 ### Tracker
-<bd | linear | none — the issue tracker for this feature; `none` unless it genuinely decomposes into >1 tracked task. No second ledger.>
+<one ledger available in this environment (e.g. bd, Linear, GitHub Issues) | none — `none` unless the feature genuinely decomposes into >1 tracked task. No second ledger.>
 
 ## Conditional — fill only for L or when a trigger fires
 
