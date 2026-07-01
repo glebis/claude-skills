@@ -232,7 +232,7 @@ def cmd_export(args):
     if args.output:
         out_path = Path(args.output)
     else:
-        out_path = Path(args.vault) / filename
+        out_path = Path(args.vault) / "Sessions" / filename
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(content, encoding="utf-8")

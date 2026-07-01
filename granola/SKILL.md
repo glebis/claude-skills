@@ -82,7 +82,7 @@ source: granola
 **Speaker Name**: What they said...
 ```
 
-Files saved as: `YYYYMMDD-meeting-title-slug.md`
+Files saved as: `Sessions/YYYYMMDD-meeting-title-slug.md`
 
 ## API Details
 
