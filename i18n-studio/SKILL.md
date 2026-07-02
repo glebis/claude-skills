@@ -93,8 +93,10 @@ For a human, the browser UI is the fast path. Start the server, share the URL, a
 point out:
 
 - **Source → target switch** in the header (work any language against any reference).
-- **Filters:** show all / untranslated / pending / accepted / duplicates, by file,
-  with sort (file / path / status / duplicates-first) and live counts.
+- **Filters:** show all / untranslated / pending / accepted / duplicates / code-like,
+  by file, with sort (file / path / status / duplicates-first) and live counts.
+- **Hide code-like:** asset paths, CSS vars/colors, class names and identifiers are
+  detected and hidden from the queue by default (they rarely need translation).
 - **Accept** button per row (and a duplicates badge `×N`).
 - **Duplicate propagation:** after editing a string that others shared, a banner
   offers *apply to all* — one click updates every entry that held the old value.
