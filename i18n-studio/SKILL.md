@@ -101,7 +101,9 @@ point out:
 - **Fullscreen review** (`review ▸`): steps through the filtered set one at a time,
   fully keyboard driven with a visible legend — `←/→` or `j/k` move, `a` accept &
   next, `p` pending, `e` edit, `s` suggest, `1/2/3` apply a suggestion, `u` undo,
-  `Esc` close. This is the tool for grinding through thousands of strings.
+  `Esc` close, `>` focus. Tab lands on the edit field; clicking the file name
+  filters the list to that file. This is the tool for grinding through thousands.
+- **Focus mode** (`Shift + .`): hides all chrome, leaving only the strings.
 
 ## Rules that matter
 
