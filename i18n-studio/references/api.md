@@ -83,7 +83,10 @@ has no library entry point — use the HTTP route.
 
 ## Gotchas
 
-- **Computed strings are read-only** (`editable: false`).
+- **Interpolated strings are editable.** Template literals with `${…}` come back
+  `editable: true, interp: true`, value = the raw template body. Keep every `${…}`
+  placeholder when editing; on save the tool re-wraps it as a template literal.
+- **Non-string leaves are read-only** (`editable: false`: numbers, identifiers).
 - **A missing target key is read-only** until added once in the `.ts` source.
 - **Verify HTML/entities** survive a suggestion before saving.
 - **Hot reload** needs the target project's dev server running; the write lands on

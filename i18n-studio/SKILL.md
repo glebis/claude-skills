@@ -113,9 +113,10 @@ point out:
   same HTML tags and entities as the source (`<b>`, `<span ...>`, `&nbsp;`, `&#39;`,
   `&mdash;`) in the same positions, and does not translate code identifiers or
   proper nouns. Suggestions are proposals, not decisions.
-- **Computed strings are read-only.** Entries with `editable: false` (dates,
-  `${...}` interpolated copy) cannot be saved via the tool; edit them by hand in
-  the `.ts` source.
+- **Interpolated strings are editable, placeholders are sacred.** Template literals
+  with `${...}` come back `editable: true, interp: true` (badged `${…}`); translate
+  the prose but keep every `${...}` placeholder exactly. Only non-string leaves
+  (numbers, identifiers) stay read-only and must be edited in the `.ts` source.
 - **Dot-paths use numeric indices for arrays**, e.g. `weeks.2.sessions.1.t`.
 - **One save writes one leaf.** Loop for bulk work; there is no batch write.
 - **Hot reload** needs the target project's own dev server running; the write lands
