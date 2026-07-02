@@ -1,6 +1,6 @@
 ---
 name: i18n-studio
-description: This skill should be used when editing or translating an Astro-style i18n string corpus (files of the form export default { en: {...}, ru: {...} } under src/i18n/strings), or when the user wants to fill in missing translations, audit which strings are untranslated, get translation candidates, bulk-edit UI microcopy, or open a visual translation editor. Drives the standalone i18n Studio tool at ~/ai_projects/i18n-studio (AST-safe minimal-diff saves via ts-morph, hot-reload, and Claude translation suggestions).
+description: This skill should be used when editing, translating, or reviewing an Astro-style i18n string corpus (files of the form export default { en: {...}, ru: {...} } under src/i18n/strings), or when the user wants to fill in missing translations, audit coverage, accept/review translations, propagate an edit across duplicate strings, get translation candidates, bulk-edit UI microcopy, or open a visual/keyboard translation editor. Drives the standalone i18n Studio tool at ~/ai_projects/i18n-studio (AST-safe minimal-diff saves via ts-morph, acceptance review state, duplicate propagation, hot-reload, and Claude translation suggestions).
 ---
 
 # i18n Studio
@@ -66,20 +66,42 @@ server with `I18N_URL` if the port is not 4331.
 ```bash
 S=~/ai_projects/claude-skills/i18n-studio/scripts/i18n.mjs
 
-node "$S" audit --to ru                          # list untranslated/missing keys for ru
-node "$S" audit                                  # gaps across all languages
-node "$S" get   Hero.ts en h1                    # read a value
-node "$S" suggest Hero.ts h1 --from en --to ru   # 3 candidates (proposals only)
-node "$S" set   Hero.ts ru h1 "Сначала — результат"  # AST-safe write
+node "$S" audit --to ru                          # status breakdown + untranslated/missing
+node "$S" audit --to ru --pending                # also list translated-but-unaccepted
+node "$S" get     Hero.ts en h1                   # read a value
+node "$S" suggest Hero.ts h1 --from en --to ru    # 3 candidates (proposals only)
+node "$S" set     Hero.ts ru h1 "Сначала — результат"  # AST-safe write (→ pending)
+node "$S" accept  Hero.ts ru h1                   # mark reviewed/accepted
+node "$S" unaccept Hero.ts ru h1                  # back to pending
 ```
 
-Typical translation-fill loop: `audit --to <lang>` to find gaps → for each gap,
-`suggest` from the source language → review the candidate (see rules below) →
-`set` the chosen value.
+Typical translation-fill loop: `audit --to <lang>` to see the breakdown and gaps →
+for each gap, `suggest` from the source language → review the candidate (see rules
+below) → `set` the chosen value → `accept` once it is right.
+
+Acceptance is a durable review state (sidecar `.i18n-status.json`); editing a
+value automatically drops it back to pending. For a human reviewer, the fullscreen
+review mode (below) is faster than the CLI.
 
 The raw routes (`GET /api/strings`, `POST /api/save`, `POST /api/suggest`), data
 shapes, dot-path rules, config flags, and a no-server library path are documented
 in `references/api.md`. Read it before doing anything beyond the CLI above.
+
+## Visual editor: review mode, filters, duplicates
+
+For a human, the browser UI is the fast path. Start the server, share the URL, and
+point out:
+
+- **Source → target switch** in the header (work any language against any reference).
+- **Filters:** show all / untranslated / pending / accepted / duplicates, by file,
+  with sort (file / path / status / duplicates-first) and live counts.
+- **Accept** button per row (and a duplicates badge `×N`).
+- **Duplicate propagation:** after editing a string that others shared, a banner
+  offers *apply to all* — one click updates every entry that held the old value.
+- **Fullscreen review** (`review ▸`): steps through the filtered set one at a time,
+  fully keyboard driven with a visible legend — `←/→` or `j/k` move, `a` accept &
+  next, `p` pending, `e` edit, `s` suggest, `1/2/3` apply a suggestion, `u` undo,
+  `Esc` close. This is the tool for grinding through thousands of strings.
 
 ## Rules that matter
 
