@@ -46,7 +46,8 @@ it to keep acceptance local.
 ```
 - A language cell is `null` when that key is absent in that language.
 - `editable: false` ⇒ computed; cannot be written.
-- `accepted` is present on editable cells only.
+- `accepted` and `ignored` are present on editable cells only (mutually exclusive:
+  `ignored: true` means the cell is marked "doesn't need translation" / n/a).
 
 ### `POST /api/save`
 Body `{ file, lang, path, value }`. AST-safe single-literal write (minimal diff).
@@ -59,6 +60,11 @@ duplicate propagation. Returns `{ ok, results: [{ ok, file, lang, path, error? }
 ### `POST /api/accept`
 Body `{ file, lang, path, value, accepted }`. Toggles review acceptance; `value`
 is the current text (the client holds the just-saved on-disk value). `{ ok }`.
+
+### `POST /api/ignore`
+Body `{ file, lang, path, value, ignored }`. Toggles the "doesn't need translation"
+(n/a) marker. Unlike `/api/accept`, allowed on an empty cell. Stored in the same
+sidecar as `ignore:<hash>`, so a later edit to the value re-surfaces it. `{ ok }`.
 
 ### `POST /api/suggest`
 Body `{ sourceText, from, to, path }`. Returns `{ ok, suggestions: [...] }` — 3
@@ -78,7 +84,7 @@ const { readAll, write } = await import('/Users/<you>/ai_projects/i18n-studio/st
 readAll();                              // entries[] (without accepted flags)
 write('Hero.ts', 'ru', 'h1', 'текст'); // AST-safe write
 ```
-Acceptance helpers live in `status.mjs` (`readStatus`, `setAccepted`); `suggest`
+Acceptance/n/a helpers live in `status.mjs` (`readStatus`, `setAccepted`, `setIgnored`); `suggest`
 has no library entry point — use the HTTP route.
 
 ## Gotchas

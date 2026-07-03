@@ -38,7 +38,7 @@ async function audit() {
   const { langs, files } = await getStrings();
   const targets = to ? [to] : langs;
   let total = 0;
-  const stat = {}; targets.forEach((l) => (stat[l] = { total: 0, accepted: 0, pending: 0, empty: 0 }));
+  const stat = {}; targets.forEach((l) => (stat[l] = { total: 0, accepted: 0, pending: 0, empty: 0, na: 0 }));
   for (const f of files) {
     const gaps = [];
     for (const e of f.entries) {
@@ -47,10 +47,13 @@ async function audit() {
         const source = langs.find((l) => l !== lang && e[l] && e[l].editable && !isEmpty(e[l]));
         if (cell && cell.editable) {
           stat[lang].total++;
-          if (isEmpty(cell)) stat[lang].empty++;
+          if (cell.ignored) stat[lang].na++;
+          else if (isEmpty(cell)) stat[lang].empty++;
           else if (cell.accepted) stat[lang].accepted++;
           else stat[lang].pending++;
         }
+        // cells marked N/A ("doesn't need translation") are done — never flag them
+        if (cell && cell.ignored) continue;
         if (source && cell && cell.editable && isEmpty(cell)) gaps.push(`  ${lang}  untranslated  ${e.path}   (from ${source}: ${JSON.stringify(e[source].value).slice(0, 50)})`);
         else if (source && !cell) gaps.push(`  ${lang}  missing-key   ${e.path}   (${source} has text)`);
         else if (pendingToo && cell && cell.editable && !isEmpty(cell) && !cell.accepted) gaps.push(`  ${lang}  pending       ${e.path}`);
@@ -59,7 +62,7 @@ async function audit() {
     if (gaps.length) { console.log(`\n${f.file}  (${gaps.length})`); console.log(gaps.join('\n')); total += gaps.length; }
   }
   console.log('');
-  for (const l of targets) { const s = stat[l]; console.log(`${l}: ${s.accepted} accepted · ${s.pending} pending · ${s.empty} untranslated · ${s.total} total`); }
+  for (const l of targets) { const s = stat[l]; console.log(`${l}: ${s.accepted} accepted · ${s.pending} pending · ${s.empty} untranslated · ${s.na} n/a · ${s.total} total`); }
   console.log(total ? `\n${total} item(s) need attention across ${targets.join(', ')}.` : `\nNothing flagged in ${targets.join(', ')}.`);
 }
 
@@ -78,6 +81,23 @@ async function accept(on) {
   const data = await res.json();
   if (!data.ok) die(`accept failed: ${data.error}`);
   console.log(`${on ? 'accepted' : 'unaccepted'} ${file} ${lang} ${path}`);
+}
+
+async function ignore(on) {
+  const [file, lang, path] = positional;
+  if (!file || !lang || !path) die(`usage: ${on ? 'ignore' : 'unignore'} <file> <lang> <path>`);
+  const { files } = await getStrings();
+  const f = files.find((x) => x.file === file) || die(`no such file: ${file}`);
+  const e = f.entries.find((x) => x.path === path) || die(`no such path: ${path}`);
+  const cell = e[lang];
+  if (!cell || !cell.editable) die(`not an editable cell: ${lang} ${path}`);
+  const res = await fetch(`${BASE}/api/ignore`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ file, lang, path, value: cell.value ?? '', ignored: on }),
+  });
+  const data = await res.json();
+  if (!data.ok) die(`ignore failed: ${data.error}`);
+  console.log(`${on ? 'marked n/a' : 'un-marked n/a'} ${file} ${lang} ${path}`);
 }
 
 async function get() {
@@ -126,6 +146,8 @@ const table = {
   audit, get, suggest, set,
   accept: () => accept(true),
   unaccept: () => accept(false),
+  ignore: () => ignore(true),
+  unignore: () => ignore(false),
 };
 if (!table[cmd]) die(
   'commands:\n' +
@@ -133,5 +155,6 @@ if (!table[cmd]) die(
   '  get <file> <lang> <path>                            read a value\n' +
   '  suggest <file> <path> --from <lang> --to <lang>     3 candidates\n' +
   '  set <file> <lang> <path> <value>                    AST-safe write\n' +
-  '  accept|unaccept <file> <lang> <path>                toggle review acceptance');
+  '  accept|unaccept <file> <lang> <path>                toggle review acceptance\n' +
+  '  ignore|unignore <file> <lang> <path>                toggle "doesn\'t need translation" (n/a)');
 await table[cmd]();

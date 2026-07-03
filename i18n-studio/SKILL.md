@@ -73,6 +73,8 @@ node "$S" suggest Hero.ts h1 --from en --to ru    # 3 candidates (proposals only
 node "$S" set     Hero.ts ru h1 "Сначала — результат"  # AST-safe write (→ pending)
 node "$S" accept  Hero.ts ru h1                   # mark reviewed/accepted
 node "$S" unaccept Hero.ts ru h1                  # back to pending
+node "$S" ignore  Dream.ts ru s2                  # mark n/a — "doesn't need translation"
+node "$S" unignore Dream.ts ru s2                 # back to untranslated/pending
 ```
 
 Typical translation-fill loop: `audit --to <lang>` to see the breakdown and gaps →
@@ -80,7 +82,11 @@ for each gap, `suggest` from the source language → review the candidate (see r
 below) → `set` the chosen value → `accept` once it is right.
 
 Acceptance is a durable review state (sidecar `.i18n-status.json`); editing a
-value automatically drops it back to pending. For a human reviewer, the fullscreen
+value automatically drops it back to pending. A cell can instead be marked **n/a**
+("doesn't need translation" — a name, a fragment, a shared token): `ignore` drops
+it out of the untranslated/pending gap counts so it stops nagging, and — unlike
+`accept` — works on an empty/untranslated cell. Like acceptance it is value-coupled,
+so translating the cell later re-surfaces it. For a human reviewer, the fullscreen
 review mode (below) is faster than the CLI.
 
 The raw routes (`GET /api/strings`, `POST /api/save`, `POST /api/suggest`), data
@@ -93,16 +99,18 @@ For a human, the browser UI is the fast path. Start the server, share the URL, a
 point out:
 
 - **Source → target switch** in the header (work any language against any reference).
-- **Filters:** show all / untranslated / pending / accepted / duplicates / code-like,
+- **Filters:** show all / untranslated / pending / accepted / n/a / duplicates / code-like,
   by file, with sort (file / path / status / duplicates-first) and live counts.
 - **Hide code-like:** asset paths, CSS vars/colors, class names and identifiers are
   detected and hidden from the queue by default (they rarely need translation).
-- **Accept** button per row (and a duplicates badge `×N`).
+- **Accept** and **n/a** buttons per row (and a duplicates badge `×N`). The **n/a**
+  toggle marks a string as not needing translation — it works even on empty cells and
+  removes them from the untranslated queue.
 - **Duplicate propagation:** after editing a string that others shared, a banner
   offers *apply to all* — one click updates every entry that held the old value.
 - **Fullscreen review** (`review ▸`): steps through the filtered set one at a time,
   fully keyboard driven with a visible legend — `←/→` or `j/k` move, `a` accept &
-  next, `p` pending, `e` edit, `s` suggest, `1/2/3` apply a suggestion, `u` undo,
+  next, `p` pending, `i` mark n/a & next, `e` edit, `s` suggest, `1/2/3` apply a suggestion, `u` undo,
   `Esc` close, `>` focus. Tab lands on the edit field; clicking the file name
   filters the list to that file. This is the tool for grinding through thousands.
 - **Focus mode** (`Shift + .`): hides all chrome, leaving only the strings.
