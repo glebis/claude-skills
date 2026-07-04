@@ -1,6 +1,6 @@
 ---
 name: nielsen-heuristics
-description: This skill should be used to run a formal heuristic evaluation of a design artifact against Jakob Nielsen's 10 usability heuristics, producing an evidence-backed, severity-scored report. Use it when the user wants a "heuristic evaluation", "usability review", "Nielsen heuristics check", "UX heuristic audit", or asks whether a screenshot, live URL, HTML page, codebase UI, interface description, or JTBD/spec document holds up against usability principles. Accepts five input types (screenshot/image, live URL, codebase/HTML, interface description, JTBD/spec doc) and adapts its rigor and output honestly to what is actually observable.
+description: This skill should be used to run a formal heuristic evaluation of a design artifact against Jakob Nielsen's 10 usability heuristics, producing an evidence-backed, severity-scored report. Use it when the user wants a "heuristic evaluation", "usability review", "Nielsen heuristics check", "UX heuristic audit", or asks whether a screenshot, live URL, HTML page, codebase UI, interface description, or JTBD/spec document holds up against usability principles. Accepts five input types (screenshot/image, live URL, codebase/HTML, interface description, JTBD/spec doc) and adapts its rigor and output honestly to what is actually observable. Can render the report as plain markdown (default) or as a Tufte-style HTML report, and can export findings above a severity threshold as Linear or Beads (bd) tasks after confirmation.
 ---
 
 # Nielsen Heuristics Validator
@@ -48,11 +48,14 @@ Load `references/heuristics.md` for the definition, "what to look for" probes, c
 4. If a heuristic is **not assessable** from this artifact (e.g., undo/redo on a static screenshot), mark it **N/A** and state why.
 5. If a heuristic has **no findings**, state **what was checked** ("checked X, Y, Z — no issues") — never silently bless it.
 
-## Step 4 — Emit the report
+## Step 4 — Emit the report (choose an output format)
 
-Use `references/report-template.md` as the canonical format. Findings are **grouped by heuristic**, each heuristic showing a **max-severity rollup**. Follow with:
-- **Top-3 prioritized fixes** — the highest-leverage findings across all heuristics.
-- **Verdict** (see below).
+Findings are always **grouped by heuristic** with a **max-severity rollup**, followed by **Top-3 prioritized fixes** and the **Verdict**. Two render targets:
+
+- **`markdown` (default)** — emit inline using `references/report-template.md`. Use this unless the user asks for a rendered/shareable report.
+- **`tufte`** — a Tufte-style standalone HTML report. Follow `references/tufte-preset.md`: build the structured findings first, then invoke the `tufte-report` skill with that preset (which maps findings onto its strip-chart / status-strip / flyout blocks and uses `assets/jakob-nielsen.png` as the hero). Trigger when the user says "tufte report", "HTML report", "shareable report", or "make it pretty".
+
+Select the format from the user's request; if ambiguous and they only said "report", default to `markdown`.
 
 ## Verdict (scoped — never "ready to ship")
 
@@ -64,3 +67,14 @@ A single evaluator finds only ~1/3 of usability problems (Nielsen); 3–5 evalua
 - **No blockers found in heuristic inspection** — clean pass, with the explicit single-evaluator caveat.
 
 Design-risk mode produces a **risk summary** (which heuristics are most at risk, and what to specify to de-risk them) instead of a scored verdict — there are no severities to roll up.
+
+## Step 5 — Export findings as tasks (optional)
+
+When the user asks to "create tasks", "file these", "make Linear issues", "open beads", etc., turn qualifying findings into tracker issues. Follow `references/task-export.md` for the exact command templates and field mapping.
+
+Rules (all defaults overridable per run):
+- **Threshold:** default **severity ≥ 3** (Major + Catastrophe). The user may set another (`≥ 4`, `≥ 2`). In **design-risk mode** there are no severities — only export flags the user explicitly selects or the "highest-risk" flags named in the risk summary, and say so.
+- **Propose, then confirm (mandatory gate):** first print the list of tasks that WOULD be created — title, severity, target tracker, and the heuristic — and ask for confirmation. Create nothing until the user approves. This gate is required for Linear (outward-facing/cloud); keep it for Beads too.
+- **Target:** **Linear** (`linear` CLI, cloud) or **Beads** (`bd` CLI, local/per-repo). Ask which if unspecified. Beads requires being inside the target repo (its `.beads` dir); confirm the repo before creating.
+- **One task per finding**, titled `[H<n>] <short finding>`, with the evidence locator, fix, and severity in the body. Map severity → tracker priority per `references/task-export.md`.
+- After creation, report back the created issue IDs/URLs.
