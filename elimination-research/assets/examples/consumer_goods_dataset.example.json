@@ -1,0 +1,1570 @@
+{
+  "title": "Electric Shaver Shortlist in Germany",
+  "created_at": "2026-07-05T18:30:00+02:00",
+  "market": "Germany",
+  "currency": "EUR",
+  "constraints": {
+    "max_device_price_eur": 200,
+    "price_limit_basis": "device_price_eur"
+  },
+  "source_policy": "Hybrid registry + deterministic source roles. Price and availability prefer idealo.de; manufacturer pages are used for specs; review sites are used only as performance proxies.",
+  "candidates": [
+    {
+      "id": "braun_series_9_pro_plus_9577cc",
+      "name": "Braun Series 9 Pro+ 9577cc",
+      "brand": "Braun",
+      "type": "foil",
+      "device_price_eur": 285.95,
+      "replacement_head_eur": 50.93,
+      "replacement_unit_price_eur": 50.93,
+      "replacement_quantity_3y": 1,
+      "replacement_interval_months": 18,
+      "replacement_part_name": "head cassette",
+      "three_year_cost_eur": 336.88,
+      "runtime_min": 60,
+      "charging_min": 60,
+      "cleaning_station": true,
+      "wet_dry": true,
+      "metrics": {
+        "effectiveness": 94.0,
+        "skin_safety": 88.0,
+        "convenience": 92.0
+      },
+      "source_refs": [
+        "src_idealo_braun_9577cc",
+        "src_braun_series_9_official",
+        "src_idealo_braun_96m"
+      ]
+    },
+    {
+      "id": "philips_s9000_prestige_sp9840_32",
+      "name": "Philips S9000 Prestige SP9840/32",
+      "brand": "Philips",
+      "type": "rotary",
+      "device_price_eur": 310.0,
+      "replacement_head_eur": 70.0,
+      "replacement_unit_price_eur": 70.0,
+      "replacement_quantity_3y": 1,
+      "replacement_interval_months": 24,
+      "replacement_part_name": "shaving heads",
+      "three_year_cost_eur": 380.0,
+      "runtime_min": 60,
+      "charging_min": 60,
+      "cleaning_station": true,
+      "wet_dry": true,
+      "metrics": {
+        "effectiveness": 90.0,
+        "skin_safety": 93.0,
+        "convenience": 88.0
+      },
+      "source_refs": [
+        "src_idealo_philips_sp9840",
+        "src_philips_sp9840_specs",
+        "src_philips_sh91_interval"
+      ]
+    },
+    {
+      "id": "panasonic_es_lv67",
+      "name": "Panasonic ES-LV67",
+      "brand": "Panasonic",
+      "type": "foil",
+      "device_price_eur": 122.99,
+      "replacement_head_eur": 69.99,
+      "replacement_unit_price_eur": 69.99,
+      "replacement_quantity_3y": 1,
+      "replacement_interval_months": 18,
+      "replacement_part_name": "foil and blades",
+      "three_year_cost_eur": 192.98,
+      "runtime_min": 50,
+      "charging_min": 60,
+      "cleaning_station": false,
+      "wet_dry": true,
+      "metrics": {
+        "effectiveness": 92.0,
+        "skin_safety": 82.0,
+        "convenience": 74.0
+      },
+      "source_refs": [
+        "src_idealo_panasonic_es_lv67",
+        "src_panasonic_es_lv67_specs",
+        "src_shavercheck_panasonic_es_lv67"
+      ]
+    },
+    {
+      "id": "braun_series_8_8567cc",
+      "name": "Braun Series 8 8567cc",
+      "brand": "Braun",
+      "type": "foil",
+      "device_price_eur": 193.99,
+      "replacement_head_eur": 46.98,
+      "replacement_unit_price_eur": 46.98,
+      "replacement_quantity_3y": 1,
+      "replacement_interval_months": 18,
+      "replacement_part_name": "head cassette",
+      "three_year_cost_eur": 240.97,
+      "runtime_min": 60,
+      "charging_min": 60,
+      "cleaning_station": true,
+      "wet_dry": true,
+      "metrics": {
+        "effectiveness": 88.0,
+        "skin_safety": 86.0,
+        "convenience": 88.0
+      },
+      "source_refs": [
+        "src_idealo_braun_8567cc",
+        "src_idealo_braun_53b"
+      ]
+    },
+    {
+      "id": "philips_series_7000_s7886_35",
+      "name": "Philips Series 7000 S7886/35",
+      "brand": "Philips",
+      "type": "rotary",
+      "device_price_eur": 115.99,
+      "replacement_head_eur": 69.46,
+      "replacement_unit_price_eur": 34.73,
+      "replacement_quantity_3y": 2,
+      "replacement_interval_months": 12,
+      "replacement_part_name": "shaving heads",
+      "three_year_cost_eur": 185.45,
+      "runtime_min": 60,
+      "charging_min": 60,
+      "cleaning_station": true,
+      "wet_dry": true,
+      "metrics": {
+        "effectiveness": 78.0,
+        "skin_safety": 88.0,
+        "convenience": 86.0
+      },
+      "source_refs": [
+        "src_idealo_philips_s7886",
+        "src_idealo_philips_sh71",
+        "src_philips_sh71_interval"
+      ]
+    },
+    {
+      "id": "braun_series_7_71_s7200cc",
+      "name": "Braun Series 7 71-S7200cc",
+      "brand": "Braun",
+      "type": "foil",
+      "device_price_eur": 135.99,
+      "replacement_head_eur": 40.99,
+      "replacement_unit_price_eur": 40.99,
+      "replacement_quantity_3y": 1,
+      "replacement_interval_months": 18,
+      "replacement_part_name": "head cassette",
+      "three_year_cost_eur": 176.98,
+      "runtime_min": 50,
+      "charging_min": 60,
+      "cleaning_station": true,
+      "wet_dry": true,
+      "metrics": {
+        "effectiveness": 80.0,
+        "skin_safety": 84.0,
+        "convenience": 82.0
+      },
+      "source_refs": [
+        "src_idealo_braun_71_s7200cc",
+        "src_braun_series_7_runtime",
+        "src_idealo_braun_73s"
+      ]
+    },
+    {
+      "id": "remington_x7_limitless_xr1775",
+      "name": "Remington X7 Limitless XR1775",
+      "brand": "Remington",
+      "type": "rotary",
+      "device_price_eur": 59.99,
+      "replacement_head_eur": 39.99,
+      "replacement_unit_price_eur": 39.99,
+      "replacement_quantity_3y": 1,
+      "replacement_interval_months": 36,
+      "replacement_part_name": "replacement head",
+      "ownership_note": "Replacement interval is a conservative placeholder because Germany-specific replacement cadence was not verified.",
+      "three_year_cost_eur": 99.98,
+      "runtime_min": 60,
+      "charging_min": 90,
+      "cleaning_station": false,
+      "wet_dry": false,
+      "metrics": {
+        "effectiveness": 65.0,
+        "skin_safety": 72.0,
+        "convenience": 70.0
+      },
+      "source_refs": [
+        "src_idealo_remington_x7",
+        "src_remington_parts_reference"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "src_idealo_braun_9577cc",
+      "title": "Idealo: Braun Series 9 Pro+ 9577cc offers",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/203140667_-series-9-pro-9577cc-braun.html",
+      "domain": "idealo.de",
+      "role": "price",
+      "metrics": [
+        "device_price_eur",
+        "availability"
+      ],
+      "notes": "Search result showed offers from 285.95 EUR and delivery dates around 2026-07-09/10."
+    },
+    {
+      "id": "src_braun_series_9_official",
+      "title": "Braun official Series 9 Pro+ page",
+      "url": "https://us.braun.com/en-us/male-grooming/electric-shavers/series-9-pro-plus",
+      "domain": "braun.com",
+      "role": "official_specs",
+      "metrics": [
+        "runtime_min",
+        "wet_dry",
+        "quick_charge"
+      ],
+      "notes": "Official page states 60 min Li-Ion runtime, wet/dry use, waterproofing, and 5-minute quick charge."
+    },
+    {
+      "id": "src_idealo_braun_96m",
+      "title": "Idealo: Braun Series 9 Pro+ 96M replacement head",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/207647682_-series-9-pro-96m-braun.html",
+      "domain": "idealo.de",
+      "role": "replacement_price",
+      "metrics": [
+        "replacement_head_eur"
+      ],
+      "notes": "Search result showed 46.78 EUR product price and 50.93 EUR including shipping."
+    },
+    {
+      "id": "src_idealo_philips_sp9840",
+      "title": "Idealo: Philips Shaver S9000 Prestige SP9840/32",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/202297195_-shaver-s9000-prestige-sp9840-32-philips.html",
+      "domain": "idealo.de",
+      "role": "price",
+      "metrics": [
+        "device_price_eur",
+        "offer_count"
+      ],
+      "notes": "Search result showed 8 offers from 310.00 EUR to 372.00 EUR."
+    },
+    {
+      "id": "src_philips_sp9840_specs",
+      "title": "Philips official SP9840 technical specifications",
+      "url": "https://www.usa.philips.com/c-p/SP9840_90/shaver-s9000-prestige-wet-dry-electric-shaver-with-skiniq",
+      "domain": "philips.com",
+      "role": "official_specs",
+      "metrics": [
+        "runtime_min",
+        "charging_min",
+        "replacement_interval"
+      ],
+      "notes": "Official specs state 60 min runtime, 1h full charge, 5 min quick charge, and SH91 replacement head."
+    },
+    {
+      "id": "src_philips_sh91_interval",
+      "title": "Philips SH91 replacement heads",
+      "url": "https://www.philips.ie/c-p/SH91_50/shaver-series-9000-and-sp900-replacement-shaving-heads",
+      "domain": "philips.com",
+      "role": "replacement_interval",
+      "metrics": [
+        "replacement_interval_months"
+      ],
+      "notes": "Manufacturer page says replace heads within/two years to restore performance."
+    },
+    {
+      "id": "src_idealo_panasonic_es_lv67",
+      "title": "Idealo: Panasonic ES-LV67",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/6826870_-es-lv67-panasonic.html",
+      "domain": "idealo.de",
+      "role": "price_specs",
+      "metrics": [
+        "device_price_eur",
+        "runtime_min",
+        "charging_min",
+        "blade_count"
+      ],
+      "notes": "Search result showed 5 offers from 122.99 EUR, 315 product opinions, 5 blades, 200 g, 50 min runtime, 1h charging."
+    },
+    {
+      "id": "src_panasonic_es_lv67_specs",
+      "title": "Panasonic Store UK: ES-LV67",
+      "url": "https://store.panasonic.co.uk/5-blade-wet-dry-electric-shaver-with-responsive-beard-sensor-es-lv67-a811",
+      "domain": "panasonic.co.uk",
+      "role": "official_specs",
+      "metrics": [
+        "blade_count",
+        "runtime_min",
+        "quick_charge",
+        "replacement_head_reference"
+      ],
+      "notes": "Manufacturer store states 5 blades, beard sensor, 3 min quick charge, 50 min cordless use, and WES9032Y accessory reference."
+    },
+    {
+      "id": "src_shavercheck_panasonic_es_lv67",
+      "title": "ShaverCheck: Panasonic ES-LV67 review",
+      "url": "https://shavercheck.com/reviews/panasonic-es-lv67-review/",
+      "domain": "shavercheck.com",
+      "role": "performance_proxy",
+      "metrics": [
+        "effectiveness",
+        "skin_safety"
+      ],
+      "notes": "Review summary describes very close, comfortable, fast/powerful shaves and suitability for coarse beards."
+    },
+    {
+      "id": "src_idealo_braun_8567cc",
+      "title": "Idealo: Braun Series 8 8567cc",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/203235507_-series-8-8567cc-braun.html",
+      "domain": "idealo.de",
+      "role": "price_specs",
+      "metrics": [
+        "device_price_eur",
+        "runtime_min",
+        "cleaning_station"
+      ],
+      "notes": "Search result showed 6 offers from 193.99 EUR and 60 min runtime with cleaning station."
+    },
+    {
+      "id": "src_idealo_braun_53b",
+      "title": "Idealo: Braun Shaver Head 53B",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/200874741_-shaver-head-53b-braun.html",
+      "domain": "idealo.de",
+      "role": "replacement_price",
+      "metrics": [
+        "replacement_head_eur"
+      ],
+      "notes": "Search result showed 46.98 EUR including shipping for original Braun 53B."
+    },
+    {
+      "id": "src_idealo_philips_s7886",
+      "title": "Idealo: Philips Shaver Series 7000 S7886/35",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/202857156_-shaver-series-7000-s7886-35-philips.html",
+      "domain": "idealo.de",
+      "role": "price_specs",
+      "metrics": [
+        "device_price_eur",
+        "runtime_min",
+        "charging_min",
+        "quick_charge"
+      ],
+      "notes": "Search result showed 115.99 EUR and notes 60 min runtime, 1h charge, 5 min quick charge."
+    },
+    {
+      "id": "src_idealo_philips_sh71",
+      "title": "Idealo: Philips SteelPrecision SH71/50",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/201130704_-steelprecision-sh71-50-philips.html",
+      "domain": "idealo.de",
+      "role": "replacement_price",
+      "metrics": [
+        "replacement_head_eur"
+      ],
+      "notes": "Search result showed 31.74 EUR product price and 34.73 EUR including shipping."
+    },
+    {
+      "id": "src_philips_sh71_interval",
+      "title": "Philips SH71 replacement heads",
+      "url": "https://www.usa.philips.com/c-p/SH71_52/norelco-shaver-series-7000-5000-replacement-shaving-heads",
+      "domain": "philips.com",
+      "role": "replacement_interval",
+      "metrics": [
+        "replacement_interval_months"
+      ],
+      "notes": "Manufacturer page says change heads every 12 months and fits S7000."
+    },
+    {
+      "id": "src_idealo_braun_71_s7200cc",
+      "title": "Idealo: Braun Series 7 71-S7200cc",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/202110256_-series-7-71-s7200cc-silber-braun.html",
+      "domain": "idealo.de",
+      "role": "price_specs",
+      "metrics": [
+        "device_price_eur",
+        "runtime_min",
+        "charging_min"
+      ],
+      "notes": "Search result showed 19 offers from 135.99 EUR, 50 min runtime and 1h charging."
+    },
+    {
+      "id": "src_braun_series_7_runtime",
+      "title": "Braun Series 7 official/brand page",
+      "url": "https://uk.braun.com/en-gb/male-grooming/shavers-for-men/series-7",
+      "domain": "braun.com",
+      "role": "official_specs",
+      "metrics": [
+        "runtime_min",
+        "charging_min"
+      ],
+      "notes": "Brand page confirms 50 min running time from 1h charge for Series 7."
+    },
+    {
+      "id": "src_idealo_braun_73s",
+      "title": "Idealo: Braun Series 7 Shaver Head 73S",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/200874422_-series-7-shaver-head-73s-braun.html",
+      "domain": "idealo.de",
+      "role": "replacement_price",
+      "metrics": [
+        "replacement_head_eur"
+      ],
+      "notes": "Search result showed 11 offers from 40.99 EUR to 70.72 EUR."
+    },
+    {
+      "id": "src_idealo_remington_x7",
+      "title": "Idealo: Remington X7 Limitless XR1775",
+      "url": "https://www.idealo.de/preisvergleich/OffersOfProduct/205130756_-x7-limitless-xr1775-remington.html",
+      "domain": "idealo.de",
+      "role": "price_specs",
+      "metrics": [
+        "device_price_eur",
+        "runtime_min",
+        "charging_min"
+      ],
+      "notes": "Search result showed 9 offers from 59.99 EUR to 88.42 EUR, 60 min runtime, 1.5h charging."
+    },
+    {
+      "id": "src_remington_parts_reference",
+      "title": "Remington replacement parts",
+      "url": "https://remingtonproducts.com/collections/replacement-parts",
+      "domain": "remingtonproducts.com",
+      "role": "replacement_part_reference",
+      "metrics": [
+        "replacement_head_reference"
+      ],
+      "notes": "Used only as a parts availability reference; German replacement pricing for this model needs verification."
+    }
+  ],
+  "open_caveats": [
+    "The current decision budget is a 200 EUR device-price ceiling. Three-year ownership cost is still shown, but it is not the purchase-price limit.",
+    "Performance metrics are proxy scores, not lab measurements. They combine blade/motor design, official features, review signals, and source confidence.",
+    "Three-year cost includes a rough replaceable-part allowance and estimated replacement cadence. Cleaning cartridge consumables are not priced because current Germany cartridge-use assumptions were not collected.",
+    "Retail prices are current source-observed values from search results on 2026-07-05 and should be refreshed before purchase."
+  ],
+  "image_search": {
+    "enabled": true,
+    "provider": "google_custom_search",
+    "mode": "cached_live_api_results",
+    "observed_at": "2026-07-06T00:00:00+02:00",
+    "num_results_per_candidate": 5,
+    "candidate_count": 7,
+    "search_count": 7,
+    "searches": [
+      {
+        "candidate_id": "braun_series_9_pro_plus_9577cc",
+        "candidate_name": "Braun Series 9 Pro+ 9577cc",
+        "query": "Braun Series 9 Pro+ 9577cc electric shaver product photo",
+        "required_terms": [
+          "Braun"
+        ],
+        "preferred_hosts": [
+          "braun.com",
+          "idealo.de"
+        ],
+        "result_count": 5,
+        "selected": {
+          "title": "Braun Series 9 PRO+ 9577cc Wet & Dry Shaver, Electric Razor for ...",
+          "link": "https://microless.com/cdn/products/6db656bed9f4b47796e9a8ddbb71d47a-hi.jpg",
+          "display_link": "ru.microless.com",
+          "context_link": "https://ru.microless.com/en/product/braun-series-9-pro-9577cc-wet-dry-shaver-electric-razor-for-men-5-pro-shave-elements-precision-long-hair-trimmer-6in1-smartcare-center-and-powercase-60min-battery-runtime-silver/",
+          "mime": "image/jpeg",
+          "byte_size": 97546,
+          "height": 1500,
+          "width": 1055,
+          "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS77KfkSAdAjamhXIx3UAcNTPZpRCOgEAgCG6EqKPsETW02UOHv03oE1QE&s",
+          "host": "microless.com",
+          "score": 60,
+          "score_reasons": [
+            "contains required brand term",
+            "optional terms: shaver, electric, razor, product",
+            "unlisted host: microless.com",
+            "preferred image mime",
+            "high resolution"
+          ]
+        },
+        "results": [
+          {
+            "title": "Braun Series 9 PRO+ 9577cc Wet & Dry Shaver, Electric Razor for ...",
+            "link": "https://microless.com/cdn/products/6db656bed9f4b47796e9a8ddbb71d47a-hi.jpg",
+            "display_link": "ru.microless.com",
+            "context_link": "https://ru.microless.com/en/product/braun-series-9-pro-9577cc-wet-dry-shaver-electric-razor-for-men-5-pro-shave-elements-precision-long-hair-trimmer-6in1-smartcare-center-and-powercase-60min-battery-runtime-silver/",
+            "mime": "image/jpeg",
+            "byte_size": 97546,
+            "height": 1500,
+            "width": 1055,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS77KfkSAdAjamhXIx3UAcNTPZpRCOgEAgCG6EqKPsETW02UOHv03oE1QE&s",
+            "host": "microless.com",
+            "score": 60,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric, razor, product",
+              "unlisted host: microless.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Braun Series 9 PRO+ 9577cc Electric Razor for Men, 5 Pro Shave ...",
+            "link": "https://martdiscover.com/wp-content/uploads/2025/03/819NkvH-kbL.jpg",
+            "display_link": "martdiscover.com",
+            "context_link": "https://martdiscover.com/product/braun-series-9-pro-9577cc-electric-razor-for-men-5-pro-shave-elements-precision-long-hair-trimmer-6in1-smartcare-center/",
+            "mime": "image/jpeg",
+            "byte_size": 339161,
+            "height": 2560,
+            "width": 2560,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ38l6UEFL3viK5CrZoz9WlK32rqQLvmp8xw8KGN2c7uJtmrV0BmUHCpli-&s",
+            "host": "martdiscover.com",
+            "score": 55,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: electric, razor, product",
+              "unlisted host: martdiscover.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Braun Series 9 Pro+ 9577cc - buy at Galaxus - Galaxus",
+            "link": "https://static01.galaxus.com/productimages/3/9/8/2/7/4/5/1/6/8/1/8/2/2/4/5/3/2/2/019aa2bb-481f-71e4-84c2-3d9bb331fe70_720.jpeg",
+            "display_link": "www.galaxus.fr",
+            "context_link": "https://www.galaxus.fr/en/s6/product/braun-series-9-pro-9577cc-shavers-38744599",
+            "mime": "image/jpeg",
+            "byte_size": 55105,
+            "height": 705,
+            "width": 720,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlmXYubCTxvmnNo5dtcty867V9EJsjIquXpeRiQiDWQGPYwgqHk77d09g&s",
+            "host": "static01.galaxus.com",
+            "score": 50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, product",
+              "unlisted host: static01.galaxus.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Braun Series 9 PRO+ 9577cc Electric Shaver for Men, 5 Pro Elements ...",
+            "link": "https://m.media-amazon.com/images/I/81DqZ8uy6YL._AC_UF894,1000_QL80_.jpg",
+            "display_link": "www.amazon.de",
+            "context_link": "https://www.amazon.de/-/en/Braun-9577cc-Precision-SmartCare-PowerCase/dp/B0CFBXRCPF",
+            "mime": "image/jpeg",
+            "byte_size": 81648,
+            "height": 896,
+            "width": 894,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfA-VxvnJvKWfazT-9WO8KoLC3x7auUnZHxTQfJTRILE7BujJBSmG8yMQ&s",
+            "host": "m.media-amazon.com",
+            "score": 50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Amazon.com: Braun Series 9 PRO+ 9577cc Electric Razor for Men, 5 ...",
+            "link": "https://m.media-amazon.com/images/I/81DqZ8uy6YL._AC_UF1000,1000_QL80_.jpg",
+            "display_link": "www.amazon.com",
+            "context_link": "https://www.amazon.com/Braun-Electric-Precision-SmartCare-PowerCase/dp/B0CFBXRCPF",
+            "mime": "image/jpeg",
+            "byte_size": 94207,
+            "height": 1000,
+            "width": 998,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgl4lCfRy5Evp3F_p6w6tnxcNILg6K3VyXGpezYADPjvc-4WjivUIhSZxw&s",
+            "host": "m.media-amazon.com",
+            "score": 50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: electric, razor",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          }
+        ],
+        "search_information": {
+          "searchTime": 0.11135,
+          "formattedSearchTime": "0.11",
+          "totalResults": "118000",
+          "formattedTotalResults": "118,000"
+        }
+      },
+      {
+        "candidate_id": "philips_s9000_prestige_sp9840_32",
+        "candidate_name": "Philips S9000 Prestige SP9840/32",
+        "query": "Philips S9000 Prestige SP9840/32 electric shaver product photo",
+        "required_terms": [
+          "Philips"
+        ],
+        "preferred_hosts": [
+          "philips.com",
+          "idealo.de"
+        ],
+        "result_count": 5,
+        "selected": {
+          "title": "Amazon.com: Philips Norelco S9000 Prestige Electric Shaver with Qi ...",
+          "link": "https://m.media-amazon.com/images/I/71SlU5IflWL._AC_UF1000,1000_QL80_.jpg",
+          "display_link": "www.amazon.com",
+          "context_link": "https://www.amazon.com/Philips-Norelco-Qi-Charger-SP9872-86/dp/B0CD8ZV4FH",
+          "mime": "image/jpeg",
+          "byte_size": 76919,
+          "height": 1000,
+          "width": 976,
+          "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5BhzRMUl9e-Az3QJGubQeACwPfxKpabG1evaqwtY-seRWzkaXhYq7JmA&s",
+          "host": "m.media-amazon.com",
+          "score": 50,
+          "score_reasons": [
+            "contains required brand term",
+            "optional terms: shaver, electric",
+            "unlisted host: m.media-amazon.com",
+            "preferred image mime",
+            "high resolution"
+          ]
+        },
+        "results": [
+          {
+            "title": "Amazon.com: Philips Norelco S9000 Prestige Electric Shaver with Qi ...",
+            "link": "https://m.media-amazon.com/images/I/71SlU5IflWL._AC_UF1000,1000_QL80_.jpg",
+            "display_link": "www.amazon.com",
+            "context_link": "https://www.amazon.com/Philips-Norelco-Qi-Charger-SP9872-86/dp/B0CD8ZV4FH",
+            "mime": "image/jpeg",
+            "byte_size": 76919,
+            "height": 1000,
+            "width": 976,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5BhzRMUl9e-Az3QJGubQeACwPfxKpabG1evaqwtY-seRWzkaXhYq7JmA&s",
+            "host": "m.media-amazon.com",
+            "score": 50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Philips Shaver Series 9000 Prestige - buy at Galaxus - Galaxus",
+            "link": "https://static01.galaxus.com/productimages/5/7/7/0/2/5/2/9/7/2/6/5/4/4/8/4/1/8/7/01968c8f-5f56-73b4-a9a1-c83459b0af18_720.jpeg",
+            "display_link": "www.galaxus.at",
+            "context_link": "https://www.galaxus.at/en/s6/product/philips-shaver-series-9000-prestige-shavers-24001443",
+            "mime": "image/jpeg",
+            "byte_size": 43918,
+            "height": 698,
+            "width": 720,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTl7VetW8ku2NKFZti0x2UJcIa2TrcjfNm264-9YaFfRDgVjDnAsIHwrx3X&s",
+            "host": "static01.galaxus.com",
+            "score": 50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, product",
+              "unlisted host: static01.galaxus.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Amazon.com: Philips Norelco Shaver Series 9000 Prestige, Wet and ...",
+            "link": "https://m.media-amazon.com/images/I/61WsSNSMbYL._AC_UF1000,1000_QL80_.jpg",
+            "display_link": "www.amazon.com",
+            "context_link": "https://www.amazon.com/Philips-Norelco-Rechargeable-Replacement-SP9840/dp/B0CDDBWTYT",
+            "mime": "image/jpeg",
+            "byte_size": 99088,
+            "height": 955,
+            "width": 1000,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTS2qbo3L-quGjQTFusBMZF4YttP112MdqTOkUgOMn5pO0dKn7TTB6adW0&s",
+            "host": "m.media-amazon.com",
+            "score": -5,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver",
+              "excluded terms: replacement",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Philips Shaver S9000 Prestige SP9840/32 Manual & User Guide ...",
+            "link": "https://device.report/m/aab82152e0798690010593a9f620422e291f2404eed4cb1dbe73fb687a45a543.png",
+            "display_link": "device.report",
+            "context_link": "https://device.report/manuals/philips-shaver-s9000-prestige-sp984032-manual",
+            "mime": "image/png",
+            "byte_size": 61999,
+            "height": 476,
+            "width": 354,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSiiILP4ykJSGusauhj5Xq7V2OnCBa8XK9EjmM1Lqc_hoPp9OzxIRk8Wug&s",
+            "host": "device.report",
+            "score": -15,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver",
+              "excluded terms: manual",
+              "unlisted host: device.report",
+              "preferred image mime"
+            ]
+          },
+          {
+            "title": "Global Gmarket Mobile",
+            "link": "https://gdimg.gmarket.co.kr/4231098066/still/400?ver=1756266203",
+            "display_link": "mg.gmarket.co.kr",
+            "context_link": "https://mg.gmarket.co.kr/Item?goodscode=4231098066",
+            "mime": "image/",
+            "byte_size": 51383,
+            "height": 400,
+            "width": 400,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQLAUY-03NmYBjgiJQYJty6PH1cnZiamuAU3097LQqEQy0FZW4toPWuZg&s",
+            "host": "gdimg.gmarket.co.kr",
+            "score": -85,
+            "score_reasons": [
+              "missing required: Philips",
+              "unlisted host: gdimg.gmarket.co.kr"
+            ]
+          }
+        ],
+        "search_information": {
+          "searchTime": 0.274658,
+          "formattedSearchTime": "0.27",
+          "totalResults": "29400",
+          "formattedTotalResults": "29,400"
+        }
+      },
+      {
+        "candidate_id": "panasonic_es_lv67",
+        "candidate_name": "Panasonic ES-LV67",
+        "query": "Panasonic ES-LV67 electric shaver product photo",
+        "required_terms": [
+          "Panasonic"
+        ],
+        "preferred_hosts": [
+          "panasonic.com",
+          "panasonic.co.uk",
+          "idealo.de"
+        ],
+        "result_count": 5,
+        "selected": {
+          "title": "Panasonic ARC5 Advanced 5 Blade Men's Electric Shaver - ES-LV67-K",
+          "link": "https://shop.panasonic.com/cdn/shop/products/23-0091_MC_shopPana_maincarousel_2048x2048_ES-LV97-K.jpg?v=1743517925&width=2048",
+          "display_link": "shop.panasonic.com",
+          "context_link": "https://shop.panasonic.com/products/arc5-advanced-5-blade-mens-electric-shaver?_pos=2&_fid=5d2c71b72&_ss=c&bvstate=pg:5/ct:r",
+          "mime": "image/jpeg",
+          "byte_size": 202282,
+          "height": 2048,
+          "width": 2048,
+          "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2POqysM4x5axwwGzhzLRs3dGArW6dp7jVFPMreW2y8SPCn7hFbiC5kAtE&s",
+          "host": "shop.panasonic.com",
+          "score": 85,
+          "score_reasons": [
+            "contains required brand term",
+            "optional terms: shaver, electric, product",
+            "preferred host: shop.panasonic.com",
+            "preferred image mime",
+            "high resolution"
+          ]
+        },
+        "results": [
+          {
+            "title": "Panasonic ARC5 Advanced 5 Blade Men's Electric Shaver - ES-LV67-K",
+            "link": "https://shop.panasonic.com/cdn/shop/products/23-0091_MC_shopPana_maincarousel_2048x2048_ES-LV97-K.jpg?v=1743517925&width=2048",
+            "display_link": "shop.panasonic.com",
+            "context_link": "https://shop.panasonic.com/products/arc5-advanced-5-blade-mens-electric-shaver?_pos=2&_fid=5d2c71b72&_ss=c&bvstate=pg:5/ct:r",
+            "mime": "image/jpeg",
+            "byte_size": 202282,
+            "height": 2048,
+            "width": 2048,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2POqysM4x5axwwGzhzLRs3dGArW6dp7jVFPMreW2y8SPCn7hFbiC5kAtE&s",
+            "host": "shop.panasonic.com",
+            "score": 85,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric, product",
+              "preferred host: shop.panasonic.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Panasonic ARC5 Advanced 5 Blade Men's Electric Shaver - ES-LV67-K",
+            "link": "http://shop.panasonic.com/cdn/shop/products/23-0091_MC_shopPana_maincarousel_2048x2048_ES-LV67-K.jpg?v=1779299950&width=2048",
+            "display_link": "shop.panasonic.com",
+            "context_link": "https://shop.panasonic.com/products/arc5-advanced-5-blade-mens-electric-shaver?ps-open&bvstate=pg:2/ct:r",
+            "mime": "image/jpeg",
+            "byte_size": 166727,
+            "height": 2048,
+            "width": 2048,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSAGoixpeW6IUvpTuQLpyli09BRaae5ZOCdiOFBcDRDhX2xcYPe0xe39CSn&s",
+            "host": "shop.panasonic.com",
+            "score": 85,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric, product",
+              "preferred host: shop.panasonic.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Panasonic ARC5 Advanced 5 Blade Men's Electric Shaver - ES-LV67-K",
+            "link": "https://shop.panasonic.com/cdn/shop/products/23-0091_MC_shopPana_maincarousel_2048x2048_ES-LV97-K.jpg?v=1779299952&width=2048",
+            "display_link": "shop.panasonic.com",
+            "context_link": "https://shop.panasonic.com/products/arc5-advanced-5-blade-mens-electric-shaver?ps-open&bvstate=pg:2/ct:r",
+            "mime": "image/jpeg",
+            "byte_size": 183415,
+            "height": 2048,
+            "width": 2048,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcReYYdI0XTnuXq7VRGYEUfk_efSocQamXpuytZ4aWFTL-ZSMN6MSvBHXGu7&s",
+            "host": "shop.panasonic.com",
+            "score": 85,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric, product",
+              "preferred host: shop.panasonic.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Amazon.com: Panasonic ARC5 Electric Razor for Men Face, Wet & Dry ...",
+            "link": "https://m.media-amazon.com/images/I/71etak6p29L._AC_UF1000,1000_QL80_.jpg",
+            "display_link": "www.amazon.com",
+            "context_link": "https://www.amazon.com/Panasonic-Electric-Intelligent-Flexible-Pivoting/dp/B0D4B2T8SR",
+            "mime": "image/jpeg",
+            "byte_size": 63738,
+            "height": 1000,
+            "width": 826,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtdt3L4yY69rDwnfHjR8rZa3WXQ3INlgK7VQTdwABD_-HELzlzEEnNrQ&s",
+            "host": "m.media-amazon.com",
+            "score": 50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: electric, razor",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Amazon.com: Replacement Shaver Charging for Panasonic ES-LV67 ...",
+            "link": "https://m.media-amazon.com/images/I/51i4tMbGtHL._AC_UF1000,1000_QL80_.jpg",
+            "display_link": "www.amazon.com",
+            "context_link": "https://www.amazon.com/Replacement-Charging-Panasonic-Electric-Accessories/dp/B0FVMPG52Y",
+            "mime": "image/jpeg",
+            "byte_size": 34563,
+            "height": 982,
+            "width": 1000,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSl1mTYgAxCuAggsPC67e9rhY0-Siq-UUZy7pTZ8mghB-7b1dgvATHeleTR&s",
+            "host": "m.media-amazon.com",
+            "score": 0,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric",
+              "excluded terms: replacement",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          }
+        ],
+        "search_information": {
+          "searchTime": 0.227052,
+          "formattedSearchTime": "0.23",
+          "totalResults": "723000",
+          "formattedTotalResults": "723,000"
+        }
+      },
+      {
+        "candidate_id": "braun_series_8_8567cc",
+        "candidate_name": "Braun Series 8 8567cc",
+        "query": "Braun Series 8 8567cc electric shaver product photo",
+        "required_terms": [
+          "Braun"
+        ],
+        "preferred_hosts": [
+          "braun.com",
+          "idealo.de"
+        ],
+        "result_count": 5,
+        "selected": {
+          "title": "Amazon.com: Braun Series 8 8567cc Electric Razor for Men, 4+1 ...",
+          "link": "https://m.media-amazon.com/images/I/81qxN1vc4yL._AC_UF350,350_QL80_.jpg",
+          "display_link": "www.amazon.com",
+          "context_link": "https://www.amazon.com/Braun-8567cc-Electric-Precision-SmartCare/dp/B0CFBV91YQ",
+          "mime": "image/jpeg",
+          "byte_size": 20892,
+          "height": 350,
+          "width": 350,
+          "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTG_DqNid8MhvT54k3L1KmauXyWVH7Rg4rXjusWw5_tV0-3SUg-Zqh4ug&s",
+          "host": "m.media-amazon.com",
+          "score": 40,
+          "score_reasons": [
+            "contains required brand term",
+            "optional terms: electric, razor",
+            "unlisted host: m.media-amazon.com",
+            "preferred image mime"
+          ]
+        },
+        "results": [
+          {
+            "title": "Amazon.com: Braun Series 8 8567cc Electric Razor for Men, 4+1 ...",
+            "link": "https://m.media-amazon.com/images/I/81qxN1vc4yL._AC_UF350,350_QL80_.jpg",
+            "display_link": "www.amazon.com",
+            "context_link": "https://www.amazon.com/Braun-8567cc-Electric-Precision-SmartCare/dp/B0CFBV91YQ",
+            "mime": "image/jpeg",
+            "byte_size": 20892,
+            "height": 350,
+            "width": 350,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTG_DqNid8MhvT54k3L1KmauXyWVH7Rg4rXjusWw5_tV0-3SUg-Zqh4ug&s",
+            "host": "m.media-amazon.com",
+            "score": 40,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: electric, razor",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime"
+            ]
+          },
+          {
+            "title": "Braun, Electric Razor for Men, 8567cc, SmartCare Center - Walmart.com",
+            "link": "https://i5.walmartimages.com/asr/bdad459b-5dc5-46e3-90a7-c5f27be33576.189a04f1a1622467e28c3c7a44da5a3c.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF",
+            "display_link": "www.walmart.com",
+            "context_link": "https://www.walmart.com/ip/Braun-Series-8-Electric-Razor-for-Men-5in1-SmartCare-Center-8567cc-Shaver-Galvano-Silver/5408898189",
+            "mime": "image/jpeg",
+            "byte_size": 72034,
+            "height": 768,
+            "width": 768,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSo3-W2Q_7sf2WGLdqm_gkX8Y8AZWkFsTE4ODie7d8c1LNoVW6buO5JObo&s",
+            "host": "i5.walmartimages.com",
+            "score": 35,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric, razor",
+              "unlisted host: i5.walmartimages.com",
+              "retailer CDN packaging risk",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Series 8 8567cc Electric Shaver for Men | Official Braun Store",
+            "link": "https://www.braunshop.co.uk/images?url=https://static.thcdn.com/productimg/original/14844823-1515195781263706.jpg&format=webp&auto=avif&width=1000&height=1000&fit=cover&v=2",
+            "display_link": "www.braunshop.co.uk",
+            "context_link": "https://www.braunshop.co.uk/braun-series-8-electric-shaver-8567cc/14844823.html",
+            "mime": "image/",
+            "byte_size": 16022,
+            "height": 1000,
+            "width": 1000,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqCmITY2jWt-0TI4flEc1eOjMuOJcAvOmT6oQkzmJ1yFJnRoBisdEDGGPZ&s",
+            "host": "www.braunshop.co.uk",
+            "score": 30,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric, product",
+              "unlisted host: www.braunshop.co.uk",
+              "proxy-wrapped image penalized",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Amazon.com: Braun Series 8 83M Electric Shaver Head Replacement ...",
+            "link": "https://m.media-amazon.com/images/I/81fkBq39D5L._AC_UF1000,1000_QL80_.jpg",
+            "display_link": "www.amazon.com",
+            "context_link": "https://www.amazon.com/Braun-Electric-Shaver-Replacement-Head/dp/B08TY3R24F",
+            "mime": "image/jpeg",
+            "byte_size": 80128,
+            "height": 953,
+            "width": 1000,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSNI2fhXwKv0J6sxQHJ1-jHpiYU7YalhSvawX618t4CsiuzUD9kyhEJlnPa&s",
+            "host": "m.media-amazon.com",
+            "score": -50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric",
+              "excluded terms: replacement, head",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Amazon.com: Braun Series 8 83M Electric Shaver Head Replacement ...",
+            "link": "https://m.media-amazon.com/images/I/81fkBq39D5L.jpg",
+            "display_link": "www.amazon.com",
+            "context_link": "https://www.amazon.com/Braun-Electric-Shaver-Replacement-Head/dp/B08TY3R24F",
+            "mime": "image/jpeg",
+            "byte_size": 270367,
+            "height": 2560,
+            "width": 2560,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT0YFIn6qwFVnf5IU3bvEQX6KqocTv5vH-MHJW3LmASpgfr52282i5jm60&s",
+            "host": "m.media-amazon.com",
+            "score": -50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric",
+              "excluded terms: replacement, head",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          }
+        ],
+        "search_information": {
+          "searchTime": 0.125589,
+          "formattedSearchTime": "0.13",
+          "totalResults": "78500",
+          "formattedTotalResults": "78,500"
+        }
+      },
+      {
+        "candidate_id": "philips_series_7000_s7886_35",
+        "candidate_name": "Philips Series 7000 S7886/35",
+        "query": "Philips Series 7000 S7886/35 electric shaver product photo",
+        "required_terms": [
+          "Philips"
+        ],
+        "preferred_hosts": [
+          "philips.com",
+          "idealo.de"
+        ],
+        "result_count": 5,
+        "selected": {
+          "title": "Philips Series 7000 Wet & Dry electric shaver S7886/35, 2 Years ...",
+          "link": "https://microless.com/cdn/products/611d0ea0f3b5030255ae3ca4b98497d5-hi.jpg",
+          "display_link": "global.microless.com",
+          "context_link": "https://global.microless.com/product/philips-series-7000-wet-dry-electric-shaver-s788635-2-years-warranty/?offer_id=369528",
+          "mime": "image/jpeg",
+          "byte_size": 138847,
+          "height": 1267,
+          "width": 1423,
+          "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcShKXSkRXc7poRWUYcyCK6X1nT4zRHQ8t92aWDC0JEFytENQpahanFmqtU&s",
+          "host": "microless.com",
+          "score": 55,
+          "score_reasons": [
+            "contains required brand term",
+            "optional terms: shaver, electric, product",
+            "unlisted host: microless.com",
+            "preferred image mime",
+            "high resolution"
+          ]
+        },
+        "results": [
+          {
+            "title": "Philips Series 7000 Wet & Dry electric shaver S7886/35, 2 Years ...",
+            "link": "https://microless.com/cdn/products/611d0ea0f3b5030255ae3ca4b98497d5-hi.jpg",
+            "display_link": "global.microless.com",
+            "context_link": "https://global.microless.com/product/philips-series-7000-wet-dry-electric-shaver-s788635-2-years-warranty/?offer_id=369528",
+            "mime": "image/jpeg",
+            "byte_size": 138847,
+            "height": 1267,
+            "width": 1423,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcShKXSkRXc7poRWUYcyCK6X1nT4zRHQ8t92aWDC0JEFytENQpahanFmqtU&s",
+            "host": "microless.com",
+            "score": 55,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric, product",
+              "unlisted host: microless.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Philips Series 7000 Wet & Dry electric shaver S7886/35, 2 Years ...",
+            "link": "https://microless.com/cdn/products/a5a6a0dcb78efa73c122e80c0be14390-hi.jpg",
+            "display_link": "global.microless.com",
+            "context_link": "https://global.microless.com/product/philips-series-7000-wet-dry-electric-shaver-s788635-2-years-warranty/",
+            "mime": "image/jpeg",
+            "byte_size": 107553,
+            "height": 1358,
+            "width": 951,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcROthaC8_kZVRbmRCryJrCnbnhMq6-Zwvc9DAagXr_yvOePfdVfoJYTMA&s",
+            "host": "microless.com",
+            "score": 55,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric, product",
+              "unlisted host: microless.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Philips Series 7000 S7886/35 Electric Shaver Dry/Wet : Amazon.ae ...",
+            "link": "https://m.media-amazon.com/images/I/61ZZO3A575L.jpg",
+            "display_link": "www.amazon.ae",
+            "context_link": "https://www.amazon.ae/Philips-7000-S7886-Electric-Shaver/dp/B0C8Y2V6P3",
+            "mime": "image/jpeg",
+            "byte_size": 73346,
+            "height": 1000,
+            "width": 1000,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6P9AoxpkPE_3qs7y42NBpmvOrpLkgm2J7Izn8bLwF56zUVnj5Q7w9mzo&s",
+            "host": "m.media-amazon.com",
+            "score": 50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Philips SHAVER Series 7000 S7886/35 100% Waterproof electric ...",
+            "link": "https://m.media-amazon.com/images/I/61kcIgiTddL.jpg",
+            "display_link": "www.amazon.com.be",
+            "context_link": "https://www.amazon.com.be/-/en/Philips-SHAVER-Waterproof-electric-shaver/dp/B0C8Y2V6P3",
+            "mime": "image/jpeg",
+            "byte_size": 76565,
+            "height": 1000,
+            "width": 1000,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQPwNyDA8Ouf-qu14Gf58yhCLT3LPRXMQ2s87sLRqm3RWoEQWWS3sCfqnY&s",
+            "host": "m.media-amazon.com",
+            "score": 50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Philips Series 7000 S7886/35 Electric Shaver User Manual",
+            "link": "https://manuals.plus/asin/B0C8Y2V6P3.jpg",
+            "display_link": "manuals.plus",
+            "context_link": "https://manuals.plus/asin/B0C8Y2V6P3",
+            "mime": "image/jpeg",
+            "byte_size": 71640,
+            "height": 1000,
+            "width": 699,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS6iBWXJ3n2yjQr9XmXmny0TpDUspuV8Xh17MQYtPUKJmWVirV481VBYQ&s",
+            "host": "manuals.plus",
+            "score": 0,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric",
+              "excluded terms: manual",
+              "unlisted host: manuals.plus",
+              "preferred image mime",
+              "high resolution"
+            ]
+          }
+        ],
+        "search_information": {
+          "searchTime": 0.121731,
+          "formattedSearchTime": "0.12",
+          "totalResults": "159000",
+          "formattedTotalResults": "159,000"
+        }
+      },
+      {
+        "candidate_id": "braun_series_7_71_s7200cc",
+        "candidate_name": "Braun Series 7 71-S7200cc",
+        "query": "Braun Series 7 71-S7200cc electric shaver product photo",
+        "required_terms": [
+          "Braun"
+        ],
+        "preferred_hosts": [
+          "braun.com",
+          "idealo.de"
+        ],
+        "result_count": 5,
+        "selected": {
+          "title": "Braun Series 7 71-S7200cc Electric Wet and Dry Shaver with ...",
+          "link": "https://m.media-amazon.com/images/I/71ZoEIT7icL._AC_UF894,1000_QL80_.jpg",
+          "display_link": "www.amazon.de",
+          "context_link": "https://www.amazon.de/-/en/Braun-71-S7200cc-Electric-SmartCare-Precision/dp/B0B8B8BTLQ",
+          "mime": "image/jpeg",
+          "byte_size": 69627,
+          "height": 771,
+          "width": 894,
+          "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR86y_2i7DMbcuAcEQRXbOuYNuqDBppufI1vr6fvzL42KedY0TqJ7JIHRQ&s",
+          "host": "m.media-amazon.com",
+          "score": 50,
+          "score_reasons": [
+            "contains required brand term",
+            "optional terms: shaver, electric",
+            "unlisted host: m.media-amazon.com",
+            "preferred image mime",
+            "high resolution"
+          ]
+        },
+        "results": [
+          {
+            "title": "Braun Series 7 71-S7200cc Electric Wet and Dry Shaver with ...",
+            "link": "https://m.media-amazon.com/images/I/71ZoEIT7icL._AC_UF894,1000_QL80_.jpg",
+            "display_link": "www.amazon.de",
+            "context_link": "https://www.amazon.de/-/en/Braun-71-S7200cc-Electric-SmartCare-Precision/dp/B0B8B8BTLQ",
+            "mime": "image/jpeg",
+            "byte_size": 69627,
+            "height": 771,
+            "width": 894,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR86y_2i7DMbcuAcEQRXbOuYNuqDBppufI1vr6fvzL42KedY0TqJ7JIHRQ&s",
+            "host": "m.media-amazon.com",
+            "score": 50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Braun Series 7 71-S7200cc Electric Shaver For Men With EasyClick ...",
+            "link": "https://m.media-amazon.com/images/I/81FMjqaTw8L._AC_UF1000,1000_QL80_.jpg",
+            "display_link": "www.amazon.nl",
+            "context_link": "https://www.amazon.nl/-/en/Braun-71-S7200cc-EasyClick-Attachment-Rechargeable/dp/B0B3JBQY2L",
+            "mime": "image/jpeg",
+            "byte_size": 115536,
+            "height": 1000,
+            "width": 998,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRpROJ4ePNSTRgOQmuGYMSC7WKx2GKSBZInHNbxPy_AGifH6Vw0xVWVwZ4&s",
+            "host": "m.media-amazon.com",
+            "score": 50,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, electric",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Braun 71-S7200cc skuveklis Series 7 360° Flex, AutoSence (71-S7200cc)",
+            "link": "https://www.dateks.lv/images/pic/2400/2400/362/1321.jpg",
+            "display_link": "www.dateks.lv",
+            "context_link": "https://www.dateks.lv/en/cenas/viriesu-skuvekli/912813-braun-71-s7200cc-skuveklis-series-7-360-flex-autosence",
+            "mime": "image/jpeg",
+            "byte_size": 864928,
+            "height": 2400,
+            "width": 2400,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSB8w6Ga8OxGQl-a7QTMeMRZ7v77A5IkyQuk5inZ9VCe1NJp8RHkoyQCJRK&s",
+            "host": "www.dateks.lv",
+            "score": 40,
+            "score_reasons": [
+              "contains required brand term",
+              "unlisted host: www.dateks.lv",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "7011, 7012, 7018, 7020, 7027, 7071, 7075, 7081, 70-B1000s, 70 ...",
+            "link": "https://image.aftersales365.pg.com/aftersales-container-01/type_number/big_images/S5764_vb.png",
+            "display_link": "service.braun.com",
+            "context_link": "https://service.braun.com/bh/en/products/5764",
+            "mime": "image/png",
+            "byte_size": 88753,
+            "height": 500,
+            "width": 500,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSh_l62nAZ8Yn-NXuP2vGQNHacCEy6BFyvc94E_-U-EY2DWdPUAfVL2ugre&s",
+            "host": "image.aftersales365.pg.com",
+            "score": 35,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: product",
+              "unlisted host: image.aftersales365.pg.com",
+              "preferred image mime"
+            ]
+          },
+          {
+            "title": "Braun Series 7 360° Flex, AutoSense, Wet & Dry, black/silver ...",
+            "link": "https://www.elesen.lt/UserFiles/Products/Images/338204-508686-medium.avif",
+            "display_link": "www.elesen.lt",
+            "context_link": "https://www.elesen.lt/en/beauty-health/facial-care/shavers/71-s7200cc/braun-series-7-360-flex-autosense-wet-dry-black-silver-shaver",
+            "mime": "image/",
+            "byte_size": 19637,
+            "height": 305,
+            "width": 305,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTMwyw26jxq0EAHl2bClkbAhCu5aO6hQvXlMcyZj0n88_KgxRUun5Yt&s",
+            "host": "www.elesen.lt",
+            "score": 35,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, product",
+              "unlisted host: www.elesen.lt"
+            ]
+          }
+        ],
+        "search_information": {
+          "searchTime": 0.109328,
+          "formattedSearchTime": "0.11",
+          "totalResults": "110000",
+          "formattedTotalResults": "110,000"
+        }
+      },
+      {
+        "candidate_id": "remington_x7_limitless_xr1775",
+        "candidate_name": "Remington X7 Limitless XR1775",
+        "query": "Remington X7 Limitless XR1775 electric shaver product photo",
+        "required_terms": [
+          "Remington"
+        ],
+        "preferred_hosts": [
+          "remingtonproducts.com",
+          "remington-europe.com",
+          "idealo.de"
+        ],
+        "result_count": 5,
+        "selected": {
+          "title": "Remington X7 Limitless X Rotary Shaver | XR1775",
+          "link": "https://uk.remington-europe.com/media/catalog/product/x/r/xr1775.png?quality=80&fit=bounds&height=700&width=700&canvas=700:700",
+          "display_link": "uk.remington-europe.com",
+          "context_link": "https://uk.remington-europe.com/x7-limitless-x-rotary-shaver",
+          "mime": "image/png",
+          "byte_size": 196627,
+          "height": 700,
+          "width": 700,
+          "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRM7HgAZijACMfRI_5ntN-IlTeIMGIcPcFetn8KTZUe79m-aW3NG2Iweft&s",
+          "host": "uk.remington-europe.com",
+          "score": 85,
+          "score_reasons": [
+            "contains required brand term",
+            "optional terms: shaver, product, rotary",
+            "preferred host: uk.remington-europe.com",
+            "preferred image mime",
+            "high resolution"
+          ]
+        },
+        "results": [
+          {
+            "title": "Remington X7 Limitless X Rotary Shaver | XR1775",
+            "link": "https://uk.remington-europe.com/media/catalog/product/x/r/xr1775.png?quality=80&fit=bounds&height=700&width=700&canvas=700:700",
+            "display_link": "uk.remington-europe.com",
+            "context_link": "https://uk.remington-europe.com/x7-limitless-x-rotary-shaver",
+            "mime": "image/png",
+            "byte_size": 196627,
+            "height": 700,
+            "width": 700,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRM7HgAZijACMfRI_5ntN-IlTeIMGIcPcFetn8KTZUe79m-aW3NG2Iweft&s",
+            "host": "uk.remington-europe.com",
+            "score": 85,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, product, rotary",
+              "preferred host: uk.remington-europe.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Remington X7 Limitless X Rotary Shaver | XR1775 | Remington",
+            "link": "https://cdn-img.remington-europe.com/manager/remington-europe_com/au-products/large_XR1775AU_HERO.png",
+            "display_link": "eu.remington-europe.com",
+            "context_link": "https://eu.remington-europe.com/products/x7-limitless-x-rotary-shaver-xr1775",
+            "mime": "image/png",
+            "byte_size": 506023,
+            "height": 1000,
+            "width": 1000,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQwdLXVi7UvANJYUiBd-KyNmTP5DDuG73FsdIlbyjf-zDH4GDFXOAAOHU&s",
+            "host": "cdn-img.remington-europe.com",
+            "score": 85,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, product, rotary",
+              "preferred host: cdn-img.remington-europe.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Remington X7 Limitless X Rotary Shaver | XR1775 in Cavan ...",
+            "link": "https://hnie-assets.s3.eu-west-1.amazonaws.com/products/REMINGTON/XR1775-test/XR1775-test_1.jpg",
+            "display_link": "www.getlocal.ie",
+            "context_link": "https://www.getlocal.ie/product/rqsnz/remington-x7-limitless-x-rotary-shaver-xr1775",
+            "mime": "image/jpeg",
+            "byte_size": 55709,
+            "height": 500,
+            "width": 849,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgg_B5icrJLpfuKbI3HdwQJsiFCufLEIIzvvqz6_VQcFk2cMltjiGj9hY&s",
+            "host": "hnie-assets.s3.eu-west-1.amazonaws.com",
+            "score": 55,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver, product, rotary",
+              "unlisted host: hnie-assets.s3.eu-west-1.amazonaws.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Amazon.com: Remington Limitless X7 Shaver for Men, Advanced ...",
+            "link": "https://m.media-amazon.com/images/I/71xCh7a9InL.jpg",
+            "display_link": "www.amazon.com",
+            "context_link": "https://www.amazon.com/Remington-Limitless-Technology-Performance-Waterproof/dp/B0DDL68TMW",
+            "mime": "image/jpeg",
+            "byte_size": 189478,
+            "height": 2000,
+            "width": 2000,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_cyPoZC3BXO8DM7DbshqeCa1xHkEdtf-zgQ4Ysb2QT0mt5F06n0QkT8PY&s",
+            "host": "m.media-amazon.com",
+            "score": 45,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime",
+              "high resolution"
+            ]
+          },
+          {
+            "title": "Amazon.com: Remington Limitless X7 Shaver for Men, Advanced ...",
+            "link": "https://m.media-amazon.com/images/I/51mmfz7D12L._SY350_PKmb-play-button-overlay_.jpg",
+            "display_link": "www.amazon.com",
+            "context_link": "https://www.amazon.com/Remington-Limitless-Technology-Performance-Waterproof/dp/B0DDL68TMW",
+            "mime": "image/jpeg",
+            "byte_size": 20902,
+            "height": 350,
+            "width": 622,
+            "thumbnail_link": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyScaN_D0F7mjyUKZSAJeIE50DFqOkFMJrrB6vanjwyYxvMdqmq7u175U&s",
+            "host": "m.media-amazon.com",
+            "score": 35,
+            "score_reasons": [
+              "contains required brand term",
+              "optional terms: shaver",
+              "unlisted host: m.media-amazon.com",
+              "preferred image mime"
+            ]
+          }
+        ],
+        "search_information": {
+          "searchTime": 0.277939,
+          "formattedSearchTime": "0.28",
+          "totalResults": "12600",
+          "formattedTotalResults": "12,600"
+        }
+      }
+    ]
+  },
+  "domain_registry": [
+    {
+      "domain": "idealo.de",
+      "country": "DE",
+      "language": [
+        "de"
+      ],
+      "source_types": [
+        "price_aggregator"
+      ],
+      "allowed_roles": [
+        "price",
+        "availability",
+        "seller_discovery",
+        "basic_specs"
+      ],
+      "blocked_roles": [
+        "performance_claims"
+      ],
+      "trust_tier": "high_for_price",
+      "api_preferred": false,
+      "human_status": "approved",
+      "notes": "Used for current Germany-facing prices, offer counts, availability notes, and simple product specs."
+    },
+    {
+      "domain": "braun.com",
+      "country": "US/DE",
+      "language": [
+        "en",
+        "de"
+      ],
+      "source_types": [
+        "manufacturer"
+      ],
+      "allowed_roles": [
+        "official_specs",
+        "warranty",
+        "replacement_parts"
+      ],
+      "blocked_roles": [
+        "independent_performance"
+      ],
+      "trust_tier": "high_for_specs",
+      "api_preferred": false,
+      "human_status": "approved",
+      "notes": "Strong for battery/runtime/waterproof/manufacturer claims; not independent evidence."
+    },
+    {
+      "domain": "philips.com",
+      "country": "US/UK/IE",
+      "language": [
+        "en"
+      ],
+      "source_types": [
+        "manufacturer"
+      ],
+      "allowed_roles": [
+        "official_specs",
+        "replacement_interval",
+        "warranty"
+      ],
+      "blocked_roles": [
+        "independent_performance"
+      ],
+      "trust_tier": "high_for_specs",
+      "api_preferred": false,
+      "human_status": "approved",
+      "notes": "Used for S9000/SH91/SH71 runtime and replacement interval claims."
+    },
+    {
+      "domain": "panasonic.co.uk",
+      "country": "UK",
+      "language": [
+        "en"
+      ],
+      "source_types": [
+        "manufacturer_store"
+      ],
+      "allowed_roles": [
+        "official_specs",
+        "accessory_price_reference"
+      ],
+      "blocked_roles": [
+        "germany_price",
+        "independent_performance"
+      ],
+      "trust_tier": "medium_high_for_specs",
+      "api_preferred": false,
+      "human_status": "approved",
+      "notes": "Used for ES-LV67 specs and accessory price reference where German accessory pricing was weaker."
+    },
+    {
+      "domain": "shavercheck.com",
+      "country": "US",
+      "language": [
+        "en"
+      ],
+      "source_types": [
+        "expert_review"
+      ],
+      "allowed_roles": [
+        "performance_proxy",
+        "maintenance_proxy"
+      ],
+      "blocked_roles": [
+        "germany_price"
+      ],
+      "trust_tier": "medium_for_performance",
+      "api_preferred": false,
+      "human_status": "needs_review",
+      "notes": "Used as a qualitative performance proxy only; not treated as lab data."
+    },
+    {
+      "domain": "remingtonproducts.com",
+      "country": "US",
+      "language": [
+        "en"
+      ],
+      "source_types": [
+        "manufacturer_store"
+      ],
+      "allowed_roles": [
+        "replacement_part_reference"
+      ],
+      "blocked_roles": [
+        "germany_price"
+      ],
+      "trust_tier": "medium_for_parts",
+      "api_preferred": false,
+      "human_status": "needs_review",
+      "notes": "Used only where Germany replacement-head data is sparse."
+    }
+  ]
+}

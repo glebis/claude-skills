@@ -1,0 +1,75 @@
+[
+  {
+    "domain": "idealo.de",
+    "country": "DE",
+    "language": ["de"],
+    "source_types": ["price_aggregator"],
+    "allowed_roles": ["price", "availability", "seller_discovery", "basic_specs"],
+    "blocked_roles": ["performance_claims"],
+    "trust_tier": "high_for_price",
+    "api_preferred": false,
+    "human_status": "approved",
+    "notes": "Used for current Germany-facing prices, offer counts, availability notes, and simple product specs."
+  },
+  {
+    "domain": "braun.com",
+    "country": "US/DE",
+    "language": ["en", "de"],
+    "source_types": ["manufacturer"],
+    "allowed_roles": ["official_specs", "warranty", "replacement_parts"],
+    "blocked_roles": ["independent_performance"],
+    "trust_tier": "high_for_specs",
+    "api_preferred": false,
+    "human_status": "approved",
+    "notes": "Strong for battery/runtime/waterproof/manufacturer claims; not independent evidence."
+  },
+  {
+    "domain": "philips.com",
+    "country": "US/UK/IE",
+    "language": ["en"],
+    "source_types": ["manufacturer"],
+    "allowed_roles": ["official_specs", "replacement_interval", "warranty"],
+    "blocked_roles": ["independent_performance"],
+    "trust_tier": "high_for_specs",
+    "api_preferred": false,
+    "human_status": "approved",
+    "notes": "Used for S9000/SH91/SH71 runtime and replacement interval claims."
+  },
+  {
+    "domain": "panasonic.co.uk",
+    "country": "UK",
+    "language": ["en"],
+    "source_types": ["manufacturer_store"],
+    "allowed_roles": ["official_specs", "accessory_price_reference"],
+    "blocked_roles": ["germany_price", "independent_performance"],
+    "trust_tier": "medium_high_for_specs",
+    "api_preferred": false,
+    "human_status": "approved",
+    "notes": "Used for ES-LV67 specs and accessory price reference where German accessory pricing was weaker."
+  },
+  {
+    "domain": "shavercheck.com",
+    "country": "US",
+    "language": ["en"],
+    "source_types": ["expert_review"],
+    "allowed_roles": ["performance_proxy", "maintenance_proxy"],
+    "blocked_roles": ["germany_price"],
+    "trust_tier": "medium_for_performance",
+    "api_preferred": false,
+    "human_status": "needs_review",
+    "notes": "Used as a qualitative performance proxy only; not treated as lab data."
+  },
+  {
+    "domain": "remingtonproducts.com",
+    "country": "US",
+    "language": ["en"],
+    "source_types": ["manufacturer_store"],
+    "allowed_roles": ["replacement_part_reference"],
+    "blocked_roles": ["germany_price"],
+    "trust_tier": "medium_for_parts",
+    "api_preferred": false,
+    "human_status": "needs_review",
+    "notes": "Used only where Germany replacement-head data is sparse."
+  }
+]
+

@@ -668,6 +668,30 @@ cp -r decision-toolkit ~/.claude/skills/
 
 ---
 
+### [Elimination Research](./elimination-research/) ⭐ NEW
+Generate numeric, source-auditable shortlist comparisons for products, tools, services, and vendors.
+
+**Features:**
+- 🧮 Deterministic scoring model with explicit criteria and raw numeric tables
+- 🛒 Consumer quick report with card/table switch, rounded prices, images, and links
+- 🔧 Ownership-cost summaries for heads, filters, blades, cartridges, bags, or other replaceable parts
+- 🌐 Source/domain registry support to separate manufacturer, retailer, aggregator, review, forum, and affiliate evidence
+- 🖼️ Optional Google Custom Search image refresh with SOPS-friendly credential loading
+- 📊 Full audit report preserving task, criteria, tournament, caveats, source roles, and embedded JSON
+
+**Quick Start:**
+```bash
+cp -r elimination-research ~/.claude/skills/
+python3 ~/.claude/skills/elimination-research/scripts/generate_elimination_report.py \
+  --dataset ~/.claude/skills/elimination-research/assets/examples/consumer_goods_dataset.example.json \
+  --output-dir /tmp/elimination-report \
+  --max-price-eur 200
+```
+
+**Use when:** Choosing from a shortlist, buying consumer goods, comparing tools/vendors, or producing a quick report plus full audit trail.
+
+---
+
 ### [Fathom](./fathom/) ⭐ NEW
 Fetch meetings, transcripts, summaries, action items, and download video recordings from Fathom API.
 
