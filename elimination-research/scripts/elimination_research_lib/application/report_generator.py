@@ -831,13 +831,21 @@ def _quick_pick_card(label, row, reason):
     return f"""
       <article class="quick-pick">
         {_quick_image(row)}
-        <h2>{escape(row['candidate_name'])}</h2>
-        <div class="quick-price">{escape(_quick_display_price(row))}</div>
-        <p><strong>{escape(label)}.</strong> {escape(reason)}</p>
-        {_quick_specs(row)}
-        {_quick_ownership(row)}
-        {_quick_links(row)}
-        {_quick_details(row)}
+        <div class="quick-card-body">
+          <h2>{escape(row['candidate_name'])}</h2>
+          <div class="quick-price-block">
+            <span>estimated street price</span>
+            <div class="quick-price">{escape(_quick_display_price(row))}</div>
+          </div>
+          <div class="quick-recommendation">
+            <span class="quick-badge">{escape(label)}</span>
+            <p class="quick-reason">{escape(reason)}</p>
+          </div>
+          {_quick_specs(row)}
+          {_quick_ownership(row)}
+          {_quick_links(row)}
+          {_quick_details(row)}
+        </div>
       </article>
     """
 
@@ -857,7 +865,10 @@ def _quick_option_card(row):
           {_quick_image(row)}
         <div class="quick-option-body">
           <h3>{escape(row['candidate_name'])}</h3>
-          <div class="quick-price">{escape(_quick_display_price(row))}</div>
+          <div class="quick-price-block">
+            <span>estimated street price</span>
+            <div class="quick-price">{escape(_quick_display_price(row))}</div>
+          </div>
           {_quick_specs(row)}
           {_quick_ownership(row)}
           {_quick_links(row)}
@@ -1058,10 +1069,13 @@ def _quick_report_css():
       --muted: #666;
       --line: #ddd;
       --bg: #f7f5ef;
-      --card: oklch(99% 0.006 95);
-      --image: oklch(99.4% 0.004 95);
+      --card: #fffefb;
+      --image: #fbfbf8;
       --on-accent: oklch(99% 0.006 145);
       --accent: #2a7a5a;
+      --accent-soft: #f4faf6;
+      --accent-line: #d5e7dd;
+      --chip: #f1f1f0;
     }
     * { box-sizing: border-box; }
     body {
@@ -1072,7 +1086,7 @@ def _quick_report_css():
       line-height: 1.45;
     }
     .quick-page {
-      max-width: 1120px;
+      max-width: 1180px;
       margin: 0 auto;
       padding: 28px 18px 56px;
     }
@@ -1096,8 +1110,7 @@ def _quick_report_css():
       margin: 0 0 12px;
       max-width: 680px;
     }
-    .quick-links a,
-    .quick-details summary {
+    .quick-links a {
       align-items: center;
       color: var(--accent);
       cursor: pointer;
@@ -1110,7 +1123,7 @@ def _quick_report_css():
     .quick-decision {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
+      gap: 16px;
       margin: 20px 0 30px;
     }
     .quick-pick,
@@ -1118,40 +1131,87 @@ def _quick_report_css():
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 8px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.02);
     }
     .quick-pick {
+      display: flex;
+      flex-direction: column;
+      min-height: 690px;
+      overflow: hidden;
       padding: 14px;
+    }
+    .quick-card-body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-width: 0;
     }
     .quick-pick h2 {
       font-size: clamp(20px, 2.1vw, 28px);
-      margin-top: 12px;
+      margin-top: 18px;
+      min-height: 64px;
       overflow-wrap: anywhere;
     }
-    .quick-pick p {
-      color: var(--muted);
-      margin: 10px 0;
+    .quick-recommendation {
+      margin: 10px 0 0;
+      min-height: 76px;
     }
-    .quick-pick p strong {
-      color: var(--ink);
+    .quick-badge {
+      align-items: center;
+      background: var(--accent);
+      border-radius: 999px;
+      color: var(--on-accent);
+      display: inline-flex;
+      font-size: 13px;
       font-weight: 800;
+      line-height: 1;
+      min-height: 28px;
+      padding: 7px 10px;
+      white-space: nowrap;
+    }
+    .quick-reason {
+      color: var(--muted);
+      display: -webkit-box;
+      font-size: 15px;
+      line-height: 1.38;
+      margin: 8px 0 0;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+    .quick-price-block {
+      border-top: 1px solid rgba(221,221,221,0.7);
+      margin-top: 10px;
+      min-height: 72px;
+      padding-top: 10px;
+    }
+    .quick-price-block span {
+      color: var(--muted);
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
     }
     .quick-price {
-      font-size: 21px;
-      font-weight: 800;
-      margin-top: 6px;
+      color: var(--ink);
+      font-size: clamp(28px, 3vw, 40px);
+      font-weight: 850;
+      letter-spacing: 0;
+      line-height: 1.05;
+      margin-top: 4px;
     }
     .quick-image {
       align-items: center;
-      aspect-ratio: 4 / 3;
       background: var(--image);
       display: flex;
+      height: 190px;
       justify-content: center;
       overflow: hidden;
       width: 100%;
     }
     .quick-pick .quick-image {
-      aspect-ratio: 16 / 10;
-      max-height: 280px;
+      height: 230px;
     }
     .quick-image img {
       display: block;
@@ -1224,6 +1284,12 @@ def _quick_report_css():
       font-size: 21px;
       overflow-wrap: anywhere;
     }
+    .quick-option .quick-price-block {
+      min-height: 62px;
+    }
+    .quick-option .quick-price {
+      font-size: 28px;
+    }
     .quick-table-wrap {
       background: var(--card);
       border: 1px solid var(--line);
@@ -1259,32 +1325,49 @@ def _quick_report_css():
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin: 12px 0;
+      margin: 14px 0 0;
+      min-height: 72px;
+      align-content: flex-start;
     }
     .quick-specs span {
-      background: #f1f1f1;
+      background: var(--chip);
       border-radius: 999px;
       color: #333;
       font-size: 13px;
-      padding: 5px 9px;
+      line-height: 1;
+      min-height: 28px;
+      padding: 7px 10px;
     }
     .quick-ownership {
-      background: #f7faf8;
-      border: 1px solid #d7e4dc;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-line);
       border-radius: 6px;
       color: #315946;
-      font-size: 13px;
-      font-weight: 650;
+      font-size: 14px;
+      font-weight: 750;
       line-height: 1.35;
-      margin: 10px 0;
-      padding: 8px 10px;
+      margin: 12px 0 0;
+      min-height: 64px;
+      padding: 10px 12px 10px 30px;
+      position: relative;
+    }
+    .quick-ownership::before {
+      background: var(--accent);
+      border-radius: 999px;
+      content: "";
+      height: 8px;
+      left: 13px;
+      position: absolute;
+      top: 17px;
+      width: 8px;
     }
     .quick-item-links,
     .quick-table-links {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      margin: 10px 0;
+      gap: 8px;
+      margin: 14px 0 0;
+      min-height: 46px;
     }
     .quick-link,
     .quick-table-link {
@@ -1295,9 +1378,11 @@ def _quick_report_css():
       display: inline-flex;
       font-size: 13px;
       font-weight: 750;
+      justify-content: center;
       line-height: 1;
+      min-width: 78px;
       min-height: 44px;
-      padding: 7px 9px;
+      padding: 7px 12px;
       text-decoration: none;
       white-space: nowrap;
     }
@@ -1311,7 +1396,24 @@ def _quick_report_css():
       margin: 0;
     }
     .quick-details {
-      margin-top: 8px;
+      border-top: 1px solid rgba(221,221,221,0.7);
+      color: var(--muted);
+      margin-top: auto;
+      padding-top: 8px;
+    }
+    .quick-details summary {
+      align-items: center;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 14px;
+      font-weight: 700;
+      gap: 6px;
+      min-height: 44px;
+      text-decoration: none;
+    }
+    .quick-details summary::marker {
+      color: var(--accent);
     }
     .quick-details table {
       border-collapse: collapse;
@@ -1344,6 +1446,14 @@ def _quick_report_css():
       .quick-heading-title-row {
         align-items: flex-start;
         flex-direction: column;
+      }
+      .quick-recommendation {
+        min-height: 118px;
+      }
+      .quick-reason {
+        display: block;
+        overflow: visible;
+        -webkit-line-clamp: unset;
       }
       .quick-option {
         grid-template-columns: 1fr;
