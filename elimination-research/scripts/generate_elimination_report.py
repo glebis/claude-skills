@@ -268,6 +268,11 @@ def _report_context(args, dataset, domain_registry, image_search, max_price, pri
         "price_limit_eur": max_price,
         "price_limit_basis": price_basis,
         "criteria": dataset.get("criteria", []),
+        "extra_candidate_fields": dataset.get("extra_candidate_fields", []),
+        "extra_numeric_columns": dataset.get("extra_numeric_columns", []),
+        "quick_pick_candidate_ids": dataset.get("quick_pick_candidate_ids", {}),
+        "quick_pick_labels": dataset.get("quick_pick_labels", {}),
+        "quick_pick_reasons": dataset.get("quick_pick_reasons", {}),
     }
 
 

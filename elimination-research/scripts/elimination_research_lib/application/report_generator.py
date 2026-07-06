@@ -110,6 +110,10 @@ def generate_final_report_artifacts(
         "domain_registry": report_context.get("domain_registry", []),
         "image_search": image_search,
         "image_search_rows": image_rows,
+        "extra_numeric_columns": report_context.get("extra_numeric_columns", []),
+        "quick_pick_candidate_ids": report_context.get("quick_pick_candidate_ids", {}),
+        "quick_pick_labels": report_context.get("quick_pick_labels", {}),
+        "quick_pick_reasons": report_context.get("quick_pick_reasons", {}),
     }
 
     markdown = _render_markdown(payload)
@@ -222,35 +226,39 @@ def _candidate_data(candidates, report_context, scores_by_id):
             if price_limit is None or price_value is None
             else price_value <= price_limit
         )
-        rows.append(
-            {
-                "candidate_id": candidate.id,
-                "candidate_name": candidate.name,
-                "brand": raw.get("brand", ""),
-                "type": raw.get("type", ""),
-                "device_price_eur": raw.get("device_price_eur"),
-                "replacement_head_eur": raw.get("replacement_head_eur"),
-                "replacement_unit_price_eur": raw.get("replacement_unit_price_eur"),
-                "replacement_quantity_3y": raw.get("replacement_quantity_3y"),
-                "replacement_interval_months": raw.get("replacement_interval_months"),
-                "replacement_part_name": raw.get("replacement_part_name", "replacement part"),
-                "three_year_cost_eur": candidate.three_year_cost_eur,
-                "ownership_summary": _ownership_summary(raw, candidate),
-                "ownership_note": raw.get("ownership_note", ""),
-                "runtime_min": raw.get("runtime_min"),
-                "charging_min": raw.get("charging_min"),
-                "cleaning_station": raw.get("cleaning_station"),
-                "wet_dry": raw.get("wet_dry"),
-                "effectiveness": metrics.get("effectiveness"),
-                "skin_safety": metrics.get("skin_safety"),
-                "convenience": metrics.get("convenience"),
-                "weighted_score": scores["weighted_score"],
-                "score_per_eur": scores["score_per_eur"],
-                "source_refs": raw.get("source_refs", []),
-                "price_limit_value_eur": price_value,
-                "within_price_limit": within_price_limit,
-            }
-        )
+        row = {
+            "candidate_id": candidate.id,
+            "candidate_name": candidate.name,
+            "brand": raw.get("brand", ""),
+            "type": raw.get("type", ""),
+            "device_price_eur": raw.get("device_price_eur"),
+            "replacement_head_eur": raw.get("replacement_head_eur"),
+            "replacement_unit_price_eur": raw.get("replacement_unit_price_eur"),
+            "replacement_quantity_3y": raw.get("replacement_quantity_3y"),
+            "replacement_interval_months": raw.get("replacement_interval_months"),
+            "replacement_part_name": raw.get("replacement_part_name", "replacement part"),
+            "three_year_cost_eur": candidate.three_year_cost_eur,
+            "ownership_summary": _ownership_summary(raw, candidate),
+            "ownership_note": raw.get("ownership_note", ""),
+            "quick_specs": raw.get("quick_specs", []),
+            "quick_detail_rows": raw.get("quick_detail_rows", []),
+            "runtime_min": raw.get("runtime_min"),
+            "charging_min": raw.get("charging_min"),
+            "cleaning_station": raw.get("cleaning_station"),
+            "wet_dry": raw.get("wet_dry"),
+            "effectiveness": metrics.get("effectiveness"),
+            "skin_safety": metrics.get("skin_safety"),
+            "convenience": metrics.get("convenience"),
+            "weighted_score": scores["weighted_score"],
+            "score_per_eur": scores["score_per_eur"],
+            "source_refs": raw.get("source_refs", []),
+            "price_limit_value_eur": price_value,
+            "within_price_limit": within_price_limit,
+        }
+        for field in report_context.get("extra_candidate_fields", []):
+            if field not in row:
+                row[field] = raw.get(field)
+        rows.append(row)
     return rows
 
 
@@ -581,7 +589,7 @@ def _render_markdown(payload):
         )
 
     lines.extend(["", "## Raw numeric shortlist data"])
-    lines.extend(_markdown_table(_candidate_numeric_columns(), payload["candidate_data"]))
+    lines.extend(_markdown_table(_candidate_numeric_columns(payload), payload["candidate_data"]))
     lines.append(
         "Product image provenance: "
         f"provider={payload['image_search'].get('provider', 'google_custom_search')}; "
@@ -760,11 +768,17 @@ def _render_quick_html(payload):
     value_winner = _candidate_by_id(payload, value[0]["candidate_id"])
     skin_ids = payload.get("sensitivity_rankings", {}).get("skin", [])
     skin_winner = _candidate_by_id(payload, skin_ids[0]) if skin_ids else winner
+    pick_ids = payload.get("quick_pick_candidate_ids", {})
+    winner = _quick_pick_override(payload, pick_ids.get("overall"), winner)
+    value_winner = _quick_pick_override(payload, pick_ids.get("value"), value_winner)
+    skin_winner = _quick_pick_override(payload, pick_ids.get("safety"), skin_winner)
     ordered_candidates = [
         _candidate_by_id(payload, row["candidate_id"])
         for row in weighted
     ]
     quick_scope = _quick_scope_sentence(payload)
+    quick_labels = payload.get("quick_pick_labels", {})
+    quick_reasons = payload.get("quick_pick_reasons", {})
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -784,9 +798,9 @@ def _render_quick_html(payload):
     </header>
 
     <section class="quick-decision" aria-label="Recommended choices">
-      {_quick_pick_card('Best overall', winner, 'Choose this if shaving quality matters more than lowest price.')}
-      {_quick_pick_card('Best value', value_winner, 'Choose this if price matters first.')}
-      {_quick_pick_card('Fit pick', skin_winner, 'Choose this if fit, safety, or comfort risk matters most.')}
+      {_quick_pick_card(quick_labels.get('overall', 'Best overall'), winner, quick_reasons.get('overall', 'Choose this if quality matters more than lowest price.'))}
+      {_quick_pick_card(quick_labels.get('value', 'Best value'), value_winner, quick_reasons.get('value', 'Choose this if price matters first.'))}
+      {_quick_pick_card(quick_labels.get('safety', 'Safety pick'), skin_winner, quick_reasons.get('safety', 'Choose this if fit, safety, or comfort risk matters most.'))}
     </section>
 
     <section class="quick-shortlist" aria-label="All options">
@@ -828,6 +842,15 @@ def _quick_pick_card(label, row, reason):
     """
 
 
+def _quick_pick_override(payload, candidate_id, fallback):
+    if not candidate_id:
+        return fallback
+    try:
+        return _candidate_by_id(payload, candidate_id)
+    except (KeyError, StopIteration):
+        return fallback
+
+
 def _quick_option_card(row):
     return f"""
       <article class="quick-option">
@@ -861,10 +884,7 @@ def _quick_comparison_table(rows):
           <th>{escape(row['candidate_name'])}</th>
           <td>{escape(_quick_display_price(row))}</td>
           <td>{escape(row.get('ownership_summary', ''))}</td>
-          <td>{escape(_short_type(row.get('type')))}</td>
-          <td>{escape(_wet_dry_label(row.get('wet_dry')))}</td>
-          <td>{escape(_station_label(row.get('cleaning_station')))}</td>
-          <td>{escape(_runtime_label(row.get('runtime_min')))}</td>
+          <td>{escape(_quick_specs_text(row))}</td>
           <td>{_quick_table_links(row)}</td>
         </tr>
         """
@@ -877,10 +897,7 @@ def _quick_comparison_table(rows):
             <th>Option</th>
             <th>Price</th>
             <th>Ownership</th>
-            <th>Type</th>
-            <th>Use</th>
-            <th>Cleaning</th>
-            <th>Battery</th>
+            <th>Specs</th>
             <th>Links</th>
           </tr>
         </thead>
@@ -949,14 +966,24 @@ def _item_link_anchors(row, class_name):
 
 
 def _quick_specs(row):
+    specs = _quick_specs_list(row)
+    return f'<div class="quick-specs">{"".join(f"<span>{escape(spec)}</span>" for spec in specs)}</div>'
+
+
+def _quick_specs_text(row):
+    return " / ".join(_quick_specs_list(row))
+
+
+def _quick_specs_list(row):
+    if row.get("quick_specs"):
+        return [str(spec) for spec in row["quick_specs"] if spec]
     specs = [
         _short_type(row.get("type")),
         _wet_dry_label(row.get("wet_dry")),
         _station_label(row.get("cleaning_station")),
         _runtime_label(row.get("runtime_min")),
     ]
-    specs = [spec for spec in specs if spec]
-    return f'<div class="quick-specs">{"".join(f"<span>{escape(spec)}</span>" for spec in specs)}</div>'
+    return [spec for spec in specs if spec]
 
 
 def _quick_details(row):
@@ -974,6 +1001,11 @@ def _quick_details(row):
         ("convenience", _format_cell(row.get("convenience"), "convenience")),
         ("ownership note", row.get("ownership_note", "")),
     ]
+    details.extend(
+        (item.get("label", ""), str(item.get("value", "")))
+        for item in row.get("quick_detail_rows", [])
+        if item.get("label") and item.get("value") not in (None, "")
+    )
     rows = "".join(
         f"<tr><th>{escape(label)}</th><td>{escape(value)}</td></tr>"
         for label, value in details
@@ -1346,7 +1378,7 @@ def _decision_product_strip(payload, winner, value_winner):
         ("Value pick", value_winner["candidate_id"], "score_per_eur", "score/EUR"),
     ]
     if skin_ids:
-        featured.append(("Skin pick", skin_ids[0], "skin_safety", "skin"))
+        featured.append(("Safety pick", skin_ids[0], "skin_safety", "safety"))
 
     seen = set()
     cards = []
@@ -1429,6 +1461,12 @@ def _raw_data_section(payload):
     )
     cheapest = min(payload["candidate_data"], key=lambda item: item["three_year_cost_eur"])
     runtime_values = _numbers(payload["candidate_data"], "runtime_min")
+    extra_labels = [column.get("label", "") for column in payload.get("extra_numeric_columns", []) if column.get("label")]
+    numeric_shape = (
+        "price, ownership cost, domain-specific numeric fields, and three 0-100 proxy metrics"
+        if extra_labels
+        else "price, runtime, charging, and three 0-100 proxy metrics"
+    )
     budget = payload.get("budget", {})
     budget_shape = ""
     if budget.get("enabled"):
@@ -1445,12 +1483,14 @@ def _raw_data_section(payload):
     runtime_sentence = (
         f"{sum(1 for row in payload['candidate_data'] if row.get('runtime_min') == max(runtime_values))} devices list {_format_number(max(runtime_values), 0)} min runtime."
         if runtime_values
+        else f"Domain metrics in this report: {', '.join(extra_labels)}."
+        if extra_labels
         else "Runtime was not included in the minimal test dataset."
     )
     return f"""
     <section id="raw-data">
       <h2>raw shortlist data <a href="#toc" class="back-to-top" title="Back to contents">+</a></h2>
-      <p class="state-line">All <strong>{payload['candidate_count']}</strong> candidates expose price, runtime, charging, and three 0-100 proxy metrics; <strong>{payload['decision_candidate_count']}</strong> are used for the decision ranking.</p>
+      <p class="state-line">All <strong>{payload['candidate_count']}</strong> candidates expose {escape(numeric_shape)}; <strong>{payload['decision_candidate_count']}</strong> are used for the decision ranking.</p>
       <div class="aside-container">
         <div class="consumer-image-grid">
           {_candidate_gallery_cards(payload['candidate_data'])}
@@ -1459,7 +1499,7 @@ def _raw_data_section(payload):
           <div class="aside-title">shape</div>
           <p><strong>Top cluster:</strong> {escape(top_quality)} lead the balanced score table.</p>
           <p><strong>Cost floor:</strong> {escape(cheapest['candidate_name'])} has the lowest three-year cost at about {escape(_format_rounded_currency(cheapest['three_year_cost_eur']))}.</p>
-          <p><strong>Runtime:</strong> {escape(runtime_sentence)}</p>
+          <p><strong>Numeric shape:</strong> {escape(runtime_sentence)}</p>
           {budget_shape}
         </aside>
       </div>
@@ -1477,12 +1517,12 @@ def _raw_data_section(payload):
       </div>
       <div class="aside-container">
         <div class="table-wrapper">
-          {_html_table(_candidate_numeric_columns(), payload['candidate_data'])}
+          {_html_table(_candidate_numeric_columns(payload), payload['candidate_data'])}
         </div>
         <aside class="aside">
           <div class="aside-title">numeric audit</div>
           <p><strong>Price:</strong> device price, replaceable-part allowance, and three-year cost are all visible in EUR.</p>
-          <p><strong>Battery:</strong> runtime and charging minutes are visible so convenience can be checked independently.</p>
+          <p><strong>Domain metrics:</strong> battery, range, maintenance, or other dataset-specific numeric fields are visible when provided.</p>
           <p><strong>Proxies:</strong> effectiveness, fit/safety, and convenience are visible before any weighted score is applied.</p>
         </aside>
       </div>
@@ -1559,7 +1599,7 @@ def _value_section(payload, names_by_id):
           <div class="aside-title">pareto check</div>
           <p><strong>Frontier:</strong> {escape(frontier_names)}.</p>
           <p><strong>Interpretation:</strong> no listed candidate is strictly dominated on all quality metrics and three-year cost.</p>
-          <p><strong>Decision rule:</strong> use value ranking first only if price ceiling matters more than shaving quality.</p>
+          <p><strong>Decision rule:</strong> use value ranking first only if price ceiling matters more than the primary quality score.</p>
         </aside>
       </div>
     </section>
@@ -1701,8 +1741,8 @@ def _evidence_section(payload):
     """
 
 
-def _candidate_numeric_columns():
-    return [
+def _candidate_numeric_columns(payload=None):
+    columns = [
         ("candidate_name", "Candidate"),
         ("device_price_eur", "Device EUR"),
         ("replacement_head_eur", "Replacement EUR"),
@@ -1714,11 +1754,22 @@ def _candidate_numeric_columns():
         ("runtime_min", "Runtime min"),
         ("charging_min", "Charge min"),
         ("effectiveness", "Effect."),
-        ("skin_safety", "Skin"),
+        ("skin_safety", "Safety"),
         ("convenience", "Conven."),
         ("weighted_score", "Score"),
         ("score_per_eur", "Score/EUR"),
     ]
+    for column in (payload or {}).get("extra_numeric_columns", []):
+        column_id = column.get("id")
+        if not column_id:
+            continue
+        if any(existing_id == column_id for existing_id, _ in columns):
+            continue
+        columns.insert(
+            -2,
+            (column_id, column.get("label") or column_id.replace("_", " ").title()),
+        )
+    return columns
 
 
 def _criteria_columns():
@@ -1849,7 +1900,7 @@ def _format_cell(value, key):
             "image_score",
             "replacement_interval_months",
             "replacement_quantity_3y",
-        }:
+        } or key.endswith(("_months", "_m", "_db", "_score", "_count")):
             places = 0
         if key == "coefficient":
             places = 5
