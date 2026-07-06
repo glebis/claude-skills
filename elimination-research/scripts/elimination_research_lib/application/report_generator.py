@@ -188,9 +188,9 @@ def _criteria_payload(report_context=None):
             "id": "three_year_cost_eur",
             "label": "Three-year cost penalty",
             "coefficient": -COST_PENALTY_WEIGHT,
-            "unit": "EUR",
+            "unit": "€",
             "direction": "lower is better",
-            "definition": "Device price plus replaceable-part allowance; subtracts points per EUR.",
+            "definition": "Device price plus replaceable-part allowance; subtracts points per €.",
         },
     ]
 
@@ -570,7 +570,7 @@ def _render_markdown(payload):
         f"# {payload['title']}",
         f"Question: {payload['task']['question']}",
         f"Market: {payload['task']['market']}",
-        f"Currency: {payload['task']['currency']}",
+        f"Currency: {_currency_label(payload['task']['currency'])}",
         f"Candidate count: {payload['candidate_count']}",
         _budget_markdown_line(payload),
         f"Winner: {payload['winner']['candidate_name']} ({payload['winner']['candidate_id']})",
@@ -612,7 +612,7 @@ def _render_markdown(payload):
                     ("rank", "Rank"),
                     ("candidate_name", "Candidate"),
                     ("score", "Score"),
-                    ("score_per_eur", "Score/EUR"),
+                    ("score_per_eur", "Score/€"),
                 ],
                 rows,
             )
@@ -683,7 +683,7 @@ def _render_html(payload):
       <div class="source-tags">{_source_tags(payload)}</div>
       <h1>{escape(payload['title'])}</h1>
       <p class="subtitle">{escape(payload['task']['question'])}</p>
-      <p class="meta-line">Market: <span class="mono">{escape(payload['task']['market'])}</span> / currency: <span class="mono">{escape(payload['task']['currency'])}</span>{_budget_meta_fragment(payload)} / generated: <span class="mono">{escape(payload['task'].get('generated_at') or payload['task'].get('created_at') or 'not recorded')}</span></p>
+      <p class="meta-line">Market: <span class="mono">{escape(payload['task']['market'])}</span> / currency: <span class="mono">{escape(_currency_label(payload['task']['currency']))}</span>{_budget_meta_fragment(payload)} / generated: <span class="mono">{escape(payload['task'].get('generated_at') or payload['task'].get('created_at') or 'not recorded')}</span></p>
       <p class="view-switch"><a href="quick_report.html">open quick consumer version</a></p>
     </header>
 
@@ -696,7 +696,7 @@ def _render_html(payload):
       <div class="status-cell status-amber">
         <div class="status-label">Value winner</div>
         <div class="status-value">{escape(value_winner['candidate_name'])}</div>
-        <div class="status-note"><span class="mono">{_format_number(value_winner['score_per_eur'], 3)}</span> score/EUR</div>
+        <div class="status-note"><span class="mono">{_format_number(value_winner['score_per_eur'], 3)}</span> score/€</div>
       </div>
       <div class="status-cell status-blue">
         <div class="status-label">Decision pool</div>
@@ -715,7 +715,7 @@ def _render_html(payload):
     <div class="toc-layout">
       <section class="overview">
         <p class="lede">This report answers one task: choose the best option from a defined shortlist using transparent, numeric criteria.</p>
-        <p>Candidate count: {payload['candidate_count']}. Decision pool: {payload['decision_candidate_count']}. Winner: {escape(winner['candidate_name'])}. Evidence sources: {source_count}. The score combines three 0-100 quality proxies and one EUR cost penalty.</p>
+        <p>Candidate count: {payload['candidate_count']}. Decision pool: {payload['decision_candidate_count']}. Winner: {escape(winner['candidate_name'])}. Evidence sources: {source_count}. The score combines three 0-100 quality proxies and one € cost penalty.</p>
         <p>{budget_note} The balanced winner costs about <span class="mono">{_format_rounded_currency(_candidate_by_id(payload, winner['candidate_id'])['three_year_cost_eur'])}</span> over three years, while the value winner costs about <span class="mono">{_format_rounded_currency(_candidate_by_id(payload, value_winner['candidate_id'])['three_year_cost_eur'])}</span>.</p>
       </section>
       <nav class="toc" id="toc">
@@ -731,7 +731,7 @@ def _render_html(payload):
 
     <div class="summary-row">
       {_summary_card('Weighted score', _format_number(winner['score']), f"{winner['candidate_name']} leads the balanced model", 'primary')}
-      {_summary_card('Value score', _format_number(value_winner['score_per_eur'], 3), f"{value_winner['candidate_name']} leads score per EUR", 'secondary')}
+      {_summary_card('Value score', _format_number(value_winner['score_per_eur'], 3), f"{value_winner['candidate_name']} leads score per €", 'secondary')}
       {_summary_card('Data depth', third_card_value, third_card_detail, 'tertiary')}
     </div>
 
@@ -791,7 +791,7 @@ def _render_quick_html(payload):
   <main class="quick-page">
     <header class="quick-header">
       <h1>{escape(payload['title'])}</h1>
-      <p>{escape(payload['task']['question'])} {escape(quick_scope)} Prices are rounded to the nearest EUR.</p>
+      <p>{escape(payload['task']['question'])} {escape(quick_scope)} Prices are rounded to the nearest €.</p>
       <nav class="quick-links">
         <a href="report.html">full audit report</a>
       </nav>
@@ -995,7 +995,7 @@ def _quick_details(row):
         ("part interval", _replacement_interval_label(row.get("replacement_interval_months"))),
         ("parts in 3 years", _format_cell(row.get("replacement_quantity_3y"), "replacement_quantity_3y")),
         ("balanced score", _format_cell(row.get("weighted_score"), "weighted_score")),
-        ("score per EUR", _format_cell(row.get("score_per_eur"), "score_per_eur")),
+        ("score per €", _format_cell(row.get("score_per_eur"), "score_per_eur")),
         ("effectiveness", _format_cell(row.get("effectiveness"), "effectiveness")),
         ("fit / safety", _format_cell(row.get("skin_safety"), "skin_safety")),
         ("convenience", _format_cell(row.get("convenience"), "convenience")),
@@ -1375,7 +1375,7 @@ def _decision_product_strip(payload, winner, value_winner):
     skin_ids = payload.get("sensitivity_rankings", {}).get("skin", [])
     featured = [
         ("Balanced pick", winner["candidate_id"], "weighted_score", "score"),
-        ("Value pick", value_winner["candidate_id"], "score_per_eur", "score/EUR"),
+        ("Value pick", value_winner["candidate_id"], "score_per_eur", "score/€"),
     ]
     if skin_ids:
         featured.append(("Safety pick", skin_ids[0], "skin_safety", "safety"))
@@ -1435,18 +1435,18 @@ def _task_section(payload):
     return f"""
     <section id="task">
       <h2>task and criteria <a href="#toc" class="back-to-top" title="Back to contents">+</a></h2>
-      <p class="state-line">The model uses <strong>4</strong> coefficients: three quality proxies and one EUR cost penalty.</p>
+      <p class="state-line">The model uses <strong>4</strong> coefficients: three quality proxies and one € cost penalty.</p>
       <div class="aside-container">
         <div>
           <div class="table-wrapper">
             {_html_table(_criteria_columns(), payload['criteria'])}
           </div>
-          <div class="caption">Score formula: effectiveness*0.44880 + fit/safety*0.23600 + convenience*0.35680 - three-year cost EUR*0.00584.</div>
+          <div class="caption">Score formula: effectiveness*0.44880 + fit/safety*0.23600 + convenience*0.35680 - three-year cost €*0.00584.</div>
         </div>
         <aside class="aside">
           <div class="aside-title">method</div>
           <p><strong>Task:</strong> rank the researched shortlist, not discover every possible option.</p>
-          <p><strong>Criteria:</strong> all quality inputs use a 0-100 proxy scale, while price enters as a direct EUR penalty.</p>
+          <p><strong>Criteria:</strong> all quality inputs use a 0-100 proxy scale, while price enters as a direct € penalty.</p>
           <p><strong>Limit:</strong> the coefficients are deterministic default coefficients, not lab-calibrated consumer research weights.</p>
         </aside>
       </div>
@@ -1521,7 +1521,7 @@ def _raw_data_section(payload):
         </div>
         <aside class="aside">
           <div class="aside-title">numeric audit</div>
-          <p><strong>Price:</strong> device price, replaceable-part allowance, and three-year cost are all visible in EUR.</p>
+          <p><strong>Price:</strong> device price, replaceable-part allowance, and three-year cost are all visible in €.</p>
           <p><strong>Domain metrics:</strong> battery, range, maintenance, or other dataset-specific numeric fields are visible when provided.</p>
           <p><strong>Proxies:</strong> effectiveness, fit/safety, and convenience are visible before any weighted score is applied.</p>
         </aside>
@@ -1543,7 +1543,7 @@ def _balanced_section(payload):
       <div class="aside-container">
         <div class="chart-container reveal">
           <canvas id="weightedChart" height="300"></canvas>
-          <div class="caption">Weighted score after the EUR cost penalty; higher is better.</div>
+          <div class="caption">Weighted score after the € cost penalty; higher is better.</div>
         </div>
         <aside class="aside">
           <div class="aside-title">decision</div>
@@ -1559,7 +1559,7 @@ def _balanced_section(payload):
         <aside class="aside">
           <div class="aside-title">rank table</div>
           <p><strong>Score:</strong> balanced score is the primary decision score when budget is not fixed.</p>
-          <p><strong>Score/EUR:</strong> shown in the same table so premium wins are not mistaken for value wins.</p>
+          <p><strong>Score/€:</strong> shown in the same table so premium wins are not mistaken for value wins.</p>
           <p><strong>Traceability:</strong> candidate IDs remain in the JSON payload while the visible report uses product names.</p>
         </aside>
       </div>
@@ -1577,12 +1577,12 @@ def _value_section(payload, names_by_id):
     return f"""
     <section id="value">
       <h2>value and frontier <a href="#toc" class="back-to-top" title="Back to contents">+</a></h2>
-      <p class="state-line">{escape(value_winner['candidate_name'])} leads value at <strong>{_format_number(value_winner['score_per_eur'], 3)}</strong> score/EUR.</p>
-      {_rank_image_row(payload, value_rows[:3], 'value top three', 'score_per_eur', 'score/EUR')}
+      <p class="state-line">{escape(value_winner['candidate_name'])} leads value at <strong>{_format_number(value_winner['score_per_eur'], 3)}</strong> score/€.</p>
+      {_rank_image_row(payload, value_rows[:3], 'value top three', 'score_per_eur', 'score/€')}
       <div class="aside-container">
         <div class="chart-container reveal">
           <canvas id="valueChart" height="300"></canvas>
-          <div class="caption">Score per EUR reverses the premium ranking; higher is better.</div>
+          <div class="caption">Score per € reverses the premium ranking; higher is better.</div>
         </div>
         <aside class="aside">
           <div class="aside-title">budget view</div>
@@ -1636,7 +1636,7 @@ def _sensitivity_section(payload, names_by_id):
         <aside class="aside">
           <div class="aside-title">sensitivity</div>
           <p><strong>Balanced:</strong> uses the full score formula and selects {escape(balanced_pick)}.</p>
-          <p><strong>Value:</strong> ranks score per EUR and selects {escape(value_pick)}.</p>
+          <p><strong>Value:</strong> ranks score per € and selects {escape(value_pick)}.</p>
           <p><strong>Fit:</strong> sorts by the fit/safety proxy and selects {escape(skin_pick)}.</p>
         </aside>
       </div>
@@ -1744,12 +1744,12 @@ def _evidence_section(payload):
 def _candidate_numeric_columns(payload=None):
     columns = [
         ("candidate_name", "Candidate"),
-        ("device_price_eur", "Device EUR"),
-        ("replacement_head_eur", "Replacement EUR"),
-        ("replacement_unit_price_eur", "Part unit EUR"),
+        ("device_price_eur", "Device €"),
+        ("replacement_head_eur", "Replacement €"),
+        ("replacement_unit_price_eur", "Part unit €"),
         ("replacement_interval_months", "Part interval mo"),
         ("replacement_quantity_3y", "Parts in 3y"),
-        ("three_year_cost_eur", "3-year EUR"),
+        ("three_year_cost_eur", "3-year €"),
         ("within_price_limit", "Under limit"),
         ("runtime_min", "Runtime min"),
         ("charging_min", "Charge min"),
@@ -1757,7 +1757,7 @@ def _candidate_numeric_columns(payload=None):
         ("skin_safety", "Safety"),
         ("convenience", "Conven."),
         ("weighted_score", "Score"),
-        ("score_per_eur", "Score/EUR"),
+        ("score_per_eur", "Score/€"),
     ]
     for column in (payload or {}).get("extra_numeric_columns", []):
         column_id = column.get("id")
@@ -1789,7 +1789,7 @@ def _ranking_columns(include_value=False):
         ("score", "Score"),
     ]
     if include_value:
-        columns.append(("score_per_eur", "Score/EUR"))
+        columns.append(("score_per_eur", "Score/€"))
     return columns
 
 
@@ -1957,7 +1957,7 @@ def _decision_pool_note(payload):
 def _source_tags(payload):
     tags = [
         payload["task"]["market"],
-        payload["task"]["currency"],
+        _currency_label(payload["task"]["currency"]),
         f"{payload['decision_candidate_count']} decision candidates",
         f"{payload['evidence_summary']['source_count']} sources",
     ]
@@ -2013,13 +2013,37 @@ def _format_number(value, places=2):
 
 
 def _format_currency(value):
-    return f"{_format_number(value, 2)} EUR"
+    return _format_money(value, 2)
 
 
 def _format_rounded_currency(value):
     if value is None or value == "":
         return ""
-    return f"{round(value):.0f} EUR"
+    return _format_money(round(value), 0)
+
+
+def _format_money(value, places=2, currency="EUR"):
+    if value is None or value == "":
+        return ""
+    symbols = {
+        "EUR": "€",
+        "USD": "$",
+    }
+    symbol = symbols.get(str(currency).upper())
+    amount = _format_number(value, places)
+    if symbol == "$":
+        return f"${amount}"
+    if symbol:
+        return f"{amount} {symbol}"
+    return f"{amount} {currency}"
+
+
+def _currency_label(currency):
+    labels = {
+        "EUR": "€",
+        "USD": "$",
+    }
+    return labels.get(str(currency).upper(), str(currency))
 
 
 def _is_number(value):
@@ -2563,7 +2587,7 @@ def _report_js(payload):
     }}
 
     barChart('weightedChart', report.weighted, 'score', 'Weighted score', 'rgba(196,90,40,0.55)');
-    barChart('valueChart', report.value, 'score_per_eur', 'Score per EUR', 'rgba(42,122,90,0.55)');
+    barChart('valueChart', report.value, 'score_per_eur', 'Score per €', 'rgba(42,122,90,0.55)');
 
     new Chart(document.getElementById('metricChart'), {{
       type: 'bar',
