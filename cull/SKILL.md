@@ -1,15 +1,13 @@
 ---
 name: cull
-description: Use when the user wants to view, review, rate, organize, search, or export images / AI-art generations with the Cull app (https://cull.company/ · https://github.com/glebis/cull). Trigger on "show me these images", "review this batch", "open these in Cull", "rate / shortlist / collect these", "find similar images", "make a smart collection", "run a quality pass", "export the keepers", "publish this collection". Works via the `cull` CLI by default (no MCP required); the `mcp__cull__*` tools are optional for richer interactive control.
+description: This skill should be used when the user wants to view, review, rate, organize, search, or export images / AI-art generations with the Cull app. Trigger on "show me these images", "review this batch", "open these in Cull", "rate / shortlist / collect these", "find similar images", "make a smart collection", "run a quality pass", "export the keepers", "publish this collection". Works via the `cull` CLI by default (no MCP required); the `mcp__cull__*` tools are optional for richer interactive control.
 ---
 
 # Cull
 
-Cull is a local AI-art image-library app: import folders, browse, rate/decide, build collections, run vision/quality analysis, find-similar via embeddings, and export/publish. This skill is a usage map over its automation surface, not a reimplementation.
+Cull is a local AI-art image-library app: import folders, browse, rate/decide, build collections, run vision/quality analysis, find similar via embeddings, and export/publish.
 
-**Links:** website [cull.company](https://cull.company/) · source [github.com/glebis/cull](https://github.com/glebis/cull)
-
-Cull exposes the **same operations four ways**: the `cull` CLI, the `cull://` URL scheme, the GUI, and an MCP server — all thin wrappers over one Rust core. **Default to the CLI + URL scheme.** They need no MCP connection and survive app restarts. Reach for the MCP only when you need interactive control the headless surface doesn't implement yet (see "When you need the MCP").
+Cull exposes the **same operations four ways**: the `cull` CLI, the `cull://` URL scheme, the GUI, and an MCP server — all thin wrappers over one Rust core. **Default to the CLI + URL scheme.** They need no MCP connection and survive app restarts. Reach for the MCP only when interactive control is needed that the headless surface doesn't implement yet (see "When the MCP is needed").
 
 ## The one core rule (do not skip)
 
@@ -33,7 +31,7 @@ open "cull://open?path=/abs/path/to/batch&view=grid"   # &view=loupe for single-
 open -a Cull                                            # ensure the window is frontmost
 ```
 
-The user now sees the batch in Cull. Never `open` the image files. Re-running `import_folder` is safe — already-imported files are skipped.
+Re-running `import_folder` is safe — already-imported files are skipped.
 
 ### Implemented CLI subcommands
 
@@ -49,7 +47,7 @@ These are live in the shipped binary (`cull --help` to confirm). Field names mat
 | `analyze_image_quality` / `get_image_quality` / `get_quality_count` | Run quality analysis / read scores / count by bucket |
 | `call_tool <tool> --params_json '{…}'` | Generic escape hatch — call any MCP-named tool with a JSON object |
 
-`call_tool` accepts MCP-shaped params, so anything you'd do over MCP you can try headless:
+`call_tool` accepts MCP-shaped params, so any MCP operation can be tried headless:
 
 ```bash
 $CULL --json call_tool import_folder --params_json '{"folder_path":"/abs/path"}'
@@ -68,11 +66,9 @@ $CULL --json call_tool export_images --params_json '{"collection_id":"<id>","out
 | rate / accept | `cull://rate?path=/abs/img.jpg&stars=4` · `cull://accept?path=/abs/img.jpg` |
 | collection | `cull://collection/add?name=picks&paths=/abs/a.jpg,/abs/b.jpg` |
 
-URL-scheme calls are fire-and-forget (no return value). When you need a result, use the CLI (`--json`) or the MCP.
+URL-scheme calls are fire-and-forget (no return value). When a result is needed, use the CLI (`--json`) or the MCP.
 
 ## Recipes (CLI-first)
-
-**Review a fresh batch.** `import_folder` → `open "cull://open?path=…&view=grid"` → `open -a Cull`. The user sees it in Cull. Never `open` the files.
 
 **Loupe one image.** `open "cull://open?path=/abs/img.png&view=loupe"`.
 
@@ -82,9 +78,9 @@ URL-scheme calls are fire-and-forget (no return value). When you need a result, 
 
 **Embeddings prerequisite.** `download_embedding_model` (once) → `generate_embeddings` (async). Only then does similarity work (`cull://similar?…`, or `find_similar` over MCP).
 
-## When you need the MCP (optional)
+## When the MCP is needed (optional)
 
-The headless CLI does **not** yet implement interactive curation and live navigation — those exist only as `mcp__cull__*` tools (or manual GUI). Reach for the MCP when you need to:
+The headless CLI does **not** yet implement interactive curation and live navigation — those exist only as `mcp__cull__*` tools (or manual GUI). Reach for the MCP to:
 
 - **Navigate / show precisely from the agent**: `navigate_to_folder`, `show_image`, `show_collection` (the URL scheme covers the common cases, but these give programmatic control and confirmation).
 - **Curate with round-trips**: `set_rating`, `set_decision`, `create_collection`, `add_to_collection`, `create_smart_collection`.
