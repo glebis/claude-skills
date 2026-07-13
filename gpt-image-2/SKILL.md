@@ -55,6 +55,10 @@ Ask where this will be used:
 - Custom size
 - No resize (use API default)
 
+**Aspect-ratio caveat:** `--platform` does NOT change the generation size — it generates at the configured size (default 1024×1024) and resizes/stretches afterwards, which distorts non-square targets (e.g. `--platform story` stretches a square to 1080×1920, cropping the composition's edges). For portrait or landscape compositions, pass the API-native size directly: `--size 1024x1536` (portrait) or `--size 1536x1024` (landscape).
+
+**Preflight false positives:** the background-conflict heuristic trips on color words applied to non-background elements (e.g. "off-white text" in a dark-background prompt reads as a second background). If the flagged conflict is spurious, re-run with `--force`, or rephrase ("pale gray text").
+
 ### Step 3.5: Preflight prompt check (automatic)
 
 Before **any** generation spend, the script now **composes the final prompt first**
