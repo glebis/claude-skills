@@ -572,6 +572,13 @@ Generate social media covers and visual assets for AGENCY Community events, meet
 
 ---
 
+### [Hermes Tweet Launch Monitor](./hermes-tweet-launch-monitor/) ⭐ NEW
+Read-first X/Twitter launch and community monitoring with the Hermes Tweet Hermes Agent plugin. Builds focused query packs, classifies developer and customer signals, and keeps engagement gated until explicitly requested.
+
+**Use when:** Tracking launch chatter, developer feedback, release sentiment, support questions, or X/Twitter mentions with Hermes Tweet.
+
+---
+
 ### [De-AI Text Humanizer](./de-ai/) ⭐ NEW
 Transform AI-sounding text into human, authentic writing while preserving meaning and facts. Research-backed approach focusing on quality over detection evasion.
 
