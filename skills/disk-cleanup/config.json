@@ -2,7 +2,8 @@
   "defaults": {
     "preset": "safe",
     "min_size_mb": 10,
-    "auto_empty_trash": false
+    "auto_empty_trash": false,
+    "mole_reminder_days": 30
   },
   "downloads_scan": {
     "root": "~/Downloads",

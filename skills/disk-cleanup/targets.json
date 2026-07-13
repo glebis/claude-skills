@@ -85,9 +85,9 @@
 
     {"id": "huggingface-models", "category": "ml-model", "risk": "medium", "method": "trash",
      "paths": ["~/.cache/huggingface", "~/.cache/kokoro-onnx", "~/.cache/qmd"],
-     "regenerates": true, "note": "ML models — re-download (can be large/slow)"},
+     "regenerates": true, "track_last_used": true, "note": "ML models — re-download (can be large/slow)"},
     {"id": "ollama-models", "category": "ml-model", "risk": "medium", "method": "trash",
-     "paths": ["~/.ollama/models"], "regenerates": true,
+     "paths": ["~/.ollama/models"], "regenerates": true, "track_last_used": true,
      "note": "local LLM weights — re-download is large/slow; confirm before clearing"},
     {"id": "xcode-device-support", "category": "dev", "risk": "medium", "method": "trash",
      "paths": ["~/Library/Developer/Xcode/iOS DeviceSupport",

@@ -186,6 +186,46 @@ def scan_downloads(spec: dict) -> list[Path]:
     return sorted(hits, key=lambda x: str(x))
 
 
+def last_used_days(paths: list[Path]) -> int | None:
+    """Days since the newest access-time (atime) among files under the given paths, as a proxy
+    for 'last used' — reading a model's weight file updates atime on APFS. None if nothing found.
+    Best-effort only: some tools/backups can bump atime without real use, and Spotlight/mdworker
+    indexing can too — treat this as a signal, not a guarantee."""
+    import time
+    newest = None
+    for base in paths:
+        if not base.exists():
+            continue
+        it = [base] if base.is_file() else base.rglob("*")
+        for f in it:
+            try:
+                if f.is_file():
+                    a = f.stat().st_atime
+                    if newest is None or a > newest:
+                        newest = a
+            except OSError:
+                continue
+    if newest is None:
+        return None
+    return int((time.time() - newest) / 86400)
+
+
+def mole_days_since_last_run() -> int | None:
+    """Days since `mo clean` (or --dry-run) last ran, via its own preview-list mtime, or None if
+    mole isn't installed / never run. NEVER invokes `mo` itself: it is a TUI with no
+    non-interactive flag and blocks waiting for a real terminal even in --dry-run mode (confirmed:
+    hangs under subprocess with piped/DEVNULL stdin AND under a script(1)-allocated pty) — running
+    it from a headless script would hang survey.py itself, so this only reads mole's own leftover
+    state file, never executes the tool."""
+    import time
+    if shutil.which("mo") is None:
+        return None
+    marker = expand("~/.config/mole/clean-list.txt")
+    if not marker.exists():
+        return None
+    return int((time.time() - marker.stat().st_mtime) / 86400)
+
+
 def resolve_target_paths(target: dict) -> list[Path]:
     """Expand a target's paths/find spec into concrete, deduped, sorted existing paths."""
     out: list[Path] = []

@@ -46,11 +46,18 @@ python3 scripts/clean.py --preset safe --skip ollama-models --go            # ex
 3. **Escalate to the user ONLY for** (these are genuine judgment calls the scripts deliberately
    refuse to auto-decide):
    - `medium` targets (ML models, device support, project `node_modules`) — confirm before `--allow-medium`.
+     ML-model targets (`ollama-models`, `huggingface-models`) carry a `last_used_days` field
+     (newest file atime under the target, aggregate across all models in that store — not
+     per-model) as a "how stale is this" signal; surface it before suggesting deletion.
    - `uncategorized` discoveries — unknown dirs >100 MB; ask or investigate before adding.
    - `advisory` notes — surface them (Telegram cache, simulators via `simctl`, `uv/tools`,
      Chrome whole-dir, Xcode Archives, `mo clean` deep-clean); never act on them automatically.
      For `mole-deep-clean`: suggest the user run `mo clean` themselves (interactive TUI, permanent
-     deletes, sudo for system caches) — never invoke it from the agent.
+     deletes, sudo for system caches) — never invoke it from the agent. **Never shell out to `mo`
+     at all** (not even `--dry-run`): it's TUI-only and blocks waiting for a real terminal even in
+     dry-run mode — confirmed hanging under a piped subprocess, `stdin=DEVNULL`, and even a
+     `script(1)`-allocated pty. A `mole` flag in survey.py's output only reads the mtime of
+     mole's own leftover `~/.config/mole/clean-list.txt` (last-run recency), never invokes it.
    - surgical Docker / simulator decisions (see below).
 4. Run `clean.py` with the resolved selection. Relay the result (`freed_human`, disk before→after).
 

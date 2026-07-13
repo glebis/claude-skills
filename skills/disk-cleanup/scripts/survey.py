@@ -29,8 +29,11 @@ def measure_targets(reg: dict) -> list[dict]:
             continue
         paths = lib.resolve_target_paths(t)
         size = sum(lib.du_bytes(p) for p in paths)
-        rows.append({**_base(t), "bytes": size, "human": lib.human(size),
-                     "exists": bool(paths), "n_paths": len(paths), "advisory": False})
+        row = {**_base(t), "bytes": size, "human": lib.human(size),
+               "exists": bool(paths), "n_paths": len(paths), "advisory": False}
+        if t.get("track_last_used") and paths:
+            row["last_used_days"] = lib.last_used_days(paths)
+        rows.append(row)
     rows.sort(key=lambda r: (-r.get("priority", 0), -r["bytes"]))
     return rows
 
@@ -74,6 +77,12 @@ def build(args) -> dict:
     for r in rows:
         if r["id"] == "crashpad-dumps" and r["bytes"] > 1e9:
             flags.append(f"crashpad-dumps={r['human']} → an app is crash-looping (update/reinstall it)")
+    mole_reminder_days = cfg.get("mole_reminder_days", 30)
+    mole_days = lib.mole_days_since_last_run()
+    if mole_days is not None and mole_days >= mole_reminder_days:
+        flags.append(f"mole not run in {mole_days}d → run `mo clean --dry-run` yourself in a "
+                     f"terminal to see what mole's whitelist-protected sweep would reclaim "
+                     f"(TUI, needs a real terminal — never auto-run)")
     return {
         "disk": lib.disk(),
         "targets": [r for r in rows if r["bytes"] >= min_mb * 1024 * 1024 or r["advisory"]
@@ -95,7 +104,11 @@ def render(s: dict) -> str:
     out += ["", "TARGETS (size-sorted within priority)"]
     for r in s["targets"]:
         tag = "ADVISORY" if r["advisory"] else r["risk"].upper()
-        out.append(f"  {r['human']:>7}  [{tag:<8}] {r['id']:<26} {r['note'][:60]}")
+        line = f"  {r['human']:>7}  [{tag:<8}] {r['id']:<26} {r['note'][:60]}"
+        if "last_used_days" in r:
+            lu = r["last_used_days"]
+            line += f"  (last used: {lu}d ago)" if lu is not None else "  (last used: unknown)"
+        out.append(line)
     if s["uncategorized"]:
         out += ["", "UNCATEGORIZED (>100M, unknown — decide manually)"]
         for u in s["uncategorized"]:
