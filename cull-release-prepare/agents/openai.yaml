@@ -1,0 +1,6 @@
+interface:
+  display_name: "Cull Release Prepare"
+  short_description: "Prepare Cull release metadata and commit"
+  default_prompt: "Use $cull-release-prepare to prepare a Cull patch release without tagging or pushing."
+policy:
+  allow_implicit_invocation: false
