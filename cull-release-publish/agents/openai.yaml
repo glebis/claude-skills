@@ -1,0 +1,6 @@
+interface:
+  display_name: "Cull Release Publish"
+  short_description: "Publish verified Cull release artifacts"
+  default_prompt: "Use $cull-release-publish to publish an already prepared Cull release through verified distribution."
+policy:
+  allow_implicit_invocation: false
