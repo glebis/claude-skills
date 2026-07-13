@@ -34,3 +34,9 @@ concepts/
 dist/
 **/disk-cleanup-workspace/
 wispr-analytics/data/
+
+# Generated skill artifacts (scan output, tool state)
+.survey.json
+**/.survey.json
+.impeccable/
+**/.impeccable/

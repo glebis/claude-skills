@@ -22,8 +22,9 @@ Editorial, restrained, typographic. Voice is dry, specific, and a little opinion
 - **Gradient / AI-slop**: gradient text, glassmorphism, purple-to-blue washes, emoji bullets, hollow taglines, em-dash filler, over-symmetry.
 - **Dashboard template**: hero-metric tiles, chart grids, the admin-panel look.
 - **Corporate-cold stock**: stock photography, navy-and-gray, lifeless enterprise polish.
+- **The unsteered-model default**: what a capable model (e.g. Fable 5) emits for "a landing page" with no direction. Concretely: **Inter or Roboto** as the typeface, **purple/violet gradients on a white ground**, minimal or no motion, and a layout that impresses at first glance but falls apart on the second look (placeholder copy, decorative elements with no job, symmetry standing in for hierarchy). Our token system and this file exist precisely to steer away from this default; naming it is the steer.
 
-If a viewer could say "AI made that" without doubt, it has failed.
+If a viewer could say "AI made that" without doubt, it has failed. The test is the *second* look, not the first.
 
 ## Design Principles
 
