@@ -1,0 +1,6 @@
+interface:
+  display_name: "Cull Release Verify"
+  short_description: "Verify Cull artifacts and distribution"
+  default_prompt: "Use $cull-release-verify to verify a Cull release and all distribution channels."
+policy:
+  allow_implicit_invocation: true
