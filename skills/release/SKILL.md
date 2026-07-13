@@ -11,6 +11,9 @@ description: >-
 
 # release — tiered compatibility & release workflow
 
+For the Cull repository, use `$cull-release`; Cull's repository-enforced state,
+artifact, updater, and Homebrew gates are stricter than this generic workflow.
+
 A config-driven release orchestrator. Mechanics live in `scripts/release.py`
 (unit-tested, stdlib-only); this file is the workflow you (or an agent) follow.
 Read `reference/config-schema.md` for `release.config.json` and
