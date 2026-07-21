@@ -1,0 +1,4 @@
+Run in INTERACTIVE Codex (plain `codex`, not `codex exec` — the interview needs back-and-forth).
+Replace {{RAW_GIST_URL}} with the unpinned raw gist URL (…/raw/<filename>).
+
+codex "Fetch this URL with curl: {{RAW_GIST_URL}} — ignore its 'paste this into a chat' preamble, then BECOME the interviewer it specifies. Interview me one question at a time through the 7 lenses, waiting for my answer before each next question, and when all 7 are done output only the final portrait YAML block. Begin now with lens 1, and do not write any code or touch files — this is a conversation."

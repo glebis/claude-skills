@@ -40,3 +40,7 @@ wispr-analytics/data/
 **/.survey.json
 .impeccable/
 **/.impeccable/
+
+# Filled-in client prep cockpits (contain client PII) — templates only in repo
+pre-session-portrait/assets/cockpit-*.html
+!pre-session-portrait/assets/cockpit-template.html

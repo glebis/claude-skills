@@ -1,0 +1,374 @@
+<title>Session Prep Cockpit</title>
+<style>
+  :root{--bg:#faf9f7;--panel:#fff;--ink:#1a1a1a;--muted:#6b6b6b;--line:#e6e3dd;--accent:#2f6f5e;--accent-soft:#e7f0ec;--warn:#b5561f;--warn-soft:#f6e7de;--radius:14px;--mono:"SF Mono",ui-monospace,Menlo,monospace}
+  @media (prefers-color-scheme:dark){:root{--bg:#14150f;--panel:#1d1e18;--ink:#ece9e2;--muted:#9a988f;--line:#2e2f27;--accent:#6fb59f;--accent-soft:#20302b;--warn:#e0865a;--warn-soft:#33241c}}
+  :root[data-theme="dark"]{--bg:#14150f;--panel:#1d1e18;--ink:#ece9e2;--muted:#9a988f;--line:#2e2f27;--accent:#6fb59f;--accent-soft:#20302b;--warn:#e0865a;--warn-soft:#33241c}
+  :root[data-theme="light"]{--bg:#faf9f7;--panel:#fff;--ink:#1a1a1a;--muted:#6b6b6b;--line:#e6e3dd;--accent:#2f6f5e;--accent-soft:#e7f0ec;--warn:#b5561f;--warn-soft:#f6e7de}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:0 18px 90px}
+  header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:10px 18px;margin:0 -18px 6px}
+  .top-row{max-width:920px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .hdr-in{background:transparent;border:0;color:var(--ink);font:650 17px/1.2 inherit;letter-spacing:-.2px;min-width:180px}
+  .hdr-in.goal{font:400 13px/1.3 inherit;color:var(--muted);flex:1;min-width:200px}
+  .hdr-in:focus{outline:none}
+  .timer{margin-left:auto;font:600 15px/1 var(--mono);background:var(--accent-soft);color:var(--accent);padding:8px 12px;border-radius:9px;border:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+  nav.tabs{display:flex;gap:4px;flex-wrap:wrap;margin:9px auto 0;max-width:920px}
+  nav.tabs button{border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:7px 12px;border-radius:20px;font-size:13px;cursor:pointer;font-weight:550}
+  nav.tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  section.tab{display:none;animation:fade .2s ease}section.tab.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;margin:14px 0}
+  h2{font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:20px 2px 6px;font-weight:600}
+  h3{font-size:16px;margin:2px 0 8px;font-weight:640}
+  p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}
+  .mini{font-size:13px;color:var(--muted)}
+  .pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .flag{background:var(--warn-soft);border-radius:9px;padding:9px 12px;font-size:13.5px;margin:8px 0}
+  input[type=text],textarea{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:14px/1.5 inherit;width:100%}
+  input[type=text]:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  textarea{min-height:110px;resize:vertical}
+  .facts{display:grid;grid-template-columns:150px 1fr;gap:8px 12px;align-items:center}
+  @media(max-width:560px){.facts{grid-template-columns:1fr}}
+  .facts label{font-size:13px;color:var(--muted);font-weight:550}
+  .q{padding:9px 0;border-bottom:1px dashed var(--line)}.q:last-child{border-bottom:0}
+  .q .row{display:flex;gap:9px;align-items:flex-start}
+  .q input[type=checkbox]{margin-top:3px;width:17px;height:17px;accent-color:var(--accent);flex:0 0 auto}
+  .q label{cursor:pointer}.q .why{color:var(--muted);font-size:12.5px;display:block;margin-top:1px}
+  .q .ans{margin:6px 0 0 26px;width:calc(100% - 26px)}
+  .q.answered label b{color:var(--accent)}
+  .list-row{display:flex;gap:8px;margin:7px 0;align-items:flex-start}
+  .list-row .grip{flex:0 0 auto;color:var(--muted);padding-top:9px;font-size:12px}
+  .list-row .owner{flex:0 0 92px}
+  .list-row button.del{flex:0 0 auto;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:7px;cursor:pointer;padding:6px 9px}
+  button.add{background:var(--accent-soft);color:var(--accent);border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:600;cursor:pointer;font-size:13.5px;margin-top:6px}
+  .station{display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}.station:last-child{border-bottom:0}
+  .station .num{flex:0 0 28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .agblock{border:1px solid var(--line);border-radius:11px;margin:10px 0;overflow:hidden;background:var(--panel)}
+  .agblock.hot{border-color:var(--warn);box-shadow:0 0 0 2px var(--warn-soft)}
+  .aghead{display:flex;gap:10px;align-items:center;padding:11px 13px;cursor:pointer;user-select:none}
+  .aghead .t{font:600 12.5px/1 var(--mono);color:var(--accent);background:var(--accent-soft);padding:4px 7px;border-radius:6px;flex:0 0 auto}
+  .aghead .ttl{font-weight:640;flex:1;min-width:0}
+  .aghead input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto}
+  .aghead .chev{color:var(--muted);transition:transform .18s}
+  .agblock.open .aghead .chev{transform:rotate(180deg)}
+  .agblock.hot .aghead .t{background:var(--warn-soft);color:var(--warn)}
+  .agblock .done-flag{font-size:11px;color:var(--accent);font-weight:600;display:none}
+  .agblock.done .done-flag{display:inline} .agblock.done .aghead .ttl{color:var(--muted);text-decoration:line-through}
+  .agbody{display:none;padding:2px 14px 14px 14px;border-top:1px solid var(--line)}
+  .agblock.open .agbody{display:block}
+  .sub{display:flex;gap:9px;align-items:flex-start;padding:6px 0}
+  .sub input[type=checkbox]{margin-top:2px;width:16px;height:16px;accent-color:var(--accent);flex:0 0 auto}
+  .sub label{cursor:pointer;font-size:14.5px}
+  .sub.checked label{color:var(--muted);text-decoration:line-through}
+  .agbody textarea{margin-top:8px;min-height:64px}
+  .progwrap{height:7px;background:var(--bg);border:1px solid var(--line);border-radius:20px;overflow:hidden;flex:1}
+  .progwrap .bar{height:100%;background:var(--accent);width:0;transition:width .25s}
+  .cue{display:flex;gap:9px;align-items:flex-start;padding:6px 0}
+  .cue input{margin-top:3px;width:16px;height:16px;accent-color:var(--warn)}
+</style>
+
+<header class="top">
+  <div class="top-row">
+    <input class="hdr-in" id="client" placeholder="Client name" title="names the saved data — each client stores separately">
+    <input class="hdr-in goal" id="goal" placeholder="Goal for the session · duration">
+    <div class="timer" id="timer" title="click = start/pause · double-click = reset">00:00</div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-t="setup" class="active">Setup</button>
+    <button data-t="framework">Framework</button>
+    <button data-t="questions">Questions</button>
+    <button data-t="capture">Decisions & Actions</button>
+    <button data-t="agenda">Agenda</button>
+    <button data-t="notes">Notes</button>
+  </nav>
+</header>
+
+<div class="wrap">
+
+<!-- SETUP -->
+<section class="tab active" id="setup">
+  <div class="card">
+    <h3>Stack &amp; facts <span class="mini">— fill live; this is where guesses get corrected</span></h3>
+    <div class="facts">
+      <label>Role / title</label><input type="text" data-key="f_role" placeholder="e.g. Ops Lead running delivery">
+      <label>Company / product</label><input type="text" data-key="f_company">
+      <label>Docs live in</label><input type="text" data-key="f_docs" placeholder="Notion / Confluence / OneDrive / Git…">
+      <label>Task tracker</label><input type="text" data-key="f_tracker" placeholder="Jira Cloud/Server / Linear / GitHub…">
+      <label>Transcript source</label><input type="text" data-key="f_transcript" placeholder="Teams / Fathom / Otter → format">
+      <label>Volume</label><input type="text" data-key="f_volume" placeholder="calls/wk · docs/call · time today">
+      <label>Stakeholders / editors</label><input type="text" data-key="f_people" placeholder="who reviews, what they need">
+      <label>Constraints</label><input type="text" data-key="f_constraints" placeholder="privacy / GDPR / allowed tools">
+    </div>
+  </div>
+  <div class="card">
+    <h3>Portrait <span class="mini">— paste the client's <code>portrait:</code> block</span></h3>
+    <textarea data-key="portrait" placeholder="topic: … / where: … / problem: … / ideal: … / tension: … / jtbd: push·pull·habit·anxiety·trigger" style="font:12.5px/1.5 var(--mono)"></textarea>
+  </div>
+</section>
+
+<!-- FRAMEWORK -->
+<section class="tab" id="framework">
+  <div class="card">
+    <h3>Framework: one pipeline, name the stations</h3>
+    <p class="mini">Adapt the stations to the client. For each: set an <b>AUTO / ASSIST / HUMAN</b> level + a <b>quality gate</b>. Everything drains into <b>one approval queue</b> — nothing sends itself (this is the trust layer that answers "automation will be low quality").</p>
+    <div style="margin-top:10px">
+      <div class="station"><div class="num">1</div><div><b>CAPTURE</b> — standardize the input <input type="text" data-key="st1" placeholder="what / gate…" style="margin-top:5px"></div></div>
+      <div class="station"><div class="num">2</div><div><b>EXTRACT</b> — structured JSON, not prose <input type="text" data-key="st2" placeholder="what / gate…" style="margin-top:5px"></div></div>
+      <div class="station"><div class="num">3</div><div><b>TRANSFORM</b> — diffs over full rewrites <input type="text" data-key="st3" placeholder="what / gate…" style="margin-top:5px"></div></div>
+      <div class="station"><div class="num">4</div><div><b>ROUTE</b> — to tracker / systems <input type="text" data-key="st4" placeholder="what / gate…" style="margin-top:5px"></div></div>
+      <div class="station"><div class="num">5</div><div><b>DRAFT MESSAGES</b> — never auto-send <input type="text" data-key="st5" placeholder="what / gate…" style="margin-top:5px"></div></div>
+      <div class="station"><div class="num">6</div><div><b>APPROVE &amp; SEND</b> — one queue, one review, human <input type="text" data-key="st6" placeholder="what / gate…" style="margin-top:5px"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Quality levers (reusable)</h3>
+    <ul>
+      <li><b>Diffs over rewrites</b> — feed only the relevant section, output a patch. Kills volume limits + trivial review.</li>
+      <li><b>Golden examples</b> — 2–3 best past outputs as few-shot anchors → consistency without more iterations.</li>
+      <li><b>Self-critique gate</b> — model scores its own draft vs a rubric before it reaches the human.</li>
+      <li><b>One agent surface</b> — collapse tool-juggling into a single agent that reads files &amp; calls APIs.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- QUESTIONS -->
+<section class="tab" id="questions">
+  <div class="card">
+    <h2 style="margin-top:2px">Reality (fill the gaps)</h2>
+    <div id="q-reality"></div>
+    <button class="add" data-add="reality">+ question</button>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:2px">Quality &amp; trust</h2>
+    <div id="q-trust"></div>
+    <button class="add" data-add="trust">+ question</button>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:2px">Appetite &amp; scope</h2>
+    <div id="q-scope"></div>
+    <button class="add" data-add="scope">+ question</button>
+  </div>
+</section>
+
+<!-- CAPTURE -->
+<section class="tab" id="capture">
+  <div class="card">
+    <h3>Decisions made</h3>
+    <div id="decisions"></div>
+    <button class="add" data-list="decisions">+ decision</button>
+  </div>
+  <div class="card">
+    <h3>Action items <span class="mini">(owner = who)</span></h3>
+    <div id="actions"></div>
+    <button class="add" data-list="actions">+ action</button>
+  </div>
+  <div class="card">
+    <h3>Built / demoed live</h3>
+    <textarea data-key="built" placeholder="what we made in the session · what to send after"></textarea>
+  </div>
+  <div class="card">
+    <h3>Show-don't-tell cues <span class="mini">— energy shifts when they SEE it work</span></h3>
+    <div class="cue"><input type="checkbox" data-key="cue1"><label>Build one real example live instead of describing it</label></div>
+    <div class="cue"><input type="checkbox" data-key="cue2"><label>Run it on THEIR data / transcript, not a toy</label></div>
+    <div class="cue"><input type="checkbox" data-key="cue3"><label>Show the diff / changelog, not just the output</label></div>
+    <div class="cue"><input type="checkbox" data-key="cue4"><label>Let them reject something — prove the human stays in control</label></div>
+  </div>
+</section>
+
+<!-- AGENDA -->
+<section class="tab" id="agenda">
+  <div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <button class="add" id="agStart" style="margin-top:0">▶ Start</button>
+    <div class="progwrap"><div class="bar" id="agBar"></div></div>
+    <div class="mini" id="agProg" style="flex:0 0 auto">0 / 5</div>
+    <div class="mini" id="agNow" style="flex-basis:100%"></div>
+  </div>
+  <div id="agenda-blocks"></div>
+  <div class="card">
+    <h3>Openers if they stall</h3>
+    <ul>
+      <li>"Show me the last thing you did by hand — let's automate <i>that</i> one live."</li>
+      <li>"If only one piece got solved today, which?"</li>
+      <li>"What would make you <i>trust</i> the output enough to send after a 30-second glance?"</li>
+    </ul>
+  </div>
+</section>
+
+<!-- NOTES -->
+<section class="tab" id="notes">
+  <div class="card"><h3>Live notes</h3><textarea data-key="notes1" placeholder="raw notes…" style="min-height:160px"></textarea></div>
+  <div class="card"><h3>Follow-ups I owe / they owe</h3><textarea data-key="notes2" placeholder="me → … · them → …"></textarea></div>
+</section>
+
+</div>
+
+<script>
+// ---- default question bank (editable/extendable live) ----
+const BANK={
+  reality:[
+    {q:"Walk me through <b>one recent case</b> end-to-end — timestamp each step. Where does the time go?",why:"Grounds everything; reveals the real bottleneck vs the assumed one."},
+    {q:"What are the <b>artifacts</b> exactly, and where do they live?",why:"Decides whether API/diff editing is even possible."},
+    {q:"What's the <b>input source</b> &amp; format?",why:"Standardize the input so downstream is reliable."},
+    {q:"<b>Tracker</b>: cloud or server? API token / admin? Which projects &amp; types?",why:"Sets the ambition level (CSV vs MCP vs REST)."},
+    {q:"Who <b>reviews</b>, and what do they need?",why:"The messaging/routing station depends on this."},
+    {q:"<b>Volume</b>: per week, per case, minutes today?",why:"Quantifies the target and picks the highest-ROI station."}
+  ],
+  trust:[
+    {q:"What's the bar for <b>good enough to ship</b>? What error is unacceptable?",why:"Turns 'quality' into a checkable rubric = the self-critique gate."},
+    {q:"Can you share <b>2–3 gold-standard past outputs</b>?",why:"Few-shot anchors — biggest consistency lever."},
+    {q:"What must <b>never</b> auto-send? What's safe to fully automate?",why:"Draws the AUTO/ASSIST/HUMAN line per station."},
+    {q:"<b>Privacy/data</b> constraints? Which tools does the org allow?",why:"Rules out options early; may force local/approved models."}
+  ],
+  scope:[
+    {q:"Setup effort you'll invest vs wanting a <b>quick win now</b>?",why:"One deep pipeline vs one station shipped today."},
+    {q:"Comfortable running an <b>agent task</b> yourself, or want a recipe?",why:"Pitch to their technical level."}
+  ]
+};
+
+// ---- storage namespaced by client so multiple prep files don't collide ----
+const slug=s=>(s||'default').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'default';
+let NS='default';
+const key=k=>'prep::'+NS+'::'+k;
+const get=k=>localStorage.getItem(key(k));
+const set=(k,v)=>localStorage.setItem(key(k),v);
+
+// dynamic question rendering
+function qHtml(sec,i,item){
+  return `<div class="q" data-qk="${sec}${i}"><div class="row"><input type="checkbox" data-key="qc_${sec}${i}"><label><span>${item.q}</span>${item.why?`<span class="why">${item.why}</span>`:''}</label></div><input type="text" class="ans" data-key="qa_${sec}${i}" placeholder="answer / notes…"></div>`;
+}
+function renderQuestions(){
+  for(const sec of Object.keys(BANK)){
+    const extra=JSON.parse(get('qextra_'+sec)||'[]');
+    const all=[...BANK[sec],...extra.map(t=>({q:t,why:''}))];
+    document.getElementById('q-'+sec).innerHTML=all.map((it,i)=>qHtml(sec,i,it)).join('');
+  }
+}
+// dynamic lists (decisions / actions)
+function renderList(name){
+  const box=document.getElementById(name);
+  const rows=JSON.parse(get('list_'+name)||'[]');
+  const withOwner=name==='actions';
+  box.innerHTML=rows.map((r,i)=>`<div class="list-row"><span class="grip">${i+1}</span>`+
+    `<input type="text" value="${(r.text||'').replace(/"/g,'&quot;')}" data-row="${name}:${i}:text" placeholder="${withOwner?'action…':'decision…'}">`+
+    (withOwner?`<input type="text" class="owner" value="${(r.owner||'').replace(/"/g,'&quot;')}" data-row="${name}:${i}:owner" placeholder="owner">`:'')+
+    `<button class="del" data-del="${name}:${i}">✕</button></div>`).join('');
+}
+function listGet(n){return JSON.parse(get('list_'+n)||'[]');}
+function listSet(n,v){set('list_'+n,JSON.stringify(v));}
+
+// ---- load everything for current NS ----
+function loadAll(){
+  document.querySelectorAll('[data-key]').forEach(el=>{
+    const v=get(el.dataset.key);
+    if(el.type==='checkbox'){el.checked=v==='1';}
+    else if(v!=null){el.value=v;}
+    else if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){el.value='';}
+    if(el.classList.contains('ans')) el.closest('.q')?.classList.toggle('answered',(el.value||'').trim().length>0);
+  });
+}
+function bindPersist(root=document){
+  root.querySelectorAll('[data-key]').forEach(el=>{
+    if(el._bound)return; el._bound=1;
+    const ev=el.type==='checkbox'?'change':'input';
+    el.addEventListener(ev,()=>{
+      set(el.dataset.key, el.type==='checkbox'?(el.checked?'1':'0'):el.value);
+      if(el.classList.contains('ans')) el.closest('.q').classList.toggle('answered',el.value.trim().length>0);
+    });
+  });
+  root.querySelectorAll('[data-row]').forEach(el=>{
+    if(el._bound)return; el._bound=1;
+    el.addEventListener('input',()=>{const[n,i,f]=el.dataset.row.split(':');const rows=listGet(n);rows[i]=rows[i]||{};rows[i][f]=el.value;listSet(n,rows);});
+  });
+}
+
+// ---- interactive agenda ----
+const AGENDA=[
+ {id:1,lo:0,hi:5,ttl:'Confirm & anchor',steps:['Read their ideal sentence back','Confirm the ONE outcome for the hour','Confirm what changed / why now']},
+ {id:2,lo:5,hi:20,ttl:'Map the current pipeline',steps:['Walk one real recent case end-to-end','Timestamp each step — where the time goes','Mark the biggest bottleneck','Fill the Facts panel (Setup) as it surfaces']},
+ {id:3,lo:20,hi:40,ttl:'Design the target',steps:['Draw the 6 stations for their case','Set AUTO / ASSIST / HUMAN per station','Name a quality gate per station','Introduce the approval-queue trust layer','Name the two levers: diffs + golden examples']},
+ {id:4,lo:40,hi:55,ttl:'Build one quick win live',steps:['Pick the quick win together','Run it on THEIR data','Show the diff / changelog','Make the tool / stack decision']},
+ {id:5,lo:55,hi:60,ttl:'Close & next steps',steps:['Confirm what they send you','Confirm what they build','Earmark the next session','Logistics: invoice / time bank']}
+];
+function renderAgenda(){
+  document.getElementById('agenda-blocks').innerHTML=AGENDA.map(b=>
+    `<div class="agblock" data-lo="${b.lo}" data-hi="${b.hi}" data-id="${b.id}">
+      <div class="aghead">
+        <input type="checkbox" class="blockdone" data-key="ad${b.id}" title="mark block done">
+        <span class="t">${b.lo}–${b.hi}</span>
+        <span class="ttl">${b.ttl}</span>
+        <span class="done-flag">done ✓</span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="agbody">
+        ${b.steps.map((s,j)=>`<div class="sub"><input type="checkbox" data-key="as${b.id}_${j}"><label>${s}</label></div>`).join('')}
+        <textarea data-key="an${b.id}" placeholder="notes for this block…"></textarea>
+      </div>
+    </div>`).join('');
+}
+function syncAgenda(){
+  let done=0;
+  document.querySelectorAll('.agblock').forEach(bl=>{
+    const bd=bl.querySelector('.blockdone');bl.classList.toggle('done',bd.checked);if(bd.checked)done++;
+    bl.querySelectorAll('.sub input').forEach(c=>c.closest('.sub').classList.toggle('checked',c.checked));
+  });
+  const pct=Math.round(done/AGENDA.length*100);
+  document.getElementById('agBar').style.width=pct+'%';
+  document.getElementById('agProg').textContent=done+' / '+AGENDA.length;
+}
+
+function refreshDynamic(){renderQuestions();renderList('decisions');renderList('actions');renderAgenda();bindPersist();loadAll();syncAgenda();}
+
+function switchClient(){
+  NS=slug(document.getElementById('client').value);
+  localStorage.setItem('prep::lastclient',document.getElementById('client').value||'');
+  refreshDynamic();
+}
+
+// ---- events ----
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  [...tabs.children].forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active',s.id===b.dataset.t));window.scrollTo({top:0,behavior:'smooth'});});
+
+document.addEventListener('click',e=>{
+  const add=e.target.closest('[data-add]'); const addL=e.target.closest('[data-list]'); const del=e.target.closest('[data-del]');
+  if(add){const sec=add.dataset.add;const t=prompt('New question:');if(t){const x=JSON.parse(get('qextra_'+sec)||'[]');x.push(t);set('qextra_'+sec,JSON.stringify(x));refreshDynamic();}}
+  if(addL){const n=addL.dataset.list;const rows=listGet(n);rows.push(n==='actions'?{text:'',owner:''}:{text:''});listSet(n,rows);renderList(n);bindPersist();}
+  if(del){const[n,i]=del.dataset.del.split(':');const rows=listGet(n);rows.splice(i,1);listSet(n,rows);renderList(n);bindPersist();}
+});
+
+// client field
+const clientEl=document.getElementById('client');
+clientEl.value=localStorage.getItem('prep::lastclient')||'';
+clientEl.addEventListener('change',switchClient);
+
+// agenda interactions: accordion toggle, sub/done state, live highlight
+document.getElementById('agenda-blocks').addEventListener('click',e=>{
+  if(e.target.closest('.blockdone')){setTimeout(syncAgenda,0);return;}   // let persist handler run first
+  if(e.target.closest('.sub')){setTimeout(syncAgenda,0);return;}
+  const head=e.target.closest('.aghead');
+  if(head) head.parentElement.classList.toggle('open');
+});
+
+// timer + agenda highlight
+let sec=0,run=false,iv=null;const tEl=document.getElementById('timer');
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+function hl(){
+  const m=sec/60;let nowTxt='—';
+  document.querySelectorAll('.agblock').forEach(bl=>{
+    const hot=m>=+bl.dataset.lo&&m<+bl.dataset.hi;
+    bl.classList.toggle('hot',hot);
+    if(hot){bl.classList.add('open');nowTxt='▸ now: '+bl.querySelector('.ttl').textContent+' ('+bl.dataset.lo+'–'+bl.dataset.hi+' min)';}
+  });
+  const nowEl=document.getElementById('agNow');if(nowEl)nowEl.textContent=run?nowTxt:'';
+}
+function toggleRun(){run=!run;document.getElementById('agStart').textContent=run?'⏸ Pause':'▶ Start';
+  if(run){iv=setInterval(()=>{sec++;tEl.textContent=fmt(sec);hl();},1000);hl();}else clearInterval(iv);}
+tEl.onclick=toggleRun;
+document.getElementById('agStart').onclick=toggleRun;
+tEl.ondblclick=()=>{clearInterval(iv);run=false;sec=0;tEl.textContent='00:00';document.getElementById('agStart').textContent='▶ Start';hl();};
+
+// init
+NS=slug(clientEl.value);
+refreshDynamic();
+</script>
