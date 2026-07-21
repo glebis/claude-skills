@@ -41,6 +41,7 @@ DOCS_SITE_DIR = lambda: get_path('DOCS_SITE_DIR', 'Sites/agency-docs')
 PRESENTATIONS_DIR = lambda: get_path('PRESENTATIONS_DIR', 'ai_projects/claude-code-lab')
 GITHUB_REPO = lambda: os.environ.get('GITHUB_REPO', 'glebis/agency-docs')
 SITE_DOMAIN = lambda: os.environ.get('SITE_DOMAIN', 'agency-lab.glebkalinin.com')
+LAB_SLUG = lambda: os.environ.get('LAB_SLUG', 'claude-code')
 
 
 def parse_fathom_frontmatter(fathom_file: str) -> Dict:
@@ -69,14 +70,28 @@ def parse_fathom_frontmatter(fathom_file: str) -> Dict:
 def extract_lab_number(fathom_file: str) -> str:
     """Extract lab number from Fathom transcript filename."""
     filename = os.path.basename(fathom_file)
-    match = re.search(r'claude-code-lab-(\d+)', filename)
+    match = re.search(rf'{re.escape(LAB_SLUG())}-lab-(\d+)', filename)
+    if not match:
+        # generic fallback: any "<slug>-lab-NN" filename
+        match = re.search(r'lab-(\d+)', filename)
     if not match:
         raise ValueError(f"Could not extract lab number from filename: {filename}")
     return match.group(1).zfill(2)
 
 
-def find_presentation_file(lab_number: str) -> Optional[str]:
-    """Find presentation markdown for lab number."""
+def extract_date(fathom_file: str) -> Optional[str]:
+    """Extract the YYYYMMDD date from the Fathom transcript filename, if present."""
+    match = re.search(r'(\d{8})', os.path.basename(fathom_file))
+    return match.group(1) if match else None
+
+
+def find_presentation_file(lab_number: str, date_str: Optional[str] = None) -> Optional[str]:
+    """Find presentation markdown for a lab number.
+
+    When date_str (YYYYMMDD) is given, only a presentation whose filename contains
+    that date is matched — this prevents picking an unrelated deck from another
+    meeting just because it was the most recently modified file in the lab dir.
+    """
     presentations_dir = PRESENTATIONS_DIR() / 'presentations' / f'lab-{lab_number}'
 
     if not presentations_dir.exists():
@@ -85,6 +100,13 @@ def find_presentation_file(lab_number: str) -> Optional[str]:
 
     md_files = sorted(presentations_dir.glob('*.md'), key=lambda p: p.stat().st_mtime, reverse=True)
     md_files = [f for f in md_files if 'homework-prompt' not in f.name.lower()]
+
+    if date_str:
+        dated = [f for f in md_files if date_str in f.name]
+        if not dated:
+            print(f"ℹ️  No presentation matching date {date_str} in {presentations_dir}; skipping presentation")
+            return None
+        md_files = dated
 
     if md_files:
         return str(md_files[0])
@@ -249,7 +271,7 @@ Examples:
 
     docs_dir = args.docs_dir
     if not docs_dir:
-        docs_dir = str(DOCS_SITE_DIR() / 'content' / 'docs' / f'claude-code-internal-{lab_number}')
+        docs_dir = str(DOCS_SITE_DIR() / 'content' / 'docs' / f'{LAB_SLUG()}-internal-{lab_number}')
 
     print(f"✓ Target docs directory: {docs_dir}")
 
@@ -275,7 +297,7 @@ Examples:
             print("    Use --update flag to overwrite, or -n to specify a different number")
             sys.exit(1)
 
-    presentation_file = find_presentation_file(lab_number)
+    presentation_file = find_presentation_file(lab_number, extract_date(args.fathom_transcript))
     presentation_content = None
     if presentation_file:
         print(f"✓ Found presentation: {presentation_file}")
@@ -310,7 +332,7 @@ Examples:
     print(f"\nNext steps:")
     print(f"  1. Edit title and description in frontmatter")
     print(f"  2. cd {Path(docs_dir).parent.parent.parent}")
-    print(f"  3. git add content/docs/claude-code-internal-{lab_number}/meetings/{meeting_number}.mdx")
+    print(f"  3. git add content/docs/{LAB_SLUG()}-internal-{lab_number}/meetings/{meeting_number}.mdx")
     print(f"     git commit -m '{action} meeting {meeting_number} documentation'")
     print(f"  4. git push")
     print(f"  5. Check Vercel deploy logs")

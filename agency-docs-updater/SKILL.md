@@ -23,6 +23,7 @@ Load `.env` from skill root. Then split `args` by whitespace:
 - "yesterday" → `DATE = $(date -v-1d +%Y%m%d)`
 - "today" or missing → `DATE = $(date +%Y%m%d)`
 - 2-digit token (`NN`) or `lab-NN` → `LAB_FILTER`
+- slug token (e.g. `ai-design`, `claude-code`) → `LAB_SLUG` (overrides env; default `claude-code`)
 
 Expand env vars for paths used in subsequent steps:
 ```bash
@@ -35,21 +36,33 @@ ZOOM_CREDENTIALS_DIR="${ZOOM_CREDENTIALS_DIR:-$HOME/.zoom_credentials}"
 PRESENTATIONS_DIR="${PRESENTATIONS_DIR:-$HOME/ai_projects/claude-code-lab}"
 GITHUB_REPO="${GITHUB_REPO:-glebis/agency-docs}"
 SITE_DOMAIN="${SITE_DOMAIN:-agency-lab.glebkalinin.com}"
+LAB_SLUG="${LAB_SLUG:-claude-code}"   # e.g. ai-design for the AI Design Lab
+LAB_TITLE="${LAB_TITLE:-$(echo $LAB_SLUG | tr '-' ' ' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)}1' | sed 's/^Ai /AI /')}"  # "Claude Code", "AI Design"
 ```
+
+### Step 0a: Preflight (recommended)
+
+Run the preflight doctor to catch the three common mid-pipeline failures up front (missing youtube-uploader Python deps, missing Playwright/chromium, dead Groq key):
+
+```bash
+bash ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/preflight.sh
+```
+
+Hard blockers (deps/Playwright) exit non-zero with the exact fix command — run it, then re-run preflight. A dead Groq key is a soft warning: the LLM metadata step will 401, so plan to supply title/description/tags manually (build a `VideoConfig` and call `upload.py` directly, then set the thumbnail and playlist separately).
 
 ## Step 1: Find Fathom Transcript
 
-If `LAB_FILTER` is set: `${VAULT_DIR}/${DATE}-claude-code-lab-${LAB_FILTER}.md`
-If empty: glob `${VAULT_DIR}/${DATE}-claude-code-lab-*.md` (pick most recent by mtime).
+If `LAB_FILTER` is set: `${VAULT_DIR}/${DATE}-${LAB_SLUG}-lab-${LAB_FILTER}.md`
+If empty: glob `${VAULT_DIR}/${DATE}-${LAB_SLUG}-lab-*.md` (pick most recent by mtime). If nothing matches and no explicit slug was given, fall back to `${VAULT_DIR}/${DATE}-*-lab-*.md` and derive `LAB_SLUG` from the match.
 
 If missing: run `${SKILLS_LOCAL_DIR}/calendar-sync/sync.sh`, re-check, stop if still missing.
 
 Extract from YAML frontmatter and store:
 - `FATHOM_FILE`, `SHARE_URL`, `MEETING_TITLE`, `DATE`, `LAB_NUMBER`
-- `VIDEO_NAME` = `${DATE}-claude-code-lab-${LAB_NUMBER}`
+- `VIDEO_NAME` = `${DATE}-${LAB_SLUG}-lab-${LAB_NUMBER}`
 - `TRANSCRIPT_LANG` = auto-detect from first ~50 lines (Cyrillic ratio > 0.3 → `ru`, else `en`)
 
-**Determine `MEETING_NUMBER`**: check existing MDX files in `${DOCS_SITE_DIR}/content/docs/claude-code-internal-${LAB_NUMBER}/meetings/` for a placeholder with today's date. If found, use that number. Otherwise, check file content sizes to find the next empty slot. Store as zero-padded two-digit string (e.g. `04`). This variable is used in Steps 3b, 4b, 5, 6, and 8.
+**Determine `MEETING_NUMBER`**: check existing MDX files in `${DOCS_SITE_DIR}/content/docs/${LAB_SLUG}-internal-${LAB_NUMBER}/meetings/` for a placeholder with today's date. If found, use that number. Otherwise, check file content sizes to find the next empty slot. Store as zero-padded two-digit string (e.g. `04`). This variable is used in Steps 3b, 4b, 5, 6, and 8.
 
 ## Step 2: Download Video
 
@@ -181,14 +194,14 @@ Generate YouTube description from the summary. Use the language-appropriate temp
 
 Do NOT mix languages in a single description.
 
-Meeting page URL: `https://${SITE_DOMAIN}/claude-code-lab-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`
+Meeting page URL: `https://${SITE_DOMAIN}/${LAB_SLUG}-lab-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`
 
-Update title, description, tags via YouTube API, then add video to playlist "Claude Code Lab ${LAB_NUMBER}" (auto-created if it does not exist).
+Update title, description, tags via YouTube API, then add video to playlist "${LAB_TITLE} Lab ${LAB_NUMBER}" (auto-created if it does not exist).
 
 ## Step 5: Generate MDX
 
 ```bash
-python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/update_meeting_doc.py \
+LAB_SLUG=${LAB_SLUG} python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/update_meeting_doc.py \
   ${FATHOM_FILE} "${YOUTUBE_URL}" ${SCRATCHPAD}/summary.md
 ```
 
@@ -196,10 +209,10 @@ python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/update_meeting_doc.py \
 
 **After running**:
 1. Strip appended Marp content (everything after summary's closing `---` before `<!-- _class: lead -->`) — MDX breaks on HTML comments (`<!-- -->`), unescaped `<`, and bare `{` characters
-2. Check for presentation file: look in `${PRESENTATIONS_DIR}/presentations/lab-${LAB_NUMBER}/` and `${PRESENTATIONS_DIR}/lesson-generator/` for files matching `${DATE}`. If found, copy to `${DOCS_SITE_DIR}/public/${DATE}-claude-code-lab-${LAB_NUMBER}.html` and add link in MDX
+2. Check for presentation file: look in `${PRESENTATIONS_DIR}/presentations/lab-${LAB_NUMBER}/` (set `PRESENTATIONS_DIR` per lab; the ai-design lab keeps decks elsewhere — skip if unset for the slug) and `${PRESENTATIONS_DIR}/lesson-generator/` for files matching `${DATE}`. If found, copy to `${DOCS_SITE_DIR}/public/${DATE}-${LAB_SLUG}-lab-${LAB_NUMBER}.html` and add link in MDX
 3. Replace frontmatter placeholders (`[Название встречи]`, `[Краткое описание встречи]`, `[Дата встречи]`)
 4. If `TRANSCRIPT_LANG=en`, rewrite the MDX entirely with English labels — the script defaults to Russian and the translation fallback produces broken mixed-language output
-5. Verify: `cd ${DOCS_SITE_DIR} && npm run build 2>&1 | tail -5`
+5. Verify: `bash ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/safe_build.sh` (wraps `npm run build`; auto-clears a corrupt `.next` cache and retries once on the `reading 'hash'` / ENOSPC error)
 
 ## Step 6: Commit and Push
 
@@ -213,10 +226,10 @@ if [ "$BEHIND" -gt 0 ]; then
   git pull --rebase origin main
   git stash pop || true
 fi
-git add content/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}.mdx
+git add content/docs/${LAB_SLUG}-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}.mdx
 # Only stage presentation HTML if it was copied
-[ -f public/${DATE}-claude-code-lab-${LAB_NUMBER}.html ] && git add public/${DATE}-claude-code-lab-${LAB_NUMBER}.html
-git commit -m "Add Lab ${LAB_NUMBER} Meeting ${MEETING_NUMBER}"
+[ -f public/${DATE}-${LAB_SLUG}-lab-${LAB_NUMBER}.html ] && git add public/${DATE}-${LAB_SLUG}-lab-${LAB_NUMBER}.html
+git commit -m "Add ${LAB_TITLE} Lab ${LAB_NUMBER} Meeting ${MEETING_NUMBER}"
 git push
 ```
 
@@ -238,7 +251,7 @@ Run with `run_in_background: true`. If state is `failure` or `error`: check Verc
 
 ## Step 8: Verify in Browser
 
-Open `https://${SITE_DOMAIN}/claude-code-lab-${LAB_NUMBER}/meetings/${MEETING_NUMBER}` in a browser (via chrome automation tools or manually). Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
+Open `https://${SITE_DOMAIN}/${LAB_SLUG}-lab-${LAB_NUMBER}/meetings/${MEETING_NUMBER}` in a browser (via chrome automation tools or manually). Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
 
 ## Step 9: Rebuild Site-Wide Aggregations
 
@@ -255,7 +268,7 @@ The script reads the same `.env` paths and writes (paths configurable via `AGG_*
 
 **Handle new glossary terms**: the script prints `→ N NEW term(s) need definitions` for terms it has never seen. For each, write a one-line definition into `${DOCS_SITE_DIR}/.agency-glossary.json` (keep technical terms in English; match the page language otherwise), then re-run the script so the glossary MDX regenerates with the definitions. Leave already-defined terms untouched — the store is the source of truth.
 
-**Then**: `cd ${DOCS_SITE_DIR} && npm run build 2>&1 | tail -5` to confirm the generated MDX compiles, stage the changed aggregation files (the three MDX pages, `public/data/meetings.json`, and `.agency-glossary.json` — never `git add .`), and commit:
+**Then**: `bash ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/safe_build.sh` to confirm the generated MDX compiles (auto-recovers from a corrupt `.next` cache), stage the changed aggregation files (the three MDX pages, `public/data/meetings.json`, and `.agency-glossary.json` — never `git add .`), and commit:
 ```bash
 git add content/docs/database.mdx content/docs/glossary.mdx content/docs/library.mdx \
         public/data/meetings.json .agency-glossary.json

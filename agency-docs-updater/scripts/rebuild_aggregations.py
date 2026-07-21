@@ -159,8 +159,9 @@ def parse_meeting(path: Path):
 
     fm, body = split_frontmatter(content)
 
-    lab_match = re.search(r'claude-code-internal-(\d+)', str(path))
-    lab = lab_match.group(1).zfill(2) if lab_match else "??"
+    lab_match = re.search(r'([a-z0-9-]+)-internal-(\d+)', str(path))
+    slug = lab_match.group(1) if lab_match else "claude-code"
+    lab = lab_match.group(2).zfill(2) if lab_match else "??"
     number = path.stem.zfill(2) if path.stem.isdigit() else path.stem
 
     title = str(fm.get('title', '')).strip()
@@ -193,6 +194,7 @@ def parse_meeting(path: Path):
 
     return {
         "lab": lab,
+        "slug": slug,
         "number": number,
         "title": title,
         "description": description,
@@ -203,7 +205,7 @@ def parse_meeting(path: Path):
         "links": links,
         "body": body,
         "path": str(path),
-        "url": f"https://{site_domain()}/claude-code-lab-{lab}/meetings/{number}",
+        "url": f"https://{site_domain()}/{slug}-lab-{lab}/meetings/{number}",
     }
 
 
@@ -215,7 +217,7 @@ def collect_meetings():
         print("Set DOCS_SITE_DIR in .env to your local agency-docs checkout.")
         sys.exit(1)
 
-    meeting_files = sorted(base.glob('claude-code-internal-*/meetings/*.mdx'))
+    meeting_files = sorted(base.glob('*-internal-*/meetings/*.mdx'))
     records = []
     for f in meeting_files:
         if not f.stem.isdigit():
@@ -223,7 +225,7 @@ def collect_meetings():
         rec = parse_meeting(f)
         if rec:
             records.append(rec)
-    records.sort(key=lambda r: (r["lab"], r["number"]))
+    records.sort(key=lambda r: (r["slug"], r["lab"], r["number"]))
     return records
 
 
