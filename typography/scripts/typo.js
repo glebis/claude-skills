@@ -12,6 +12,8 @@
 //   --diff            show a unified word-diff-ish preview instead of full output
 //   --safe            disable rules that alter visible characters beyond
 //                     quotes/dashes/spaces (no ё, no abbreviation changes)
+//   --optalign        hanging punctuation: wrap «, ", commas in classed <span>s
+//                     (ru locale, HTML output only; pair with assets/optalign.css)
 
 const fs = require('fs');
 const path = require('path');
@@ -27,6 +29,7 @@ for (const a of args) {
   else if (a === '--check') opts.check = true;
   else if (a === '--diff') opts.diff = true;
   else if (a === '--safe') opts.safe = true;
+  else if (a === '--optalign') opts.optalign = true;
   else if (a === '--help' || a === '-h') { printHelp(); process.exit(0); }
   else if (a.startsWith('--')) { console.error(`Unknown option: ${a}`); process.exit(2); }
   else files.push(a);
@@ -51,7 +54,8 @@ function makeTypograf() {
   if (ru) {
     tp.enableRule('ru/nbsp/afterNumberSign');    // № 5
     tp.enableRule('ru/other/phone-number');
-    tp.disableRule('ru/optalign/*');             // no hanging punctuation markup
+    if (opts.optalign) tp.enableRule('ru/optalign/*'); // hanging punctuation spans
+    else tp.disableRule('ru/optalign/*');
   }
 
   if (opts.safe) {
