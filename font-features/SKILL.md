@@ -39,4 +39,5 @@ Requires `fontTools` (`pip install fonttools` if missing).
 - `font-feature-settings` is all-or-nothing per declaration — a second declaration on a nested element REPLACES the inherited list; repeat the full list. This is the main reason to prefer `font-variant-*`.
 - CSS accepts any tag, browsers silently ignore ones the font lacks — which is why step 1 is mandatory (e.g. Monaspace has NO `tnum`/`zero`/`smcp`; it's a monospace family and zero is already slashed).
 - Stylistic-set meanings are font-specific; never reuse Monaspace's ss-descriptions for another family.
+- A feature tag being present does not mean it covers the glyphs assumed: dump the actual GSUB substitutions before writing demo copy (e.g. Monaspace's `case` only raises `: ¡ ¿ ‽` and combining accents — NOT quotes, brackets, or dashes).
 - Texture healing needs `calt` AND ligatures left enabled; `font-variant-ligatures: none` kills it.
