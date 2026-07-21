@@ -27,7 +27,7 @@ With no subcommand it launches the GUI; with a subcommand it runs **headless and
 
 ```bash
 $CULL --json import_folder --folder_path "/abs/path/to/batch"
-open "cull://open?path=/abs/path/to/batch&view=grid"   # &view=loupe for single-image detail
+open -a /Applications/Cull.app "cull://open?path=/abs/path/to/batch&view=grid"   # &view=loupe for single-image detail
 open -a Cull                                            # ensure the window is frontmost
 ```
 
@@ -56,7 +56,7 @@ $CULL --json call_tool export_images --params_json '{"collection_id":"<id>","out
 
 ### URL scheme (GUI actions)
 
-`open "cull://<action>?<params>"` — paths URL-encoded, multiple paths comma-separated. GUI actions front the window; if the app isn't running, macOS launches it.
+`open -a /Applications/Cull.app "cull://<action>?<params>"` — paths URL-encoded, multiple paths comma-separated. **Always pass `-a /Applications/Cull.app`**: dev builds of Cull also register the `cull://` scheme, and a bare `open "cull://…"` may route to a stale copy (URL silently goes nowhere). GUI actions front the window; if the app isn't running, macOS launches it.
 
 | Action | Example |
 |---|---|
@@ -70,7 +70,7 @@ URL-scheme calls are fire-and-forget (no return value). When a result is needed,
 
 ## Recipes (CLI-first)
 
-**Loupe one image.** `open "cull://open?path=/abs/img.png&view=loupe"`.
+**Loupe one image.** `open -a /Applications/Cull.app "cull://open?path=/abs/img.png&view=loupe"`.
 
 **Export the keepers.** `list_export_presets` → `export_images` with `--collection_id` / `--folder_path` / `--image_ids`, an `--output_dir`, and `--format`.
 
