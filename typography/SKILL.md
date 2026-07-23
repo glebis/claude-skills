@@ -45,7 +45,7 @@ node <skill-dir>/scripts/typo.js --safe file.md
 
 Three routes, in order of preference by constraint:
 
-1. **No markup changes allowed** → copy `assets/hang-punctuation.js` into the site and load it. It uses native CSS `hanging-punctuation` where supported (Safari) and falls back to DOM-only span wrapping elsewhere; source files stay untouched. Configure targets via `window.HANG_PUNCT = { selector: '...' }` before the script.
+1. **No markup changes allowed** → copy `assets/hang-punctuation.js` into the site and load it. It uses native CSS `hanging-punctuation` where supported (Safari) and falls back to DOM-only span wrapping elsewhere; source files stay untouched. Configure targets via `window.HANG_PUNCT = { selector: '...' }` before the script. If the page rewrites copy at runtime (a language toggle, a client router), call `window.HangPunct.refresh()` afterwards — the script only hangs what was in the DOM at load, and re-running it is safe.
 2. **Markup changes acceptable, ru text** → run `typo.js --optalign` (HTML input only); it wraps hanging marks in classed `<span>`s. Include `assets/optalign.css` in the page. Note: `--optalign` output is not idempotent-safe with `--check` on already-spanned files; keep source pristine and treat it as a build step.
 3. **Zero effort baseline** → add `hanging-punctuation: first allow-end;` to prose containers (currently Safari-only, harmless elsewhere).
 

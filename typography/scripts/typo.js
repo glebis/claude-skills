@@ -48,8 +48,16 @@ function makeTypograf() {
   const ru = locales[0] === 'ru';
 
   // Pinned rule choices (determinism: same input → same output, always):
-  tp.enableRule('common/nbsp/afterShortWord');   // short prepositions/articles → nbsp
-  tp.enableRule('common/nbsp/beforeShortLastWord');
+  // afterShortWord glues short prepositions/articles to the next word. That's a
+  // Slavic convention; in English it would bind "and the", "on the" and read wrong.
+  if (ru) {
+    tp.enableRule('common/nbsp/afterShortWord');
+    tp.enableRule('common/nbsp/beforeShortLastWord');
+  } else {
+    // Western-European typography does not glue articles/prepositions to the
+    // following word; leaving these on produces "and&nbsp;the" everywhere.
+    tp.disableRule('common/nbsp/*');
+  }
   tp.disableRule('common/html/*');               // never inject HTML tags
   if (ru) {
     tp.enableRule('ru/nbsp/afterNumberSign');    // № 5
