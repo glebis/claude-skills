@@ -75,3 +75,24 @@ def test_tufte_theme_falls_back_fully_when_no_roles():
     out = export_prompt.to_tufte_theme({"color.x": {"type": "color", "value": "#123456"}}, "X")
     assert "--ink: #1a1a1a;" in out  # all defaults
     assert "tufte default" in out
+
+
+BRAND = {
+    "mood": ["precise", "calm"],
+    "imageryStyle": "flat vector, dot-grid textures",
+    "avoid": ["glows", "gradients as decoration"],
+    "negativePrompt": "photorealistic, watermark",
+}
+
+
+def test_brand_extensions_flow_into_image_prompts():
+    out = export_prompt.to_image_prompts(RESOLVED, "Acme", "gpt-image-2", brand=BRAND)
+    assert "mood: precise, calm" in out
+    assert "flat vector, dot-grid textures" in out
+    assert "# BRAND DON'Ts: glows; gradients as decoration" in out
+    assert "Avoid: photorealistic, watermark" in out
+
+
+def test_no_brand_extensions_is_clean():
+    out = export_prompt.to_image_prompts(RESOLVED, "Acme", "gpt-image-2")
+    assert "mood:" not in out and "BRAND DON'Ts" not in out and "Avoid:" not in out

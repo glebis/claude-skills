@@ -32,6 +32,11 @@ def resolve(tree):
                 raise TokenError(f"cannot determine $type for {path}")
         resolving.discard(path)
         resolved[path] = {"type": ttype, "value": concrete}
+        # Carry the token's own $description (not the alias target's) so
+        # exporters can surface usage notes; key absent when undocumented.
+        desc = node.get("$description")
+        if desc:
+            resolved[path]["description"] = desc
         return resolved[path]
 
     for path in idx:

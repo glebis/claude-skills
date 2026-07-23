@@ -26,8 +26,28 @@ _ROLE_RULES = [
 ]
 
 
+# SKILL CONVENTION: optional brand-style block under $extensions at file root.
+# Unknown keys are carried through untouched (DTCG requires tools to preserve
+# extensions they don't understand); consumers pick the keys they know.
+BRAND_EXT_KEY = "community.design-tokens.brand"
+
+
+def extract_brand(tree):
+    """Return the brand-style extension block from a raw token tree, or {}."""
+    ext = tree.get("$extensions")
+    if isinstance(ext, dict):
+        brand = ext.get(BRAND_EXT_KEY)
+        if isinstance(brand, dict):
+            return brand
+    return {}
+
+
 def _infer_role(name):
     low = name.lower()
+    # "on-accent"/"on-primary" etc. are contrast counterparts (ink placed ON a
+    # fill), not the fill's role itself — never promote them to that role.
+    if low.startswith("on-") or low.startswith("on_"):
+        return None
     for role, needles in _ROLE_RULES:
         if any(n in low for n in needles):
             return role
@@ -45,7 +65,7 @@ def _dim_str(value):
     return str(value)
 
 
-def summarize(resolved):
+def summarize(resolved, brand=None):
     """Return a dict describing the brand for prompt synthesis.
 
     Keys:
@@ -56,6 +76,8 @@ def summarize(resolved):
       radii      -> [str]                 (e.g. "4px", "8px")
       spacing    -> [str]
       shape      -> "sharp" | "soft" | "rounded" | "pill" | None  (from max radius)
+      brand      -> $extensions brand-style block (mood, imageryStyle, voice,
+                    subjects, avoid, negativePrompt), {} if absent
     """
     colors, fonts, type_styles, radii, spacing = [], [], [], [], []
     seen_fonts = set()
@@ -101,6 +123,7 @@ def summarize(resolved):
         "radii": radii,
         "spacing": spacing,
         "shape": _shape_language(radii),
+        "brand": brand or {},
     }
 
 

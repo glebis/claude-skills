@@ -25,17 +25,26 @@ Test Brand design system. Generated from design tokens.
 
 ## Colors
 
-- **action-primary** (`#1A73E8`)
-- **brand** (`#1A73E8`)
+| Name | Value | Token | Role |
+|---|---|---|---|
+| action-primary | `#1A73E8` | `--color-action-primary` | — |
+| brand | `#1A73E8` | `--color-brand` | — |
 
 ## Typography
 
-- **body** — Inter 16px/1.5 400
+| Role | Family | Size | Weight | Line Height | Letter Spacing |
+|---|---|---|---|---|---|
+| body | Inter | 16px | 400 | 1.5 | — |
 
-## Layout
+## Spacing
 
-Spacing scale: md 16px, sm 8px.
+| Name | Value | Token |
+|---|---|---|
+| md | 16px | `--space-md` |
+| sm | 8px | `--space-sm` |
 
-## Shapes
+## Border Radius
 
-Corner radii: sm 4px.
+| Name | Value |
+|---|---|
+| sm | 4px |

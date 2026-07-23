@@ -1,0 +1,13 @@
+{
+  "$description": "SKILL CONVENTION (not DTCG): brand-style block consumed by the prompt door. Lives at token-file root under $extensions. Unknown keys warn, never fail. Worked example: the ai-design (Goal-Driven Design) brand.",
+  "$extensions": {
+    "community.design-tokens.brand": {
+      "mood": ["precise", "editorial", "calm", "technical", "quietly confident"],
+      "imageryStyle": "flat vector illustration with dot-grid and stipple textures; geometric, code-native; no photorealism, no 3d renders",
+      "voice": "an editorial argument, not a sales pitch — states a thesis and demonstrates it",
+      "subjects": ["abstract systems and grids", "human-and-agent collaboration", "typography as material"],
+      "avoid": ["glows and lens flares", "gradients as decoration", "stock-photo people", "glossy 3d blobs", "pure black or pure white backgrounds"],
+      "negativePrompt": "photorealistic, 3d render, neon glow, bokeh, gradient background, stock photo, watermark"
+    }
+  }
+}

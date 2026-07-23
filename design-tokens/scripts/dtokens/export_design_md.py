@@ -129,7 +129,49 @@ def _frontmatter(name, description, colors, typography, rounded, spacing):
     return lines
 
 
-def _body(name, description, colors, typography, rounded, spacing, skipped):
+def _descriptions(resolved):
+    """Map flat name -> $description for color tokens that carry one."""
+    out = {}
+    for path, entry in resolved.items():
+        if entry["type"] == "color" and entry.get("description"):
+            out[_flat_name(path)] = entry["description"]
+    return out
+
+
+def _var_names(resolved):
+    """Per-bucket maps flat name -> CSS custom-property name (matches export_css).
+
+    Buckets are keyed separately because flat names can collide across
+    top-level groups (space.sm and radius.sm both flatten to 'sm').
+    """
+    color_vars, spacing_vars = {}, {}
+    for path, entry in resolved.items():
+        var = "--" + path.replace(".", "-")
+        if entry["type"] == "color":
+            color_vars[_flat_name(path)] = var
+        elif entry["type"] == "dimension" and _top_group(path) not in _ROUNDED_GROUPS:
+            spacing_vars[_flat_name(path)] = var
+    return color_vars, spacing_vars
+
+
+def _md_cell(s):
+    return str(s).replace("|", "\\|").replace("\n", " ")
+
+
+def _table(header, rows):
+    lines = ["| " + " | ".join(header) + " |",
+             "|" + "|".join("---" for _ in header) + "|"]
+    for row in rows:
+        lines.append("| " + " | ".join(
+            "—" if c is None or c == "" else _md_cell(c) for c in row) + " |")
+    return lines
+
+
+def _body(name, description, colors, typography, rounded, spacing, skipped,
+          descs=None, color_vars=None, spacing_vars=None):
+    descs = descs or {}
+    color_vars = color_vars or {}
+    spacing_vars = spacing_vars or {}
     lines = ["", f"# {name}", "", "## Overview", ""]
     overview = f"{name} design system. Generated from design tokens."
     if description:
@@ -141,30 +183,140 @@ def _body(name, description, colors, typography, rounded, spacing, skipped):
 
     if colors:
         lines += ["", "## Colors", ""]
-        for k, v in colors.items():
-            lines.append(f"- **{k}** (`{v}`)")
+        lines += _table(
+            ["Name", "Value", "Token", "Role"],
+            [(k, f"`{v}`", f"`{color_vars.get(k, '')}`" if color_vars.get(k) else "",
+              descs.get(k, "")) for k, v in colors.items()],
+        )
     if typography:
         lines += ["", "## Typography", ""]
-        for k, v in typography.items():
-            fam = v.get("fontFamily", "")
-            size = v.get("fontSize", "")
-            lh = v.get("lineHeight", "")
-            weight = v.get("fontWeight", "")
-            lines.append(f"- **{k}** — {fam} {size}/{lh} {weight}".rstrip())
+        lines += _table(
+            ["Role", "Family", "Size", "Weight", "Line Height", "Letter Spacing"],
+            [(k, v.get("fontFamily", ""), v.get("fontSize", ""),
+              v.get("fontWeight", ""), v.get("lineHeight", ""),
+              v.get("letterSpacing", "")) for k, v in typography.items()],
+        )
     if spacing:
-        lines += ["", "## Layout", ""]
-        scale = ", ".join(f"{k} {v}" for k, v in spacing.items())
-        lines.append(f"Spacing scale: {scale}.")
+        lines += ["", "## Spacing", ""]
+        lines += _table(
+            ["Name", "Value", "Token"],
+            [(k, v, f"`{spacing_vars.get(k, '')}`" if spacing_vars.get(k) else "")
+             for k, v in spacing.items()],
+        )
     if rounded:
-        lines += ["", "## Shapes", ""]
-        scale = ", ".join(f"{k} {v}" for k, v in rounded.items())
-        lines.append(f"Corner radii: {scale}.")
+        lines += ["", "## Border Radius", ""]
+        lines += _table(["Name", "Value"], list(rounded.items()))
     return lines
 
 
-def to_design_md(resolved, name, description=None):
-    """Render a complete DESIGN.md string from resolved DTCG tokens."""
+def _motion_table(resolved):
+    """Rows for duration tokens: (name, value, token, description)."""
+    rows = []
+    for path in sorted(resolved):
+        entry = resolved[path]
+        if entry["type"] != "duration":
+            continue
+        rows.append((_flat_name(path), _dim_str(entry["value"]),
+                     f"`--{path.replace('.', '-')}`",
+                     entry.get("description", "")))
+    return rows
+
+
+# --- rich body (SKILL CONVENTION, opt-in) ------------------------------------
+# Rendered from optional keys in the $extensions brand block:
+#   essence (prose), components [{name, role, spec}],
+#   animations [{name, role, spec}] (spec may embed code fences), dos [str], donts [str],
+#   surfaces [{level, name, value, purpose}], elevation {label: note},
+#   imagery (prose; falls back to imageryStyle), layout (prose),
+#   similarBrands [{name, note} | str].
+# These sections are NOT part of the Google-Labs DESIGN.md alpha format.
+
+_RICH_NOTE = ("> Note: sections below the token tables extend the Google-Labs "
+              "DESIGN.md alpha format (skill convention). The YAML frontmatter "
+              "above remains standard.")
+
+
+def _rich_sections(brand, resolved):
+    lines = ["", _RICH_NOTE]
+    if brand.get("essence"):
+        lines += ["", "## Essence", "", str(brand["essence"])]
+    comps = brand.get("components") or []
+    if comps:
+        lines += ["", "## Components"]
+        for c in comps:
+            lines += ["", f"### {c.get('name', 'Component')}"]
+            if c.get("role"):
+                lines.append(f"**Role:** {c['role']}")
+            if c.get("spec"):
+                lines += ["", str(c["spec"])]
+    anims = brand.get("animations") or []
+    if anims:
+        lines += ["", "## Animation Recipes"]
+        for a in anims:
+            lines += ["", f"### {a.get('name', 'Animation')}"]
+            if a.get("role"):
+                lines.append(f"**Role:** {a['role']}")
+            if a.get("spec"):
+                lines += ["", str(a["spec"])]
+    dos, donts = brand.get("dos") or [], brand.get("donts") or []
+    if dos or donts:
+        lines += ["", "## Do's and Don'ts"]
+        if dos:
+            lines += ["", "### Do", ""] + [f"- {d}" for d in dos]
+        if donts:
+            lines += ["", "### Don't", ""] + [f"- {d}" for d in donts]
+    surfaces = brand.get("surfaces") or []
+    if surfaces:
+        lines += ["", "## Surfaces", ""]
+        lines += _table(
+            ["Level", "Name", "Value", "Purpose"],
+            [(s.get("level", ""), s.get("name", ""),
+              f"`{s.get('value', '')}`" if s.get("value") else "",
+              s.get("purpose", "")) for s in surfaces],
+        )
+    elevation = brand.get("elevation") or {}
+    if elevation:
+        lines += ["", "## Elevation", ""]
+        lines += [f"- **{k}:** `{v}`" for k, v in elevation.items()]
+    imagery = brand.get("imagery") or brand.get("imageryStyle")
+    if imagery:
+        lines += ["", "## Imagery", "", str(imagery)]
+    if brand.get("layout"):
+        lines += ["", "## Layout", "", str(brand["layout"])]
+    similar = brand.get("similarBrands") or []
+    if similar:
+        lines += ["", "## Similar Brands", ""]
+        for s in similar:
+            if isinstance(s, dict):
+                lines.append(f"- **{s.get('name', '')}** — {s.get('note', '')}".rstrip(" —"))
+            else:
+                lines.append(f"- {s}")
+    # Quick Start: the same :root block export-css emits, inlined for agents.
+    from . import export_css as _css
+    lines += ["", "## Quick Start", "", "### CSS Custom Properties", "",
+              "```css", _css.export_css(resolved).rstrip("\n"), "```"]
+    return lines
+
+
+def to_design_md(resolved, name, description=None, brand=None, rich=False):
+    """Render a complete DESIGN.md string from resolved DTCG tokens.
+
+    With rich=True, append skill-convention sections (components, do's/don'ts,
+    surfaces, imagery, layout, similar brands, Quick Start CSS) sourced from
+    the $extensions brand block — the result is no longer plain Labs alpha.
+    """
     colors, typography, rounded, spacing, skipped = bucketize(resolved)
     lines = _frontmatter(name, description, colors, typography, rounded, spacing)
-    lines += _body(name, description, colors, typography, rounded, spacing, skipped)
+    color_vars, spacing_vars = _var_names(resolved)
+    lines += _body(name, description, colors, typography, rounded, spacing, skipped,
+                   descs=_descriptions(resolved),
+                   color_vars=color_vars, spacing_vars=spacing_vars)
+    # Motion: duration tokens have no frontmatter home in DESIGN.md alpha, but
+    # the free-form body can carry them as a table (with $description as Role).
+    motion = _motion_table(resolved)
+    if motion:
+        lines += ["", "## Motion", ""]
+        lines += _table(["Name", "Value", "Token", "Role"], motion)
+    if rich:
+        lines += _rich_sections(brand or {}, resolved)
     return "\n".join(lines) + "\n"

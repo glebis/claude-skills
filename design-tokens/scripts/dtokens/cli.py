@@ -6,6 +6,9 @@ import pathlib
 import sys
 
 from . import TokenError
+from . import annotate as annotate_mod
+from . import brand_summary as brand_summary_mod
+from . import generate as generate_mod
 from . import export_css as export_css_mod
 from . import export_design_md as design_md_mod
 from . import export_preview_html as preview_mod
@@ -111,10 +114,37 @@ def _cmd_setup_edit(args):
     return 0
 
 
+_RICH_WARNING = (
+    "--rich appends skill-convention sections (components, do's/don'ts, "
+    "surfaces, imagery, Quick Start CSS) to the body. The result is no longer "
+    "a plain Google-Labs DESIGN.md alpha document (frontmatter stays standard)."
+)
+
+
+def _confirm_rich(yes=False):
+    """Confirm the non-standard rich format. Returns True to proceed.
+
+    Interactive (TTY): ask. Non-interactive: proceed (the explicit --rich flag
+    is the consent), but always print the warning to stderr.
+    """
+    print(f"note: {_RICH_WARNING}", file=sys.stderr)
+    if yes or not sys.stdin.isatty():
+        return True
+    answer = input("Emit the extended (non-standard) format? [y/N] ").strip().lower()
+    return answer in ("y", "yes")
+
+
 def _cmd_design_md(args):
-    resolved = resolve_mod.resolve(model.load(args.file))
+    tree = model.load(args.file)
+    resolved = resolve_mod.resolve(tree)
     name = args.name or pathlib.Path(args.file).stem
-    _emit(design_md_mod.to_design_md(resolved, name, args.description), args.out)
+    rich = args.rich
+    if rich and not _confirm_rich(args.yes):
+        print("aborted: emitting standard DESIGN.md instead", file=sys.stderr)
+        rich = False
+    brand = brand_summary_mod.extract_brand(tree) if rich else None
+    _emit(design_md_mod.to_design_md(resolved, name, args.description,
+                                     brand=brand, rich=rich), args.out)
     return 0
 
 
@@ -157,7 +187,9 @@ def _cmd_preview(args):
 
 
 def _cmd_prompt(args):
-    resolved = resolve_mod.resolve(model.load(args.file))
+    tree = model.load(args.file)
+    resolved = resolve_mod.resolve(tree)
+    brand = brand_summary_mod.extract_brand(tree)
     name = args.name or pathlib.Path(args.file).stem
     targets = ["gpt-image-2", "nano-banana", "tufte"] if args.target == "all" else [args.target]
     chunks = []
@@ -167,9 +199,34 @@ def _cmd_prompt(args):
         else:
             chunks.append(prompt_mod.to_image_prompts(
                 resolved, name, target, presets=args.preset,
-                platform=args.platform, subject=args.subject,
+                platform=args.platform, subject=args.subject, brand=brand,
             ))
     _emit("\n".join(chunks), args.out)
+    return 0
+
+
+def _cmd_generate(args):
+    tree = model.load(args.file)
+    resolved = resolve_mod.resolve(tree)
+    name = args.name or pathlib.Path(args.file).stem
+    targets = ["gpt-image-2", "nano-banana"] if args.target == "all" else [args.target]
+    results = generate_mod.generate(
+        tree, resolved, name, targets, subject=args.subject, refs_dir=args.refs,
+        out_dir=args.out_dir or ".", draft=not args.final, platform=args.platform,
+        dry_run=args.dry_run,
+    )
+    failed = [t for t, _, rc in results if rc != 0]
+    for target, out, rc in results:
+        print(f"{'ok' if rc == 0 else 'FAILED'}  {target}  {out}")
+    return 1 if failed else 0
+
+
+def _cmd_annotate(args):
+    try:
+        annotate_mod.annotate(args.dir, port=args.port, open_browser=not args.no_open)
+    except FileNotFoundError as exc:
+        print(exc)
+        return 1
     return 0
 
 
@@ -198,8 +255,16 @@ def _cmd_use(args):
     out_dir = pathlib.Path(args.out_dir) if args.out_dir else pathlib.Path(args.file).parent / "resolved"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "tokens.css").write_text(export_css_mod.export_css(resolved), encoding="utf-8")
+    rich = args.rich
+    if rich and not _confirm_rich(args.yes):
+        print("aborted: emitting standard DESIGN.md instead", file=sys.stderr)
+        rich = False
     (out_dir / "DESIGN.md").write_text(
-        design_md_mod.to_design_md(resolved, name, args.description), encoding="utf-8"
+        design_md_mod.to_design_md(
+            resolved, name, args.description,
+            brand=brand_summary_mod.extract_brand(tree) if rich else None, rich=rich,
+        ),
+        encoding="utf-8",
     )
     (out_dir / "preview.html").write_text(
         preview_mod.to_preview_html(resolved, name), encoding="utf-8"
@@ -209,7 +274,7 @@ def _cmd_use(args):
     )
     # Bridge artifacts: tokens -> downstream generation (the prompt door).
     image_prompts = "\n".join(
-        prompt_mod.to_image_prompts(resolved, name, t)
+        prompt_mod.to_image_prompts(resolved, name, t, brand=brand_summary_mod.extract_brand(tree))
         for t in ("gpt-image-2", "nano-banana")
     )
     (out_dir / "image-prompts.md").write_text(image_prompts, encoding="utf-8")
@@ -260,6 +325,12 @@ def _build_parser():
     sd.add_argument("file")
     sd.add_argument("--name")
     sd.add_argument("--description")
+    sd.add_argument("--rich", action="store_true",
+                    help="append skill-convention sections (components, do's/don'ts, "
+                         "surfaces, Quick Start CSS) from the $extensions brand block; "
+                         "NON-STANDARD: extends the Labs DESIGN.md alpha body")
+    sd.add_argument("--yes", action="store_true",
+                    help="skip the --rich non-standard-format confirmation")
     sd.add_argument("-o", "--out")
     sd.set_defaults(func=_cmd_design_md)
 
@@ -295,8 +366,36 @@ def _build_parser():
     su.add_argument("--name")
     su.add_argument("--description")
     su.add_argument("--out-dir")
+    su.add_argument("--rich", action="store_true",
+                    help="rich DESIGN.md from the $extensions brand block (non-standard body)")
+    su.add_argument("--yes", action="store_true",
+                    help="skip the --rich non-standard-format confirmation")
     _add_serve_flags(su)
     su.set_defaults(func=_cmd_use)
+
+    sg = sub.add_parser(
+        "generate",
+        help="actually generate on-brand images (gpt-image-2 / nano-banana), optionally with refs.json",
+    )
+    sg.add_argument("file")
+    sg.add_argument("--target", choices=["gpt-image-2", "nano-banana", "all"], default="all")
+    sg.add_argument("--subject")
+    sg.add_argument("--name")
+    sg.add_argument("--refs", help="directory with reference images + refs.json (see `annotate`)")
+    sg.add_argument("--out-dir")
+    sg.add_argument("--platform", default="square")
+    sg.add_argument("--final", action="store_true", help="high quality (default is cheap draft)")
+    sg.add_argument("--dry-run", action="store_true", help="print the composed commands, no API calls")
+    sg.set_defaults(func=_cmd_generate)
+
+    sa = sub.add_parser(
+        "annotate",
+        help="serve a per-image role annotator for a directory of reference images -> refs.json",
+    )
+    sa.add_argument("dir", help="directory containing the reference images")
+    sa.add_argument("--port", type=int)
+    sa.add_argument("--no-open", action="store_true")
+    sa.set_defaults(func=_cmd_annotate)
 
     sserve = sub.add_parser("serve", help="serve a file or directory over HTTP and open it")
     sserve.add_argument("path", help="a generated .html file or an output directory")

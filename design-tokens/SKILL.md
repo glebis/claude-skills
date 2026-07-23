@@ -33,17 +33,23 @@ Run via `scripts/tokens <command>` (or `PYTHONPATH=scripts python3 -m dtokens.cl
 
 | Command | What it does |
 | --- | --- |
-| `setup-edit <dest> [--from SRC]` | Scaffold a token file at `<dest>` and validate it (refuses to overwrite). With `--from`, deterministically clone an existing set's structure + content to edit (byte-stable for a given source) instead of the blank template. Ships `templates/base.tokens.json` (minimal) and `templates/monaspace.tokens.json` (a real set extracted from a live site — see *Extracting from a site*). |
+| `setup-edit <dest> [--from SRC]` | Scaffold a token file at `<dest>` and validate it (refuses to overwrite). With `--from`, deterministically clone an existing set's structure + content to edit (byte-stable for a given source) instead of the blank template. Ships `templates/base.tokens.json` (minimal), `templates/monaspace.tokens.json` (a real set extracted from a live site — see *Extracting from a site*), and `templates/gsap.tokens.json` (a motion-first set: `duration` tokens under `motion.*` render as a body Motion table, and its `$extensions` brand block carries GSAP animation recipes for `--rich`). |
 | `import <css> [-o OUT]` | Import a CSS file's `:root` custom properties into DTCG, preserving variable names. Skips composites (shadow/gradient) and reports them on stderr. |
 | `validate <file>` | Print `OK` or a list of errors; exit 1 if invalid. |
 | `merge <base> <override> [-o OUT]` | Layer project override on global base. |
 | `resolve <file> [-o OUT]` | Flatten aliases to concrete values (JSON map). |
 | `export-css <file> [--selector SEL] [-o OUT]` | Emit CSS custom properties. |
-| `design-md <file> [--name N] [--description D] [-o OUT]` | Emit a Google-Labs [DESIGN.md](https://github.com/google-labs-code/design.md) (alpha) — YAML token frontmatter + prose body. |
+| `design-md <file> [--name N] [--description D] [--rich] [--yes] [-o OUT]` | Emit a Google-Labs [DESIGN.md](https://github.com/google-labs-code/design.md) (alpha) — YAML token frontmatter + a table-based body (colors carry their `$description` as a Role column). `--rich` (also on `use`) appends style-guide sections from the brand `$extensions` block — components, do's/don'ts, surfaces, imagery, layout, similar brands, plus a Quick Start CSS block. **Non-standard**: `--rich` extends the Labs alpha body, so the CLI shows a confirmation (auto-accepted with `--yes` or when non-interactive; the note still prints to stderr). |
 | `preview <file> [--name N] [--full] [--description D] [-o OUT]` | Emit a standalone HTML swatch page (colors, type specimens, spacing, rounded, shadow). With `--full`, emit a **landing-page mockup** instead — the brand applied in situ (hero, prose, accent band, footer), driven entirely by the role/type/space tokens via `:root` vars. Type specimens load their families via a deterministic Google Fonts `@import` so brand faces render (degrades to a generic fallback offline / for non-Google fonts). |
 | `prompt <file> [--target gpt-image-2\|nano-banana\|tufte\|all] [--preset P ...] [--platform P] [--subject S] [--name N] [-o OUT]` | The **prompt door**: turn resolved tokens into ready-to-paste generation prompts. Image targets emit per-preset CLI invocations with the brand's hex/fonts/shape baked into the subject; `tufte` emits a CSS `:root` theme mapping brand roles onto `/tufte-report`'s variables. |
 | `use <file> [--name N] [--description D] [--out-dir DIR] [--serve/--no-serve] [--port N] [--no-open]` | Validate + resolve, then write `tokens.css`, `DESIGN.md`, `preview.html`, `preview-full.html` (landing-page mockup), `image-prompts.md`, and `tufte-theme.css`. **Serves the output over HTTP and opens it by default when interactive** (see below). |
+| `generate <file> [--target gpt-image-2\|nano-banana\|all] [--subject S] [--refs DIR] [--out-dir D] [--final] [--dry-run]` | **Actually generate** on-brand images: composes the winning art-direction-prose prompt (fidelity-tested) from tokens + `$extensions` brand block and shells out to the gpt-image-2 / nano-banana skill scripts (cheap draft by default; `--final` = high/pro). With `--refs`, reads the `refs.json` manifest: each annotated image becomes a `--reference` flag plus a role-annotated prompt clause ("from reference image 1 take: palette, mood — …"). |
+| `annotate <dir> [--port N] [--no-open]` | Serve a **reference-image annotator** for a directory of images: per-image role chips (style, palette, composition, subject, texture, typography, mood) + a free-text note, with voice dictation via Groq Whisper when `GROQ_API_KEY` is set (text-only otherwise). Save writes a `refs.json` manifest next to the images (SKILL CONVENTION) — the source of truth for "what to take from each reference" in multi-reference generation. |
 | `serve <path> [--port N] [--no-open]` | Serve a generated `.html` (or an output dir) over `http://127.0.0.1` and open it. Use this to view previews — `file://` URLs are unique origins and break web-font loads, `fetch`, and extensions. |
+
+## Brand-style extensions ($extensions)
+
+SKILL CONVENTION: an optional `$extensions["community.design-tokens.brand"]` block at the token-file root (`mood` adjectives, `imageryStyle`/`voice` prose, `subjects`, `avoid`, `negativePrompt`) feeds the prompt door: mood/imageryStyle join the brand clause, `avoid` becomes DON'T lines, `negativePrompt` an "Avoid:" tail. See `templates/brand-extensions.example.json` (worked ai-design example). Fidelity tests (`references/prompt-fidelity-notes.md`): art-direction **prose** with hexes + color words beats both the bare comma-clause and strict constraint blocks (which are unreliable on Nano Banana); provider capabilities in `references/providers.md`.
 
 ## Serving previews (default)
 
@@ -116,6 +122,14 @@ Our resolved tokens map to its frontmatter as: `color` → `colors`, `typography
 Types without a DESIGN.md home (`duration`, `shadow`, `number`, `fontFamily`,
 `fontWeight` standalone) are noted in the Overview, not the frontmatter. This
 name/bucket mapping is a skill convention over the DESIGN.md alpha schema.
+
+**Rich mode (opt-in, non-standard).** `--rich` sources extra sections from optional
+keys in `$extensions["community.design-tokens.brand"]`: `essence` (prose),
+`components` `[{name, role, spec}]`, `animations` `[{name, role, spec}]` (spec may embed code fences — motion recipes render under "Animation Recipes"), `dos`/`donts` `[str]`, `surfaces`
+`[{level, name, value, purpose}]`, `elevation` `{label: note}`, `imagery` (prose,
+falls back to `imageryStyle`), `layout` (prose), `similarBrands` `[{name, note}|str]`.
+The frontmatter stays standard; the body gains a labelled skill-convention block, so
+the file is no longer a plain Labs alpha document — hence the confirmation prompt.
 
 ## Storage convention
 

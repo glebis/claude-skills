@@ -95,6 +95,29 @@ def _by_role(summary):
     return roles
 
 
+def _color_word(hex_):
+    """Rough English name for a hex color. Fidelity tests showed models ground
+    the color word even when they misread the hex, so prompts carry both."""
+    h = hex_.lstrip("#")
+    if len(h) != 6:
+        return None
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    mx, mn = max(r, g, b), min(r, g, b)
+    if mx < 40:
+        return "near-black"
+    if mn > 235:
+        return "near-white"
+    if mx - mn < 24:
+        return "gray" if mx < 180 else "light gray"
+    import colorsys
+    hue = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)[0] * 360
+    for limit, word in ((15, "red"), (45, "orange"), (70, "yellow"), (160, "green"),
+                        (200, "cyan"), (255, "blue"), (290, "violet"), (330, "magenta"), (360, "red")):
+        if hue <= limit:
+            return word
+    return None
+
+
 # Canonical order so palette prose reads brand-first, then semantic states.
 _ROLE_ORDER = ["primary", "accent", "text", "background", "success", "warning", "danger", "muted"]
 
@@ -105,7 +128,10 @@ def brand_clause(summary):
     roles = _by_role(summary)
     if roles:
         ordered = sorted(roles, key=lambda r: _ROLE_ORDER.index(r) if r in _ROLE_ORDER else 99)
-        palette = ", ".join(f"{role} {roles[role]}" for role in ordered)
+        def swatch(role):
+            word = _color_word(roles[role])
+            return f"{role} {roles[role]} ({word})" if word else f"{role} {roles[role]}"
+        palette = ", ".join(swatch(role) for role in ordered)
         parts.append(f"color palette: {palette}")
     elif summary["colors"]:
         palette = ", ".join(c["hex"] for c in summary["colors"][:5])
@@ -116,6 +142,12 @@ def brand_clause(summary):
         shape_word = {"sharp": "sharp square corners", "soft": "softly rounded corners",
                       "rounded": "rounded corners", "pill": "fully rounded pill shapes"}
         parts.append(shape_word.get(summary["shape"], summary["shape"]))
+    brand = summary.get("brand") or {}
+    mood = brand.get("mood")
+    if mood:
+        parts.append("mood: " + ", ".join(mood if isinstance(mood, list) else [str(mood)]))
+    if brand.get("imageryStyle"):
+        parts.append(str(brand["imageryStyle"]))
     return ", ".join(parts)
 
 
@@ -129,9 +161,16 @@ def _image_prompts(summary, name, target, presets, platform, subject):
         f"# {cfg['note']}",
         "# DO use the exact hex codes and fonts below. DON'T add logos, real",
         "#   brand names, or text unless the preset is text-oriented.",
-        "",
     ]
+    brand = summary.get("brand") or {}
+    avoid = brand.get("avoid")
+    if avoid:
+        lines.append("# BRAND DON'Ts: " + "; ".join(avoid))
+    lines.append("")
     full_subject = f"{subject}, {clause}" if clause else subject
+    neg = brand.get("negativePrompt")
+    if neg:
+        full_subject += f". Avoid: {neg}"
     tail = f" {cfg['confirm']}".rstrip()
     for preset in presets:
         out = f"{slug}-{preset}.png"
@@ -145,10 +184,10 @@ def _image_prompts(summary, name, target, presets, platform, subject):
     return "\n".join(lines).rstrip() + "\n"
 
 
-def to_image_prompts(resolved, name, target, presets=None, platform="square", subject=None):
+def to_image_prompts(resolved, name, target, presets=None, platform="square", subject=None, brand=None):
     if target not in _IMAGE_TARGETS:
         raise ValueError(f"unknown image target: {target}")
-    summary = _bs.summarize(resolved)
+    summary = _bs.summarize(resolved, brand=brand)
     presets = presets or _IMAGE_TARGETS[target]["presets"]
     return _image_prompts(summary, name, target, presets, platform, subject)
 

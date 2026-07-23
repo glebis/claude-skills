@@ -45,3 +45,14 @@ def test_spacing_vs_radii_split_by_group():
     assert s["spacing"] == ["16px"]
     assert s["radii"] == ["12px"]
     assert s["shape"] == "rounded"
+
+
+def test_on_roles_are_not_promoted_to_the_fill_role():
+    from dtokens import brand_summary
+    resolved = {
+        "role.accent": {"type": "color", "value": "#BC9AFA"},
+        "role.on-accent": {"type": "color", "value": "#0C1116"},
+    }
+    colors = {c["name"]: c["role"] for c in brand_summary.summarize(resolved)["colors"]}
+    assert colors["accent"] == "accent"
+    assert colors["on-accent"] is None
