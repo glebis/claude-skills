@@ -61,6 +61,24 @@
 - A session may not fit any lab slot (cross-cohort alumni meetup). Fathom saved only an 11-min fragment ("Impromptu Zoom Meeting") while Zoom had the full 87-min recording + VTT transcript. Always cross-check Zoom when the Fathom duration looks too short.
 - For "YouTube only" publishing: build `VideoConfig` manually (Groq-free path), `upload_video(..., notify_subscribers=False)`, privacy `unlisted` — matches process_video.py defaults. Thumbnail template adapts fine: "Claude Code Lab · Community" / "Community Session" instead of meeting number.
 
+## GDD / non-standard lab layouts (seen 2026-07-24, GDD RU #02)
+- The GDD lab does NOT follow `${LAB_SLUG}-internal-${LAB_NUMBER}` — meetings live in `content/docs/goal-driven-design-ru/meetings/NN.mdx` (and `goal-driven-design-en/`). Placeholder MDX files exist for all 10 meetings with date lines like «23 июля 2026» — match by date, keep the placeholder's `toolkit:` frontmatter intact, only fix title/description.
+- Vault naming for GDD: `${DATE}-ai-design-lab-01.md` (lab number = cohort 01), but the SITE slug is `goal-driven-design-ru`. Don't derive one from the other.
+- calendar-sync only processes TODAY — it ignores date arguments. For yesterday's meeting, rebuild the vault file directly via `FathomClient` (`get_transcript(id)` + `get_summary(id)`, share_url from the summary markdown), frontmatter modeled on the previous meeting's file.
+- YouTube playlists: check the FULL existing playlist list before creating one — «Goal-Driven Design Lab (RU)» already existed and held meeting 01; a freshly created playlist 404s on immediate `playlistItems.list` (propagation delay — retry after ~10-20 s, or insert without listing).
+- Thumbnails: the lab has its own design token at `${DOCS_SITE_DIR}/design.tokens.json` (orange #ff6b35, dark-bg #0a0a0a, Geist Sans headings + Inter). Use IT, not the youtube-uploader template fonts (EB Garamond/JetBrains Mono, #e85d04) — those are the Claude Code Lab style. Brighten Nano Banana overlays (`magick -level 0%,55%`) before recoloring or they vanish at preview size.
+- Publication transcript is a wanted artifact: merge consecutive same-speaker segments, `[HH:MM:SS]` timecodes, names shortened to «Имя Ф.» (site rule: no last names), targeted ASR fixes only → `public/transcripts/${DATE}-<slug>-NN-transcript.md`, linked from the meeting MDX.
+- Pipeline can ship in stages: page + materials + transcript first (with «Запись обрабатывается» note), video embed as a second commit once upload verifies. Unblocks the page by ~an hour.
+
+## Dead API keys (policy)
+- When a required API key is invalid (e.g. Groq 401 in preflight): do NOT just silently work around it — ask the user for a fresh key via AppleScript dialog first: `osascript -e 'display dialog "Enter GROQ_API_KEY:" default answer "" with hidden answer'`, then use it for the run and offer to store it in the appropriate secrets file (SOPS). Only if the user declines/has no key, fall back to the manual `VideoConfig` path (title/description/tags hand-written).
+
+## Disk space (seen 2026-07-24, GDD RU #02 — cost three lost downloads)
+- The Fathom downloader needs ~2× the video size free (raw .ts + remuxed mp4). On failure it DELETES both the partial mp4 AND the raw .ts — an ENOSPC remux loses the whole download. Check `df` BEFORE starting; want ≥5 GB free for a ~1 h meeting.
+- ffmpeg exit code 228 during remux = ENOSPC in disguise.
+- disk-cleanup safe preset also trashes `~/Library/Caches/ms-playwright` — re-run `python3 -m playwright install chromium` after cleaning (Node's `npx playwright install` uses a DIFFERENT cache than Python playwright; each needs its own install).
+- Long downloads: launch with `nohup ... & disown`, monitor by PID from a separate background loop. Plain `run_in_background` Bash tasks got killed twice mid-download (process dies with the task).
+
 ## Environment (seen 2026-07-07)
 - `nano-banana/scripts/generate_image.sh` fails to decrypt secrets unless `SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt` is exported first.
 - Disk-full during `npm install`/`npx playwright install` fails HALF-silently: node_modules ends up empty and chromium downloads but never extracts. After freeing space, re-run BOTH.
