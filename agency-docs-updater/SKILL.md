@@ -91,6 +91,17 @@ cd ${VAULT_DIR} && python3 ${SKILLS_LOCAL_DIR}/fathom/scripts/download_video.py 
 
 ## Step 3: Upload to YouTube
 
+### Step 3-pre: Trim leading silence
+
+Zoom auto-recordings start at meeting open and often begin with minutes of dead air. Before uploading:
+
+```bash
+bash ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/trim_leading_silence.sh ${VAULT_DIR}/${VIDEO_NAME}.mp4
+# If it prints "trim: wrote …trimmed.mp4", upload the trimmed file instead of the original.
+```
+
+The script only trims when the file STARTS in silence >10 s, keeps 2 s of lead-in, refuses cuts >20 min, and stream-copies (no re-encode). "no leading silence detected" → use the original.
+
 ```bash
 cd ${YOUTUBE_UPLOADER_DIR} && \
 python3 process_video.py \
