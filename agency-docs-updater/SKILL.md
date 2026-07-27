@@ -115,6 +115,15 @@ It finds (a) the lesson-opening phrase («всем привет», «добро 
 
 If neither phrase is found, fall back to the plain silence trim.
 
+**Tech-difficulty spans.** The same detector emits `tech_check_spans` — screen-share fumbling («видно презентацию?», «меня слышно?», «перешарю», «одну секундочку» рядом со словами презентация/экран). These are CANDIDATES: read each span's `context` lines first; a genuine question-and-answer about visibility is cuttable, a rhetorical «секундочку» mid-explanation is not. To cut approved spans:
+
+```bash
+python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/cut_spans.py video.mp4 \
+  --remove 1245-1270 --remove 781-821        # seconds, from tech_check_spans
+```
+
+`cut_spans.py` re-encodes (frame-accurate; ~realtime for talking-head 1080p), merges/clamps spans, and refuses to remove >15% of total duration. Cutting shifts everything after each span — compute YouTube chapter timestamps AFTER all cuts. For a single ≤30 s hiccup consider skipping the cut: a full re-encode of a 2 h video may not be worth it.
+
 ```bash
 cd ${YOUTUBE_UPLOADER_DIR} && \
 python3 process_video.py \

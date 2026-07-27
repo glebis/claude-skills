@@ -102,6 +102,70 @@ def load_segments(path: Path):
     return out
 
 
+# Technical-difficulty markers around screen sharing.
+# Strong: alone they open a tech-check span.
+TECH_STRONG_PATTERNS = [
+    r"видно (мою |нашу |мой )?(презентаци|экран)",
+    r"(презентаци\w*|экран) (видно|видите)",
+    r"не видно",
+    r"меня слышно",
+    r"слышно меня",
+    r"перешарю",
+    r"ещ[её] раз (по)?шерю",
+    r"can you (see|hear)",
+    r"is (my|the) screen (visible|showing)",
+    r"do you see (my|the)",
+]
+# Weak: count only within NEAR_S of a strong match or of presentation_open.
+TECH_WEAK_PATTERNS = [
+    r"одну секундочку",
+    r"секундочку",
+    r"один момент",
+    r"подождите",
+    r"сейчас[,.]? сейчас",
+    r"one sec\w*",
+    r"hold on",
+]
+NEAR_S = 45          # weak marker attaches to a strong anchor within this distance
+SPAN_PRE_S = 5       # span padding before first marker
+SPAN_POST_S = 20     # span padding after last marker
+SPAN_MERGE_S = 60    # merge spans closer than this
+
+
+def tech_spans(segments, window_s, anchor_ts=None):
+    """Return list of {start,end,context} candidate spans of technical fumbling."""
+    strong, weak = [], []
+    screen_word = re.compile(r"презентаци|экран|слайд|screen|slide")
+    for sec, text in segments:
+        if sec > window_s:
+            break
+        low = text.lower()
+        if any(re.search(p, low) for p in TECH_STRONG_PATTERNS):
+            strong.append((sec, text[:100]))
+        elif any(re.search(p, low) for p in TECH_WEAK_PATTERNS):
+            # a weak marker in the same breath as a screen/slides word is strong
+            if screen_word.search(low):
+                strong.append((sec, text[:100]))
+            else:
+                weak.append((sec, text[:100]))
+    anchors = [s for s, _ in strong]
+    if anchor_ts is not None:
+        anchors.append(anchor_ts)
+    hits = strong + [(s, t) for s, t in weak
+                     if any(abs(s - a) <= NEAR_S for a in anchors)]
+    hits.sort()
+    spans = []
+    for sec, ctx in hits:
+        if spans and sec - spans[-1]["end"] <= SPAN_MERGE_S:
+            spans[-1]["end"] = sec + SPAN_POST_S
+            spans[-1]["context"].append(ctx)
+        else:
+            spans.append({"start": max(0.0, sec - SPAN_PRE_S),
+                          "end": sec + SPAN_POST_S,
+                          "context": [ctx]})
+    return spans
+
+
 def first_match(segments, patterns, window_s):
     for sec, text in segments:
         if sec > window_s:
@@ -137,12 +201,15 @@ def main():
     # presentation is searched in a wider window (it can come after intro talk)
     pres_s, pres_pat, pres_ctx = first_match(segments, PRESENTATION_PATTERNS, window_s * 2)
 
+    spans = tech_spans(segments, window_s * 2, anchor_ts=pres_s)
+
     if as_json:
         print(json.dumps({
             "lesson_start_s": start_s,
             "lesson_phrase": start_pat,
             "presentation_open_s": pres_s,
             "presentation_phrase": pres_pat,
+            "tech_check_spans": spans,
         }, ensure_ascii=False))
         return
 
@@ -157,6 +224,12 @@ def main():
     print(f"presentation open:  {fmt(pres_s)}  ({pres_pat or 'not found'})")
     if pres_ctx:
         print(f"  context: {pres_ctx}")
+    if spans:
+        print(f"tech-check spans ({len(spans)}) — candidates, review before cutting:")
+        for sp in spans:
+            print(f"  {fmt(sp['start'])}–{fmt(sp['end'])}  {sp['context'][0]}")
+    else:
+        print("tech-check spans:   none")
 
 
 if __name__ == "__main__":
