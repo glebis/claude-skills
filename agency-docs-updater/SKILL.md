@@ -62,6 +62,16 @@ Extract from YAML frontmatter and store:
 - `VIDEO_NAME` = `${DATE}-${LAB_SLUG}-lab-${LAB_NUMBER}`
 - `TRANSCRIPT_LANG` = auto-detect from first ~50 lines (Cyrillic ratio > 0.3 → `ru`, else `en`)
 
+**Resolve the lab layout FIRST** — paths, page URLs, and playlist names differ per lab. Never build them by hand; resolve through the registry:
+
+```bash
+python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/lab_layout.py ${LAB_SLUG} --lab ${LAB_NUMBER} --meeting ${MEETING_NUMBER} --json
+# → meetings_dir (relative to DOCS_SITE_DIR), page_url, playlist, lang, thumbnail_style,
+#   preserve_placeholder_frontmatter, registered
+```
+
+The registry is `labs.json` in the skill root (claude-code legacy layout, GDD RU `goal-driven-design-ru`, GDD EN). `update_meeting_doc.py` and `rebuild_aggregations.py` resolve through it automatically. Unregistered slugs fall back to the legacy `{slug}-internal-{lab}` scheme with a warning — add new labs to `labs.json`, don't improvise paths. Use `playlist` for Step 4b (search the existing playlist list by this exact name before creating), `page_url` for Step 4b/8, `lang` for summary/MDX language, and honor `preserve_placeholder_frontmatter` (GDD placeholders carry curated `toolkit:` frontmatter — merge, never overwrite).
+
 **Determine `MEETING_NUMBER`**: check existing MDX files in `${DOCS_SITE_DIR}/content/docs/${LAB_SLUG}-internal-${LAB_NUMBER}/meetings/` for a placeholder with today's date. If found, use that number. Otherwise, check file content sizes to find the next empty slot. Store as zero-padded two-digit string (e.g. `04`). This variable is used in Steps 3b, 4b, 5, 6, and 8.
 
 ## Step 2: Download Video

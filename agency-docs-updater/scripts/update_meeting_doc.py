@@ -271,7 +271,13 @@ Examples:
 
     docs_dir = args.docs_dir
     if not docs_dir:
-        docs_dir = str(DOCS_SITE_DIR() / 'content' / 'docs' / f'{LAB_SLUG()}-internal-{lab_number}')
+        # Resolve through the labs.json registry (falls back to the legacy
+        # {slug}-internal-{lab} scheme for unregistered labs).
+        import lab_layout
+        layout = lab_layout.resolve(LAB_SLUG(), lab=lab_number)
+        docs_dir = str(DOCS_SITE_DIR() / layout['meetings_dir'])
+        if not layout['registered']:
+            print(f"  ! lab '{LAB_SLUG()}' not in labs.json — using legacy layout")
 
     print(f"✓ Target docs directory: {docs_dir}")
 

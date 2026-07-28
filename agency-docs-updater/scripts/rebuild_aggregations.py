@@ -160,8 +160,22 @@ def parse_meeting(path: Path):
     fm, body = split_frontmatter(content)
 
     lab_match = re.search(r'([a-z0-9-]+)-internal-(\d+)', str(path))
-    slug = lab_match.group(1) if lab_match else "claude-code"
-    lab = lab_match.group(2).zfill(2) if lab_match else "??"
+    if lab_match:
+        slug = lab_match.group(1)
+        lab = lab_match.group(2).zfill(2)
+    else:
+        # Registered non-legacy layout: match the meetings_dir from labs.json.
+        slug, lab = "claude-code", "??"
+        try:
+            import lab_layout
+            for reg_slug, entry in lab_layout.load_registry().items():
+                d = entry.get('meetings_dir', '')
+                site_part = d.removeprefix('content/docs/').split('/meetings')[0]
+                if site_part and site_part in str(path):
+                    slug, lab = entry.get('site_slug', reg_slug), "01"
+                    break
+        except Exception:
+            pass
     number = path.stem.zfill(2) if path.stem.isdigit() else path.stem
 
     title = str(fm.get('title', '')).strip()
@@ -217,7 +231,22 @@ def collect_meetings():
         print("Set DOCS_SITE_DIR in .env to your local agency-docs checkout.")
         sys.exit(1)
 
-    meeting_files = sorted(base.glob('*-internal-*/meetings/*.mdx'))
+    # Legacy layout + every meetings_dir registered in labs.json.
+    patterns = ['*-internal-*/meetings/*.mdx']
+    try:
+        import lab_layout
+        for d in lab_layout.all_meeting_dirs():
+            rel = d.removeprefix('content/docs/')
+            patterns.append(f'{rel}/*.mdx')
+    except Exception as e:
+        print(f"  ! labs.json registry unavailable ({e}) — legacy glob only")
+    seen, meeting_files = set(), []
+    for pat in patterns:
+        for f in base.glob(pat):
+            if f not in seen:
+                seen.add(f)
+                meeting_files.append(f)
+    meeting_files.sort()
     records = []
     for f in meeting_files:
         if not f.stem.isdigit():

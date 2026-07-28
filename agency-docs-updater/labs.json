@@ -1,0 +1,28 @@
+{
+  "_comment": "Lab layout registry. Key = LAB_SLUG (vault naming slug). Placeholders: {lab} = zero-padded lab/cohort number, {meeting} = zero-padded meeting number. Every pipeline step that builds a path/URL/playlist must resolve through this file (scripts/lab_layout.py).",
+  "claude-code": {
+    "meetings_dir": "content/docs/claude-code-internal-{lab}/meetings",
+    "page_url": "/claude-code-lab-{lab}/meetings/{meeting}",
+    "playlist": "Claude Code Lab {lab}",
+    "lang": "ru",
+    "thumbnail_style": "claude-code"
+  },
+  "ai-design": {
+    "site_slug": "goal-driven-design-ru",
+    "meetings_dir": "content/docs/goal-driven-design-ru/meetings",
+    "page_url": "/goal-driven-design-ru/meetings/{meeting}",
+    "playlist": "Goal-Driven Design Lab (RU)",
+    "lang": "ru",
+    "thumbnail_style": "site-token",
+    "preserve_placeholder_frontmatter": true
+  },
+  "goal-driven-design-en": {
+    "site_slug": "goal-driven-design-en",
+    "meetings_dir": "content/docs/goal-driven-design-en/meetings",
+    "page_url": "/goal-driven-design-en/meetings/{meeting}",
+    "playlist": "Goal-Driven Design Lab (EN)",
+    "lang": "en",
+    "thumbnail_style": "site-token",
+    "preserve_placeholder_frontmatter": true
+  }
+}
