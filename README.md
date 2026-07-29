@@ -207,7 +207,7 @@ Fork, add a skill following the structure above, document it, open a PR. For gui
 
 ## License
 
-MIT — see individual skill directories for exceptions.
+[MIT](./LICENSE) — see individual skill directories for exceptions.
 
 ---
 
