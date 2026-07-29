@@ -20,9 +20,31 @@ import json
 import os
 import subprocess
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # import lib regardless of CWD
 import lib
+
+
+def _app_running(app: str) -> bool:
+    return subprocess.run(["pgrep", "-x", app], capture_output=True, text=True).returncode == 0
+
+
+def quit_apps(apps: list[str], timeout: int = 20) -> list[str]:
+    """Ask each running app to quit gracefully, wait until gone. Returns apps STILL running.
+
+    Live Electron apps hold their cache DBs open; trashing under them can corrupt state,
+    so callers must skip a target whose apps did not fully quit.
+    """
+    running = [a for a in apps if _app_running(a)]
+    for a in running:
+        subprocess.run(["osascript", "-e", f'quit app "{a}"'], capture_output=True, text=True)
+    deadline = time.monotonic() + timeout
+    still = list(running)
+    while still and time.monotonic() < deadline:
+        time.sleep(1)
+        still = [a for a in still if _app_running(a)]
+    return still
 
 
 def select(reg, args) -> list[dict]:
@@ -78,15 +100,26 @@ def run(args):
         # name the items for reviewable methods (downloads/node_modules sweeps trash many things)
         items = ([p.name for p, _ in ok_paths] if t["method"] in ("downloads-scan", "find-trash")
                  else [])
+        apps = t.get("quit_apps", [])
         plan.append({"id": t["id"], "action": f"trash {len(ok_paths)} path(s)",
-                     "bytes": size, "items": items,
+                     "bytes": size, "items": items, "quit_apps": apps,
                      "rejected": [{"path": str(p), "why": r} for p, r in bad]})
         if args.go and ok_paths:
-            okk, msg = lib.trash([p for p, _ in ok_paths])
-            if okk:
-                freed += size
+            if not apps:
+                still = []
+            elif args.no_quit:
+                still = [a for a in apps if _app_running(a)]  # skip rather than quit
             else:
-                refused.append({"id": t["id"], "reason": f"trash failed: {msg}"})
+                still = quit_apps(apps)
+            if still:
+                refused.append({"id": t["id"],
+                                "reason": f"not trashed — quit these apps first: {', '.join(still)}"})
+            else:
+                okk, msg = lib.trash([p for p, _ in ok_paths])
+                if okk:
+                    freed += size
+                else:
+                    refused.append({"id": t["id"], "reason": f"trash failed: {msg}"})
 
     emptied = False
     if args.go and args.empty_trash:
@@ -126,6 +159,8 @@ def render(r: dict) -> str:
     out.append("")
     for p in r["plan"]:
         out.append(f"  {lib.human(p['bytes']):>7}  {p['id']:<26} {p['action']}")
+        if p.get("quit_apps"):
+            out.append(f"           ⏻ will quit first: {', '.join(p['quit_apps'])}")
         for it in p.get("items", [])[:30]:
             out.append(f"           · {it}")
         if len(p.get("items", [])) > 30:
@@ -152,6 +187,8 @@ def main():
     ap.add_argument("--allow-medium", action="store_true", help="permit risk=medium targets")
     ap.add_argument("--go", action="store_true", help="actually execute (default is dry-run)")
     ap.add_argument("--empty-trash", action="store_true", help="empty Trash after (only with --go)")
+    ap.add_argument("--no-quit", action="store_true",
+                    help="do NOT auto-quit apps; targets whose apps are running are skipped instead")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
     r = run(args)
