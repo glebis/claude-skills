@@ -35,10 +35,10 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | 2026-07 | [automation-advisor](./automation-advisor/) | Quantified ROI + break-even analysis for "should I automate this?" |
 | 2026-07 | [cull-release](./cull-release/) | Six-skill release orchestration suite (check, prepare, publish, verify, recover) |
 | 2026-07 | [elimination-research](./elimination-research/) | Numeric, source-auditable shortlist comparisons for products and vendors |
-| 2026-07 | [nielsen-heuristics](./nielsen-heuristics/) | Formal heuristic evaluation against Nielsen's 10 usability heuristics |
+| 2026-07 | [nielsen-heuristics](https://github.com/glebis/humane-agentic-design) | Formal heuristic evaluation against Nielsen's 10 usability heuristics — **moved to the humane plugin** |
 | 2026-07 | [i18n-studio](./i18n-studio/) | Edit, translate, and review Astro-style i18n string corpora |
 | 2026-07 | [the-goal](./the-goal/) | Theory-of-Constraints diagnostic for deciding what to automate |
-| 2026-06 | [design-tokens](./design-tokens/) | DTCG 2025.10 token sets — validate, resolve, export to CSS |
+| 2026-06 | [design-tokens](https://github.com/glebis/humane-agentic-design) | DTCG 2025.10 token sets — validate, resolve, export to CSS — **moved to the humane plugin** |
 | 2026-06 | [app-release](./app-release/) | iOS/watchOS release pipeline to TestFlight and the App Store |
 | 2026-06 | [local-models](./local-models/) | Offline llama.cpp inference reusing models Ollama already downloaded |
 | 2026-06 | [feature-factory](./feature-factory/) | Solo-dev feature pipeline: goal-first, TDD, deterministic verification |
@@ -88,10 +88,10 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | [pdf-generation](./pdf-generation/) | Markdown → PDF via Pandoc; mobile (6×9in) and print (A4) layouts, EN/RU |
 | [tufte-report](./tufte-report/) | Tufte-style data reports and dashboards as standalone HTML |
 | [brand-agency](./brand-agency/) | Agency brand colors, typography, and 11 social templates via Playwright |
-| [design-tokens](./design-tokens/) | DTCG token sets — global base + per-project layering, CSS export |
+| [design-tokens](https://github.com/glebis/humane-agentic-design) | DTCG token sets, CSS export, APCA/WCAG contrast — **moved to the humane plugin** |
 | [typography](./typography/) | Locale-correct quotes, dashes, and non-breaking spaces via pinned CLI |
 | [font-features](./font-features/) | Inspect and apply ligatures, stylistic sets, and character variants |
-| [nielsen-heuristics](./nielsen-heuristics/) | Evidence-backed heuristic usability evaluation |
+| [nielsen-heuristics](https://github.com/glebis/humane-agentic-design) | Evidence-backed heuristic usability evaluation — **moved to the humane plugin** |
 | [de-ai](./de-ai/) | Humanize AI-sounding text across 5 languages, preserving meaning and facts |
 | [i18n-studio](./i18n-studio/) | Edit, translate, and review i18n string corpora |
 | [sketch](./sketch/) | Sketch/diagram generation support |
@@ -148,7 +148,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | [the-goal](./the-goal/) | Theory-of-Constraints diagnostic before building any automation |
 | [automation-advisor](./automation-advisor/) | 8 questions → break-even math, with voice-enabled web UI |
 | [decision-toolkit](./decision-toolkit/) | 7 frameworks, 20+ bias counter-questions, interactive HTML wizards |
-| [jtbd](./jtbd/) | Jobs-to-be-Done interviews, switching forces, messaging and GTM briefs |
+| [jtbd](https://github.com/glebis/humane-agentic-design) | Jobs-to-be-Done interviews, switching forces, messaging and GTM briefs — **moved to the humane plugin** |
 | [balanced](./balanced/) | Anti-sycophantic multi-perspective analysis and Socratic dialogue |
 | [cognitive-toolkit](https://github.com/glebis/claude-cognitive-toolkit) | CBT/DBT interventions — thought records, DEAR MAN, crisis skills (separate repo) |
 | [synthetic-session-generator](./synthetic-session-generator/) | Persona-consistent synthetic coaching/therapy transcripts for evals |

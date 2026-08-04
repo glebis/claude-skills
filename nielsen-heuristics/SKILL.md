@@ -1,80 +1,30 @@
 ---
 name: nielsen-heuristics
-description: This skill should be used to run a formal heuristic evaluation of a design artifact against Jakob Nielsen's 10 usability heuristics, producing an evidence-backed, severity-scored report. Use it when the user wants a "heuristic evaluation", "usability review", "Nielsen heuristics check", "UX heuristic audit", or asks whether a screenshot, live URL, HTML page, codebase UI, interface description, or JTBD/spec document holds up against usability principles. Accepts five input types (screenshot/image, live URL, codebase/HTML, interface description, JTBD/spec doc) and adapts its rigor and output honestly to what is actually observable. Can render the report as plain markdown (default) or as a Tufte-style HTML report, and can export findings above a severity threshold as Linear or Beads (bd) tasks after confirmation.
+description: MOVED — nielsen-heuristics now ships in the humane plugin (glebis/humane-agentic-design), not here. This directory is a redirect; install humane to get the maintained skill.
 ---
 
-# Nielsen Heuristics Validator
+# nielsen-heuristics has moved
 
-> Mascot: `assets/jakob-nielsen.png` — a line-art portrait of Jakob Nielsen. Surface it (embed or attach) when producing a rendered/HTML report or a shareable summary, as the evaluation's signature. It is an output asset, not context to read while evaluating.
+This skill is now part of **[humane-agentic-design](https://github.com/glebis/humane-agentic-design)**,
+where it sits inside the design method cycle it belongs to and is maintained
+alongside the skills it hands off to.
 
-Run a rigorous, evidence-disciplined heuristic evaluation against Jakob Nielsen's 10 usability heuristics (Nielsen & Molich 1990, refined 1994). The value over an ad-hoc "critique this UI" prompt is a **consistent rubric plus honesty guards**: sharp per-heuristic probes, a per-finding severity scale, a mandatory evidence-locator requirement, and correct handling of artifacts that have no observable interface.
+```
+npx skills add glebis/humane-agentic-design
+```
 
-## Scope guard (read first)
+In Claude Code:
 
-This skill does ONE thing: a formal heuristic inspection. It does NOT run a parallel accessibility (WCAG) audit, performance audit, or general design critique. Flag an accessibility issue **only when it is also a heuristic violation** (e.g., an invisible focus state violates H1: visibility of system status). If the user wants comprehensive multi-dimension auditing, defer to the `impeccable:audit` skill instead.
+```
+/plugin marketplace add glebis/humane-agentic-design
+/plugin install humane@humane-agentic-design
+```
 
-## Step 1 — Detect artifact type and select a mode
+## Why the copy here was removed
 
-Heuristic evaluation is an inspection of an *interface*. Some inputs have one to observe; some only describe one that does not yet exist. Detect the input type, then announce the mode and why.
+One skill should live in exactly one channel. Two published copies of the
+same name drift, and this one had: it was frozen in 2026-07 and lacked
+the shared humane review contract — finding caps, a required considered-but-rejected table, and the Block/Needs changes/Approve verdict that lets it consolidate with the other review skills.
 
-**Evaluation mode** (observable interface → findings are severity-scored):
-- **Screenshot / image** — read it visually.
-- **Live URL** — drive it with browser tools to observe states and flows.
-- **Codebase / HTML page** — grep and read the UI source.
-
-**Design-risk review mode** (interface described but not built → findings are UNSCORED risk flags):
-- **Interface description** (text/markdown).
-- **JTBD / spec document.**
-
-Never assign a 0–4 severity to a pure spec or JTBD doc — there is no running system to observe, so a number would be speculation dressed as measurement. Reframe the question as *"which heuristics does this design direction put at risk when built."*
-
-See `references/artifact-guide.md` for how to ingest each type, which heuristics are assessable vs. N/A for it, and which mode applies.
-
-## Step 2 — Inventory (mandatory, before judging)
-
-Enumerate the concrete units that will be examined BEFORE forming any finding. This is the structural safeguard against shallow, agreeable output.
-- Evaluation mode: list the screens, key elements, and flows observed.
-- Design-risk mode: list the spec sections / described flows.
-
-Walk this inventory in Step 3. Do not evaluate from vibes.
-
-## Step 3 — Walk all 10 heuristics
-
-Load `references/heuristics.md` for the definition, "what to look for" probes, common violations, and the 0–4 severity rubric. For EACH of the 10 heuristics:
-
-1. Produce **zero or more findings** (not exactly one — real evaluations have zero for some heuristics and several for others).
-2. **Every finding MUST cite an evidence locator.** Unevidenced findings are disallowed. A locator is one of: a described screenshot region, a DOM element/CSS selector, a `file:line` reference, a quoted sentence from the spec, or the specific URL interaction performed.
-3. In evaluation mode, assign a **severity 0–4** per finding. In design-risk mode, mark each as an **unscored risk flag** ("potential, unverified").
-4. If a heuristic is **not assessable** from this artifact (e.g., undo/redo on a static screenshot), mark it **N/A** and state why.
-5. If a heuristic has **no findings**, state **what was checked** ("checked X, Y, Z — no issues") — never silently bless it.
-
-## Step 4 — Emit the report (choose an output format)
-
-Findings are always **grouped by heuristic** with a **max-severity rollup**, followed by **Top-3 prioritized fixes** and the **Verdict**. Two render targets:
-
-- **`markdown` (default)** — emit inline using `references/report-template.md`. Use this unless the user asks for a rendered/shareable report.
-- **`tufte`** — a Tufte-style standalone HTML report. Follow `references/tufte-preset.md`: build the structured findings first, then invoke the `tufte-report` skill with that preset (which maps findings onto its strip-chart / status-strip / flyout blocks and uses `assets/jakob-nielsen.png` as the hero). Trigger when the user says "tufte report", "HTML report", "shareable report", or "make it pretty".
-
-Select the format from the user's request; if ambiguous and they only said "report", default to `markdown`.
-
-## Verdict (scoped — never "ready to ship")
-
-A single evaluator finds only ~1/3 of usability problems (Nielsen); 3–5 evaluators are recommended for confidence. The verdict must carry this caveat and use these defined levels (evaluation mode):
-
-- **Blockers present** — one or more severity-4 findings.
-- **Major issues** — one or more severity-3, none at 4.
-- **Minor issues only** — nothing above severity-2.
-- **No blockers found in heuristic inspection** — clean pass, with the explicit single-evaluator caveat.
-
-Design-risk mode produces a **risk summary** (which heuristics are most at risk, and what to specify to de-risk them) instead of a scored verdict — there are no severities to roll up.
-
-## Step 5 — Export findings as tasks (optional)
-
-When the user asks to "create tasks", "file these", "make Linear issues", "open beads", etc., turn qualifying findings into tracker issues. Follow `references/task-export.md` for the exact command templates and field mapping.
-
-Rules (all defaults overridable per run):
-- **Threshold:** default **severity ≥ 3** (Major + Catastrophe). The user may set another (`≥ 4`, `≥ 2`). In **design-risk mode** there are no severities — only export flags the user explicitly selects or the "highest-risk" flags named in the risk summary, and say so.
-- **Propose, then confirm (mandatory gate):** first print the list of tasks that WOULD be created — title, severity, target tracker, and the heuristic — and ask for confirmation. Create nothing until the user approves. This gate is required for Linear (outward-facing/cloud); keep it for Beads too.
-- **Target:** **Linear** (`linear` CLI, cloud) or **Beads** (`bd` CLI, local/per-repo). Ask which if unspecified. Beads requires being inside the target repo (its `.beads` dir); confirm the repo before creating.
-- **One task per finding**, titled `[H<n>] <short finding>`, with the evidence locator, fix, and severity in the body. Map severity → tracker priority per `references/task-export.md`.
-- After creation, report back the created issue IDs/URLs.
+Leaving it installable would have meant someone running the old behaviour
+while reading the current documentation.
