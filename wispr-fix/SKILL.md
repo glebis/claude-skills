@@ -1,6 +1,6 @@
 ---
 name: wispr-fix
-description: Queue and batch-apply Wispr Flow dictation corrections. Use when the user invokes /wispr-fix or writes "wispr fix: X -> Y" to correct a speech-to-text mishear.
+description: 'Queue and batch-apply Wispr Flow dictation corrections. Use when the user invokes /wispr-fix or writes "wispr fix: X -> Y" to correct a speech-to-text mishear.'
 ---
 
 # Wispr Fix: Dictation Correction Queue
@@ -10,7 +10,7 @@ Queue dictation corrections instantly during work. Apply them all at once when c
 ## Invocation Patterns
 
 ### Explicit add
-User says: `/wispr-fix "Clauthe Code" "Claude Code"`
+User says: `/wispr-fix "Clauthe Code" "Codex"`
 Action: Run the add command.
 
 ### Auto-detect pattern
@@ -23,33 +23,33 @@ Action: Run the corresponding command.
 
 ## Commands
 
-All commands use the script at `~/.claude/skills/wispr-fix/scripts/wispr-fix.sh`.
+All commands use the script at `~/.Codex/skills/wispr-fix/scripts/wispr-fix.sh`.
 
 ### Queue a correction
 ```bash
-~/.claude/skills/wispr-fix/scripts/wispr-fix.sh add "<mishear>" "<correction>"
+~/.Codex/skills/wispr-fix/scripts/wispr-fix.sh add "<mishear>" "<correction>"
 ```
 Use `--exact` to skip case variant generation (auto-applied for single words).
 
 ### List pending corrections
 ```bash
-~/.claude/skills/wispr-fix/scripts/wispr-fix.sh list
+~/.Codex/skills/wispr-fix/scripts/wispr-fix.sh list
 ```
 
 ### Remove a queued correction
 ```bash
-~/.claude/skills/wispr-fix/scripts/wispr-fix.sh remove "<mishear>"
+~/.Codex/skills/wispr-fix/scripts/wispr-fix.sh remove "<mishear>"
 ```
 Supports fuzzy matching on the mishear string.
 
 ### Preview what flush will do
 ```bash
-~/.claude/skills/wispr-fix/scripts/wispr-fix.sh dry-run
+~/.Codex/skills/wispr-fix/scripts/wispr-fix.sh dry-run
 ```
 
 ### Apply all queued corrections
 ```bash
-~/.claude/skills/wispr-fix/scripts/wispr-fix.sh flush
+~/.Codex/skills/wispr-fix/scripts/wispr-fix.sh flush
 ```
 Options: `--force-quit` (force-kill Wispr if graceful quit fails), `--no-restart` (don't restart Wispr after).
 
@@ -57,7 +57,7 @@ Options: `--force-quit` (force-kill Wispr if graceful quit fails), `--no-restart
 
 ### Restore from backup
 ```bash
-~/.claude/skills/wispr-fix/scripts/wispr-fix.sh restore latest
+~/.Codex/skills/wispr-fix/scripts/wispr-fix.sh restore latest
 ```
 
 ## Argument Parsing
@@ -87,6 +87,6 @@ When you see `wispr fix: X -> Y` in user text (the `wispr fix:` prefix is requir
 ## Notes
 - Corrections are queued instantly — no Wispr restart needed
 - Flush quits Wispr, backs up DB, applies corrections, verifies integrity, exports dictionary, restarts Wispr
-- The queue persists between sessions at `~/.claude/skills/wispr-fix/queue.jsonl`
+- The queue persists between sessions at `~/.Codex/skills/wispr-fix/queue.jsonl`
 - Applied corrections are logged in `queue.applied.jsonl`
 - Backups are stored in `~/Library/Application Support/Wispr Flow/backups/` (last 10 retained)

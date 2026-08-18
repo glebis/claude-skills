@@ -1,13 +1,13 @@
 ---
 name: telegram-telethon
-description: This skill should be used for comprehensive Telegram automation via Telethon API. Use for sending/receiving messages, monitoring chats, running a background daemon that triggers Claude Code sessions, managing channels/groups, and downloading media. Triggers on "telegram daemon", "monitor telegram", "telegram bot", "spawn Claude from telegram", or any Telethon-related request. IMPORTANT: Use `draft` command for "драфт/draft", use `send` for "отправь/send"; if ambiguous, ASK before sending.
+description: 'This skill should be used for comprehensive Telegram automation via Telethon API. Use for sending/receiving messages, monitoring chats, running a background daemon that triggers Codex sessions, managing channels/groups, and downloading media. Triggers on "telegram daemon", "monitor telegram", "telegram bot", "spawn Codex from telegram", or any Telethon-related request. IMPORTANT - use the draft command for "драфт/draft", use send for "отправь/send"; if ambiguous, ASK before sending.'
 ---
 
-## Claude Behavior Guidelines
+## Codex Behavior Guidelines
 
 ### Draft vs Send: Follow User's Intent
 
-| User says | Claude does | Clarify? |
+| User says | Codex does | Clarify? |
 |-----------|-------------|----------|
 | "драфт", "draft", "сделай драфт" | `draft` | No |
 | "отправь", "пошли", "send" | `send` | No |
@@ -22,17 +22,17 @@ description: This skill should be used for comprehensive Telegram automation via
 ### Examples
 
 **User:** "сделай драфт для lv: привет"
-**Claude:** Uses `draft --chat "lv" --text "привет"` immediately
+**Codex:** Uses `draft --chat "lv" --text "привет"` immediately
 
 **User:** "отправь сообщение Маше: встретимся в 5?"
-**Claude:** Uses `send --chat "Маша" --text "встретимся в 5?"` immediately
+**Codex:** Uses `send --chat "Маша" --text "встретимся в 5?"` immediately
 
 **User:** "напиши сообщение для Маши: встретимся в 5?"
-**Claude:** Asks "Создать драфт или сразу отправить?"
+**Codex:** Asks "Создать драфт или сразу отправить?"
 
 # Telegram Telethon Skill
 
-Full Telethon API wrapper with daemon mode and Claude Code integration. Supports interactive setup, background message monitoring, and automatic Claude session spawning per chat.
+Full Telethon API wrapper with daemon mode and Codex integration. Supports interactive setup, background message monitoring, and automatic Codex session spawning per chat.
 
 ## Package Layout
 
@@ -69,7 +69,7 @@ With the publish/markdown/schedule ports now complete, **`telegram-telethon` is 
 - `publish` — draft→channel workflow (frontmatter, media albums, post-publish move + index update, post-flight lint)
 - `--markdown` on `send` / `publish` — markdown→Telegram HTML conversion
 - `--schedule` on `send` / `publish` — ISO / relative / natural-language scheduled delivery
-- Daemon mode + Claude Code spawning, voice transcription (Telegram/Groq/Whisper), `delete` / `forward` / `mark-read`, local `draft` / `drafts` / `draft-send`, `lint-channel`, non-interactive auth setup.
+- Daemon mode + Codex spawning, voice transcription (Telegram/Groq/Whisper), `delete` / `forward` / `mark-read`, local `draft` / `drafts` / `draft-send`, `lint-channel`, non-interactive auth setup.
 
 ## Prerequisites
 
@@ -87,9 +87,9 @@ This guides through:
 3. 2FA (if enabled)
 4. Optional daemon trigger configuration
 
-### Non-Interactive Setup (Claude Code)
+### Non-Interactive Setup (Codex)
 
-For use from Claude Code or scripts without TTY:
+For use from Codex or scripts without TTY:
 
 ```bash
 # Step 1: Provide credentials and trigger code send
@@ -320,8 +320,8 @@ python3 scripts/tg.py transcribe "Chat" 123 --method whisper
 
 The daemon monitors Telegram for messages matching configured triggers and can:
 - Reply with static text
-- Spawn Claude Code sessions to handle requests
-- Resume existing Claude sessions per-chat
+- Spawn Codex sessions to handle requests
+- Resume existing Codex sessions per-chat
 - Queue requests to prevent rate limiting
 
 ### Trigger Configuration
@@ -330,16 +330,16 @@ Triggers are stored in `~/.config/telegram-telethon/daemon.yaml`:
 
 ```yaml
 triggers:
-  # Respond to /claude command in DMs
+  # Respond to /Codex command in DMs
   - chat: "@myusername"
-    pattern: "^/claude (.+)$"
-    action: claude
+    pattern: "^/Codex (.+)$"
+    action: Codex
     reply_mode: inline
 
   # Respond to @Bot mentions in a group
   - chat: "AI Assistants"
     pattern: "@Bot (.+)$"
-    action: claude
+    action: Codex
     reply_mode: new
 
   # Simple ping-pong in any chat
@@ -348,7 +348,7 @@ triggers:
     action: reply
     reply_text: "pong"
 
-claude:
+Codex:
   allowed_tools:
     - Read
     - Edit
@@ -367,23 +367,23 @@ queue:
 | Field | Description |
 |-------|-------------|
 | `chat` | Chat name, `@username`, or `*` for all chats |
-| `pattern` | Regex pattern (capture group 1 becomes Claude prompt) |
-| `action` | `claude`, `reply`, or `ignore` |
+| `pattern` | Regex pattern (capture group 1 becomes Codex prompt) |
+| `action` | `Codex`, `reply`, or `ignore` |
 | `reply_mode` | `inline` (reply to message) or `new` (separate message) |
 | `reply_text` | Static text for `reply` action |
 
-### Claude Integration
+### Codex Integration
 
-When action is `claude`:
-1. Text captured by regex group 1 is sent to Claude Code via `claude -p "..." --output-format json`
-2. Claude sessions persist per-chat in `sessions.json`
+When action is `Codex`:
+1. Text captured by regex group 1 is sent to Codex via `Codex -p "..." --output-format json`
+2. Codex sessions persist per-chat in `sessions.json`
 3. Subsequent messages from same chat resume session via `--resume <session_id>`
 4. Responses are sent back to Telegram as reply or new message
 
 ## Session Persistence
 
-Claude sessions are saved to `~/.config/telegram-telethon/sessions.json`:
-- Each chat_id maps to a Claude session_id
+Codex sessions are saved to `~/.config/telegram-telethon/sessions.json`:
+- Each chat_id maps to a Codex session_id
 - Sessions survive daemon restarts
 - Track message count and last used timestamp
 
@@ -399,7 +399,7 @@ Respond to all DMs to yourself:
 triggers:
   - chat: "@yourusername"
     pattern: "(.+)"
-    action: claude
+    action: Codex
     reply_mode: inline
 ```
 
@@ -411,7 +411,7 @@ Only respond when @mentioned:
 triggers:
   - chat: "Dev Team"
     pattern: "@AssistantBot (.+)"
-    action: claude
+    action: Codex
     reply_mode: inline
 ```
 
@@ -421,7 +421,7 @@ triggers:
 triggers:
   - chat: "*"
     pattern: "^/ask (.+)"
-    action: claude
+    action: Codex
     reply_mode: inline
 
   - chat: "*"
@@ -439,9 +439,9 @@ triggers:
 ```
 ~/.config/telegram-telethon/
 ├── config.yaml        # API credentials (api_id, api_hash, phone)
-├── daemon.yaml        # Daemon triggers and Claude config
+├── daemon.yaml        # Daemon triggers and Codex config
 ├── session.session    # Telethon session file
-├── sessions.json      # Claude session persistence
+├── sessions.json      # Codex session persistence
 └── daemon.log         # Daemon log file
 ```
 
@@ -512,7 +512,7 @@ Mapping natural-language asks to commands:
 | "Config not found" | Run `python3 scripts/tg.py setup` |
 | "Session expired" | Delete `session.session` and re-run setup |
 | `ModuleNotFoundError: telegram_telethon` | Run `pip install -e .` from the skill directory |
-| "Claude timeout" | Increase `timeout` in `daemon.yaml` |
+| "Codex timeout" | Increase `timeout` in `daemon.yaml` |
 | "Queue full" | Reduce request rate or wait |
 | "No trigger matched" | Check `pattern` regex and `chat` name match |
 | Chat not found by name | Increase `--limit` on `list` (default 30); may not be in recent dialogs |

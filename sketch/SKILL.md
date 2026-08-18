@@ -1,7 +1,19 @@
+---
+name: sketch
+description: 'Open a Fabric.js-based SVG editor in the browser for collaborative visual prototyping. Codex writes and reads SVG through MCP tools while the user edits interactively. Changes sync in real-time via WebSocket. Use for wireframes, diagrams, schemes, UI mockups, and visual sketches. Triggers on "open sketch", "sketch canvas", "draw in browser", "fabric canvas".'
+---
+
 # Sketch - Collaborative SVG Canvas
 
 ## Description
-Opens a Fabric.js-based SVG editor in the browser for collaborative visual prototyping. Claude can write and read SVG through MCP tools while the user edits interactively. Changes sync in real-time via WebSocket.
+Opens a Fabric.js-based SVG editor in the browser for collaborative visual prototyping. Codex can write and read SVG through MCP tools while the user edits interactively. Changes sync in real-time via WebSocket.
+
+## Preflight
+If the editor shows "disconnected" or WebSocket errors occur, stale server processes may be blocking. Run this before retrying:
+```bash
+pkill -f 'sketch-mcp-server/dist/index.js'
+```
+Then reconnect the MCP server (the next tool call will restart it). The server now auto-kills stale instances on startup, but orphaned processes from before this fix may still linger.
 
 ## Tools Available (via sketch-mcp-server)
 - `sketch_open_canvas` - Open a named canvas (creates if new), launches browser editor
@@ -14,6 +26,10 @@ Opens a Fabric.js-based SVG editor in the browser for collaborative visual proto
 - `sketch_save_template` - Save canvas as reusable JSON template (preserves Textbox widths + lock state)
 - `sketch_load_template` - Load a saved JSON template into a canvas
 - `sketch_list_templates` - List all saved templates
+- `sketch_set_zoom` - Set zoom level (1.0 = 100%), optionally zoom toward a specific point
+- `sketch_pan_to` - Pan the viewport so (x, y) is at the top-left
+- `sketch_zoom_to_fit` - Fit all content in view with padding (call after drawing)
+- `sketch_capture_screenshot` - Capture a PNG screenshot of the canvas (returns image for visual verification)
 - `sketch_clear_canvas` - Clear canvas to blank state (use before streaming)
 - `sketch_focus_canvas` - Bring canvas window to foreground
 - `sketch_list_canvases` - List all active canvases
@@ -36,6 +52,19 @@ Opens a Fabric.js-based SVG editor in the browser for collaborative visual proto
 
 ### Multiple canvases
 Each canvas opens in its own browser tab. Use different names for different drawings.
+
+## Default Visual Style
+
+When generating prototypes, wireframes, diagrams, or schemes, use a minimalist style unless the user specifies otherwise:
+
+- **Colors**: White/light gray background, black/dark gray for strokes and text. No fills on shapes unless semantically meaningful. Avoid decorative color.
+- **Strokes**: Thin (1-2px), consistent weight. Use slightly heavier weight (2-3px) for emphasis only.
+- **Typography**: Clean, sans-serif. Use size hierarchy for structure (e.g., 24px headings, 16px body, 12px labels). Black or `#333` text.
+- **Shapes**: Simple rectangles, lines, circles. Rounded corners (rx=4-8) for UI elements. No drop shadows or gradients.
+- **Layout**: Generous whitespace. Align elements to a grid. Clear visual hierarchy through size and spacing, not color.
+- **Annotations**: Use thin arrows and small labels. Keep secondary to the content.
+
+Only introduce color when it carries meaning (e.g., red for errors, green for success, blue for interactive elements) or when the user explicitly requests a colored/branded style.
 
 ### SVG tips
 - Use standard SVG elements: `<rect>`, `<circle>`, `<ellipse>`, `<line>`, `<path>`, `<text>`, `<polygon>`, `<polyline>`

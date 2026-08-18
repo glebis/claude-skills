@@ -1,6 +1,6 @@
 ---
 name: agency-docs-updater
-description: End-to-end pipeline for publishing Claude Code lab meetings. Accepts optional args: date (YYYYMMDD, "yesterday", "today") and lab number (e.g. "04"). Examples: "yesterday 04", "20260420 05", "04" (today, lab 04), "" (today, auto-detect lab).
+description: 'End-to-end pipeline for publishing Claude Code lab meetings. Accepts optional args: date (YYYYMMDD, "yesterday", "today") and lab number (e.g. "04"). Examples: "yesterday 04", "20260420 05", "04" (today, lab 04), "" (today, auto-detect lab).'
 ---
 
 # Agency Docs Updater
@@ -222,6 +222,8 @@ Read `${FATHOM_FILE}`. Generate a structured summary **in `${TRANSCRIPT_LANG}`**
 - `##` section headers, bullet points, code examples where relevant
 - Technical terms in English (MCP, Skills, Claude Code, etc.)
 - **Exclude personal scheduling details**
+- **Exclude operator/pipeline notes**: recording source, trimming or cutting, silence/preamble removal, remuxing or re-encoding, transcript synchronization, upload retries, and other production mechanics belong only in the internal Pipeline Report — never in the published summary or meeting page
+- Verify product, company, and person names against authoritative project context or explicit user corrections before publishing; do not trust ASR/LLM normalization for proper nouns
 - Sanitize for MDX: escape `<`, `>`, and bare `{` characters that would break MDX compilation
 
 Fact-check Claude Code feature claims using `claude-code-guide` subagent (if available; skip fact-checking if the agent is not accessible). Save corrected summary to scratchpad as `summary.md`.
@@ -256,6 +258,8 @@ LAB_SLUG=${LAB_SLUG} python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/upd
 3. Replace frontmatter placeholders (`[Название встречи]`, `[Краткое описание встречи]`, `[Дата встречи]`)
 4. If `TRANSCRIPT_LANG=en`, rewrite the MDX entirely with English labels — the script defaults to Russian and the translation fallback produces broken mixed-language output
 5. Verify: `bash ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/safe_build.sh` (wraps `npm run build`; auto-clears a corrupt `.next` cache and retries once on the `reading 'hash'` / ENOSPC error)
+6. Search the generated MDX for operator/pipeline notes (recording provenance, edit/cut details, encoding, transcript synchronization, upload mechanics) and remove them before publication
+7. Search the MDX, public transcript, YouTube metadata, and thumbnail copy for known ASR variants of corrected proper nouns; use the canonical spelling consistently across every public surface
 
 ## Step 6: Commit and Push
 
