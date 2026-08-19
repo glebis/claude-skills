@@ -360,7 +360,7 @@ def api_request(
     max_retries = 4
     for attempt in range(max_retries):
         try:
-            with urllib.request.urlopen(req, timeout=300) as resp:
+            with urllib.request.urlopen(req, timeout=900) as resp:
                 result = json.loads(resp.read().decode("utf-8"))
                 resp_data = result.get("data")
                 if not resp_data:
@@ -388,6 +388,16 @@ def api_request(
                     sys.exit(1)
             else:
                 print(f"Error {e.code}: {error_body}", file=sys.stderr)
+                sys.exit(1)
+        except TimeoutError:
+            # A socket read timeout is NOT a URLError — without this branch it
+            # escapes the retry loop entirely and crashes with a raw traceback.
+            if attempt < max_retries - 1:
+                wait = 2 ** (attempt + 1)
+                print(f"Read timed out, retrying in {wait}s (attempt {attempt + 1}/{max_retries})...", file=sys.stderr)
+                time.sleep(wait)
+            else:
+                print(f"Failed after {max_retries} attempts: the API did not respond in time.", file=sys.stderr)
                 sys.exit(1)
         except urllib.error.URLError as e:
             if attempt < max_retries - 1:
