@@ -25,6 +25,12 @@ the skill. Read `references/phase-contracts.md` before acting.
    not repeat completed work.
 8. Route every mismatch or failed phase through cull-release-recover.
 
+Before the first tag of a cycle, read
+`references/release-lessons-2026-09.md` — it documents the failure modes that
+cost four burned attempts in the v0.6.x cycle (record-anchor vs workflow-gate
+mismatch, dependabot staleness races, closed-bead bd filter, provenance type
+drift) and the exact tag-time sequence that avoids them.
+
 ## Completion report
 
 Report version, release commit, annotated tag object, workflow run, artifact
