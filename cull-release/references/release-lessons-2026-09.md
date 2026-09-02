@@ -1,8 +1,44 @@
 # Cull release lessons — 2026-09 v0.6.x cycle
 
 Five tag/attempt cycles were needed to ship the first post-0.5.1 release
-(v0.6.0 → v0.6.1 → v0.6.2). Each failure is recorded here with its root cause,
-fix, and prevention so the next cycle is one attempt.
+(v0.6.0 → v0.6.1 → v0.6.2), and the first post-release feature PR needed three
+CI attempts because the packaged interaction smoke exposed a startup crash.
+Each failure is recorded here with its root cause, fix, and prevention so the
+next cycle is one attempt.
+
+## Failure 0 — PR CI: TDZ crash blanked the app at startup (the sneaky one)
+
+The lineage-zoom PR failed the packaged interaction smoke 3/3 times with a
+blank window: the tab bar seeded `$state` via `lineageScaleToPosition(1)`
+during instance init while `const LINEAGE_ZOOM_MAX` was declared later in the
+script — a temporal dead zone `ReferenceError` at component creation that took
+down the whole `+page` mount. svelte-check and unit tests cannot see TDZ
+ordering; the app rendered a blank window in every packaged/WebKWebView run.
+
+**Debugging traps that cost hours (do not repeat):**
+
+- The local smoke harness can report a bogus **PASS**: when a previous
+  instance was killed, a stale single-instance registration makes the next
+  launch exit 0 instantly (empty app log + instant exit = bounce, not a pass).
+  Always check the app log has the watcher lines before trusting a local pass.
+- The packaged release build cannot show WKWebView console output, so the
+  driver's errors are invisible. Diagnose frontend crashes by loading the app
+  with the E2E mock in a real browser (`CULL_E2E_MOCK=1 npx vite dev` +
+  agent-browser) — the console shows the error in seconds. The packaged
+  screenshot/OCR loop burned hours by comparison.
+- An NSProcessInfo activity assertion (added to keep App Nap / WebProcess
+  suspension from starving the driver on busy desktops) is still worth keeping,
+  but it masked nothing: the real failure was deterministic JS.
+
+**Fixes applied:** TDZ declaration order (PR #216), the
+`CULL_NATIVE_SMOKE_ACTIVE` activity assertion, and an `app.html` error banner
+that renders fatal frontend errors on-page so the smoke timeout screenshot
+captures them.
+
+**Prevention:** before pushing UI changes, load the app once with
+`CULL_E2E_MOCK=1 npx vite dev` and check the console — module-init errors
+appear immediately. Consider a browser-smoke step in CI for PRs that touch
+app-shell components (TabBar/+page/persistence).
 
 ## Failure 1 — prepare gate: version-coupled docs not updated
 
