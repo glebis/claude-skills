@@ -29,6 +29,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Added | Skill | What it does |
 | --- | --- | --- |
+| 2026-09 | [agent-run-forensics](./agent-run-forensics/) | Read an earlier agent run from its recording — which step changed a file, why a command ran — and replay it offline |
 | 2026-07 | [font-features](./font-features/) | Inspect and apply OpenType features — ligatures, stylistic sets, alternates |
 | 2026-07 | [typography](./typography/) | Deterministic smart quotes, dashes, non-breaking spaces (RU/EN/DE/FR) |
 | 2026-07 | [pre-session-portrait](./pre-session-portrait/) | 7-lens JTBD client portrait before a paid consulting hour |
@@ -124,6 +125,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | Skill | What it does |
 | --- | --- |
 | [tdd](./tdd/) | Multi-agent TDD with enforced context isolation across RED→GREEN→REFACTOR |
+| [agent-run-forensics](./agent-run-forensics/) | Answer "why did it do that" from a recorded agent run, and replay or fork that run offline |
 | [feature-factory](./feature-factory/) | Solo-dev pipeline from feature intent to shipped, with evidence gates |
 | [skills/release](./skills/release/) | Config-driven releases with a tiered compatibility policy (`COMPATIBILITY.md`) |
 | [cull-release](./cull-release/) | Cull release suite: [check](./cull-release-check/), [prepare](./cull-release-prepare/), [publish](./cull-release-publish/), [verify](./cull-release-verify/), [recover](./cull-release-recover/) |
