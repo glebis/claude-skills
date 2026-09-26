@@ -52,8 +52,10 @@ def get_openrouter_key(env_file: Optional[Path] = None) -> Optional[str]:
     env_path = env_file or Path(".env")
     env = load_env(env_path)
     return (
-        os.environ.get("OPENROUTER_API_KEY")
+        os.environ.get("OPENROUTER_KEY")
+        or os.environ.get("OPENROUTER_API_KEY")
         or os.environ.get("OPENROUTER-API-KEY")
+        or env.get("OPENROUTER_KEY")
         or env.get("OPENROUTER_API_KEY")
         or env.get("OPENROUTER-API-KEY")
     )

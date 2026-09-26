@@ -130,6 +130,10 @@ def run_llm(
 
     llm_env = os.environ.copy()
     if openrouter_key:
+        # llm-openrouter gates model registration on OPENROUTER_KEY; without it the
+        # plugin registers zero models and every "openrouter/..." name is rejected
+        # as "Unknown model". Keep the conventional name set for other tooling.
+        llm_env.setdefault("OPENROUTER_KEY", openrouter_key)
         llm_env.setdefault("OPENROUTER_API_KEY", openrouter_key)
 
     try:

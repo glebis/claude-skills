@@ -25,7 +25,21 @@ Store credentials in `.env`:
 ```
 Google-Custom-Search-JSON-API-KEY=your_key
 Google-Custom-Search-CX=your_cx
-OPENROUTER_API_KEY=your_openrouter_key
+OPENROUTER-API-KEY=your_openrouter_key
+```
+(The `OPENROUTER_API_KEY=...` spelling works too — see the plugin note below.)
+
+### OpenRouter / llm-openrouter caveat
+
+The `llm-openrouter` plugin only registers its models when it can read a key named
+`OPENROUTER_KEY` (env var or `llm keys set openrouter`). With only
+`OPENROUTER_API_KEY` set, `llm models list` shows **zero** OpenRouter models and every
+`openrouter/...` name fails with `Unknown model` — the script then silently falls back to
+keyword scoring. `llm_select.py` sets both names for the subprocess, so this is handled;
+if selection ever regresses, check `OPENROUTER_KEY` first:
+
+```bash
+llm models list | grep -c openrouter   # 458+ means the plugin registered its models
 ```
 
 ## Modes of Operation
