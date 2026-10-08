@@ -257,6 +257,11 @@
       "name": "zoom",
       "source": "./zoom",
       "description": "Create and manage Zoom meetings and access cloud recordings via the Zoom API. Use for queries like \"create a Zoom meetin"
+    },
+    {
+      "name": "open-knowledge-vault",
+      "source": "./open-knowledge-vault",
+      "description": "Portable Open Knowledge Format vault setup and maintenance, with optional Obsidian and Dataview views"
     }
   ]
 }

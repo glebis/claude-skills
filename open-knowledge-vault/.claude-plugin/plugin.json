@@ -1,0 +1,7 @@
+{
+  "name": "open-knowledge-vault",
+  "version": "0.1.0",
+  "description": "Create and maintain portable Open Knowledge Format vaults with optional Obsidian and Dataview views",
+  "author": {"name": "Gleb Kalinin"},
+  "skills": "./skills/"
+}

@@ -67,7 +67,8 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | [elimination-research](./elimination-research/) | Deterministic scoring, ownership costs, and audit trail for shortlists |
 | [doctorg](./doctorg/) | Evidence-based health research, GRADE-style ratings, Apple Health context |
 | [qmd-search](./qmd-search/) | Local semantic + keyword search over an Obsidian vault; cross-lingual (EN↔RU) |
-| [learning-vault](./learning-vault/) | Generate an Obsidian study vault for any certification or course |
+| [learning-vault](./learning-vault/) | Learning profile for portable study vaults, with optional Dataview |
+| [open-knowledge-vault](./open-knowledge-vault/) | Maintain source-grounded OKF vaults with optional Obsidian and Dataview |
 | [temple-generator](./temple-generator/) | Turn a vault into a 3D interactive knowledge map with generative audio |
 | [daydream](./daydream/) | Multi-agent mining of non-obvious connections between vault notes |
 | [insight-extractor](./insight-extractor/) | Parse `/insights` output into trackable markdown action items |
