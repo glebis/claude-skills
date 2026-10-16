@@ -29,6 +29,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Added | Skill | What it does |
 | --- | --- | --- |
+| 2026-10 | [palmier-reels](./palmier-reels/) | Narrative 9:16 reels in Palmier Pro from a spec + style (presets or design tokens) |
 | 2026-07 | [font-features](./font-features/) | Inspect and apply OpenType features — ligatures, stylistic sets, alternates |
 | 2026-07 | [typography](./typography/) | Deterministic smart quotes, dashes, non-breaking spaces (RU/EN/DE/FR) |
 | 2026-07 | [pre-session-portrait](./pre-session-portrait/) | 7-lens JTBD client portrait before a paid consulting hour |
@@ -108,6 +109,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | [nano-banana](./nano-banana/) | Gemini image generation and editing with style and platform presets |
 | [vision-bench](./vision-bench/) | Score and compare images using vision LLMs as judges (11 criteria presets) |
 | [elevenlabs-tts](./elevenlabs-tts/) | Text → audio via ElevenLabs with voice presets and tunable parameters |
+| [palmier-reels](./palmier-reels/) | Vertical narrative reels in Palmier Pro via MCP — beat-cut, word-by-word typography, card wipes, film jitter, ElevenLabs SFX; style presets or DTCG design tokens |
 
 ## Communication
 

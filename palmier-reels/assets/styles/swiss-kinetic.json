@@ -1,0 +1,99 @@
+{
+ "canvas": {
+  "width": 1080,
+  "height": 1920,
+  "fps": 30
+ },
+ "layout": {
+  "x": 0.09,
+  "measure_px": 920,
+  "top": 0.118,
+  "gap": 0.028
+ },
+ "type": {
+  "context_pt": 38,
+  "quote_pt_short": 46,
+  "quote_pt_long": 42,
+  "long_quote_words": 12,
+  "context_line_height": 1.1,
+  "natural_line_height": 1.22,
+  "quote_line_spacing": -2,
+  "card_max_pt": 260,
+  "card_case": "upper",
+  "label_pt": 34
+ },
+ "motion": {
+  "easing": [
+   0.7,
+   0,
+   0.2,
+   1
+  ],
+  "hero_ms": 450,
+  "reveal_ms": 300,
+  "header_ms": 120,
+  "card_hold_ms": 600,
+  "exit_frames": 9
+ },
+ "sfx": {
+  "enabled": true
+ },
+ "name": "swiss-kinetic",
+ "description": "White, black and signal blue; bold grotesk throughout (italic for quotes), hard 120 ms card slams, large off-axis art, no grain or film effects.",
+ "color": {
+  "paper": "#ffffff",
+  "ink": "#000000",
+  "accent": "#1f3fff",
+  "on_accent": "#ffffff",
+  "muted": "#6b6b6b"
+ },
+ "fonts": {
+  "context": {
+   "family": "Helvetica Neue",
+   "weight": 700
+  },
+  "quote": {
+   "family": "Helvetica Neue",
+   "weight": 500,
+   "italic": true
+  },
+  "card": {
+   "family": "HelveticaNeue-CondensedBlack",
+   "ps": "HelveticaNeue-CondensedBlack"
+  },
+  "label": {
+   "family": "Helvetica Neue",
+   "weight": 500
+  }
+ },
+ "paper": {
+  "grain_sd": 0
+ },
+ "cards": {
+  "enabled": true,
+  "colors": [
+   "accent",
+   "ink"
+  ],
+  "wipes": "horizontal",
+  "word_on": {
+   "accent": "on_accent",
+   "ink": "paper"
+  }
+ },
+ "context": {
+  "entrance": "slide"
+ },
+ "quote": {
+  "color": "accent",
+  "exit": "fade"
+ },
+ "art": {
+  "layout": "chaotic",
+  "entrance": "slide"
+ },
+ "film": {
+  "jitter": false,
+  "flicker": false
+ }
+}

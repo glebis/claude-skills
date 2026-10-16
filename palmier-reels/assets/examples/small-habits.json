@@ -1,0 +1,60 @@
+{
+ "project": "My Reels",
+ "timeline": "Small habits — v1",
+ "style": "godard-riso",
+ "lang": "en",
+ "workdir": "reel-work",
+ "music": {
+  "path": "music/track.wav",
+  "min_start": 8,
+  "volume_db": -3
+ },
+ "max_seconds": 45,
+ "end_card": {
+  "text": "SMALL STEPS",
+  "ms": 1200
+ },
+ "scenes": [
+  {
+   "card": "WEEK 01",
+   "label": "12 October 2026",
+   "context": "We started with one question:",
+   "text": "why do good intentions fade by Wednesday?",
+   "quote": false,
+   "art": "art/01-candle-a.png",
+   "sfx": "match striking, candle wick catching"
+  },
+  {
+   "card": "FRICTION",
+   "context": "Most plans fail on the first small obstacle, so",
+   "text": "«make the first step smaller than feels serious»",
+   "quote": true,
+   "art": "art/02-door-a.png",
+   "sfx": "heavy door creaking open slightly"
+  },
+  {
+   "card": "RHYTHM",
+   "context": "Then the step needs a fixed place in the day",
+   "text": "«same time, same chair, same cup»",
+   "quote": true,
+   "art": "art/03-cup-a.png",
+   "sfx": "ceramic cup set down on a wooden table"
+  },
+  {
+   "card": "EVIDENCE",
+   "context": "Progress becomes visible only when written down",
+   "text": "«a tick on paper beats a perfect app»",
+   "quote": true,
+   "art": "art/04-pencil-a.png",
+   "sfx": "pencil ticking boxes on paper"
+  },
+  {
+   "card": "NEXT",
+   "context": "Next week:",
+   "text": "what is the smallest version of the habit you keep skipping?",
+   "quote": false,
+   "art": "art/05-spiral-a.png",
+   "sfx": "soft rising shimmer, small bell"
+  }
+ ]
+}

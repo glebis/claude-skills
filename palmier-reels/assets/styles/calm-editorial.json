@@ -1,0 +1,90 @@
+{
+ "canvas": {
+  "width": 1080,
+  "height": 1920,
+  "fps": 30
+ },
+ "layout": {
+  "x": 0.09,
+  "measure_px": 900,
+  "top": 0.118,
+  "gap": 0.028
+ },
+ "type": {
+  "context_pt": 42,
+  "quote_pt_short": 58,
+  "quote_pt_long": 52,
+  "long_quote_words": 12,
+  "context_line_height": 1.1,
+  "natural_line_height": 1.22,
+  "quote_line_spacing": -4,
+  "card_max_pt": 230,
+  "card_case": "upper",
+  "label_pt": 34
+ },
+ "motion": {
+  "easing": [
+   0.16,
+   1,
+   0.3,
+   1
+  ],
+  "hero_ms": 750,
+  "reveal_ms": 550,
+  "header_ms": 200,
+  "card_hold_ms": 600,
+  "exit_frames": 9
+ },
+ "sfx": {
+  "enabled": true
+ },
+ "name": "calm-editorial",
+ "description": "Quiet magazine page: paper, black sans body + black EB Garamond italic emphasis, no cards (soft dissolves through paper), centred art with slow push, no film effects.",
+ "color": {
+  "paper": "#f3f0e8",
+  "ink": "#090909",
+  "accent": "#090909",
+  "on_accent": "#f3f0e8",
+  "muted": "#57534c"
+ },
+ "fonts": {
+  "context": {
+   "family": "Helvetica Neue",
+   "weight": 400
+  },
+  "quote": {
+   "family": "EB Garamond",
+   "weight": 400,
+   "italic": true
+  },
+  "card": {
+   "family": "Helvetica Neue",
+   "weight": 500
+  },
+  "label": {
+   "family": "Helvetica Neue",
+   "weight": 400
+  }
+ },
+ "paper": {
+  "grain_sd": 2.0
+ },
+ "cards": {
+  "enabled": false
+ },
+ "context": {
+  "entrance": "fade"
+ },
+ "quote": {
+  "color": "ink",
+  "exit": "fade"
+ },
+ "art": {
+  "layout": "calm",
+  "entrance": "rise"
+ },
+ "film": {
+  "jitter": false,
+  "flicker": false
+ }
+}

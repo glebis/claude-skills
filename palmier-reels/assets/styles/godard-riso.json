@@ -1,0 +1,99 @@
+{
+ "canvas": {
+  "width": 1080,
+  "height": 1920,
+  "fps": 30
+ },
+ "layout": {
+  "x": 0.09,
+  "measure_px": 900,
+  "top": 0.118,
+  "gap": 0.028
+ },
+ "type": {
+  "context_pt": 40,
+  "quote_pt_short": 56,
+  "quote_pt_long": 50,
+  "long_quote_words": 12,
+  "context_line_height": 1.1,
+  "natural_line_height": 1.42,
+  "quote_line_spacing": -4,
+  "card_max_pt": 230,
+  "card_case": "upper",
+  "label_pt": 34
+ },
+ "motion": {
+  "easing": [
+   0.16,
+   1,
+   0.3,
+   1
+  ],
+  "hero_ms": 750,
+  "reveal_ms": 550,
+  "header_ms": 200,
+  "card_hold_ms": 600,
+  "exit_frames": 9
+ },
+ "sfx": {
+  "enabled": true
+ },
+ "name": "godard-riso",
+ "description": "Warm paper, risograph red/ink, light geometric sans + red EB Garamond italic quotes, colour-card wipes on every cut, chaotic collage art, film gate weave.",
+ "color": {
+  "paper": "#f3f0e8",
+  "ink": "#090909",
+  "accent": "#d01920",
+  "on_accent": "#ffffff",
+  "muted": "#57534c"
+ },
+ "fonts": {
+  "context": {
+   "family": "Manrope",
+   "weight": 300
+  },
+  "quote": {
+   "family": "EB Garamond",
+   "weight": 400,
+   "italic": true
+  },
+  "card": {
+   "family": "Manrope",
+   "weight": 600
+  },
+  "label": {
+   "family": "IBM Plex Mono",
+   "weight": 400
+  }
+ },
+ "paper": {
+  "grain_sd": 3.7
+ },
+ "cards": {
+  "enabled": true,
+  "colors": [
+   "accent",
+   "ink"
+  ],
+  "wipes": "alternate",
+  "word_on": {
+   "accent": "on_accent",
+   "ink": "paper"
+  }
+ },
+ "context": {
+  "entrance": "slide"
+ },
+ "quote": {
+  "color": "accent",
+  "exit": "blur"
+ },
+ "art": {
+  "layout": "chaotic",
+  "entrance": "slide"
+ },
+ "film": {
+  "jitter": true,
+  "flicker": false
+ }
+}
