@@ -29,6 +29,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Added | Skill | What it does |
 | --- | --- | --- |
+| 2026-10 | [firecrawl](./firecrawl/) | Firecrawl search, scrape, extract, and map CLI; key from SOPS with env fallback |
 | 2026-10 | [palmier-reels](./palmier-reels/) | Narrative 9:16 reels in Palmier Pro from a spec + style (presets or design tokens) |
 | 2026-07 | [font-features](./font-features/) | Inspect and apply OpenType features — ligatures, stylistic sets, alternates |
 | 2026-07 | [typography](./typography/) | Deterministic smart quotes, dashes, non-breaking spaces (RU/EN/DE/FR) |
@@ -64,6 +65,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | Skill | What it does |
 | --- | --- |
 | [deep-research](./deep-research/) | OpenAI Deep Research API with prompt enhancement and sourced markdown reports |
+| [firecrawl](./firecrawl/) | Firecrawl CLI: web search, article scraping, structured extraction, site maps |
 | [firecrawl-research](./firecrawl-research/) | Scrape and enrich notes with web sources; scientific writing with citations |
 | [elimination-research](./elimination-research/) | Deterministic scoring, ownership costs, and audit trail for shortlists |
 | [doctorg](./doctorg/) | Evidence-based health research, GRADE-style ratings, Apple Health context |
