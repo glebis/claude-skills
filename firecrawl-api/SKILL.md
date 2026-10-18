@@ -67,10 +67,28 @@ python3 $S run arxiv-org/papers/get_paper --options '{"arxiv_id":"2608.21829"}' 
 - **Unlisted price:** tools with no listed price are refused.
 - **Refusals:** a refused run exits 1 before any billed call. Raise the ceiling explicitly for expensive tools (e.g. Similarweb, up to 550 credits).
 
+**Several paid calls (a sweep or batch): use a ledger.** One ledger file per task enforces a total budget across runs:
+
+```bash
+L=/tmp/sweep-ledger.json
+python3 $S run substack-com/newsletters/post --options '{"url":"…"}' --ledger $L --budget 60   # first run creates it
+python3 $S run stackexchange-com/questions/search --options '{…}' --ledger $L               # later runs reuse it
+python3 $S ledger $L                                                                        # budget, spend, every call
+```
+
+- Each run's ceiling is the lower of the per-run ceiling and the ledger's remaining budget.
+- Successful runs record the `creditsCost` the API reports. Failed runs record the listed price, since a failed call may still be billed.
+- After a failed run, the next run is refused until the cause is fixed. Pass `--after-failure` only once it is understood.
+
+**Before paying, check eligibility for free.** If results must satisfy a criterion such as a date window or language, confirm it from free sources (search snippets, `scrape`, archive pages) before a paid fetch. Test an unfamiliar input format with one call before a batch.
+
+**Known quirks:** read `~/.claude/skills/firecrawl-api/references/alexandria-quirks.md` before using Stack Exchange or Substack tools, and add an entry whenever a contract's text disagrees with what the API accepts.
+
 **Rules:**
 - A tool match is not data. Run `contract` and send exactly the inputs it declares.
 - Each call prints `Request ID (free): …` or `Request ID (billed): …` to stderr. A `run` prints both: the free contract lookup, then the billed execution. Keep stderr apart from stdout JSON (`2>/dev/null` or `2>log`).
-- Never wrap `run` in a retry, a loop, or an `||` fallback: every execution is billed.
+- Never wrap `run` in a retry or an `||` fallback: every execution is billed. Loops over many inputs must use `--ledger`.
+- Free calls (`find-tools`, `contract`, free tools) retry automatically after a 429 rate-limit response; billed calls never do. The limit was 12 requests/minute, and each `run` makes two requests.
 - Per-item errors in `data.alexandria[]` exit non-zero.
 - A `THIRD_PARTY_DATA_TERMS_REQUIRED` error prints the terms URL. An org admin must accept the terms there; a data request does not authorize accepting them.
 

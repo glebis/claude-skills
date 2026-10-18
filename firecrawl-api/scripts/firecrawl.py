@@ -10,6 +10,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 import uuid
 import requests
 
@@ -49,7 +50,11 @@ HEADERS = {
 TERMS_DASHBOARD_URL = "https://www.firecrawl.dev/app/settings?tab=data-sources"
 
 
+LAST_ERROR = [""]  # message of the most recent die(), for ledger records
+
+
 def die(msg):
+    LAST_ERROR[0] = str(msg)
     print(f"ERROR: {msg}", file=sys.stderr)
     sys.exit(1)
 
@@ -59,25 +64,48 @@ def die(msg):
 # at the tool's listed price. All calls go through the v2 API.
 
 
+FREE_RETRIES = 3  # the team limit is 12 requests/minute
+
+
+def retry_delay(response, body):
+    """Seconds to wait after a 429: the API's retry hint plus 1, else 15."""
+    hint = body.get("retry_after_seconds") if isinstance(body, dict) else None
+    hint = hint or response.headers.get("Retry-After")
+    try:
+        return int(float(hint)) + 1
+    except (TypeError, ValueError):
+        return 15
+
+
 def alexandria_call(call, request_id=None, billed=False):
     """POST one Alexandria call {provider, capability, options} to /v2/scrape.
 
     Prints the request ID to stderr before sending so an interrupted request
-    can be traced. Returns the parsed response; never retries.
+    can be traced. A free call that hits the rate limit (429) waits and retries
+    up to FREE_RETRIES times; a billed call is never retried.
     """
     request_id = request_id or str(uuid.uuid4())
     kind = "billed" if billed else "free"
     print(f"Request ID ({kind}): {request_id}", file=sys.stderr)
-    r = requests.post(
-        f"{BASE_V2}/scrape",
-        headers={**HEADERS, "x-request-id": request_id},
-        json={"alexandria": call},
-        timeout=120,
-    )
-    try:
-        body = r.json()
-    except ValueError:
-        die(f"Alexandria call failed ({r.status_code}): {r.text[:500]}")
+    for attempt in range(FREE_RETRIES + 1):
+        r = requests.post(
+            f"{BASE_V2}/scrape",
+            headers={**HEADERS, "x-request-id": request_id},
+            json={"alexandria": call},
+            timeout=120,
+        )
+        try:
+            body = r.json()
+        except ValueError:
+            die(f"Alexandria call failed ({r.status_code}): {r.text[:500]}")
+        if r.status_code != 429:
+            break
+        if billed or attempt == FREE_RETRIES:
+            die(f"Rate limited (429){' on a billed call; not retried' if billed else ''}: "
+                f"{json.dumps(body)[:300]}")
+        delay = retry_delay(r, body)
+        print(f"Rate limited; retrying free call in {delay}s", file=sys.stderr)
+        time.sleep(delay)
     if body.get("code") == "THIRD_PARTY_DATA_TERMS_REQUIRED":
         url = (body.get("requiresAction") or {}).get("url") or TERMS_DASHBOARD_URL
         die(f"Provider terms not accepted. An org admin must review and accept them at {url}. "
@@ -172,17 +200,68 @@ def estimate_cost(entry, options):
     return cost * limit if numeric and limit > 0 else None
 
 
+def resolve_ceiling(max_credits=None):
+    """Per-run ceiling: explicit value, else FIRECRAWL_MAX_CREDITS, else the default."""
+    if max_credits is not None:
+        return max_credits
+    try:
+        return float(os.getenv("FIRECRAWL_MAX_CREDITS", DEFAULT_MAX_CREDITS))
+    except ValueError:
+        return DEFAULT_MAX_CREDITS
+
+
+# --- Session ledger -----------------------------------------------------------
+# A JSON file shared by a series of `run` calls: it enforces a total budget,
+# records what each call cost, and blocks further runs after a failure until
+# someone has looked at it.
+
+
+def load_ledger(path, budget=None):
+    """Read a ledger, creating it when `budget` is given. Returns the dict."""
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            ledger = json.load(f)
+        if budget is not None and budget != ledger["budget"]:
+            die(f"Ledger {path} already has budget {ledger['budget']:g}; "
+                "start a new ledger file to change it")
+        return ledger
+    if budget is None:
+        die(f"Ledger {path} does not exist; pass --budget N to create it")
+    return {"budget": budget, "calls": []}
+
+
+def ledger_spent(ledger):
+    return sum(c["credits"] for c in ledger["calls"])
+
+
+def record_call(path, ledger, address, credits, status, detail=""):
+    ledger["calls"].append({
+        "address": address, "credits": credits, "status": status,
+        "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), **({"detail": detail[-300:]} if detail else {}),
+    })
+    tmp = f"{path}.tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(ledger, f, indent=1)
+    os.replace(tmp, path)
+
+
+def ledger_summary(path):
+    """Print budget, spend, and every recorded call."""
+    ledger = load_ledger(path)
+    spent = ledger_spent(ledger)
+    print(f"Budget {ledger['budget']:g} · spent {spent:g} · remaining {ledger['budget'] - spent:g}")
+    for c in ledger["calls"]:
+        print(f"  {c['at']}  {c['status']:<6} {c['credits']:>5g}  {c['address']}"
+              + (f"  ({c['detail'][:80]})" if c.get("detail") else ""))
+
+
 def allow_spend(entry, options, max_credits):
     """Decide whether a billed Alexandria run may proceed.
 
     Ceiling: --max-credits, else FIRECRAWL_MAX_CREDITS, else DEFAULT_MAX_CREDITS.
     A run is refused when its estimate exceeds the ceiling or cannot be bounded.
     """
-    if max_credits is None:
-        try:
-            max_credits = float(os.getenv("FIRECRAWL_MAX_CREDITS", DEFAULT_MAX_CREDITS))
-        except ValueError:
-            max_credits = DEFAULT_MAX_CREDITS
+    max_credits = resolve_ceiling(max_credits)
     estimate = estimate_cost(entry, options)
     if estimate is None:
         print("Cost cannot be bounded: set a numeric `limit` in --options for a per-record tool.",
@@ -195,16 +274,40 @@ def allow_spend(entry, options, max_credits):
     return True
 
 
-def run(address, options, max_credits=None):
-    """Execute a provider capability. Billed at the tool's listed price."""
+def run(address, options, max_credits=None, ledger_path=None, budget=None, after_failure=False):
+    """Execute a provider capability. Billed at the tool's listed price.
+
+    With ledger_path, the run must also fit the ledger's remaining budget, is
+    refused after a recorded failure (unless after_failure), and is recorded:
+    the reported creditsCost on success, the listed price on failure (a failed
+    call may still be billed, so the ledger stays conservative).
+    """
     provider, _, capability = address.partition("/")
+    ledger = load_ledger(ledger_path, budget) if ledger_path else None
+    if ledger:
+        failed = [c for c in ledger["calls"] if c["status"] == "failed"]
+        if failed and not after_failure:
+            die(f"Ledger has a failed call ({failed[-1]['address']}: {failed[-1].get('detail', '')[:120]}). "
+                "Fix the cause before spending more; pass --after-failure to continue anyway")
     entry = contract(address)
-    if not allow_spend(entry, options, max_credits):
+    ceiling = resolve_ceiling(max_credits)
+    if ledger:
+        ceiling = min(ceiling, ledger["budget"] - ledger_spent(ledger))
+    if not allow_spend(entry, options, ceiling):
         die(f"Aborted: {address} costs {entry.get('creditsCost')} credits"
-            f"{' per record' if entry.get('perRecord') else ''}; raise --max-credits to allow")
-    body = alexandria_call({"provider": provider, "capability": capability, "options": options},
-                           billed=True)
-    items = alexandria_items(body)
+            f"{' per record' if entry.get('perRecord') else ''}; ceiling for this run is {ceiling:g}"
+            f"{' (ledger remaining)' if ledger else ''}")
+    try:
+        body = alexandria_call({"provider": provider, "capability": capability, "options": options},
+                               billed=True)
+        items = alexandria_items(body)
+    except SystemExit:
+        if ledger:
+            record_call(ledger_path, ledger, address, estimate_cost(entry, options) or 0, "failed",
+                        LAST_ERROR[0] or "unknown error")
+        raise
+    if ledger:
+        record_call(ledger_path, ledger, address, body.get("data", {}).get("creditsCost") or 0, "ok")
     print(json.dumps({"creditsCost": body.get("data", {}).get("creditsCost"),
                       "results": [i.get("data") for i in items]},
                      indent=2, ensure_ascii=False))
@@ -390,7 +493,14 @@ def main():
     p_run.add_argument("address", help="provider/capability")
     p_run.add_argument("--options", default="{}", help="Input JSON matching the contract")
     p_run.add_argument("--max-credits", type=float, help="Spend ceiling for this run")
+    p_run.add_argument("--ledger", help="Session ledger JSON: shared budget, spend record, stop after failure")
+    p_run.add_argument("--budget", type=float, help="Total budget when creating a new --ledger")
+    p_run.add_argument("--after-failure", action="store_true", help="Run even though the ledger has a failed call")
     p_run.add_argument("-o", "--output", help="Save to file")
+
+    # Ledger summary (no API calls)
+    p_ledger = sub.add_parser("ledger", help="Show a session ledger's budget and calls")
+    p_ledger.add_argument("path", help="Ledger JSON file")
 
     args = parser.parse_args()
 
@@ -431,7 +541,11 @@ def main():
                 die(f"--options is not valid JSON: {e}")
             if not isinstance(options, dict):
                 die("--options must be a JSON object")
-            run(args.address, options, args.max_credits)
+            if args.budget is not None and not args.ledger:
+                die("--budget needs --ledger")
+            run(args.address, options, args.max_credits, args.ledger, args.budget, args.after_failure)
+        elif args.command == "ledger":
+            ledger_summary(args.path)
         succeeded = True
     finally:
         if output:
