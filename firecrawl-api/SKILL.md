@@ -1,130 +1,96 @@
 ---
 name: firecrawl-api
-description: Standalone Python script for the Firecrawl API (search, scrape, extract, map, plus Alexandria structured-data tools: discover, contract, run) that reads FIRECRAWL_API_KEY from SOPS with env fallback. Use when the official firecrawl CLI is unavailable or broken, or for scripted pipelines that need a plain Python dependency-light client. For normal web work prefer the official `firecrawl` CLI skill. Never use beautifulsoup.
+description: This skill should be used for scripted Firecrawl API access from a dependency-light Python script (search, scrape, extract, map) and for Firecrawl Alexandria structured-data tools (discover, inspect contract, run with a spend ceiling), including a local catalog of all Alexandria providers and tools. Use it when the official `firecrawl` CLI skill is unavailable or broken, when a pipeline needs a plain Python client, or when browsing the Alexandria catalog offline. The API key is read from SOPS with env fallback. For ordinary interactive web work prefer the official `firecrawl` CLI skill. Never use beautifulsoup.
 ---
 
 # Firecrawl API script (firecrawl-api)
 
-Search, scrape, and extract web content via the Firecrawl API.
+A standalone Python client for the Firecrawl API, with Alexandria support and a dated local catalog of its tools.
 
 ## When to Use
 
-- Scraping article or page content from a URL
-- Searching the web for information
-- Extracting structured data from web pages
-- Mapping all URLs on a site
-- Any web scraping task (this replaces beautifulsoup entirely)
+- The official `firecrawl` CLI is missing, broken, or not allowed in the environment.
+- A script or pipeline needs a plain Python client instead of a Node CLI.
+- A task needs structured records from an Alexandria provider, with an enforced per-run spend ceiling.
+- Looking up which Alexandria providers and tools exist, without spending credits or network calls.
 
-## Commands
+For everyday searching and scraping in an interactive session, use the official `firecrawl` skill instead.
 
-All commands read `FIRECRAWL_API_KEY` from SOPS (`~/.claude/skills/secrets.enc.yaml`) first, falling back to the environment variable if sops, the file, or the key is unavailable.
+## Setup
 
-### Search the web
+`FIRECRAWL_API_KEY` is read from SOPS (`~/.claude/skills/secrets.enc.yaml`) first, then from the environment if sops, the file, or the key is unavailable. The only dependency is `requests`. `sops` is optional.
 
-```bash
-python3 ~/.claude/skills/firecrawl-api/scripts/firecrawl.py search "query" -n 5
-```
-
-Options:
-- `-n` / `--limit` — number of results (default: 5)
-- `-f` / `--format` — `markdown` (default) or `json`
-- `-o` / `--output` — save to file
-
-### Scrape a URL
-
-```bash
-python3 ~/.claude/skills/firecrawl-api/scripts/firecrawl.py scrape "https://example.com/article"
-```
-
-Options:
-- `-f` / `--format` — `markdown` (default) or `json`
-- `-o` / `--output` — save to file
-
-### Extract structured data
-
-```bash
-python3 ~/.claude/skills/firecrawl-api/scripts/firecrawl.py extract "https://example.com" -p "Extract all product names and prices"
-```
-
-Options:
-- `-p` / `--prompt` — extraction prompt (required)
-- `-f` / `--format` — `markdown` or `json` (default)
-- `-o` / `--output` — save to file
-
-### Map a site (get all URLs)
-
-```bash
-python3 ~/.claude/skills/firecrawl-api/scripts/firecrawl.py map "https://example.com" -n 100
-```
-
-Options:
-- `-n` / `--limit` — max URLs (default: 100)
-- `-o` / `--output` — save to file
-
-## Alexandria (structured data providers)
-
-[Alexandria](https://www.firecrawl.dev/alexandria) is Firecrawl's catalogue of data providers that return typed, sourced records (e.g. arXiv papers, podcast episodes). Use it when the task needs the same fields across many entities, exact figures, or provenance; use plain search/scrape when web pages already answer the question. Requires an API key on a team with Alexandria access (the keyless tier has none).
-
-Flow: discover → inspect contract → run. **Discovery, find-tools, and contract are free. `run` is billed at the tool's listed `creditsCost`.**
+All commands below use:
 
 ```bash
 S=~/.claude/skills/firecrawl-api/scripts/firecrawl.py
+```
+
+`-o FILE` saves stdout to FILE only if the command succeeds. On failure the file is left unchanged and nothing is reported as saved.
+
+## Web commands (v1 API)
+
+```bash
+python3 $S search "query" -n 5 [-f json] [-o out.md]      # web search with page markdown
+python3 $S scrape "https://example.com/article" [-o page.md]
+python3 $S extract "https://a.com" "https://b.com" -p "Get company name and founding year"
+python3 $S map "https://docs.example.com" -n 500 -o sitemap.txt
+```
+
+`extract` defaults to JSON output. Timeouts: 120 s, or 300 s for `extract`.
+
+## Alexandria (structured data providers)
+
+[Alexandria](https://www.firecrawl.dev/alexandria) is Firecrawl's catalogue of data providers that return typed, sourced records (e.g. arXiv papers, podcast episodes). Use it when a task needs the same fields across many entities, exact figures, or provenance. Use web search or scrape when pages already answer the question. It requires an API key on a team with Alexandria access; the keyless tier has none.
+
+Flow: check the local catalog → inspect the contract → run.
+
+```bash
 python3 $S tools "arXiv paper metadata by ID"                  # free semantic discovery
-python3 $S tools "podcast episodes about AI agents" --web      # + web results (billed)
 python3 $S find-tools --providers arxiv-org --level tools      # free catalogue browse
 python3 $S find-tools --urls https://arxiv.org                 # tools matched to a website
 python3 $S find-tools --categories companies --level providers # providers in a category
 python3 $S find-tools --request '<next JSON from a result>'    # follow a `next` link
-python3 $S contract arxiv-org/papers/get_paper                 # inputs, response, price
-python3 $S run arxiv-org/papers/get_paper --options '{"arxiv_id":"2608.21829"}' --max-credits 10
+python3 $S contract arxiv-org/papers/get_paper                 # inputs, response, price (free)
+python3 $S run arxiv-org/papers/get_paper --options '{"arxiv_id":"2608.21829"}'   # billed
 ```
 
-### Local catalog
+**Costs:**
+- `tools`, `find-tools`, and `contract` are free.
+- `run` is billed at the tool's listed `creditsCost`.
+- `tools --web` also returns web results. These are billed as a normal search and are **not** covered by the run ceiling.
 
-[references/alexandria-catalog.md](references/alexandria-catalog.md) lists every category, provider, and tool with its listed price; [references/alexandria-catalog.json](references/alexandria-catalog.json) holds the same data for scripts. Grep it before running discovery, e.g. `grep -n -i "podcast" references/alexandria-catalog.md`. It is a dated snapshot: prices and coverage change, so confirm with `contract` before `run`. Refresh it (free, about 6 minutes because of the 12 requests/minute limit) with:
+**Spend ceiling for `run`.** `run` looks up the contract first (free), then:
+- **Ceiling:** `--max-credits N`, else env `FIRECRAWL_MAX_CREDITS`, else 25 credits. The default covers 1,773 of the 1,834 flat-priced tools in the 2026-10-18 catalog.
+- **Flat-priced tools:** refused if the listed price exceeds the ceiling.
+- **Per-record tools:** estimated as price × the numeric `limit` in `--options`. Refused when there is no `limit`, because the cost cannot be bounded, or when the estimate exceeds the ceiling.
+- **Unlisted price:** tools with no listed price are refused.
+- **Refusals:** a refused run exits 1 before any billed call. Raise the ceiling explicitly for expensive tools (e.g. Similarweb, up to 550 credits).
+
+**Rules:**
+- A tool match is not data. Run `contract` and send exactly the inputs it declares.
+- Each call prints `Request ID (free): …` or `Request ID (billed): …` to stderr. A `run` prints both: the free contract lookup, then the billed execution. Keep stderr apart from stdout JSON (`2>/dev/null` or `2>log`).
+- Never wrap `run` in a retry, a loop, or an `||` fallback: every execution is billed.
+- Per-item errors in `data.alexandria[]` exit non-zero.
+- A `THIRD_PARTY_DATA_TERMS_REQUIRED` error prints the terms URL. An org admin must accept the terms there; a data request does not authorize accepting them.
+
+## Local catalog
+
+- `~/.claude/skills/firecrawl-api/references/alexandria-catalog.md` (about 66k words): category index, then one table per provider with each tool's listed price and use.
+- `~/.claude/skills/firecrawl-api/references/alexandria-catalog.json`: the same data for `jq`.
+
+Never read the Markdown file whole. Search it:
+
+```bash
+C=~/.claude/skills/firecrawl-api/references
+grep -n -i "podcast" $C/alexandria-catalog.md | head -20                 # find providers/tools by topic
+sed -n '/^## ai-models$/,/^## apps$/p' $C/alexandria-catalog.md | head -80  # read one category
+jq -r '.tools[] | select(.provider=="arxiv-org") | "\(.capability)\t\(.creditsCost)"' $C/alexandria-catalog.json
+jq -r '.tools[] | select(.perRecord) | "\(.provider)/\(.capability) \(.creditsCost)/record"' $C/alexandria-catalog.json
+```
+
+The catalog is a dated snapshot (see its first lines), and prices and coverage change: confirm with `contract` before `run`. To refresh it (free, about 6 minutes because of the 12 requests/minute limit), run:
 
 ```bash
 python3 ~/.claude/skills/firecrawl-api/scripts/build_catalog.py
 ```
-
-Rules:
-- A tool match is not data. Run `contract` and send exactly the inputs it declares.
-- `run` looks up the contract first, then applies a spend ceiling before executing:
-  - Ceiling: `--max-credits N`, else env `FIRECRAWL_MAX_CREDITS`, else **25 credits**. The default covers 1,773 of the 1,834 flat-priced tools in the 2026-10-18 catalog.
-  - Flat-priced tools: refused if the listed price exceeds the ceiling.
-  - Per-record tools: estimated as price × the numeric `limit` in `--options`; refused if there is no `limit` (the cost cannot be bounded) or the estimate exceeds the ceiling.
-  - Tools with no listed price: refused.
-  - A refusal exits 1 before any billed call. Raise the ceiling explicitly for expensive tools (e.g. Similarweb at 550).
-- Every call prints a `Request ID` to stderr. Keep stderr separate from JSON on stdout (`2>/dev/null` or `2>log`).
-- Never wrap `run` in a retry or `||` fallback: each execution is billed.
-- Per-item errors in `data.alexandria[]` exit non-zero. A `THIRD_PARTY_DATA_TERMS_REQUIRED` error prints the terms URL: an org admin must accept them, and a data request does not authorize accepting terms.
-
-## Common Patterns
-
-**Scrape an article and save:**
-```bash
-python3 ~/.claude/skills/firecrawl-api/scripts/firecrawl.py scrape "https://blog.example.com/post" -o article.md
-```
-
-**Search and save results as JSON:**
-```bash
-python3 ~/.claude/skills/firecrawl-api/scripts/firecrawl.py search "topic" -n 10 -f json -o results.json
-```
-
-**Extract data from multiple URLs:**
-```bash
-python3 ~/.claude/skills/firecrawl-api/scripts/firecrawl.py extract "https://a.com" "https://b.com" -p "Get company name and founding year"
-```
-
-**Map a docs site:**
-```bash
-python3 ~/.claude/skills/firecrawl-api/scripts/firecrawl.py map "https://docs.example.com" -n 500 -o sitemap.txt
-```
-
-## Dependencies
-
-```bash
-pip install requests
-```
-
-No other dependencies required. `sops` is optional; without it the `FIRECRAWL_API_KEY` env var is used.

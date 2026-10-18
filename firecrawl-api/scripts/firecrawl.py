@@ -4,6 +4,7 @@ Firecrawl CLI — search, scrape, and extract web content via Firecrawl API.
 """
 
 import argparse
+import io
 import json
 import os
 import shutil
@@ -58,14 +59,15 @@ def die(msg):
 # at the tool's listed price. All calls go through the v2 API.
 
 
-def alexandria_call(call, request_id=None):
+def alexandria_call(call, request_id=None, billed=False):
     """POST one Alexandria call {provider, capability, options} to /v2/scrape.
 
     Prints the request ID to stderr before sending so an interrupted request
     can be traced. Returns the parsed response; never retries.
     """
     request_id = request_id or str(uuid.uuid4())
-    print(f"Request ID: {request_id}", file=sys.stderr)
+    kind = "billed" if billed else "free"
+    print(f"Request ID ({kind}): {request_id}", file=sys.stderr)
     r = requests.post(
         f"{BASE_V2}/scrape",
         headers={**HEADERS, "x-request-id": request_id},
@@ -98,6 +100,9 @@ def alexandria_items(body):
 def tools(query, limit=5, with_web=False, fmt="markdown"):
     """Semantic tool discovery. Free unless --web adds billed web results."""
     sources = ["web", "alexandria"] if with_web else ["alexandria"]
+    if with_web:
+        print("Note: --web results are billed as a normal search (not covered by the run ceiling).",
+              file=sys.stderr)
     r = requests.post(
         f"{BASE_V2}/search",
         headers=HEADERS,
@@ -197,7 +202,8 @@ def run(address, options, max_credits=None):
     if not allow_spend(entry, options, max_credits):
         die(f"Aborted: {address} costs {entry.get('creditsCost')} credits"
             f"{' per record' if entry.get('perRecord') else ''}; raise --max-credits to allow")
-    body = alexandria_call({"provider": provider, "capability": capability, "options": options})
+    body = alexandria_call({"provider": provider, "capability": capability, "options": options},
+                           billed=True)
     items = alexandria_items(body)
     print(json.dumps({"creditsCost": body.get("data", {}).get("creditsCost"),
                       "results": [i.get("data") for i in items]},
@@ -210,6 +216,7 @@ def search(query, limit=5, fmt="markdown"):
     r = requests.post(
         f"{BASE}/search",
         headers=HEADERS,
+        timeout=120,
         json={
             "query": query,
             "limit": limit,
@@ -249,6 +256,7 @@ def scrape(url, fmt="markdown"):
     r = requests.post(
         f"{BASE}/scrape",
         headers=HEADERS,
+        timeout=120,
         json={
             "url": url,
             "formats": ["markdown"],
@@ -280,6 +288,7 @@ def extract(urls, prompt, fmt="markdown"):
     r = requests.post(
         f"{BASE}/extract",
         headers=HEADERS,
+        timeout=300,
         json={
             "urls": urls,
             "prompt": prompt,
@@ -303,6 +312,7 @@ def map_site(url, limit=100):
     r = requests.post(
         f"{BASE}/map",
         headers=HEADERS,
+        timeout=120,
         json={"url": url, "limit": limit},
     )
     if r.status_code != 200:
@@ -387,10 +397,13 @@ def main():
     def csv(value):
         return [v.strip() for v in value.split(",") if v.strip()] if value else None
 
-    # Redirect stdout to file if --output specified
+    # With --output, buffer stdout and write the file only if the command succeeds,
+    # so a failed or aborted call never leaves an empty or partial file behind.
     original_stdout = sys.stdout
-    if hasattr(args, "output") and args.output:
-        sys.stdout = open(args.output, "w", encoding="utf-8")
+    output = getattr(args, "output", None)
+    if output:
+        sys.stdout = io.StringIO()
+    succeeded = False
 
     try:
         if args.command == "search":
@@ -419,11 +432,17 @@ def main():
             if not isinstance(options, dict):
                 die("--options must be a JSON object")
             run(args.address, options, args.max_credits)
+        succeeded = True
     finally:
-        if sys.stdout != original_stdout:
-            sys.stdout.close()
+        if output:
+            buffered = sys.stdout.getvalue()
             sys.stdout = original_stdout
-            print(f"Saved to {args.output}")
+            if succeeded:
+                with open(output, "w", encoding="utf-8") as f:
+                    f.write(buffered)
+                print(f"Saved to {output}")
+            else:
+                print(f"Not saved: command failed, {output} left unchanged", file=sys.stderr)
 
 
 if __name__ == "__main__":
