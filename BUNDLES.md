@@ -11,7 +11,7 @@ telegram, telegram-telethon, telegram-post, tg-responder, gws, gmail, zoom
 All your inboxes from the terminal.
 
 ## Bundle 3: Research
-deep-research, firecrawl, firecrawl-research, doctorg, chrome-history, google-image-search
+deep-research, firecrawl-api, firecrawl-research, doctorg, chrome-history, google-image-search
 
 Pull information in from every direction.
 
