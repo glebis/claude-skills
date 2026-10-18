@@ -171,12 +171,13 @@ def get_deep_research_path() -> Path:
     )
 
 
-def run_deep_research(prompt_file: Path, model: str = "o4-mini-deep-research", timeout: int = 1800) -> None:
+def run_deep_research(prompt_file: Path, model: str | None = None, timeout: int = 3600,
+                      output_dir: Path | None = None) -> None:
     """Execute deep_research.py with the research prompt."""
     deep_research_py = get_deep_research_path()
 
     print(f"\n🚀 Running Deep Research")
-    print(f"   Model: {model}")
+    print(f"   Model: {model or 'runner default (DEEP_RESEARCH_MODEL or gpt-5.6-sol)'}")
     print(f"   Timeout: {timeout} seconds ({timeout // 60} minutes)")
     print(f"   Estimated time: 10-20 minutes")
     print(f"\n⏳ Research in progress... (this may take a while)\n")
@@ -186,11 +187,13 @@ def run_deep_research(prompt_file: Path, model: str = "o4-mini-deep-research", t
         str(deep_research_py),
         "--prompt-file",
         str(prompt_file),
-        "--model",
-        model,
         "--timeout",
         str(timeout),
     ]
+    if model:
+        cmd += ["--model", model]
+    # Request, raw response, and report land next to the saved prompt.
+    cmd += ["--output-dir", str(output_dir or prompt_file.parent)]
 
     try:
         subprocess.run(cmd, check=True)
@@ -219,14 +222,14 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument(
         "--model",
-        default="o4-mini-deep-research",
-        help="Model to use (default: o4-mini-deep-research)",
+        default=None,
+        help="Model to use (default: the runner's, i.e. DEEP_RESEARCH_MODEL or gpt-5.6-sol)",
     )
     parser.add_argument(
         "--timeout",
         type=int,
-        default=1800,
-        help="Request timeout in seconds (default: 1800)",
+        default=3600,
+        help="Maximum wait in seconds (default: 3600)",
     )
     parser.add_argument(
         "--output-dir",
@@ -250,7 +253,7 @@ def main(argv: list[str] | None = None) -> None:
     prompt_file = save_research_prompt(prompt, args.output_dir)
 
     # Run deep research
-    run_deep_research(prompt_file, args.model, args.timeout)
+    run_deep_research(prompt_file, args.model, args.timeout, args.output_dir)
 
 
 if __name__ == "__main__":

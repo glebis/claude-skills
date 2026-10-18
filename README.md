@@ -64,7 +64,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Skill | What it does |
 | --- | --- |
-| [deep-research](./deep-research/) | OpenAI Deep Research API with prompt enhancement and sourced markdown reports |
+| [deep-research](./deep-research/) | OpenAI deep research (Responses API + web search) with prompt enhancement; saves raw response JSON, resumable background runs |
 | [firecrawl-api](./firecrawl-api/) | Firecrawl API script: search, scrape, extract, map, Alexandria discover/contract/run, local tool catalog |
 | [firecrawl-research](./firecrawl-research/) | Scrape and enrich notes with web sources; scientific writing with citations |
 | [elimination-research](./elimination-research/) | Deterministic scoring, ownership costs, and audit trail for shortlists |

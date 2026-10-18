@@ -7,7 +7,7 @@ description: This skill should be used when conducting comprehensive research on
 
 ## Purpose
 
-This skill enables comprehensive, internet-enabled research on any topic using OpenAI's Deep Research API (o4-mini-deep-research model). It intelligently enhances user research prompts through interactive clarifying questions, ensures research parameters are saved for reproducibility, and executes deep research with full web search capabilities.
+This skill enables comprehensive, internet-enabled research on any topic using the OpenAI Responses API with web search (default model `gpt-5.6-sol`, override with `--model` or `DEEP_RESEARCH_MODEL`). `o3-deep-research` and `o4-mini-deep-research` were scheduled for shutdown on 2026-07-23 and are no longer the default. It intelligently enhances user research prompts through interactive clarifying questions, ensures research parameters are saved for reproducibility, and executes deep research with full web search capabilities.
 
 ## When to Use This Skill
 
@@ -48,7 +48,7 @@ YES → Ask Enhancement Questions → Collect Answers
 ## How Claude Should Use This Skill
 
 **Important for Token Efficiency:**
-Deep research takes 10-20 minutes to complete. The skill is designed to run synchronously (blocking) without intermediate status checks. This approach minimizes token usage during the wait. Claude should:
+Deep research takes 10-20 minutes or more. The runner uses background mode and polls quietly every 15 s; the command blocks until the run ends, so no status checks are needed from Claude. Claude should:
 1. Start the research
 2. Wait for completion (subprocess blocks automatically)
 3. Present final results once complete
@@ -86,19 +86,25 @@ The script automatically:
 4. **Saves prompt file**: Writes enhanced prompt to `research_prompt_YYYYMMDD_HHMMSS.txt` for reproducibility
 
 5. **Executes deep research**: Runs the core `deep_research.py` script with:
-   - Model: o4-mini-deep-research (configurable via `--model`)
-   - Timeout: 1800 seconds / 30 minutes (configurable via `--timeout`)
+   - Model: `gpt-5.6-sol` with reasoning `high` (configurable via `--model`, `--reasoning`, or env `DEEP_RESEARCH_MODEL`)
+   - Maximum wait: 3600 seconds / 60 minutes (configurable via `--timeout`)
    - Tools: Web search enabled by default
 
 ### Step 4: Present Results to User
 
 The script automatically:
-- **Saves markdown file**: Research report with sources saved to `research_report_YYYYMMDD_HHMMSS.md`
+- **Saves raw JSON first**: `research_response_YYYYMMDD_HHMMSS.json` holds the exact API response bytes (citation spans, web-search step log). It is written as soon as the run is created, and again at every poll, so nothing paid for is lost.
+- **Saves the request**: `research_request_…json` (model, tools, prompt; never the key)
+- **Saves markdown file**: `research_report_YYYYMMDD_HHMMSS.md`, with footer lines for model, response ID, and raw-response file
 - **Prints to terminal**: Complete research report with markdown formatting
-- **Lists web sources**: Numbered URLs referenced in the research
+- **Lists consulted sources**: `## Sources consulted (web search)` lists every URL the web-search steps searched or opened. These are *consulted*, not *cited*; citations are the inline links.
 - **Confirms completion**: Path where research files were saved
 
-**Token Efficiency Note**: Deep research takes 10-20 minutes. The script runs synchronously (blocking) without intermediate polling, minimizing token usage during the wait.
+**Token Efficiency Note**: The script blocks while it polls in the background, so Claude waits on one command.
+
+**Interrupted runs**: the response ID is printed and saved before waiting. Collect a run that is still going, or one whose wait timed out, with `python3 assets/deep_research.py --resume <response_id> --output-dir <dir>`. This sends no new (paid) request.
+
+**Importing into a vault**: import the raw JSON, not the Markdown, with the research-runs skill: `python3 ~/.claude/skills/research-runs/scripts/research_run.py import research_response_….json --vault <vault> --adapter openai-json --provider openai --surface api --prompt research_prompt_….txt`. The JSON keeps citation spans and consulted-but-uncited pages.
 
 ## Bundled Resources
 
@@ -122,9 +128,9 @@ The orchestration script that handles:
 ```
 python3 run_deep_research.py <prompt> [OPTIONS]
   --no-enhance              Skip enhancement questions
-  --model <model>           Model to use (default: o4-mini-deep-research)
-  --timeout <seconds>       Timeout in seconds (default: 1800)
-  --output-dir <path>       Where to save prompt file
+  --model <model>           Model to use (default: runner default, gpt-5.6-sol)
+  --timeout <seconds>       Maximum wait in seconds (default: 3600)
+  --output-dir <path>       Where to save the prompt, request, raw response, and report
 ```
 
 #### `assets/deep_research.py`
@@ -212,9 +218,9 @@ Every research execution:
 ## Requirements
 
 - Python 3.7+
-- OpenAI API key (set via `OPENAI_API_KEY` environment variable or `.env` file)
+- OpenAI API key: read from SOPS (`~/.claude/skills/secrets.enc.yaml`) first, then `OPENAI_API_KEY` or a `.env` file
 - Internet connection (for web search)
-- 30+ minutes for research completion (configurable timeout)
+- Up to 60 minutes for research completion (configurable `--timeout`; use `--resume` beyond that)
 
 ## Token-Efficient Workflow
 
@@ -238,10 +244,12 @@ The skill automatically generates and saves files:
 
 **Generated files:**
 - `research_prompt_YYYYMMDD_HHMMSS.txt` - Enhanced research prompt with parameters
-- `research_report_YYYYMMDD_HHMMSS.md` - Complete markdown report with:
-  - Research sections (historical, cognitive, cultural, etc.)
-  - Numbered source citations
-  - Metadata footer (date, model)
+- `research_request_YYYYMMDD_HHMMSS.json` - What was sent: model, tools, reasoning, prompt (no key)
+- `research_response_YYYYMMDD_HHMMSS.json` - Exact raw API response: report text, `url_citation` annotations with character spans, `web_search_call` steps with consulted sources. **Canonical record; import this one.**
+- `research_report_YYYYMMDD_HHMMSS.md` - Readable report with:
+  - Inline citation links
+  - `## Sources consulted (web search)`: every URL searched or opened, cited or not
+  - Metadata footer (date, model, response ID, raw-response file name)
 
 **Customization options:**
 ```bash
@@ -272,9 +280,9 @@ python3 deep_research.py --prompt-file prompt.txt --no-save
 
 ### Research Timeout
 
-**Error:** Request times out after 30 minutes
+**Error:** "Still in_progress after …s. Resume later with: --resume <id>"
 
 **Solution:**
-- Increase timeout: `--timeout 5400` (90 minutes)
+- Collect it later: `--resume <id>` (no new charge), or increase `--timeout 5400` (90 minutes)
 - Simplify prompt to reduce research scope
 - Run during off-peak hours for potentially faster API responses
