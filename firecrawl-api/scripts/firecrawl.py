@@ -148,15 +148,45 @@ def contract(address):
     return entries[0]
 
 
+DEFAULT_MAX_CREDITS = 25  # covers most single lookups (median listed price: 5)
+
+
+def estimate_cost(entry, options):
+    """Estimated credits for one run, or None if it cannot be bounded.
+
+    Per-record tools cost price x records; the request's `limit` is the only
+    upper bound known before paying, so without it the cost is unknown.
+    """
+    cost = entry.get("creditsCost")
+    if cost is None:
+        return None
+    if not entry.get("perRecord"):
+        return cost
+    limit = options.get("limit")
+    numeric = isinstance(limit, (int, float)) and not isinstance(limit, bool)
+    return cost * limit if numeric and limit > 0 else None
+
+
 def allow_spend(entry, options, max_credits):
     """Decide whether a billed Alexandria run may proceed.
 
-    entry: the contract from contract(), incl. creditsCost and perRecord.
-    options: the input JSON about to be sent (may contain a limit).
-    max_credits: the --max-credits value, or None if not given.
-    Return True to run, or False to abort.
+    Ceiling: --max-credits, else FIRECRAWL_MAX_CREDITS, else DEFAULT_MAX_CREDITS.
+    A run is refused when its estimate exceeds the ceiling or cannot be bounded.
     """
-    # TODO(user): spend policy. See the request in chat.
+    if max_credits is None:
+        try:
+            max_credits = float(os.getenv("FIRECRAWL_MAX_CREDITS", DEFAULT_MAX_CREDITS))
+        except ValueError:
+            max_credits = DEFAULT_MAX_CREDITS
+    estimate = estimate_cost(entry, options)
+    if estimate is None:
+        print("Cost cannot be bounded: set a numeric `limit` in --options for a per-record tool.",
+              file=sys.stderr)
+        return False
+    if estimate > max_credits:
+        print(f"Estimated {estimate:g} credits exceeds the {max_credits:g}-credit ceiling.",
+              file=sys.stderr)
+        return False
     return True
 
 

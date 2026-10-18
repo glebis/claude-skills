@@ -89,7 +89,12 @@ python3 ~/.claude/skills/firecrawl-api/scripts/build_catalog.py
 
 Rules:
 - A tool match is not data. Run `contract` and send exactly the inputs it declares.
-- `run` looks up the contract first, then applies the spend policy in `allow_spend()` before executing.
+- `run` looks up the contract first, then applies a spend ceiling before executing:
+  - Ceiling: `--max-credits N`, else env `FIRECRAWL_MAX_CREDITS`, else **25 credits**. The default covers 1,773 of the 1,834 flat-priced tools in the 2026-10-18 catalog.
+  - Flat-priced tools: refused if the listed price exceeds the ceiling.
+  - Per-record tools: estimated as price × the numeric `limit` in `--options`; refused if there is no `limit` (the cost cannot be bounded) or the estimate exceeds the ceiling.
+  - Tools with no listed price: refused.
+  - A refusal exits 1 before any billed call. Raise the ceiling explicitly for expensive tools (e.g. Similarweb at 550).
 - Every call prints a `Request ID` to stderr. Keep stderr separate from JSON on stdout (`2>/dev/null` or `2>log`).
 - Never wrap `run` in a retry or `||` fallback: each execution is billed.
 - Per-item errors in `data.alexandria[]` exit non-zero. A `THIRD_PARTY_DATA_TERMS_REQUIRED` error prints the terms URL: an org admin must accept them, and a data request does not authorize accepting terms.
