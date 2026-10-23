@@ -29,6 +29,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Added | Skill | What it does |
 | --- | --- | --- |
+| 2026-10 | [cms-migration-checklist](./cms-migration-checklist/) | Gated WordPress → Next.js + Payload migration checklist: audit, import reconciliation, URL parity, cutover |
 | 2026-10 | [firecrawl-api](./firecrawl-api/) | Firecrawl API script with Alexandria structured-data tools and a 1,850-tool catalog; key from SOPS |
 | 2026-10 | [palmier-reels](./palmier-reels/) | Narrative 9:16 reels in Palmier Pro from a spec + style (presets or design tokens) |
 | 2026-07 | [font-features](./font-features/) | Inspect and apply OpenType features — ligatures, stylistic sets, alternates |
@@ -131,6 +132,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | --- | --- |
 | [tdd](./tdd/) | Multi-agent TDD with enforced context isolation across RED→GREEN→REFACTOR |
 | [feature-factory](./feature-factory/) | Solo-dev pipeline from feature intent to shipped, with evidence gates |
+| [cms-migration-checklist](./cms-migration-checklist/) | WordPress → Next.js + Payload migration: phase detection, evidence-backed gates, known pitfalls, cutover runbook |
 | [skills/release](./skills/release/) | Config-driven releases with a tiered compatibility policy (`COMPATIBILITY.md`) |
 | [cull-release](./cull-release/) | Cull release suite: [check](./cull-release-check/), [prepare](./cull-release-prepare/), [publish](./cull-release-publish/), [verify](./cull-release-verify/), [recover](./cull-release-recover/) |
 | [app-release](./app-release/) | iOS/watchOS → TestFlight and App Store |
