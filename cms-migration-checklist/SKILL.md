@@ -1,6 +1,6 @@
 ---
 name: cms-migration-checklist
-description: Gated checklist and working method for migrating a WordPress site to Next.js with a Payload CMS admin — audit, owner decisions, HTML→Lexical conversion, idempotent import and reconciliation, URL/SEO parity, editorial admin, security probes, self-hosted deploy, DNS cutover, rollback and the first week after. Use this whenever someone is planning, building, reviewing or launching a WordPress → Payload (or WordPress → headless Next.js) migration, even if they only ask one slice of it — "are we ready to cut over?", "how do I know the import didn't lose anything?", "what should I audit in the WP database first?", "replace wp-admin with Payload", "move off WordPress", "migration plan for our blog", "will old URLs still work?".
+description: Gated checklist and working method for migrating a WordPress site to Next.js with a Payload CMS admin — audit, owner decisions, HTML→Lexical conversion, idempotent import and reconciliation, URL/SEO parity, editorial admin, security probes, self-hosted deploy, DNS cutover, rollback and the first week after. Use this whenever someone is planning, building, reviewing or launching a WordPress → Payload (or WordPress → headless Next.js) migration, even if they only ask one slice of it. Includes a setup mode that interviews the user about the old site and goals and writes a migration brief — "set up a migration for example.com", "are we ready to cut over?", "how do I know the import didn't lose anything?", "what should I audit in the WP database first?", "replace wp-admin with Payload", "move off WordPress", "migration plan for our blog", "will old URLs still work?".
 ---
 
 # WordPress → Next.js + Payload migration checklist
@@ -14,6 +14,12 @@ checklist is split into phases that each end in a gate with evidence.
 
 Don't paste the whole checklist back at the user. Instead:
 
+0. **Setup mode for a new migration.** If the user wants to start or set up a migration,
+   or the project has no migration evidence yet, run the intake in `references/setup.md`:
+   at most 10 questions via `AskUserQuestion` (the old site's URL or code, how much should
+   change, URLs, body format, editorial features, plugins, hosting, audience, freeze,
+   approver), a read-only look at the old site between rounds, and a `MIGRATION-BRIEF.md`
+   that marks n/a items and pre-fills the decision packet.
 1. **Find out where the project is.** Look for evidence before asking: an audit folder or
    reports (inventory, field matrix, URL manifest), a Payload config and collections, an
    import ledger or reconciliation report, a crawl report, deploy scripts, a cutover
