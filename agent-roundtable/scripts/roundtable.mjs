@@ -1,28 +1,28 @@
 #!/usr/bin/env node
-// agent-roundtable runner: drives a multi-agent audit debate over ACP, falling
-// back to headless CLI calls per agent. The orchestrating Claude session acts as
-// moderator through files in the run directory (see SKILL.md "Run directory").
+// agent-roundtable runner: drives a multi-agent audit debate. Each agent runs over
+// ACP or a headless CLI with native resume (see agents.mjs); a failing agent is
+// recovered along a fixed ladder and the run is labelled degraded. The
+// orchestrating Claude session acts as moderator through files in the run
+// directory (see SKILL.md "Run directory").
 //
 //   node roundtable.mjs run --brief brief.md --agents codex,cmd --run-dir DIR [options]
-//   node roundtable.mjs doctor [--agents codex,cmd,...]
+//   node roundtable.mjs doctor [codex,cmd,...]
 
-import { spawn, execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, mkdtempSync } from "node:fs";
-import { join, dirname, resolve } from "node:path";
-import { tmpdir } from "node:os";
-import { Readable, Writable } from "node:stream";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, renameSync, readdirSync, statSync, realpathSync } from "node:fs";
+import { join, dirname, resolve, relative, isAbsolute } from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
-import * as acp from "@agentclientprotocol/sdk";
-import { openingPrompt, critiquePrompt, vetoPrompt, parseStatus } from "./prompts.mjs";
-import { assessConsensus } from "./consensus.mjs";
+import { AcpAgent, HeadlessAgent, killAllChildren } from "./agents.mjs";
+import { openingPrompt, critiquePrompt, vetoPrompt, recoveryPrompt, parseStatus } from "./prompts.mjs";
+import { assessConsensus, blockingIds, isDeadlock } from "./consensus.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const REGISTRY = JSON.parse(readFileSync(join(HERE, "..", "agents.json"), "utf8"));
 process.env.PATH = `${join(HERE, "node_modules", ".bin")}:${process.env.PATH}`;
 
-const FORBIDDEN_TOOL_KINDS = new Set(["edit", "delete", "move"]);
 const ROLES = ["auditor", "devils-advocate", "architect", "qa"];
+const MAX_FAILED_TURNS = 3;
 
 const { positionals, values: opt } = parseArgs({
   allowPositionals: true,
@@ -34,184 +34,97 @@ const { positionals, values: opt } = parseArgs({
     rounds: { type: "string", default: "3" },
     "min-rounds": { type: "string", default: "2" },
     mode: { type: "string", default: "auto" }, // auto | active
-    transport: { type: "string", default: "auto" }, // auto | acp | headless
+    transport: { type: "string", default: "auto" }, // auto (registry default) | acp | headless
     cwd: { type: "string", default: process.cwd() },
     "run-dir": { type: "string" },
+    registry: { type: "string", default: join(HERE, "..", "agents.json") },
     "turn-timeout": { type: "string", default: "900" }, // seconds per agent turn
+    "drain-timeout": { type: "string", default: "30" }, // seconds to drain a cancelled ACP turn
+    "kill-grace": { type: "string", default: "5" }, // seconds between SIGTERM and SIGKILL
     "budget-min": { type: "string", default: "60" }, // wall clock for the debate rounds
     "wait-timeout": { type: "string", default: "3600" }, // seconds to wait for moderator files
     "no-veto": { type: "boolean", default: false },
   },
 });
 
+const REGISTRY = JSON.parse(readFileSync(opt.registry, "utf8"));
+const agentOpts = (extra) => ({ drainMs: Number(opt["drain-timeout"]) * 1000, killGraceMs: Number(opt["kill-grace"]) * 1000, ...extra });
+
 // ---------- small utilities ----------
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const now = () => new Date().toISOString();
 
-function withTimeout(promise, ms, label) {
-  let t;
-  return Promise.race([
-    promise.finally(() => clearTimeout(t)),
-    new Promise((_, rej) => (t = setTimeout(() => rej(new Error(`${label} timed out after ${ms / 1000}s`)), ms))),
-  ]);
+// tmp file + rename, so a reader only ever sees a complete file under the final name.
+function writeAtomic(path, data) {
+  const tmp = `${path}.${process.pid}.tmp`;
+  writeFileSync(tmp, data);
+  renameSync(tmp, path);
 }
 
+// Waits for a moderator file and returns it once its size has stopped changing,
+// as a second guard behind the atomic tmp + mv the moderator is asked to use.
 async function waitForFile(path, timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
+  const end = Date.now() + timeoutMs;
+  while (Date.now() < end) {
     if (existsSync(path)) {
-      await sleep(500); // let the writer finish
-      return readFileSync(path, "utf8");
+      const size = statSync(path).size;
+      await sleep(500);
+      if (existsSync(path) && statSync(path).size === size) return readFileSync(path, "utf8");
+      continue;
     }
-    await sleep(2000);
+    await sleep(Math.min(2000, Math.max(100, end - Date.now())));
   }
   return null;
 }
 
-function gitStatus(cwd) {
-  try {
-    return execFileSync("git", ["status", "--porcelain", "--untracked-files=all"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-  } catch {
-    return null; // not a git repo; the edit guard is skipped
+const git = (cwd, args) => execFileSync("git", args, { cwd, stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 30 });
+const EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+
+// Content fingerprint of tracked and untracked (not gitignored) files, runDir excluded.
+// A further edit to an already dirty file changes it, unlike `git status`.
+function fingerprint(cwd, runDir) {
+  let top;
+  try { top = git(cwd, ["rev-parse", "--show-toplevel"]).toString().trim(); } catch { return null; } // not a git repo
+  const rel = relative(realpathSync(top), realpathSync(runDir)); // git prints realpaths (/private/var on macOS)
+  const exclude = rel && !rel.startsWith("..") && !isAbsolute(rel) ? [`:(exclude,top)${rel}`] : [];
+  const h = createHash("sha256");
+  let base = "HEAD";
+  try { git(top, ["rev-parse", "--verify", "HEAD"]); } catch { base = EMPTY_TREE; }
+  h.update(git(top, ["diff", "--binary", base, "--", ".", ...exclude]));
+  const untracked = git(top, ["ls-files", "--others", "--exclude-standard", "-z", "--", ".", ...exclude]).toString().split("\0").filter(Boolean);
+  for (const f of untracked.sort()) {
+    h.update(`\0${f}\0`);
+    try { h.update(readFileSync(join(top, f))); } catch { h.update("<unreadable>"); }
   }
+  return h.digest("hex");
 }
 
 // ---------- agents ----------
 
-class AcpAgent {
-  constructor(id, cfg, cwd, log) {
-    Object.assign(this, { id, cfg, cwd, log, transport: "acp" });
-  }
-
-  async start() {
-    const [cmd, ...args] = this.cfg.acp;
-    this.proc = spawn(cmd, args, { cwd: this.cwd, stdio: ["pipe", "pipe", "pipe"] });
-    this.stderr = "";
-    this.proc.stderr.on("data", (d) => (this.stderr = (this.stderr + d).slice(-4000)));
-    const spawned = new Promise((res, rej) => {
-      this.proc.once("spawn", res);
-      this.proc.once("error", rej);
-    });
-    await spawned;
-
-    const stream = acp.ndJsonStream(Writable.toWeb(this.proc.stdin), Readable.toWeb(this.proc.stdout));
-    this.conn = acp
-      .client({ name: "agent-roundtable" })
-      .onNotification(acp.methods.client.session.update, () => {}) // routed to ActiveSession
-      .onRequest(acp.methods.client.session.requestPermission, async ({ params }) => this.decidePermission(params))
-      .connect(stream);
-    const ctx = this.conn.agent;
-
-    const init = await withTimeout(
-      ctx.request(acp.methods.agent.initialize, { protocolVersion: 1, clientCapabilities: {} }),
-      60_000,
-      `${this.id} initialize`,
-    );
-    this.info = init.agentInfo;
-    try {
-      this.session = await withTimeout(ctx.buildSession(this.cwd).start(), 120_000, `${this.id} session/new`);
-    } catch (e) {
-      if (!this.cfg.authMethod || !/auth/i.test(e.message)) throw e;
-      await withTimeout(ctx.request(acp.methods.agent.authenticate, { methodId: this.cfg.authMethod }), 120_000, `${this.id} authenticate`);
-      this.session = await withTimeout(ctx.buildSession(this.cwd).start(), 120_000, `${this.id} session/new`);
-    }
-  }
-
-  decidePermission(params) {
-    const kind = params.toolCall?.kind ?? "other";
-    const allow = !FORBIDDEN_TOOL_KINDS.has(kind);
-    const option = params.options.find((o) => o.kind === (allow ? "allow_once" : "reject_once"))
-      ?? params.options.find((o) => o.kind.startsWith(allow ? "allow" : "reject"));
-    this.log(`${this.id} permission ${kind} "${params.toolCall?.title ?? ""}" -> ${allow ? "allow" : "reject"}`);
-    return option ? { outcome: { outcome: "selected", optionId: option.optionId } } : { outcome: { outcome: "cancelled" } };
-  }
-
-  async ask(prompt, timeoutMs) {
-    const done = this.session.prompt(prompt);
-    done.catch(() => {}); // surfaced through the update loop
-    const collect = (async () => {
-      let text = "";
-      for (;;) {
-        const msg = await this.session.nextUpdate();
-        if (msg.kind === "stop") return { text, stopReason: msg.stopReason };
-        const u = msg.update;
-        if (u.sessionUpdate === "agent_message_chunk" && u.content?.type === "text") text += u.content.text;
-        else if (u.sessionUpdate === "tool_call") this.log(`${this.id} tool ${u.kind ?? ""} ${u.title ?? ""}`);
-      }
-    })();
-    try {
-      return await withTimeout(collect, timeoutMs, `${this.id} turn`);
-    } catch (e) {
-      await this.conn.agent.notify(acp.methods.agent.session.cancel, { sessionId: this.session.sessionId }).catch(() => {});
-      throw e;
-    }
-  }
-
-  close() {
-    try { this.conn?.close(); } catch {}
-    this.proc?.kill();
-  }
-}
-
-class HeadlessAgent {
-  // Stateless CLI: every turn resends the whole conversation so far.
-  constructor(id, cfg, cwd, log) {
-    Object.assign(this, { id, cfg, cwd, log, transport: "headless", history: [] });
-  }
-
-  async start() {
-    const bin = this.cfg.headless[0];
-    execFileSync("/bin/sh", ["-c", `command -v ${bin}`], { stdio: "ignore" }); // throws if missing
-  }
-
-  async ask(prompt, timeoutMs) {
-    const full = this.history.length
-      ? `${this.history.map((h) => `## Earlier turn\n### Prompt\n${h.prompt}\n### Your reply\n${h.reply}`).join("\n\n")}\n\n## Current turn\n${prompt}`
-      : prompt;
-    const out = join(mkdtempSync(join(tmpdir(), "roundtable-")), "last.md");
-    const argv = this.cfg.headless.map((a) => a.replace("{prompt}", full).replace("{out}", out).replace("{cwd}", this.cwd));
-    const text = await new Promise((res, rej) => {
-      const p = spawn(argv[0], argv.slice(1), { cwd: this.cwd, stdio: ["pipe", "pipe", "pipe"] });
-      let stdout = "", stderr = "";
-      const t = setTimeout(() => { p.kill(); rej(new Error(`${this.id} headless turn timed out`)); }, timeoutMs);
-      p.stdout.on("data", (d) => (stdout += d));
-      p.stderr.on("data", (d) => (stderr = (stderr + d).slice(-4000)));
-      p.on("error", rej);
-      p.on("close", (code) => {
-        clearTimeout(t);
-        if (code !== 0) return rej(new Error(`${this.id} exited ${code}: ${stderr.slice(-500)}`));
-        res(this.cfg.outputFile && existsSync(out) ? readFileSync(out, "utf8") : stdout);
-      });
-      if (this.cfg.stdin) p.stdin.end(full);
-      else p.stdin.end();
-    });
-    this.history.push({ prompt, reply: text });
-    return { text, stopReason: "end_turn" };
-  }
-
-  close() {}
-}
-
-async function startAgent(id, cwd, transport, log) {
+function makeAgent(id, transport, ctx, carry = {}) {
   const cfg = REGISTRY[id];
-  if (!cfg) throw new Error(`unknown agent "${id}" (known: ${Object.keys(REGISTRY).filter((k) => !k.startsWith("_")).join(", ")})`);
-  if (transport !== "headless") {
-    const a = new AcpAgent(id, cfg, cwd, log);
-    try {
-      await a.start();
-      log(`${id} connected over ACP (${a.info?.name ?? "?"} ${a.info?.version ?? ""})`);
-      return a;
-    } catch (e) {
-      a.close();
-      log(`${id} ACP failed: ${e.message}${a.stderr ? ` | stderr: ${a.stderr.slice(-300).trim()}` : ""}`);
-      if (transport === "acp") throw e;
-    }
+  return transport === "acp"
+    ? new AcpAgent(id, cfg, agentOpts(ctx))
+    : new HeadlessAgent(id, cfg, agentOpts({ ...ctx, sessionId: carry.sessionId ?? null }));
+}
+
+async function startAgent(id, transport, ctx) {
+  const a = makeAgent(id, transport, ctx);
+  try {
+    await a.start();
+    return a;
+  } catch (e) {
+    await a.close?.();
+    if (a.stderr) e.message += ` | stderr: ${a.stderr.slice(-300).trim()}`;
+    throw e;
   }
-  const h = new HeadlessAgent(id, cfg, cwd, log);
-  await h.start();
-  log(`${id} using headless fallback`);
-  return h;
+}
+
+function defaultTransport(id) {
+  const cfg = REGISTRY[id];
+  if (opt.transport !== "auto") return opt.transport;
+  return cfg.transport ?? (cfg.acp ? "acp" : "headless");
 }
 
 // ---------- debate ----------
@@ -220,13 +133,18 @@ async function run() {
   if (!opt.brief || !opt["run-dir"]) throw new Error("run needs --brief and --run-dir");
   const runDir = resolve(opt["run-dir"]);
   const cwd = resolve(opt.cwd);
+  for (const f of ["state.json", "moderator", "synthesis.md"]) {
+    if (existsSync(join(runDir, f))) throw new Error(`${join(runDir, f)} exists: this run dir was already used; pick a new --run-dir`);
+  }
   for (const d of ["rounds", "moderator", "veto"]) mkdirSync(join(runDir, d), { recursive: true });
   const logFile = join(runDir, "events.log");
   const log = (m) => { const line = `${now()} ${String(m).replace(/\s*\n\s*/g, " ⏎ ").slice(0, 400)}`; appendFileSync(logFile, line + "\n"); console.error(line); };
 
   const brief = readFileSync(opt.brief, "utf8");
-  writeFileSync(join(runDir, "brief.md"), brief);
+  writeAtomic(join(runDir, "brief.md"), brief);
   const ids = opt.agents.split(",").map((s) => s.trim()).filter(Boolean);
+  for (const id of ids) if (!REGISTRY[id] || id.startsWith("_")) throw new Error(`unknown agent "${id}" (known: ${Object.keys(REGISTRY).filter((k) => !k.startsWith("_")).join(", ")})`);
+  if (opt.format === "roles" && !opt.roles) log(`warning: --format roles without --roles; using the default lenses ${ROLES.join(", ")}`);
   const roles = opt.roles ? opt.roles.split(",") : ROLES;
   const maxRounds = Number(opt.rounds);
   const turnMs = Number(opt["turn-timeout"]) * 1000;
@@ -234,151 +152,301 @@ async function run() {
   const deadline = Date.now() + Number(opt["budget-min"]) * 60_000;
   if (opt.format === "pingpong" && ids.length !== 2) throw new Error("pingpong needs exactly 2 agents");
 
-  const state = { status: "starting", format: opt.format, mode: opt.mode, maxRounds, round: 0, agents: {}, warnings: [], stopReason: null };
-  const save = () => writeFileSync(join(runDir, "state.json"), JSON.stringify(state, null, 2));
+  const state = {
+    status: "starting", result: null, format: opt.format, mode: opt.mode, maxRounds, round: 0,
+    agents: {}, degraded: [], turns: [], warnings: [], stopReason: null,
+    editDetection: "content fingerprint of tracked and untracked files (git diff HEAD + untracked contents), run dir excluded; gitignored files are NOT covered",
+  };
+  const save = () => writeAtomic(join(runDir, "state.json"), JSON.stringify(state, null, 2));
   save();
 
   const agents = {};
-  await Promise.all(ids.map(async (id, i) => {
-    try {
-      agents[id] = await startAgent(id, cwd, opt.transport, log);
-      agents[id].prefix = id.toUpperCase();
-      agents[id].role = opt.format === "roles" ? roles[i % roles.length] : null;
-      state.agents[id] = { transport: agents[id].transport, role: agents[id].role, ok: true };
-    } catch (e) {
-      state.agents[id] = { ok: false, error: e.message };
-      log(`${id} unavailable: ${e.message}`);
-    }
-  }));
-  const live = ids.filter((id) => agents[id]);
-  if (live.length < 2) { state.status = "failed"; state.stopReason = "fewer than 2 agents available"; save(); throw new Error(state.stopReason); }
-  save();
+  const ctx = { cwd, runDir, log };
+  const markDegraded = (id, what) => { if (!state.degraded.some((d) => d.agent === id && d.what === what)) state.degraded.push({ agent: id, what }); };
 
-  const baseline = gitStatus(cwd);
-  const latest = {}; // id -> { text, status }
+  // Cleanup runs on every exit path: normal end, thrown error, SIGINT/SIGTERM.
+  const closeAll = () => Promise.all(Object.values(agents).map((a) => a.close().catch(() => {}))).then(() => killAllChildren(Number(opt["kill-grace"]) * 1000));
+  const onSignal = (sig) => async () => {
+    log(`received ${sig}; closing agents`);
+    state.status = "failed"; state.stopReason = `interrupted by ${sig}`; save();
+    await closeAll();
+    process.exit(130);
+  };
+  process.once("SIGINT", onSignal("SIGINT"));
+  process.once("SIGTERM", onSignal("SIGTERM"));
 
-  const turn = async (round, id, prompt) => {
-    const a = agents[id];
-    writeFileSync(join(runDir, "rounds", `r${round}-${id}.prompt.md`), prompt);
-    try {
-      const { text } = await a.ask(prompt, turnMs);
-      const status = parseStatus(text);
-      latest[id] = { text, status };
-      writeFileSync(join(runDir, "rounds", `r${round}-${id}.md`), text);
+  try {
+    await Promise.all(ids.map(async (id, i) => {
+      const role = opt.format === "roles" ? roles[i % roles.length] : null;
+      const want = defaultTransport(id);
+      state.agents[id] = { ok: false, live: true, transport: want, role, lastError: null, failedTurns: 0, nativeSessionId: null };
+      try {
+        agents[id] = await startAgent(id, want, ctx);
+      } catch (e) {
+        log(`${id} ${want} failed to start: ${e.message}`);
+        state.agents[id].lastError = e.message;
+        const other = want === "acp" ? "headless" : "acp";
+        if (opt.transport !== "auto") { state.agents[id].live = false; return; }
+        try {
+          agents[id] = await startAgent(id, other, ctx);
+          state.warnings.push(`${id}: ${want} failed at start, using ${other}`);
+        } catch (e2) {
+          log(`${id} ${other} failed to start: ${e2.message}`);
+          state.agents[id] = { ...state.agents[id], live: false, lastError: `${e.message}; ${other}: ${e2.message}` };
+          return;
+        }
+      }
+      Object.assign(agents[id], { prefix: id.toUpperCase(), role });
+      Object.assign(state.agents[id], { ok: true, transport: agents[id].transport });
+      log(`${id} started over ${agents[id].transport}${agents[id].info ? ` (${agents[id].info.name ?? "?"} ${agents[id].info.version ?? ""})` : ""}`);
+    }));
+    const live = () => ids.filter((id) => agents[id] && state.agents[id].live);
+    if (live().length < 2) { state.status = "failed"; state.result = "failed"; state.stopReason = "fewer than 2 agents available"; save(); throw new Error(state.stopReason); }
+    save();
+
+    const baseline = fingerprint(cwd, runDir);
+    if (baseline === null) state.warnings.push("target is not a git repo; edit detection is off");
+    const checkEdits = (when) => {
+      if (baseline === null) return;
+      if (fingerprint(cwd, runDir) !== baseline) {
+        const w = `${when}: working tree content changed during the debate — an agent may have edited files`;
+        if (!state.warnings.includes(w)) { state.warnings.push(w); log(w); }
+      }
+    };
+    const latest = {}; // id -> { text, status, round }
+
+    // Context for an agent whose transport lost its memory: its own completed replies.
+    const withContext = (id, prompt) => {
+      const a = agents[id];
+      if (!a.needsContext || !latest[id]) return prompt;
+      const ownReplies = readdirSync(join(runDir, "rounds"))
+        .map((f) => f.match(new RegExp(`^r(\\d+)-${id}\\.md$`)))
+        .filter(Boolean)
+        .map((m) => ({ round: Number(m[1]), text: readFileSync(join(runDir, "rounds", m[0]), "utf8") }))
+        .sort((x, y) => x.round - y.round);
+      if (!ownReplies.length) return prompt;
+      const opening = openingPrompt({ brief, prefix: a.prefix, role: a.role, format: opt.format });
+      return recoveryPrompt({ opening, ownReplies, prompt });
+    };
+
+    // Recovery ladder over the whole run: 1st failed attempt restarts the same transport,
+    // 2nd moves to headless with native resume, 3rd drops the agent.
+    const recover = async (id) => {
+      const h = state.agents[id];
+      const old = agents[id];
+      await old.close().catch(() => {});
+      for (;;) {
+        if (h.failedTurns >= MAX_FAILED_TURNS) {
+          h.live = false; h.ok = false; markDegraded(id, "dropped");
+          log(`${id} dropped after ${h.failedTurns} failed attempts`);
+          return false;
+        }
+        const target = h.failedTurns === 1 ? old.transport : "headless";
+        try {
+          const a = await startAgent(id, target, { ...ctx, sessionId: old.sessionId });
+          Object.assign(a, { prefix: old.prefix, role: old.role });
+          agents[id] = a;
+          if (target !== old.transport) markDegraded(id, `switched to ${target}`);
+          h.transport = target;
+          log(`${id} recovered over ${target} (failed attempts: ${h.failedTurns})`);
+          return true;
+        } catch (e) {
+          h.failedTurns++; h.lastError = `restart over ${target}: ${e.message}`;
+          log(`${id} ${h.lastError}`);
+          save();
+        }
+      }
+    };
+
+    // One turn with the recovery ladder. Returns { text, stopReason } or null if the agent was dropped.
+    const attempt = async (id, prompt, label) => {
+      const h = state.agents[id];
+      for (;;) {
+        const a = agents[id];
+        const started = Date.now();
+        const record = { label, agent: id, transport: a.transport, startedAt: new Date(started).toISOString() };
+        try {
+          const r = await a.ask(withContext(id, prompt), turnMs);
+          record.stopReason = r.stopReason;
+          if (r.stopReason !== "end_turn") throw new Error(`turn stopped with ${r.stopReason}`);
+          Object.assign(record, { outcome: "ok", ms: Date.now() - started });
+          Object.assign(h, { ok: true, transport: a.transport, nativeSessionId: a.sessionId ?? h.nativeSessionId });
+          state.turns.push(record); save();
+          return r;
+        } catch (e) {
+          Object.assign(record, { outcome: "failed", error: e.message, ms: Date.now() - started });
+          state.turns.push(record);
+          h.failedTurns++; h.ok = false; h.lastError = e.message;
+          if (latest[id]) latest[id].status = null; // the stale vote never counts
+          log(`${id} ${label} failed (${h.failedTurns}/${MAX_FAILED_TURNS}): ${e.message}`);
+          save();
+          if (!(await recover(id))) { save(); return null; }
+          save();
+        }
+      }
+    };
+
+    const turn = async (round, id, prompt) => {
+      writeAtomic(join(runDir, "rounds", `r${round}-${id}.prompt.md`), prompt);
+      const r = await attempt(id, prompt, `r${round}`);
+      if (!r) return null;
+      const status = parseStatus(r.text);
+      latest[id] = { text: r.text, status, round };
+      writeAtomic(join(runDir, "rounds", `r${round}-${id}.md`), r.text);
       if (!status.parsed) log(`${id} r${round}: invalid roundtable-status (${status.error})`);
       return { agent: id, ...status };
-    } catch (e) {
-      // Keep the old text so peers can still answer it, but drop the stale vote.
-      if (latest[id]) latest[id].status = null;
-      log(`${id} r${round} failed: ${e.message}`);
-      return null;
-    }
-  };
-  const peersOf = (id) => live.filter((p) => p !== id && latest[p])
-    .map((p) => ({ label: REGISTRY[p].label, prefix: agents[p].prefix, text: latest[p].text }));
+    };
+    const peersOf = (id) => live().filter((p) => p !== id && latest[p])
+      .map((p) => ({ label: REGISTRY[p].label, prefix: agents[p].prefix, text: latest[p].text }));
 
-  let moderatorNote = null;
-  for (let round = 1; round <= maxRounds; round++) {
-    if (Date.now() > deadline) { state.stopReason = "budget exhausted"; break; }
-    state.round = round; state.status = "debating"; save();
-    log(`round ${round} start`);
+    // Moderator notes are consumed once each, in order, at the start of the next round.
+    const consumed = new Set();
+    const unreadNotes = () => {
+      const files = readdirSync(join(runDir, "moderator"))
+        .map((f) => f.match(/^r(\d+)\.md$/)).filter(Boolean)
+        .sort((x, y) => Number(x[1]) - Number(y[1]))
+        .map((m) => m[0]).filter((f) => !consumed.has(f));
+      files.forEach((f) => consumed.add(f));
+      return files.map((f) => readFileSync(join(runDir, "moderator", f), "utf8"));
+    };
+    const degradedNote = () => state.degraded.length ? ` (degraded: ${state.degraded.map((d) => `${d.agent} ${d.what}`).join(", ")})` : "";
 
-    let speakers;
-    if (opt.format === "pingpong") speakers = [live[(round - 1) % 2]];
-    else speakers = live;
+    let prevBlocking = null;
+    let verdict = null;
+    let pendingWait = null; // note file the moderator must write before the next round
+    for (let round = 1; round <= maxRounds; round++) {
+      if (pendingWait) {
+        state.status = "awaiting_moderator"; state.waitingFor = pendingWait.path; state.waitingReason = pendingWait.reason; save();
+        log(`waiting for moderator note ${pendingWait.path} (${pendingWait.reason})`);
+        const note = await waitForFile(pendingWait.path, waitMs);
+        delete state.waitingFor; delete state.waitingReason;
+        pendingWait = null;
+        if (note === null) { state.stopReason = "moderator timeout"; break; }
+      }
+      const notes = unreadNotes();
+      if (notes.some((n) => n.trim().split("\n")[0].trim().toUpperCase() === "STOP")) { state.stopReason = "moderator stopped"; break; }
+      const moderatorNote = notes.length ? notes.join("\n\n") : null;
 
-    // Peers are snapshotted before anyone speaks, so parallel speakers all see the previous round.
-    const peerSnapshot = Object.fromEntries(speakers.map((id) => [id, peersOf(id)]));
-    const results = await Promise.all(speakers.map((id) => {
-      const a = agents[id];
-      const parts = [];
-      if (!latest[id]) parts.push(openingPrompt({ brief, prefix: a.prefix, role: a.role, format: opt.format }));
-      if (peerSnapshot[id].length) parts.push(critiquePrompt({ round, peers: peerSnapshot[id], moderatorNote, prefix: a.prefix }));
-      return turn(round, id, parts.join("\n\n"));
-    }));
+      if (Date.now() > deadline) { state.stopReason = "budget exhausted"; break; }
+      if (live().length < 2) { state.stopReason = "fewer than 2 agents left"; break; }
+      state.round = round; state.status = "debating"; save();
+      log(`round ${round} start`);
 
-    const after = gitStatus(cwd);
-    if (baseline !== null && after !== baseline) {
-      const w = `round ${round}: working tree changed during the debate — an agent may have edited files`;
-      state.warnings.push(w); log(w);
-    }
-
-    // Consensus is judged on every agent's most recent status, not just this round's speakers.
-    const statuses = live.filter((id) => latest[id]?.status).map((id) => ({ agent: id, ...latest[id].status }));
-    const verdict = assessConsensus(statuses, { round, maxRounds, minRounds: Number(opt["min-rounds"]), expectedAgents: live });
-    writeFileSync(join(runDir, "rounds", `r${round}.summary.json`), JSON.stringify({ round, answered: results.filter(Boolean).length, statuses, verdict }, null, 2));
-    log(`round ${round} consensus: ${verdict.converged} (${verdict.reason})`);
-    if (verdict.converged) { state.stopReason = `consensus: ${verdict.reason}`; break; }
-    if (round === maxRounds) { state.stopReason = "round limit"; break; }
-
-    const notePath = join(runDir, "moderator", `r${round}.md`);
-    if (opt.mode === "active") {
-      state.status = "awaiting_moderator"; state.waitingFor = notePath; save();
-      log(`waiting for moderator note ${notePath}`);
-      moderatorNote = await waitForFile(notePath, waitMs);
-      if (moderatorNote === null) { state.stopReason = "moderator timeout"; break; }
-    } else {
-      moderatorNote = existsSync(notePath) ? readFileSync(notePath, "utf8") : null;
-    }
-    if (moderatorNote?.trim().split("\n")[0].trim().toUpperCase() === "STOP") { state.stopReason = "moderator stopped"; break; }
-  }
-  delete state.waitingFor;
-  log(`debate ended: ${state.stopReason}`);
-
-  if (!opt["no-veto"]) {
-    const synthPath = join(runDir, "synthesis.md");
-    state.status = "awaiting_synthesis"; state.waitingFor = synthPath; save();
-    log(`waiting for synthesis ${synthPath}`);
-    const synthesis = await waitForFile(synthPath, waitMs);
-    delete state.waitingFor;
-    if (synthesis === null) {
-      state.warnings.push("no synthesis written; veto round skipped");
-    } else {
-      state.status = "veto"; save();
-      const votes = await Promise.all(live.map(async (id) => {
-        try {
-          const { text } = await agents[id].ask(vetoPrompt({ synthesis, prefix: agents[id].prefix }), turnMs);
-          writeFileSync(join(runDir, "veto", `${id}.md`), text);
-          const s = parseStatus(text);
-          return { agent: id, approve: s.parsed && s.stance === "converged" && s.blocking.length === 0, blocking: s.blocking, parsed: s.parsed, error: s.error };
-        } catch (e) {
-          log(`${id} veto failed: ${e.message}`);
-          return { agent: id, approve: null, error: e.message };
-        }
+      const speakers = opt.format === "pingpong" ? [live()[(round - 1) % live().length]] : live();
+      // Peers are snapshotted before anyone speaks, so parallel speakers all see the previous round.
+      const peerSnapshot = Object.fromEntries(speakers.map((id) => [id, peersOf(id)]));
+      const results = await Promise.all(speakers.map((id) => {
+        const a = agents[id];
+        const parts = [];
+        if (!latest[id]) parts.push(openingPrompt({ brief, prefix: a.prefix, role: a.role, format: opt.format }));
+        if (peerSnapshot[id].length) parts.push(critiquePrompt({ round, peers: peerSnapshot[id], moderatorNote, prefix: a.prefix }));
+        return turn(round, id, parts.join("\n\n"));
       }));
-      writeFileSync(join(runDir, "veto.json"), JSON.stringify(votes, null, 2));
-      state.veto = votes;
-    }
-  }
+      checkEdits(`round ${round}`);
 
-  state.status = "done"; save();
-  live.forEach((id) => agents[id].close());
-  log("done");
+      // Consensus is judged on every live agent's most recent status, not just this round's speakers.
+      const statuses = live().filter((id) => latest[id]?.status).map((id) => ({ agent: id, ...latest[id].status }));
+      verdict = assessConsensus(statuses, { round, maxRounds, minRounds: Number(opt["min-rounds"]), expectedAgents: live() });
+      if (verdict.converged && state.degraded.length) verdict = { ...verdict, reason: verdict.reason + degradedNote() };
+      const blocking = blockingIds(statuses);
+      writeAtomic(join(runDir, "rounds", `r${round}.summary.json`), JSON.stringify({ round, answered: results.filter(Boolean).length, statuses, blocking, verdict, degraded: state.degraded }, null, 2));
+      log(`round ${round} consensus: ${verdict.converged} (${verdict.reason})`);
+      if (verdict.converged) { state.stopReason = `consensus: ${verdict.reason}`; break; }
+      if (round === maxRounds) { state.stopReason = "round limit"; break; }
+      if (live().length < 2) { state.stopReason = "fewer than 2 agents left"; break; }
+
+      const notePath = join(runDir, "moderator", `r${round}.md`);
+      if (isDeadlock(prevBlocking, blocking)) {
+        // Even in auto mode: a human-shaped call is needed to break it.
+        state.deadlocks = [...(state.deadlocks ?? []), { round, blocking }];
+        pendingWait = { path: notePath, reason: `deadlock: same blocking set ${blocking.join(", ")} two rounds running` };
+      } else if (opt.mode === "active") {
+        pendingWait = { path: notePath, reason: "active mode" };
+      }
+      prevBlocking = blocking;
+    }
+    delete state.waitingFor;
+    log(`debate ended: ${state.stopReason}`);
+
+    if (!opt["no-veto"] && live().length) {
+      const synthPath = join(runDir, "synthesis.md");
+      state.status = "awaiting_synthesis"; state.waitingFor = synthPath; save();
+      log(`waiting for synthesis ${synthPath}`);
+      const synthesis = await waitForFile(synthPath, waitMs);
+      delete state.waitingFor;
+      if (synthesis === null) {
+        state.warnings.push("no synthesis written; veto round skipped");
+      } else {
+        state.status = "veto"; save();
+        const panel = ids.filter((id) => agents[id]).map((id) => ({
+          prefix: id.toUpperCase(), label: REGISTRY[id].label, status: latest[id]?.status ?? null, text: latest[id]?.text ?? null,
+          state: !state.agents[id].live ? "dropped" : state.degraded.find((d) => d.agent === id)?.what ?? "live",
+        }));
+        const votes = await Promise.all(live().map(async (id) => {
+          const r = await attempt(id, vetoPrompt({ synthesis, prefix: agents[id].prefix, panel }), "veto");
+          if (!r) return { agent: id, approve: null, error: state.agents[id].lastError };
+          writeAtomic(join(runDir, "veto", `${id}.md`), r.text);
+          const s = parseStatus(r.text);
+          // attempt() only returns end_turn turns, so an approval always has stopReason end_turn.
+          return { agent: id, approve: s.parsed && s.stance === "converged" && s.blocking.length === 0, stopReason: r.stopReason, blocking: s.blocking, parsed: s.parsed, error: s.error };
+        }));
+        writeAtomic(join(runDir, "veto.json"), JSON.stringify(votes, null, 2));
+        state.veto = votes;
+        checkEdits("veto");
+      }
+    }
+
+    state.result = state.degraded.length ? "degraded" : verdict?.converged ? "consensus" : "no_consensus";
+    state.status = "done"; save();
+    log(`done: ${state.result}${degradedNote()}`);
+  } catch (e) {
+    if (state.status !== "failed") { state.status = "failed"; state.result = "failed"; state.stopReason ??= e.message; save(); }
+    throw e;
+  } finally {
+    await closeAll();
+  }
 }
 
 // ---------- doctor ----------
 
+// Starts each agent over its default transport and sends a one-line prompt, so
+// expired keys and failed logins show up here instead of in round 1.
 async function doctor() {
-  // `doctor` checks every registered agent; `doctor codex,cmd` checks a subset.
   const ids = positionals[1] ? positionals[1].split(",") : Object.keys(REGISTRY).filter((k) => !k.startsWith("_"));
-  const log = () => {};
+  const ctx = { cwd: process.cwd(), runDir: null, log: () => {} };
+  const pingMs = 90_000;
   const rows = await Promise.all(ids.map(async (id) => {
-    const row = { agent: id, acp: "-", headless: "-" };
-    const a = new AcpAgent(id, REGISTRY[id], process.cwd(), log);
-    try { await a.start(); row.acp = `ok (${a.info?.name ?? "?"} ${a.info?.version ?? ""})`.trim(); }
-    catch (e) { row.acp = `FAIL: ${e.message.slice(0, 120)}`; }
-    finally { a.close(); }
-    try { await new HeadlessAgent(id, REGISTRY[id], process.cwd(), log).start(); row.headless = "binary found"; }
-    catch { row.headless = "binary missing"; }
-    return row;
+    const cfg = REGISTRY[id];
+    if (!cfg) return { agent: id, lines: ["unknown agent"] };
+    const want = defaultTransport(id);
+    const lines = [];
+    for (const t of ["acp", "headless"]) {
+      const tag = `${t}${t === want ? " (default)" : ""}`;
+      if (t === "acp" && !cfg.acp) { lines.push(`${tag}: not configured`); continue; }
+      if (t === "headless" && !cfg.headless) { lines.push(`${tag}: not configured (no native resume)`); continue; }
+      let a;
+      try {
+        a = await startAgent(id, t, ctx);
+        if (t !== want) { lines.push(`${tag}: starts${t === "headless" ? " (binary found)" : ""}`); continue; }
+        const r = await a.ask("Reply with the single word PONG and nothing else.", pingMs);
+        const ok = r.stopReason === "end_turn" && /PONG/i.test(r.text);
+        lines.push(`${tag}: ${ok ? "ok" : "FAIL"} — replied ${JSON.stringify(r.text.trim().slice(0, 40))}, stopReason ${r.stopReason}${a.info ? ` (${a.info.name ?? "?"} ${a.info.version ?? ""})` : ""}`);
+      } catch (e) {
+        lines.push(`${tag}: FAIL: ${e.message.replace(/\s+/g, " ").slice(0, 160)}`);
+      } finally {
+        await a?.close().catch(() => {});
+      }
+    }
+    return { agent: id, lines };
   }));
-  for (const r of rows) console.log(`${r.agent.padEnd(9)} acp: ${r.acp}\n${"".padEnd(9)} headless: ${r.headless}`);
+  for (const r of rows) console.log(r.lines.map((l, i) => `${(i ? "" : r.agent).padEnd(9)} ${l}`).join("\n"));
+  await killAllChildren(1000);
 }
 
 const cmd = positionals[0];
 const main = cmd === "doctor" ? doctor : cmd === "run" ? run : null;
 if (!main) {
-  console.error("usage: roundtable.mjs run --brief FILE --run-dir DIR [--agents a,b] [--format panel|pingpong|roles] [--mode auto|active] ...\n       roundtable.mjs doctor");
+  console.error("usage: roundtable.mjs run --brief FILE --run-dir DIR [--agents a,b] [--format panel|pingpong|roles] [--mode auto|active] ...\n       roundtable.mjs doctor [a,b]");
   process.exit(2);
 }
 main().then(() => process.exit(0), (e) => { console.error(e.stack ?? e); process.exit(1); });

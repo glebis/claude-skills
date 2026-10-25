@@ -51,11 +51,47 @@ ${peerText}
 For every peer finding say agree / disagree / refine, with evidence. Drop or revise your own findings that were refuted. Add only genuinely new issues. Then list what you still consider blocking.`;
 }
 
-export function vetoPrompt({ synthesis, prefix }) {
+// After a transport restart or switch the agent has no memory of the debate. This
+// rebuilds it from the run's completed rounds/ files ahead of the current turn.
+export function recoveryPrompt({ opening, ownReplies, prompt }) {
+  const replies = ownReplies
+    .map((r) => `### Your round ${r.round} reply\n<own_reply round="${r.round}">\n${r.text}\n</own_reply>`)
+    .join("\n\n");
+  return `${opening}
+
+## Context restored
+Your previous session ended, so this is a new one. These are your own replies from the rounds already completed. Keep your finding ids stable.
+
+${replies}
+
+---
+
+${prompt}`;
+}
+
+// Strip the trailing status block and cap the length, for the veto overview.
+function replySummary(text, max = 800) {
+  const body = text.replace(/```roundtable-status[\s\S]*$/, "").trim();
+  return body.length > max ? `${body.slice(0, max)}\n[…truncated]` : body;
+}
+
+// panel: every agent's final-round status, including the recipient's own, so a veto
+// is judged against where the debate actually ended. Entries are { prefix, label,
+// status, text, state } where state is "live", "dropped" or "switched to headless".
+export function vetoPrompt({ synthesis, prefix, panel = [] }) {
+  const overview = panel
+    .map((p) => {
+      const st = p.status ? JSON.stringify({ stance: p.status.stance, blocking: p.status.blocking }) : "no valid status";
+      return `### ${p.label} (${p.prefix})${p.state && p.state !== "live" ? ` — ${p.state}` : ""}\nFinal-round status: ${st}\n<peer_reply agent="${p.prefix}">\n${p.text ? replySummary(p.text) : "(no reply)"}\n</peer_reply>`;
+    })
+    .join("\n\n");
   return `# Roundtable audit — final review
 ${rules(prefix)}
 
 The moderator merged the debate into the draft below. Check that it represents your position fairly and that nothing you consider blocking was dropped or softened.
+
+## Where every agent ended
+${overview || "(not available)"}
 
 ## Draft
 <draft>

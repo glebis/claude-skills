@@ -33,3 +33,13 @@ for (const [name, over] of [
     assert.equal(assessConsensus([vote("codex"), vote("cmd", over)], ctx()).converged, false);
   });
 }
+
+test("deadlock = same non-empty blocking ids two rounds running", async () => {
+  const { blockingIds, isDeadlock } = await import("./consensus.mjs");
+  const ids = blockingIds([vote("codex", { blocking: ["CMD-2: x", "CODEX-1: y"] }), vote("cmd", { blocking: ["CMD-2: other words"] })]);
+  assert.deepEqual(ids, ["CMD-2", "CODEX-1"]);
+  assert.equal(isDeadlock(null, ids), false);
+  assert.equal(isDeadlock(["CMD-2", "CODEX-1"], ids), true);
+  assert.equal(isDeadlock(["CMD-2"], ids), false);
+  assert.equal(isDeadlock([], []), false);
+});

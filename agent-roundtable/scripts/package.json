@@ -5,7 +5,7 @@
   "description": "Runs multi-agent audit debates over ACP with headless CLI fallback",
   "scripts": {
     "doctor": "node roundtable.mjs doctor",
-    "test": "node --test prompts.test.mjs consensus.test.mjs"
+    "test": "node --test prompts.test.mjs consensus.test.mjs test/transport.test.mjs test/runner.test.mjs"
   },
   "dependencies": {
     "@agentclientprotocol/sdk": "2.0.2",

@@ -35,3 +35,13 @@ export function assessConsensus(statuses, ctx) {
 
   return { converged: true, reason: `all ${statuses.length} agents converged with no blocking or new issues` };
 }
+
+// The finding ids behind a set of blocking objections ("CODEX-3: reason" -> "CODEX-3").
+export function blockingIds(statuses) {
+  return [...new Set(statuses.flatMap((s) => s.blocking ?? []).map((b) => b.split(":")[0].trim()))].sort();
+}
+
+// Deadlock: the same non-empty blocking set two rounds running.
+export function isDeadlock(previousIds, currentIds) {
+  return !!previousIds && currentIds.length > 0 && previousIds.join("\n") === currentIds.join("\n");
+}
