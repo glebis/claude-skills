@@ -144,6 +144,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | [local-models](./local-models/) | Cheap offline inference via llama.cpp on Ollama-downloaded models |
 | [codex](./codex/) | Drive OpenAI Codex CLI for analysis, refactoring, automated edits |
 | [peer-agent-collaboration](./peer-agent-collaboration/) | Have Claude Code, Codex, and other agents work together as peers |
+| [agent-roundtable](./agent-roundtable/) | Multi-agent audit over ACP (Codex, Command Code, Gemini, OpenCode, Claude) that converges on a spec and task list |
 | [linear](./linear/) | Create, list, update, and search Linear issues and projects |
 | [github-gist](./github-gist/) | Publish files or notes as secret/public gists |
 | [skills/job-babysitter](./skills/job-babysitter/) | Watch long-running background jobs (encodes, embeddings, batch pipelines) |

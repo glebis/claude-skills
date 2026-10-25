@@ -1,0 +1,31 @@
+{
+  "_comment": "Agent registry. acp = command that speaks ACP over stdio. headless = stateless fallback; {prompt} is replaced by the prompt text, {out} by a temp file the agent writes its final message to, {cwd} by the target directory. stdin:true sends the prompt on stdin instead. authMethod is sent with ACP authenticate when session/new reports auth required.",
+  "codex": {
+    "label": "Codex",
+    "acp": ["codex-acp"],
+    "headless": ["codex", "exec", "--skip-git-repo-check", "--sandbox", "workspace-write", "-C", "{cwd}", "-o", "{out}", "-"],
+    "stdin": true,
+    "outputFile": true
+  },
+  "cmd": {
+    "label": "Command Code",
+    "acp": ["cmd", "acp"],
+    "headless": ["cmd", "-p", "{prompt}", "--trust", "--skip-onboarding", "--max-turns", "60"]
+  },
+  "gemini": {
+    "label": "Gemini CLI",
+    "acp": ["gemini", "--experimental-acp"],
+    "authMethod": "oauth-personal",
+    "headless": ["gemini", "-p", "{prompt}"]
+  },
+  "opencode": {
+    "label": "OpenCode",
+    "acp": ["opencode", "acp"],
+    "headless": ["opencode", "run", "{prompt}"]
+  },
+  "claude": {
+    "label": "Claude Code",
+    "acp": ["claude-agent-acp"],
+    "headless": ["claude", "-p", "{prompt}", "--allowedTools", "Read", "Grep", "Glob", "Bash"]
+  }
+}

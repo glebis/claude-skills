@@ -1,0 +1,15 @@
+{
+  "name": "agent-roundtable-runner",
+  "private": true,
+  "type": "module",
+  "description": "Runs multi-agent audit debates over ACP with headless CLI fallback",
+  "scripts": {
+    "doctor": "node roundtable.mjs doctor",
+    "test": "node --test prompts.test.mjs consensus.test.mjs"
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "2.0.2",
+    "@agentclientprotocol/codex-acp": "2.2.2",
+    "@agentclientprotocol/claude-agent-acp": "0.95.0"
+  }
+}
