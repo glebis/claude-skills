@@ -19,6 +19,7 @@ import argparse
 import base64
 import concurrent.futures
 import json
+import math
 import os
 import re
 import shutil
@@ -49,13 +50,20 @@ HISTORY_FILE = CONFIG_DIR / "history.jsonl"
 LAST_RUN_FILE = CONFIG_DIR / "last.json"
 
 DEFAULT_MODEL = "gemini-3.1-flash-image-preview"
+ATLAS_DEFAULT_MODEL = "google/nano-banana-2-lite/text-to-image-developer"
 MODELS = {
     "flash": "gemini-3.1-flash-image-preview",
     "pro": "gemini-3-pro-image-preview",
     "flash-2.5": "gemini-2.5-flash-image",
 }
+ATLAS_MODELS = {
+    "flash": ATLAS_DEFAULT_MODEL,
+    "atlas-lite": ATLAS_DEFAULT_MODEL,
+}
 
 API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+ATLAS_API_BASE = "https://api.atlascloud.ai"
+ATLAS_POLL_DELAYS_S = (1, 2, 3, 5, 8, 13, 20, 20)
 
 
 # ---------- Config & secrets ----------
@@ -90,6 +98,10 @@ def get_api_key() -> str | None:
     return None
 
 
+def get_atlas_api_key() -> str | None:
+    return os.environ.get("ATLASCLOUD_API_KEY") or os.environ.get("ATLAS_CLOUD_API_KEY")
+
+
 def load_presets() -> dict[str, dict[str, str]]:
     if not PRESETS_FILE.exists():
         return {}
@@ -112,6 +124,7 @@ class GenerationResult:
     output_path: Path
     prompt: str
     model: str
+    provider: str
     preset: str | None
     platform: str | None
     edit_source: str | None
@@ -224,6 +237,116 @@ def _call_gemini(
         except PermanentAPIError:
             raise  # no point retrying
     raise RuntimeError(f"Gave up after {_MAX_RETRIES} retries. Last error: {last_err}")
+
+
+def _atlas_aspect_ratio(platform: dict[str, Any] | None) -> str:
+    if not platform:
+        return "auto"
+    width = int(platform["width"])
+    height = int(platform["height"])
+    divisor = math.gcd(width, height)
+    ratio = f"{width // divisor}:{height // divisor}"
+    allowed = {
+        "1:1",
+        "3:2",
+        "2:3",
+        "3:4",
+        "4:3",
+        "4:5",
+        "5:4",
+        "9:16",
+        "16:9",
+    }
+    return ratio if ratio in allowed else "auto"
+
+
+def _atlas_request_json(req: urllib.request.Request, timeout: int = 120) -> dict[str, Any]:
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode(errors="replace")
+        if e.code in _RETRYABLE_STATUS:
+            raise TransientAPIError(f"HTTP {e.code}: {body[:400]}") from e
+        raise PermanentAPIError(f"HTTP {e.code}: {body[:400]}") from e
+    except urllib.error.URLError as e:
+        raise TransientAPIError(f"Network error: {e}") from e
+
+
+def _call_atlas(
+    prompt: str,
+    model: str,
+    api_key: str,
+    edit_source: Path | None = None,
+    reference_images: list[Path] | None = None,
+    aspect_ratio: str = "auto",
+) -> bytes:
+    """Submit once to Atlas, then poll the read-only prediction endpoint."""
+    if edit_source or reference_images:
+        raise PermanentAPIError(
+            "Atlas provider currently supports text-to-image only; use Gemini for edit/reference mode."
+        )
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "User-Agent": "nano-banana/1.0",
+    }
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "aspect_ratio": aspect_ratio,
+        "resolution": "1k",
+    }
+    submit = urllib.request.Request(
+        f"{ATLAS_API_BASE}/api/v1/model/generateImage",
+        data=json.dumps(payload).encode(),
+        headers=headers,
+    )
+    # Generation is billable, so the POST is deliberately never retried.
+    submitted = _atlas_request_json(submit)
+    data = submitted.get("data") or {}
+    prediction_id = data.get("id")
+    if not prediction_id:
+        raise PermanentAPIError(
+            f"Atlas submission did not return a prediction id: {submitted.get('message', '')}"
+        )
+
+    prediction = data
+    for delay in (0, *ATLAS_POLL_DELAYS_S):
+        if prediction.get("status") == "completed":
+            break
+        if prediction.get("status") in {"failed", "timeout", "canceled"}:
+            raise PermanentAPIError(
+                f"Atlas prediction {prediction.get('status')}: {prediction.get('error', '')}"
+            )
+        if delay:
+            time.sleep(delay)
+        poll = urllib.request.Request(
+            f"{ATLAS_API_BASE}/api/v1/model/prediction/{prediction_id}",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "User-Agent": "nano-banana/1.0",
+            },
+        )
+        try:
+            prediction = (_atlas_request_json(poll).get("data") or {})
+        except TransientAPIError:
+            continue
+    else:
+        raise TransientAPIError("Atlas prediction did not complete within the polling window")
+
+    outputs = prediction.get("outputs") or []
+    if not outputs:
+        raise PermanentAPIError("Atlas prediction completed without an output URL")
+    try:
+        download = urllib.request.Request(
+            outputs[0], headers={"User-Agent": "nano-banana/1.0"}
+        )
+        with urllib.request.urlopen(download, timeout=120) as resp:
+            return resp.read()
+    except (urllib.error.HTTPError, urllib.error.URLError) as e:
+        raise TransientAPIError(f"Could not download Atlas output: {e}") from e
 
 
 # ---------- Post-processing ----------
@@ -340,12 +463,23 @@ def generate_once(
     output_path: Path,
     model: str,
     api_key: str,
+    provider: str = "gemini",
     edit_source: Path | None = None,
     reference_images: list[Path] | None = None,
     platform: dict[str, Any] | None = None,
 ) -> GenerationResult:
     start = time.time()
-    img_bytes = _call_gemini(prompt, model, api_key, edit_source, reference_images)
+    if provider == "atlas":
+        img_bytes = _call_atlas(
+            prompt,
+            model,
+            api_key,
+            edit_source,
+            reference_images,
+            _atlas_aspect_ratio(platform),
+        )
+    else:
+        img_bytes = _call_gemini(prompt, model, api_key, edit_source, reference_images)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_bytes(img_bytes)
     if platform:
@@ -354,6 +488,7 @@ def generate_once(
         output_path=output_path,
         prompt=prompt,
         model=model,
+        provider=provider,
         preset=None,
         platform=None,
         edit_source=str(edit_source) if edit_source else None,
@@ -363,11 +498,15 @@ def generate_once(
 
 
 def generate(args: argparse.Namespace, config: dict[str, Any]) -> None:
-    api_key = get_api_key()
+    provider = (args.provider or config.get("default_provider", "gemini")).lower()
+    if provider not in {"gemini", "atlas"}:
+        sys.exit("Error: provider must be 'gemini' or 'atlas'")
+    api_key = get_atlas_api_key() if provider == "atlas" else get_api_key()
     if not api_key:
+        key_name = "ATLASCLOUD_API_KEY" if provider == "atlas" else "GEMINI_API_KEY"
         print(
-            "Error: GEMINI_API_KEY not set and could not decrypt from secrets.enc.yaml.\n"
-            "Run: nano_banana.py init",
+            f"Error: {key_name} not set"
+            + (".\nRun: nano_banana.py init" if provider == "gemini" else "."),
             file=sys.stderr,
         )
         sys.exit(1)
@@ -407,11 +546,15 @@ def generate(args: argparse.Namespace, config: dict[str, Any]) -> None:
             )
         platform_conf = platforms[platform_name]
 
-    model = args.model or config.get("default_model", DEFAULT_MODEL)
-    # Resolve model aliases
-    model = MODELS.get(model, model)
+    if provider == "atlas":
+        model = args.model or config.get("atlas_default_model", ATLAS_DEFAULT_MODEL)
+        model = ATLAS_MODELS.get(model, model)
+    else:
+        model = args.model or config.get("default_model", DEFAULT_MODEL)
+        model = MODELS.get(model, model)
 
     if args.dry_run:
+        print(f"Provider: {provider}")
         print(f"Model: {model}")
         print(f"Preset: {preset_name or '(none)'}")
         print(f"Platform: {platform_name or '(none)'}")
@@ -437,7 +580,14 @@ def generate(args: argparse.Namespace, config: dict[str, Any]) -> None:
         print(f"[{i+1}/{n}] Generating → {out.name}")
         try:
             result = generate_once(
-                prompt, out, model, api_key, edit_source, reference_paths, platform_conf
+                prompt,
+                out,
+                model,
+                api_key,
+                provider,
+                edit_source,
+                reference_paths,
+                platform_conf,
             )
         except Exception as e:
             print(f"  ✗ variant {i+1} failed: {e}", file=sys.stderr)
@@ -478,6 +628,7 @@ def generate(args: argparse.Namespace, config: dict[str, Any]) -> None:
         "preset": preset_name,
         "platform": platform_name,
         "model": model,
+        "provider": provider,
         "edit_source": str(edit_source) if edit_source else None,
         "reference": [str(r) for r in reference_paths],
         "project": project,
@@ -517,6 +668,7 @@ def cmd_again(args: argparse.Namespace) -> None:
         preset=last.get("preset"),
         platform=last.get("platform"),
         model=last.get("model"),
+        provider=last.get("provider", "gemini"),
         edit=last.get("edit_source"),
         reference=last.get("reference", []),
         project=last.get("project"),
@@ -563,14 +715,19 @@ def cmd_init(_args: argparse.Namespace) -> None:
     else:
         print("✓ Dependencies (sops, age, magick) installed\n")
 
-    # Check API key
-    key = get_api_key()
-    if key:
-        print(f"✓ GEMINI_API_KEY accessible (via SOPS or env)")
+    # Check provider credentials without printing their values.
+    gemini_key = get_api_key()
+    atlas_key = get_atlas_api_key()
+    if gemini_key:
+        print("✓ GEMINI_API_KEY accessible (via SOPS or env)")
     else:
         print("✗ GEMINI_API_KEY not found.")
         print("  Set it by editing secrets.enc.yaml with: sops secrets.enc.yaml")
         print("  Or: export GEMINI_API_KEY=AIza... in your shell rc")
+    if atlas_key:
+        print("✓ ATLASCLOUD_API_KEY accessible (via env)")
+    else:
+        print("○ ATLASCLOUD_API_KEY not set (only needed for --provider atlas)")
     print()
 
     # Config wizard
@@ -586,6 +743,11 @@ def cmd_init(_args: argparse.Namespace) -> None:
         "default_model",
         "Default model (flash / pro / flash-2.5)",
         "flash",
+    )
+    config["default_provider"] = ask(
+        "default_provider",
+        "Default provider (gemini / atlas)",
+        "gemini",
     )
     config["default_platform"] = ask(
         "default_platform",
@@ -640,7 +802,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("output", nargs="?", help="Output path (auto-generated if omitted)")
     p.add_argument("--preset", help="Style preset name (see list-presets)")
     p.add_argument("--platform", help="Platform preset (see list-platforms)")
-    p.add_argument("--model", help="Model: flash | pro | flash-2.5 or full ID")
+    p.add_argument("--model", help="Provider model alias or full model ID")
+    p.add_argument("--provider", choices=("gemini", "atlas"), help="Image API provider")
     p.add_argument("--edit", help="Edit mode: path to source image to modify")
     p.add_argument(
         "--reference",

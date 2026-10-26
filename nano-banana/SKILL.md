@@ -1,11 +1,11 @@
 ---
 name: nano-banana
-description: Generate and edit images using Google's Gemini image generation models (Nano Banana family). Supports style presets, platform-specific sizing (YouTube/slides/blog), variants, image editing via inlineData, reference images for style transfer, and organized output with metadata. Default model is Nano Banana 2 (gemini-3.1-flash-image-preview). Key is auto-decrypted via SOPS.
+description: Generate images with Google's Gemini API or Atlas Cloud, plus Gemini-powered editing and style references. Supports style presets, platform-specific sizing (YouTube/slides/blog), variants, and organized output with metadata. Default provider is Gemini. Its key can be auto-decrypted via SOPS.
 ---
 
-# Nano Banana - Gemini Image Generation
+# Nano Banana Image Generation
 
-Generate and edit images from text prompts via Google's Gemini image generation API.
+Generate images from text prompts through Google's Gemini API or Atlas Cloud. Gemini remains the default and also supports image editing and style references.
 
 ## When to Use
 
@@ -28,6 +28,9 @@ Wizard checks dependencies (sops, age, magick), verifies the API key, and saves 
 ```bash
 # Simple generation
 scripts/nano_banana.py "a minimalist illustration of a rocket" ./rocket.png
+
+# Optional Atlas Cloud provider (text-to-image)
+scripts/nano_banana.py --provider atlas "a minimalist illustration of a rocket" ./rocket.png
 
 # With style preset
 scripts/nano_banana.py --preset editorial "interconnected nodes" ./nodes.png
@@ -53,7 +56,8 @@ scripts/nano_banana.py history -n 10
 
 ## Requirements
 
-- `GEMINI_API_KEY` — auto-decrypted from `secrets.enc.yaml` via SOPS + age. Fallback: `export GEMINI_API_KEY=...`
+- `GEMINI_API_KEY` — required for the default Gemini provider; auto-decrypted from `secrets.enc.yaml` via SOPS + age. Fallback: `export GEMINI_API_KEY=...`
+- `ATLASCLOUD_API_KEY` — required only when using `--provider atlas`
 - `sops`, `age` — for key decryption
 - `magick` (ImageMagick) — for platform fit + contact sheets
 - `python3` with `pyyaml`
@@ -67,6 +71,8 @@ scripts/nano_banana.py history -n 10
 | `gemini-2.5-flash-image` | `flash-2.5` | **Nano Banana** (original) | Legacy |
 
 Use via `--model flash|pro|flash-2.5` or full ID.
+
+For Atlas Cloud text-to-image generation, use `--provider atlas`. It defaults to `google/nano-banana-2-lite/text-to-image-developer`; pass another Atlas model ID with `--model`. Atlas submissions are never automatically retried because generation requests are billable. Only prediction polling uses bounded retries. Edit and reference modes currently remain on the Gemini provider.
 
 ## Style Presets
 
@@ -182,7 +188,9 @@ scripts/nano_banana.py --preset editorial --platform youtube "subject" --dry-run
 
 ## Transient Errors & Retry
 
-The API occasionally returns `500/INTERNAL` or empty candidates. The script retries up to 4 times with exponential backoff (2s, 4s, 8s, 16s). Permanent errors (4xx, safety violations) fail fast without retry.
+The Gemini API occasionally returns `500/INTERNAL` or empty candidates. The script retries up to 4 times with exponential backoff (2s, 4s, 8s, 16s). Permanent errors (4xx, safety violations) fail fast without retry.
+
+Atlas Cloud uses a different policy: the billable generation POST runs exactly once, while read-only prediction polling has a bounded retry window.
 
 ## Prompt Tips
 
