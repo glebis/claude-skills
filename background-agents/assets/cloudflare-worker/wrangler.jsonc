@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "background-agents-pi",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-27",
+  "workers_dev": false,
+  "preview_urls": false,
+  "workflows": [
+    {
+      "binding": "AGENT_WORKFLOW",
+      "name": "background-agent",
+      "class_name": "BackgroundAgentWorkflow"
+    }
+  ],
+  "vars": { "PI_MODEL": "deepseek/deepseek-v4.1-flash" }
+}

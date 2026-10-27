@@ -1,0 +1,4 @@
+interface:
+  display_name: "Background Agents"
+  short_description: "Run configurable agent profiles on cloud backends"
+  default_prompt: "Use $background-agents to select a profile and run a verified background-agent job."

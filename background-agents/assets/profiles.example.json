@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "defaultBackend": "trigger.dev",
+  "defaultProfile": "pi-openrouter",
+  "defaults": {
+    "projectRef": "env:TRIGGER_PROJECT_REF",
+    "environment": "env:TRIGGER_ENVIRONMENT",
+    "limits": {
+      "concurrency": 2,
+      "runTimeoutSeconds": 240,
+      "maxAttempts": 1
+    }
+  },
+  "profiles": {
+    "pi-openrouter": {
+      "agent": {
+        "engine": "pi",
+        "provider": "openrouter",
+        "model": "env:PI_MODEL"
+      },
+      "tasks": {
+        "run": "env:PI_RUN_TASK_ID"
+      },
+      "capabilities": [
+        "prompt"
+      ],
+      "credentialsEnv": [
+        "OPENROUTER_API_KEY"
+      ]
+    },
+    "pi-evidence": {
+      "extends": "pi-openrouter",
+      "tasks": {
+        "run": "env:PI_EVIDENCE_TASK_ID"
+      },
+      "capabilities": [
+        "source-review"
+      ],
+      "output": {
+        "format": "json",
+        "contract": "source-backed-proposals"
+      }
+    },
+    "another-agent": {
+      "enabled": false,
+      "agent": {
+        "engine": "custom",
+        "provider": "env:CUSTOM_MODEL_PROVIDER",
+        "model": "env:CUSTOM_MODEL"
+      },
+      "tasks": {
+        "run": "env:CUSTOM_RUN_TASK_ID"
+      },
+      "capabilities": [
+        "prompt"
+      ],
+      "credentialsEnv": []
+    },
+    "pi-cloudflare": {
+      "enabled": false,
+      "backend": "cloudflare.workflows",
+      "projectRef": "env:CLOUDFLARE_ACCOUNT_ID",
+      "environment": "env:CLOUDFLARE_ENVIRONMENT",
+      "agent": {
+        "engine": "pi-agent-core",
+        "provider": "openrouter",
+        "model": "env:PI_MODEL"
+      },
+      "tasks": {
+        "run": "env:CLOUDFLARE_WORKFLOW_NAME"
+      },
+      "capabilities": [
+        "prompt"
+      ],
+      "credentialsEnv": [
+        "OPENROUTER_API_KEY"
+      ],
+      "backendOptions": {
+        "apiTokenEnv": "CLOUDFLARE_API_TOKEN"
+      }
+    }
+  }
+}

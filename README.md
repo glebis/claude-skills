@@ -29,6 +29,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Added | Skill | What it does |
 | --- | --- | --- |
+| 2026-10 | [background-agents](./background-agents/) | Named agent profiles for Trigger.dev and Cloudflare Workflows; source-backed evidence review |
 | 2026-10 | [cms-migration-checklist](./cms-migration-checklist/) | Gated WordPress → Next.js + Payload migration checklist: audit, import reconciliation, URL parity, cutover |
 | 2026-10 | [firecrawl-api](./firecrawl-api/) | Firecrawl API script with Alexandria structured-data tools and a 1,850-tool catalog; key from SOPS |
 | 2026-10 | [palmier-reels](./palmier-reels/) | Narrative 9:16 reels in Palmier Pro from a spec + style (presets or design tokens) |

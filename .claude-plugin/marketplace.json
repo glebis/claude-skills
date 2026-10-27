@@ -262,6 +262,11 @@
       "name": "open-knowledge-vault",
       "source": "./open-knowledge-vault",
       "description": "Portable Open Knowledge Format vault setup and maintenance, with optional Obsidian and Dataview views"
+    },
+    {
+      "name": "background-agents",
+      "source": "./background-agents",
+      "description": "Run named background-agent profiles with Trigger.dev by default and an optional Cloudflare Workflows Pi-core adapter. Includes source-backed evidence review and private runtime configuration."
     }
   ]
 }
