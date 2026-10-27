@@ -266,7 +266,7 @@
     {
       "name": "background-agents",
       "source": "./background-agents",
-      "description": "Run named background-agent profiles with Trigger.dev by default and an optional Cloudflare Workflows Pi-core adapter. Includes source-backed evidence review and private runtime configuration."
+      "description": "Configure and run background agents with reusable profiles for agent engines, model providers and extensible execution backends. Trigger.dev and Cloudflare Workflows are available options; includes optional source-backed evidence review."
     }
   ]
 }

@@ -1,6 +1,6 @@
 ---
 name: background-agents
-description: Configure named background-agent profiles and run their jobs, using Trigger.dev by default. Use when delegating work to deployed agents, reusing agents across sessions, or adding another agent engine or execution backend. Includes optional source-backed enrichment validation.
+description: Configure and run background agents with reusable profiles for agent engines, model providers and execution backends. Use when delegating background work, reusing agents across sessions, or adding an engine or backend. Trigger.dev and Cloudflare Workflows are available backends; the approach is extensible. Includes optional source-backed evidence review.
 ---
 
 # Background Agents
