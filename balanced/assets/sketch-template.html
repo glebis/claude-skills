@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balanced Sketch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f1e6;
+  --paper: #fffdf7;
+  --ink: #26231e;
+  --muted: #6b645a;
+  --line: #4a443a;
+  --holds: #2f7d4f;   --holds-bg: #e7f2e9;
+  --breaks: #b23a3a;  --breaks-bg: #f8e5e2;
+  --reframe: #2d5f9a; --reframe-bg: #e3ebf6;
+  --unknown: #9a6a12; --unknown-bg: #f6edd7;
+  --net: #26231e;     --net-bg: #fff3bd;
+  --hand: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+  --body: "Patrick Hand", "Segoe Print", "Comic Sans MS", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1a17; --paper: #24221e; --ink: #ece6da; --muted: #a59d8f; --line: #cfc7b8;
+    --holds: #7cc79a;   --holds-bg: #1f3328;
+    --breaks: #ef8a80;  --breaks-bg: #3a2220;
+    --reframe: #8fb5e6; --reframe-bg: #1e2a3b;
+    --unknown: #e3b75e; --unknown-bg: #362c18;
+    --net: #ece6da;     --net-bg: #3a3417;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b1a17; --paper: #24221e; --ink: #ece6da; --muted: #a59d8f; --line: #cfc7b8;
+  --holds: #7cc79a;   --holds-bg: #1f3328;
+  --breaks: #ef8a80;  --breaks-bg: #3a2220;
+  --reframe: #8fb5e6; --reframe-bg: #1e2a3b;
+  --unknown: #e3b75e; --unknown-bg: #362c18;
+  --net: #ece6da;     --net-bg: #3a3417;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 1.15rem/1.4 var(--body);
+}
+main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 48px; }
+
+.eyebrow { font: 700 1.3rem var(--hand); color: var(--muted); margin: 0; }
+.statement { color: var(--muted); margin: 4px 0 0; }
+
+#board { position: relative; margin-top: 24px; }
+#wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+#wires path { fill: none; stroke: var(--line); stroke-width: 2; stroke-linecap: round; filter: url(#rough); }
+
+.card {
+  position: relative;
+  z-index: 1;
+  background: var(--card-bg, var(--paper));
+  border-radius: 16px 10px 18px 9px;
+  padding: 16px 18px 18px;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2.5px solid var(--c, var(--line));
+  border-radius: inherit;
+  filter: url(#rough);
+  pointer-events: none;
+}
+.card h2 {
+  margin: 0 0 6px;
+  font: 700 1.7rem/1 var(--hand);
+  color: var(--c, var(--ink));
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.card ul { margin: 0; padding: 0; list-style: none; }
+.card li { padding-left: 20px; position: relative; margin-top: 6px; }
+.card li::before { content: "~"; position: absolute; left: 2px; color: var(--c, var(--muted)); }
+.card .empty { color: var(--muted); }
+
+.claim { width: min(680px, 100%); margin: 0 auto; transform: rotate(-0.6deg); }
+.claim h1 { margin: 0; font: 700 clamp(1.9rem, 4.5vw, 2.6rem)/1.1 var(--hand); }
+
+.branches {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 72px;
+}
+.holds   { --c: var(--holds);   --card-bg: var(--holds-bg);   transform: rotate(0.8deg); }
+.breaks  { --c: var(--breaks);  --card-bg: var(--breaks-bg);  transform: rotate(-0.7deg); }
+.reframe { --c: var(--reframe); --card-bg: var(--reframe-bg); transform: rotate(0.5deg); }
+.unknown { --c: var(--unknown); --card-bg: var(--unknown-bg); transform: rotate(-0.9deg); }
+
+.net {
+  --c: var(--net);
+  --card-bg: var(--net-bg);
+  width: min(680px, 100%);
+  margin: 72px auto 0;
+  transform: rotate(0.4deg);
+}
+.net .summary { font: 700 1.6rem/1.15 var(--hand); margin: 0; }
+.meter { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+.meter .track { flex: 1; height: 16px; position: relative; }
+.meter .track::before, .meter .fill {
+  content: ""; position: absolute; inset: 0; border-radius: 9px 6px 8px 7px; filter: url(#rough);
+}
+.meter .track::before { border: 2px solid var(--line); }
+.meter .fill { background: var(--ink); opacity: .75; right: auto; }
+.meter .label { font: 700 1.3rem var(--hand); white-space: nowrap; }
+.action { margin: 14px 0 0; font-size: 1.2rem; }
+.action b { font-family: var(--hand); font-size: 1.4rem; }
+
+sup a { color: inherit; font-size: .75em; text-decoration: none; border-bottom: 1px dashed currentColor; }
+.refs { margin-top: 40px; color: var(--muted); font-size: 1rem; }
+.refs h2 { font: 700 1.4rem var(--hand); margin: 0 0 4px; color: var(--ink); }
+.refs ol { margin: 0; padding-left: 24px; }
+.refs li { margin-top: 4px; overflow-wrap: anywhere; }
+
+@media (max-width: 960px) { .branches { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .branches { grid-template-columns: 1fr; margin-top: 28px; }
+  .net { margin-top: 28px; }
+  #wires { display: none; }
+  .card { transform: none; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="rough">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="4"/>
+    <feDisplacementMap in="SourceGraphic" scale="3.5"/>
+  </filter>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </marker>
+</svg>
+
+<main>
+  <p class="eyebrow">balanced · sketch</p>
+  <p class="statement" id="statement"></p>
+
+  <div id="board">
+    <svg id="wires" aria-hidden="true"></svg>
+    <section class="card claim" id="claim"><h1></h1></section>
+    <div class="branches" id="branches"></div>
+    <section class="card net" id="net"></section>
+  </div>
+
+  <section class="refs" id="refs" hidden><h2>References</h2><ol></ol></section>
+</main>
+
+<script>
+const DATA = /*__SKETCH_DATA__*/null;
+
+const BRANCHES = [
+  ["holds", "✓", "Holds"],
+  ["breaks", "✗", "Breaks"],
+  ["reframe", "↻", "Reframe"],
+  ["unknown", "?", "Unknown"],
+];
+
+// Append text to `el`, turning [n] tags into links to reference n.
+function withRefs(el, text) {
+  text.split(/(\[\d+\])/).forEach(part => {
+    const m = part.match(/^\[(\d+)\]$/);
+    if (m && DATA.refs && DATA.refs[m[1] - 1]) {
+      const sup = document.createElement("sup");
+      const a = document.createElement("a");
+      a.href = "#ref-" + m[1];
+      a.textContent = m[1];
+      sup.append(a);
+      el.append(sup);
+    } else if (part) {
+      el.append(part);
+    }
+  });
+  return el;
+}
+
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) withRefs(node, text);
+  return node;
+}
+
+function render() {
+  document.title = "Balanced Sketch · " + DATA.claim.slice(0, 40);
+  if (DATA.statement) document.getElementById("statement").textContent = "“" + DATA.statement + "”";
+  withRefs(document.querySelector("#claim h1"), DATA.claim);
+
+  const branches = document.getElementById("branches");
+  for (const [key, mark, label] of BRANCHES) {
+    const card = el("section", "card " + key);
+    const h = el("h2");
+    h.append(el("span", null, mark), el("span", null, label));
+    card.append(h);
+    const lines = DATA[key] || [];
+    if (lines.length) {
+      const ul = el("ul");
+      lines.forEach(line => ul.append(el("li", null, line)));
+      card.append(ul);
+    } else {
+      card.append(el("p", "empty", "—"));
+    }
+    branches.append(card);
+  }
+
+  const net = document.getElementById("net");
+  const h = el("h2");
+  h.append(el("span", null, "★"), el("span", null, "Net"));
+  net.append(h, el("p", "summary", DATA.net.summary));
+  if (typeof DATA.net.confidence === "number") {
+    const meter = el("div", "meter");
+    const track = el("div", "track");
+    const fill = el("div", "fill");
+    fill.style.width = DATA.net.confidence + "%";
+    track.append(fill);
+    meter.append(track, el("span", "label", "~" + DATA.net.confidence + "% confident"));
+    net.append(meter);
+  }
+  if (DATA.net.action) {
+    const p = el("p", "action");
+    p.append(el("b", null, "→ "));
+    withRefs(p, DATA.net.action);
+    net.append(p);
+  }
+
+  if (DATA.refs && DATA.refs.length) {
+    const box = document.getElementById("refs");
+    const ol = box.querySelector("ol");
+    DATA.refs.forEach((ref, i) => {
+      const li = el("li", null, ref);
+      li.id = "ref-" + (i + 1);
+      ol.append(li);
+    });
+    box.hidden = false;
+  }
+}
+
+// Wobbly connectors: claim → first-row branches, last-row branches → net.
+function drawWires() {
+  const svg = document.getElementById("wires");
+  svg.replaceChildren();
+  if (getComputedStyle(svg).display === "none") return;
+  const origin = document.getElementById("board").getBoundingClientRect();
+  const box = node => {
+    const r = node.getBoundingClientRect();
+    return { x: r.left - origin.left + r.width / 2, top: r.top - origin.top, bottom: r.bottom - origin.top };
+  };
+  const claim = box(document.getElementById("claim"));
+  const net = box(document.getElementById("net"));
+  const cards = [...document.querySelectorAll(".branches .card")].map(box);
+  const firstRow = Math.min(...cards.map(c => c.top));
+  const lastRow = Math.max(...cards.map(c => c.top));
+
+  const wire = (x1, y1, x2, y2, i) => {
+    const mid = (y2 - y1) / 2;
+    const wob = (i % 2 ? 1 : -1) * 6;
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", `M${x1} ${y1 + 4} C${x1 + wob} ${y1 + mid} ${x2 - wob} ${y2 - mid} ${x2} ${y2 - 6}`);
+    path.setAttribute("marker-end", "url(#arrow)");
+    path.style.color = "var(--line)";
+    svg.append(path);
+  };
+  cards.forEach((c, i) => {
+    // Cards are slightly rotated, so rows only line up within a few pixels.
+    if (c.top - firstRow < 40) wire(claim.x + (i - 1.5) * 40, claim.bottom, c.x, c.top, i);
+    if (lastRow - c.top < 40) wire(c.x, c.bottom, net.x + (i - 1.5) * 40, net.top, i + 1);
+  });
+}
+
+render();
+drawWires();
+addEventListener("resize", drawWires);
+document.fonts && document.fonts.ready.then(drawWires);
+</script>
+</body>
+</html>

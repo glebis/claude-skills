@@ -1,6 +1,6 @@
 {
   "name": "balanced",
-  "description": "Constructive, evidence-based dialogue mode that avoids sycophancy. Multi-perspective analysis, critical feedback, and rigorous challenge of ideas, with full, interactive, tldr, steelman, and decision modes.",
+  "description": "Constructive, evidence-based dialogue mode that avoids sycophancy. Multi-perspective analysis, critical feedback, and rigorous challenge of ideas, with full, interactive, tldr, steelman, decision, and sketch modes.",
   "author": {
     "name": "Gleb Kalinin"
   },

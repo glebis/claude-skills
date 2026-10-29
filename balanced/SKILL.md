@@ -1,6 +1,6 @@
 ---
 name: balanced
-description: Constructive, evidence-based dialogue mode that avoids sycophancy. This skill should be used when the user wants balanced multi-perspective analysis, critical feedback, or rigorous challenge of their ideas. Triggers on "/balanced" or requests for honest/critical/balanced feedback. Supports full, interactive, tldr, steelman, and decision modes.
+description: Constructive, evidence-based dialogue mode that avoids sycophancy. This skill should be used when the user wants balanced multi-perspective analysis, critical feedback, or rigorous challenge of their ideas. Triggers on "/balanced" or requests for honest/critical/balanced feedback. Supports full, interactive, tldr, steelman, decision, and sketch modes.
 ---
 
 # Balanced Dialog
@@ -23,13 +23,14 @@ INTERACTIVE    — Socratic Q&A, one move at a time
 TLDR           — 3-5 line insight box, action-oriented
 STEELMAN       — strongest argument + strongest counter
 DECISION       — tradeoff table + the call
+SKETCH         — the analysis as a visual HTML diagram
 
 Modifiers (append to any mode):
   --table   ASCII pro/contra table
   --refs    force full academic citations
 ```
 
-2. Ask for the default mode with AskUserQuestion. The tool allows at most 4 options, so offer FULL (recommended), TLDR, STEELMAN, and DECISION; the user picks INTERACTIVE through the tool's free-text "Other" answer.
+2. Ask for the default mode with AskUserQuestion. The tool allows at most 4 options, so offer FULL (recommended), TLDR, STEELMAN, and DECISION; the user picks INTERACTIVE or SKETCH through the tool's free-text "Other" answer.
 
 3. Ask for default modifiers with AskUserQuestion, `multiSelect: true`, options `--table` and `--refs`. Selecting neither means no modifiers.
 
@@ -37,7 +38,7 @@ Modifiers (append to any mode):
    ```json
    {"default_mode": "full", "default_modifiers": []}
    ```
-   Valid `default_mode` values: `full`, `interactive`, `tldr`, `steelman`, `decision`. Valid `default_modifiers` entries: `--table`, `--refs`.
+   Valid `default_mode` values: `full`, `interactive`, `tldr`, `steelman`, `decision`, `sketch`. Valid `default_modifiers` entries: `--table`, `--refs`.
 
 5. Confirm:
    ```
@@ -67,6 +68,10 @@ Treat the first word of the arguments as a mode only when it exactly matches a m
   ```
 - **Steelman mode**: `/balanced steelman <statement>`. Only moves 1+2. Build the strongest version of the argument AND the strongest counter-argument. No action steps. For preparing to defend a position.
 - **Decision mode**: `/balanced decision <statement>`. Only move 4 (refinement). For when analysis is done and the call needs to be made. Output a tradeoff table with one row per option and columns for key gain, key cost, main risk, and reversibility, then state the recommended option, the confidence level, and what evidence would change the call.
+- **Sketch mode**: `/balanced sketch <statement>`. All four moves as a hand-drawn-style HTML diagram: the claim at the top, wires down to four cards (holds, breaks, reframe, unknown), and a net card with a confidence meter and the next step. For seeing the shape of the argument at a glance.
+  1. Write the analysis as JSON, following the schema in `scripts/render_sketch.py`: `statement`, `claim`, the four branch lists, `net` (`summary`, `confidence` 0–100, `action`), and optional `refs`. Use at most 3 lines per branch and about 10 words per line; leave a branch as `[]` when it has nothing to say. With `--refs`, tag lines with `[1]`, `[2]` and fill `refs`.
+  2. Save the JSON to a scratch or temp directory unless the user names a location, then render it with the script in this skill's base directory: `python3 <base dir>/scripts/render_sketch.py sketch.json -o sketch.html`. The script validates the data and prints the output path.
+  3. Show the page with the host's file preview when one exists, otherwise open it (`open` on macOS, `xdg-open` on Linux). Reply with one line and the file path; do not repeat the analysis in chat.
 
 ## Output Modifiers
 
@@ -82,7 +87,7 @@ Append these flags to any mode:
   │ Builds on known skills  │ Success metric unclear  │
   └─────────────────────────┴─────────────────────────┘
   ```
-- **`--refs`**: Force full academic references even in tldr/decision modes (normally omitted for brevity).
+- **`--refs`**: Force full academic references even in tldr/decision/sketch modes (normally omitted for brevity).
 
 ## Four Moves
 
