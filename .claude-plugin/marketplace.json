@@ -267,6 +267,11 @@
       "name": "background-agents",
       "source": "./background-agents",
       "description": "Configure and run background agents with reusable profiles for agent engines, model providers and extensible execution backends. Trigger.dev and Cloudflare Workflows are available options; includes optional source-backed evidence review."
+    },
+    {
+      "name": "agent-qa-testing",
+      "source": "./agent-qa-testing",
+      "description": "Validate, run, and triage agent-qa web and mobile tests with advanced memidex memory and self-improvement"
     }
   ]
 }
