@@ -131,6 +131,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Skill | What it does |
 | --- | --- |
+| [agent-qa-testing](./agent-qa-testing/) | Validate, run, and triage agent-qa web and mobile tests with advanced memidex memory and self-improvement |
 | [tdd](./tdd/) | Multi-agent TDD with enforced context isolation across RED→GREEN→REFACTOR |
 | [feature-factory](./feature-factory/) | Solo-dev pipeline from feature intent to shipped, with evidence gates |
 | [cms-migration-checklist](./cms-migration-checklist/) | WordPress → Next.js + Payload migration: phase detection, evidence-backed gates, known pitfalls, cutover runbook |
