@@ -47,3 +47,7 @@ pre-session-portrait/assets/cockpit-*.html
 
 # Private case notes (client data, local paths)
 cms-migration-checklist/references/eroskosmos-lessons.md
+
+# Generated image drafts (large binaries, local only)
+drafts/
+**/drafts/
