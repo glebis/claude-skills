@@ -325,9 +325,15 @@ git push
 
 This commit can be folded into Step 6's commit if you prefer a single push; either way it must land before re-running Step 7's deploy wait.
 
+## Step 10: Announce the Published Recording via the Lab Bot (REQUIRED)
+
+After the final deployment and browser verification, announce the recording and materials through the lab's configured Telegram bot. This is part of publication, not a separate reminder or scheduled task. Read `references/bot-announcement.md` and follow its verification and duplicate-prevention rules. Do not send on a build success, transcript completion, draft page, or unverified deployment alone.
+
+For Goal-Driven AI 01 use **@agency_lab_companion_bot**, posting to **Goal-Driven AI 01 — Чат**. Include clickable recording and meeting-material links, a brief description of currently available companion features, and a button inviting participants to open the bot's private chat. Record the resulting Telegram message link in the Pipeline Report. Other labs require their own verified bot and destination mapping; never reuse this cohort's chat by default.
+
 ## Pipeline Report
 
-After completion, report: Fathom path, video path, YouTube URL, MDX path, commit hash, deploy status, embed verification, and the aggregation rebuild (meeting count, any new glossary terms defined).
+After completion, report: Fathom path, video path, YouTube URL, MDX path, commit hash, deploy status, embed verification, and the aggregation rebuild (meeting count, any new glossary terms defined). Include bot announcement status, destination, and verified Telegram message link (or the exact blocking reason).
 
 ## Related: fan-out maintenance workflows
 
