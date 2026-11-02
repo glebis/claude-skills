@@ -1,0 +1,191 @@
+{
+  "title": {
+    "first": "Who keeps",
+    "emphasis": "your memory?",
+    "first_size": 142,
+    "emphasis_size": 179,
+    "emphasis_color": "#d01920"
+  },
+  "graph": {
+    "x": 0,
+    "y": 370,
+    "width": 1320,
+    "height": 740,
+    "rotation": -20
+  },
+  "nodes": [
+    {
+      "id": "a",
+      "x": 170,
+      "y": 245,
+      "size": 250,
+      "shape": "circle",
+      "ink": "red"
+    },
+    {
+      "id": "b",
+      "x": 440,
+      "y": 130,
+      "size": 94,
+      "shape": "square",
+      "ink": "black"
+    },
+    {
+      "id": "c",
+      "x": 730,
+      "y": 185,
+      "size": 108,
+      "shape": "circle",
+      "ink": "black"
+    },
+    {
+      "id": "d",
+      "x": 825,
+      "y": 390,
+      "size": 100,
+      "shape": "triangle",
+      "ink": "red"
+    },
+    {
+      "id": "e",
+      "x": 485,
+      "y": 420,
+      "size": 76,
+      "shape": "circle",
+      "ink": "black"
+    },
+    {
+      "id": "f",
+      "x": 305,
+      "y": 60,
+      "size": 56,
+      "shape": "square",
+      "ink": "red"
+    },
+    {
+      "id": "g",
+      "x": 900,
+      "y": 80,
+      "size": 48,
+      "shape": "circle",
+      "ink": "black"
+    },
+    {
+      "id": "h",
+      "x": 340,
+      "y": 360,
+      "size": 50,
+      "shape": "circle",
+      "ink": "black"
+    },
+    {
+      "id": "i",
+      "x": 930,
+      "y": 280,
+      "size": 46,
+      "shape": "square",
+      "ink": "black"
+    },
+    {
+      "id": "j",
+      "x": 590,
+      "y": 55,
+      "size": 44,
+      "shape": "circle",
+      "ink": "red"
+    }
+  ],
+  "edges": [
+    [
+      "a",
+      "b"
+    ],
+    [
+      "b",
+      "c"
+    ],
+    [
+      "c",
+      "d"
+    ],
+    [
+      "d",
+      "e"
+    ],
+    [
+      "e",
+      "a"
+    ],
+    [
+      "a",
+      "c"
+    ],
+    [
+      "b",
+      "e"
+    ],
+    [
+      "e",
+      "c"
+    ],
+    [
+      "b",
+      "d"
+    ],
+    [
+      "a",
+      "f"
+    ],
+    [
+      "c",
+      "g"
+    ],
+    [
+      "a",
+      "h"
+    ],
+    [
+      "h",
+      "e"
+    ],
+    [
+      "h",
+      "b"
+    ],
+    [
+      "h",
+      "c"
+    ],
+    [
+      "d",
+      "i"
+    ],
+    [
+      "i",
+      "c"
+    ],
+    [
+      "i",
+      "g"
+    ],
+    [
+      "b",
+      "j"
+    ],
+    [
+      "j",
+      "c"
+    ],
+    [
+      "j",
+      "f"
+    ]
+  ],
+  "footer": {
+    "enabled": true,
+    "name": "Gleb Kalinin",
+    "profile": "/in/glebkalinin/",
+    "align": "right",
+    "opacity": 0.24
+  }
+}
