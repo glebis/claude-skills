@@ -1,9 +1,13 @@
 ---
 name: wispr-analytics
-description: This skill should be used when analyzing Wispr Flow voice dictation history for self-reflection, work patterns, mental health insights, or productivity analytics AND when managing the Wispr Flow dictionary (adding terms, fixing mishears, exporting/importing, suggesting improvements). Triggered by requests like "/wispr-analytics", "analyze my dictations", "what did I dictate today", "wispr reflection", "add to wispr dictionary", "improve dictation", "wispr suggest", "export wispr dictionary", or any request to review voice dictation patterns or manage dictation quality.
+description: This skill should be used when analyzing Wispr Flow voice dictation history for self-reflection, work patterns, mental health insights, or productivity analytics AND when managing the Wispr Flow dictionary (adding terms, fixing mishears, exporting/importing, suggesting improvements). Triggered by requests like "/wispr-analytics", "analyze my dictations", "what did I dictate today", "wispr reflection", "add to wispr dictionary", "improve dictation", "wispr suggest", "export wispr dictionary", or any request to review voice dictation patterns or manage dictation quality. Also use for live Wispr Flow meeting transcription or completed-dictation capture into separate Obsidian talk folders, with a default 30-second capture target.
 ---
 
 # Wispr Analytics
+
+## Live transcription mode
+
+For live speech capture, meeting transcripts, or a wiki built during a talk, read [references/live-transcription.md](references/live-transcription.md). Run `scripts/live_wispr.py --mode live --vault PATH --talk TITLE`. Default: meeting recorder, 5-second polls, 30-second capture target, a new subfolder with one `Source.md` transcript per talk, plus separate curated notes. Completed dictation requires `--source dictation`. The script captures source data and creates the wiki structure; semantic curation is a separate agent/model step.
 
 Extract and analyze Wispr Flow dictation history from the local SQLite database. Combine quantitative metrics with LLM-powered qualitative analysis for self-reflection, work pattern recognition, and mental health awareness.
 
@@ -313,3 +317,5 @@ When running analytics, also check for dictionary improvement opportunities:
 - Bilingual dictations are common; analysis should honor both Russian and English
 - The `asrText` field contains raw speech recognition before formatting -- useful for detecting speech patterns vs formatted output
 - Dictionary JSON is stored at `~/ai_projects/claude-skills/wispr-analytics/data/dictionary.json` for version control
+
+For user-authorized spoken controls, use `--voice-commands` and the explicit command grammar in the live-transcription reference. A separate model worker is required for semantic updates.
