@@ -43,7 +43,26 @@ Read `references/formats.md`. Short version:
 
 Default agents: `codex,cmd`. Add `claude` when a third view helps: it is a separate Claude session with its own context, but the same model family as you, so it adds no model diversity. Add `opencode`/`gemini` only when they pass `doctor`.
 
-## 3. Check the agents
+## 3. Configure models, then check the agents
+
+Use setup when the user asks to choose models, or before the first run when they want explicit model choices. In a terminal:
+
+```bash
+node ~/.claude/skills/agent-roundtable/scripts/roundtable.mjs setup --agents codex,cmd,claude
+```
+
+When orchestrating through tools rather than a terminal, discover with `setup --agents codex,cmd,claude --json`, present the advertised names and IDs through cenno, then save their choices:
+
+```bash
+node ~/.claude/skills/agent-roundtable/scripts/roundtable.mjs setup \
+  --agents codex,cmd --models 'codex=MODEL_ID,cmd=MODEL_ID'
+```
+
+Replace `MODEL_ID` with the exact IDs from discovery. `--models 'codex=@default'` clears an override. Selections are saved atomically to `<cwd>/.roundtable.json`; use `--cwd TARGET` to configure a particular target or `--config FILE` to share an explicit configuration. Pass the same `--config` to run/doctor when using a custom file. Discovery-only `--json` does not save anything.
+
+Run and doctor load the saved choices. ACP validates each model against advertised options and confirms the setter response before any turn; every restarted session reapplies it. Headless initial/resume commands receive the same model through `--model`. Unsupported or rejected choices fail visibly, never silently select an alternative. State/result record requested and effective models where reported. Setup discovery is not proof that live inference with the model will succeed.
+
+Then check every agent over its live transport:
 
 ```bash
 node ~/.claude/skills/agent-roundtable/scripts/roundtable.mjs doctor
@@ -52,7 +71,6 @@ node ~/.claude/skills/agent-roundtable/scripts/roundtable.mjs doctor
 `doctor` starts every agent over its default transport and sends a one-line prompt, so expired keys and failed logins show up here, not in round 1. The other transport is only started. Drop agents whose default transport fails and whose other transport doesn't start, and tell the user which and why. Known traps: `gemini` ACP needs a working Google OAuth login (`gemini` interactively once); `opencode` connects but fails at the first prompt when its API key is expired. First install: `cd ~/.claude/skills/agent-roundtable/scripts && npm install`.
 
 ## 4. Run the debate (in the background)
-
 ```bash
 node ~/.claude/skills/agent-roundtable/scripts/roundtable.mjs run \
   --brief RUN/brief.md --run-dir RUN --cwd TARGET_REPO \
@@ -61,7 +79,7 @@ node ~/.claude/skills/agent-roundtable/scripts/roundtable.mjs run \
 
 Use `RUN = <target repo>/docs/roundtable/<slug>-<YYYY-MM-DD>/` when the user wants a handoff doc, otherwise the scratchpad. `RUN` must be fresh: the runner refuses a directory that already has `state.json`, `moderator/` or `synthesis.md`. Start it with `run_in_background: true` and watch `RUN/state.json` with Monitor (an until-loop on its `status` field), never with bare sleeps.
 
-Options: `--rounds` (default 3), `--min-rounds` (default 2), `--turn-timeout` seconds per agent turn (900), `--budget-min` wall clock for the debate (60), `--transport auto|acp|headless` (`auto` = each agent's default), `--roles a,b` for the roles format, `--no-veto`, `--drain-timeout` (30) and `--kill-grace` (5) seconds, `--registry` for another `agents.json`.
+Options: `--rounds` (default 3), `--min-rounds` (default 2), `--turn-timeout` seconds per agent turn (900), `--budget-min` wall clock for the debate (60), `--transport auto|acp|headless` (`auto` = each agent's default), `--roles a,b` for the roles format, `--no-veto`, `--drain-timeout` (30) and `--kill-grace` (5) seconds, `--registry` for another `agents.json`, `--config` for another model-selection file.
 
 **Read-only is best effort.** Agents may read anything and run commands. The ACP permission rule decides by path, never by the tool's title:
 
