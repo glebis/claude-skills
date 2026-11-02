@@ -21,7 +21,9 @@ read-only by default.
 4. Download artifacts to an isolated temporary directory. Run Cull's exact
    artifact verifier; check updater signature, SHA-256 checksums, DMG contents,
    embedded version and architecture, codesign, Gatekeeper, and notarization
-   staple.
+   staple. The verifier requires **exactly the 4 signed assets** in
+   `--artifact-dir` — checksums.txt and release-provenance.json are verifier
+   outputs, not inputs; remove them before running.
 5. Compare Homebrew version and SHA-256 with public provenance and require its
    promotion evidence.
 6. Report version, commit, tag object, workflow, asset hashes, release URL, tap

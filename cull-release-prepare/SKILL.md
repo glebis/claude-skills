@@ -32,5 +32,20 @@ Preparation cannot tag, push, dispatch workflows, publish, or update Homebrew.
 7. Verify one `chore(release): vX.Y.Z` commit, state `prepared`, the declared file
    set, no tag, and no remote mutation.
 
+## Pre-prepare checklist (learned the hard way)
+
+- Free regenerable `target/` dirs first: the gate needs ≥15 GiB and cargo
+  targets regrow 7–11 GB per build.
+- Wait out the dependabot auto-merge queue (`gh pr list --state open`); queued
+  merges advance main between prepare and tag and burn tags later.
+- On minor/major bumps, land the new `X.Y.x` row in SECURITY.md's
+  supported-versions table before preparing (HYG-006 contract test fails
+  inside the gate otherwise).
+- Curated release notes are **end-user release notes**: they must cover the full
+  delta since the last *public* release (not the last tag), lead with features,
+  and stay readable for non-technical users. Internal recovery story goes in a
+  short under-the-hood paragraph. Error codes, bd ids, and tool names stay out
+  of user-facing notes.
+
 On failure, show diagnostics and changed files. Never reset, discard, or overwrite
 work outside the release-owned file set.

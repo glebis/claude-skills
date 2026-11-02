@@ -23,6 +23,11 @@ Treat Cull's JSON release CLI as authoritative. This skill is strictly read-only
 6. Capture status and HEAD again. If either changed, return
    `CHECK_MUTATED_REPOSITORY` and stop.
 
+Before reporting green, sanity-check the two blockers that recur between
+releases: free disk (delete regenerable `target/` dirs — gates need ≥15 GiB and
+targets regrow 7–11 GB per build) and the dependabot auto-merge queue (it can
+advance main between check and tag; wait for it to drain or account for it).
+
 ## Report contract
 
 Report current and target versions, source SHA, branch and sync state, disk,
