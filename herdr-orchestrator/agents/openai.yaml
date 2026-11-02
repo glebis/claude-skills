@@ -1,0 +1,4 @@
+interface:
+  display_name: "Herdr Orchestrator"
+  short_description: "Coordinate parallel herdr agents and review their work"
+  default_prompt: "Use $herdr-orchestrator to assign independent work to cmd agents in herdr, monitor progress, and review their evidence."

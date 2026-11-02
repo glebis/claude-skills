@@ -1,0 +1,4 @@
+interface:
+  display_name: "Systemic"
+  short_description: "Continue the Work Reflection contract through Beads"
+  default_prompt: "Use $systemic to continue the next ready task under the Work Reflection contract, preserving the current scope."
