@@ -1,6 +1,6 @@
 ---
 name: disk-cleanup
-description: Scan and clean macOS caches, package-manager data, crash dumps, and app caches to reclaim disk space. Deterministic — a config registry (targets.json) plus two scripts (survey.py read-only, clean.py executor) do all the measuring and deleting; the agent only relays a compressed summary and makes the few human-judgment calls. IMPORTANT — use this skill whenever the user's request on macOS involves: freeing disk space, cleaning/clearing caches, "disk is full", "clean up my Mac", "free up space", "what's eating my disk", "running low on disk", needing space for an install, or any low-storage complaint. Covers the whole workflow survey → choose → clean → empty Trash.
+description: 'Scan and clean macOS caches, package-manager data, crash dumps, and app caches to reclaim disk space. Deterministic — a config registry (targets.json) plus two scripts (survey.py read-only, clean.py executor) do all the measuring and deleting; the agent only relays a compressed summary and makes the few human-judgment calls. IMPORTANT — use this skill whenever the user''s request on macOS involves: freeing disk space, cleaning/clearing caches, "disk is full", "clean up my Mac", "free up space", "what''s eating my disk", "running low on disk", needing space for an install, or any low-storage complaint. Covers the whole workflow survey → choose → clean → empty Trash.'
 ---
 
 # Disk Cleanup
