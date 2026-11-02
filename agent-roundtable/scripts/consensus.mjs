@@ -37,11 +37,13 @@ export function assessConsensus(statuses, ctx) {
 }
 
 // The finding ids behind a set of blocking objections ("CODEX-3: reason" -> "CODEX-3").
+// The moderator note and the run summary quote these, not the full sentences.
 export function blockingIds(statuses) {
   return [...new Set(statuses.flatMap((s) => s.blocking ?? []).map((b) => b.split(":")[0].trim()))].sort();
 }
 
-// Deadlock: the same non-empty blocking set two rounds running.
+// Deadlock: the same non-empty blocking set two rounds running. A human-shaped
+// call is then needed even in auto mode, so the runner pauses for a note.
 export function isDeadlock(previousIds, currentIds) {
   return !!previousIds && currentIds.length > 0 && previousIds.join("\n") === currentIds.join("\n");
 }

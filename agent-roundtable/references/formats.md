@@ -20,6 +20,12 @@ Pick by the shape of the question, not by habit. State the choice and the reason
 
 ## Choosing agents
 
-- Model diversity beats agent count: codex + cmd + claude is three different stacks; two Claude-based agents add little.
+- Model diversity beats agent count: different model families provide different perspectives; codex + cmd + claude are distinct CLI stacks but may not be three model families. Check configured models; two Claude-based participants add little model diversity.
 - `claude` as a participant is a separate ACP session, not you. Add it when you want a Claude perspective in the debate while you stay neutral.
 - Each extra agent multiplies cost and time by about the round count. Three is usually the ceiling worth paying for.
+
+## Transport and failure semantics
+
+Default codex to native-resume headless with a read-only sandbox, and cmd/claude to ACP. Both transports preserve completed context; recovery uses explicit native IDs, never the latest shared-cwd session. Select agents only after acceptance tests pass and prompt-level doctor checks succeed; doctor makes real model calls. Live native-resume behavior remains unverified until exercised.
+
+A restarted, switched or dropped participant makes the result degraded. Retain dropped participants’ objections in the synthesis; never present agreement among survivors as full consensus. Recovery allowances are lifetime limits, independent of format or round count (see SKILL.md).

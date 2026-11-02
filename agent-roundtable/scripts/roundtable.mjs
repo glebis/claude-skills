@@ -1,452 +1,324 @@
 #!/usr/bin/env node
-// agent-roundtable runner: drives a multi-agent audit debate. Each agent runs over
-// ACP or a headless CLI with native resume (see agents.mjs); a failing agent is
-// recovered along a fixed ladder and the run is labelled degraded. The
-// orchestrating Claude session acts as moderator through files in the run
-// directory (see SKILL.md "Run directory").
-//
-//   node roundtable.mjs run --brief brief.md --agents codex,cmd --run-dir DIR [options]
-//   node roundtable.mjs doctor [codex,cmd,...]
-
-import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, renameSync, readdirSync, statSync, realpathSync } from "node:fs";
-import { join, dirname, resolve, relative, isAbsolute } from "node:path";
-import { parseArgs } from "node:util";
-import { fileURLToPath } from "node:url";
-import { AcpAgent, HeadlessAgent, killAllChildren } from "./agents.mjs";
-import { openingPrompt, critiquePrompt, vetoPrompt, recoveryPrompt, parseStatus } from "./prompts.mjs";
-import { assessConsensus, blockingIds, isDeadlock } from "./consensus.mjs";
+// File-mediated audit runner. Importable without parsing argv or spawning agents.
+import { existsSync, mkdirSync, readFileSync, appendFileSync } from 'node:fs';
+import { join, dirname, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { AcpAgent } from './acp-agent.mjs';
+import { HeadlessAgent } from './headless.mjs';
+import { Participant } from './recovery.mjs';
+import { setup, loadModelConfig, withModelConfig } from './setup.mjs';
+import { atomicWrite, assertFreshRun, waitForFile, fingerprint } from './safeguards.mjs';
+import { openingPrompt, critiquePrompt, vetoPrompt, parseStatus } from './prompts.mjs';
+import { assessConsensus, blockingIds, isDeadlock } from './consensus.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-process.env.PATH = `${join(HERE, "node_modules", ".bin")}:${process.env.PATH}`;
-
-const ROLES = ["auditor", "devils-advocate", "architect", "qa"];
-const MAX_FAILED_TURNS = 3;
-
-const { positionals, values: opt } = parseArgs({
-  allowPositionals: true,
-  options: {
-    brief: { type: "string" },
-    agents: { type: "string", default: "codex,cmd" },
-    format: { type: "string", default: "panel" }, // panel | pingpong | roles
-    roles: { type: "string" }, // comma list aligned with --agents, for format=roles
-    rounds: { type: "string", default: "3" },
-    "min-rounds": { type: "string", default: "2" },
-    mode: { type: "string", default: "auto" }, // auto | active
-    transport: { type: "string", default: "auto" }, // auto (registry default) | acp | headless
-    cwd: { type: "string", default: process.cwd() },
-    "run-dir": { type: "string" },
-    registry: { type: "string", default: join(HERE, "..", "agents.json") },
-    "turn-timeout": { type: "string", default: "900" }, // seconds per agent turn
-    "drain-timeout": { type: "string", default: "30" }, // seconds to drain a cancelled ACP turn
-    "kill-grace": { type: "string", default: "5" }, // seconds between SIGTERM and SIGKILL
-    "budget-min": { type: "string", default: "60" }, // wall clock for the debate rounds
-    "wait-timeout": { type: "string", default: "3600" }, // seconds to wait for moderator files
-    "no-veto": { type: "boolean", default: false },
-  },
-});
-
-const REGISTRY = JSON.parse(readFileSync(opt.registry, "utf8"));
-const agentOpts = (extra) => ({ drainMs: Number(opt["drain-timeout"]) * 1000, killGraceMs: Number(opt["kill-grace"]) * 1000, ...extra });
-
-// ---------- small utilities ----------
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+export const REGISTRY = JSON.parse(readFileSync(join(HERE, '..', 'agents.json'), 'utf8'));
+const ROLES = ['auditor', 'devils-advocate', 'architect', 'qa'];
 const now = () => new Date().toISOString();
+export const DEFAULTS = { agents: 'codex,cmd', format: 'panel', rounds: '3', 'min-rounds': '2', mode: 'auto', transport: 'auto',
+  cwd: process.cwd(), 'turn-timeout': '900', 'drain-timeout': '30', 'kill-grace': '5', 'budget-min': '60', 'wait-timeout': '3600', 'no-veto': false };
 
-// tmp file + rename, so a reader only ever sees a complete file under the final name.
-function writeAtomic(path, data) {
-  const tmp = `${path}.${process.pid}.tmp`;
-  writeFileSync(tmp, data);
-  renameSync(tmp, path);
-}
+// Timing knobs handed to every adapter: how long a cancelled ACP turn may drain
+// before its session is discarded, and how long a process gets between SIGTERM
+// and SIGKILL. One option set covers both constructor conventions.
+const agentOptions = opt => {
+  const drainMs = Number(opt['drain-timeout']) * 1000, graceMs = Number(opt['kill-grace']) * 1000;
+  return { drainMs, killGraceMs: graceMs, cancelGraceMs: drainMs, closeGraceMs: graceMs, graceMs };
+};
+// The registry names its default transport either `transport` or `defaultTransport`.
+const initialTransportFor = (opt, cfg) => opt.transport !== 'auto' ? opt.transport : cfg.defaultTransport ?? cfg.transport ?? (cfg.acp ? 'acp' : 'headless');
 
-// Waits for a moderator file and returns it once its size has stopped changing,
-// as a second guard behind the atomic tmp + mv the moderator is asked to use.
-async function waitForFile(path, timeoutMs) {
-  const end = Date.now() + timeoutMs;
-  while (Date.now() < end) {
-    if (existsSync(path)) {
-      const size = statSync(path).size;
-      await sleep(500);
-      if (existsSync(path) && statSync(path).size === size) return readFileSync(path, "utf8");
-      continue;
-    }
-    await sleep(Math.min(2000, Math.max(100, end - Date.now())));
+function validate(options, registry) {
+  const ids = options.agents.split(',').map(s => s.trim()).filter(Boolean);
+  if (ids.length < 2 || new Set(ids).size !== ids.length) throw new Error('At least two distinct agents are required');
+  for (const id of ids) if (!Object.hasOwn(registry, id) || id.startsWith('_') || !/^[a-zA-Z0-9_-]+$/.test(id)) throw new Error(`Unknown or invalid agent: ${id}`);
+  for (const [key, choices] of Object.entries({ format: ['panel', 'pingpong', 'roles'], mode: ['auto', 'active'], transport: ['auto', 'acp', 'headless'] })) {
+    if (!choices.includes(options[key])) throw new Error(`Invalid ${key}: ${options[key]}`);
   }
-  return null;
-}
-
-const git = (cwd, args) => execFileSync("git", args, { cwd, stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 30 });
-const EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
-
-// Content fingerprint of tracked and untracked (not gitignored) files, runDir excluded.
-// A further edit to an already dirty file changes it, unlike `git status`.
-function fingerprint(cwd, runDir) {
-  let top;
-  try { top = git(cwd, ["rev-parse", "--show-toplevel"]).toString().trim(); } catch { return null; } // not a git repo
-  const rel = relative(realpathSync(top), realpathSync(runDir)); // git prints realpaths (/private/var on macOS)
-  const exclude = rel && !rel.startsWith("..") && !isAbsolute(rel) ? [`:(exclude,top)${rel}`] : [];
-  const h = createHash("sha256");
-  let base = "HEAD";
-  try { git(top, ["rev-parse", "--verify", "HEAD"]); } catch { base = EMPTY_TREE; }
-  h.update(git(top, ["diff", "--binary", base, "--", ".", ...exclude]));
-  const untracked = git(top, ["ls-files", "--others", "--exclude-standard", "-z", "--", ".", ...exclude]).toString().split("\0").filter(Boolean);
-  for (const f of untracked.sort()) {
-    h.update(`\0${f}\0`);
-    try { h.update(readFileSync(join(top, f))); } catch { h.update("<unreadable>"); }
+  for (const key of ['rounds', 'min-rounds', 'turn-timeout', 'drain-timeout', 'kill-grace', 'budget-min', 'wait-timeout']) {
+    const n = Number(options[key]);
+    if (!Number.isFinite(n) || n <= 0 || (['rounds', 'min-rounds'].includes(key) && !Number.isInteger(n))) throw new Error(`Invalid ${key}`);
   }
-  return h.digest("hex");
+  if (Number(options['min-rounds']) > Number(options.rounds)) throw new Error('min-rounds cannot exceed rounds');
+  if (options.format === 'pingpong' && ids.length !== 2) throw new Error('pingpong needs exactly two agents');
+  return ids;
 }
 
-// ---------- agents ----------
-
-function makeAgent(id, transport, ctx, carry = {}) {
-  const cfg = REGISTRY[id];
-  return transport === "acp"
-    ? new AcpAgent(id, cfg, agentOpts(ctx))
-    : new HeadlessAgent(id, cfg, agentOpts({ ...ctx, sessionId: carry.sessionId ?? null }));
-}
-
-async function startAgent(id, transport, ctx) {
-  const a = makeAgent(id, transport, ctx);
-  try {
-    await a.start();
-    return a;
-  } catch (e) {
-    await a.close?.();
-    if (a.stderr) e.message += ` | stderr: ${a.stderr.slice(-300).trim()}`;
-    throw e;
-  }
-}
-
-function defaultTransport(id) {
-  const cfg = REGISTRY[id];
-  if (opt.transport !== "auto") return opt.transport;
-  return cfg.transport ?? (cfg.acp ? "acp" : "headless");
-}
-
-// ---------- debate ----------
-
-async function run() {
-  if (!opt.brief || !opt["run-dir"]) throw new Error("run needs --brief and --run-dir");
-  const runDir = resolve(opt["run-dir"]);
-  const cwd = resolve(opt.cwd);
-  for (const f of ["state.json", "moderator", "synthesis.md"]) {
-    if (existsSync(join(runDir, f))) throw new Error(`${join(runDir, f)} exists: this run dir was already used; pick a new --run-dir`);
-  }
-  for (const d of ["rounds", "moderator", "veto"]) mkdirSync(join(runDir, d), { recursive: true });
-  const logFile = join(runDir, "events.log");
-  const log = (m) => { const line = `${now()} ${String(m).replace(/\s*\n\s*/g, " ⏎ ").slice(0, 400)}`; appendFileSync(logFile, line + "\n"); console.error(line); };
-
-  const brief = readFileSync(opt.brief, "utf8");
-  writeAtomic(join(runDir, "brief.md"), brief);
-  const ids = opt.agents.split(",").map((s) => s.trim()).filter(Boolean);
-  for (const id of ids) if (!REGISTRY[id] || id.startsWith("_")) throw new Error(`unknown agent "${id}" (known: ${Object.keys(REGISTRY).filter((k) => !k.startsWith("_")).join(", ")})`);
-  if (opt.format === "roles" && !opt.roles) log(`warning: --format roles without --roles; using the default lenses ${ROLES.join(", ")}`);
-  const roles = opt.roles ? opt.roles.split(",") : ROLES;
-  const maxRounds = Number(opt.rounds);
-  const turnMs = Number(opt["turn-timeout"]) * 1000;
-  const waitMs = Number(opt["wait-timeout"]) * 1000;
-  const deadline = Date.now() + Number(opt["budget-min"]) * 60_000;
-  if (opt.format === "pingpong" && ids.length !== 2) throw new Error("pingpong needs exactly 2 agents");
-
-  const state = {
-    status: "starting", result: null, format: opt.format, mode: opt.mode, maxRounds, round: 0,
-    agents: {}, degraded: [], turns: [], warnings: [], stopReason: null,
-    editDetection: "content fingerprint of tracked and untracked files (git diff HEAD + untracked contents), run dir excluded; gitignored files are NOT covered",
+export async function run(input, { registry = REGISTRY, createAgent, signal } = {}) {
+  // A registry may arrive as the parsed object (from --registry) or as a path.
+  registry = typeof input.registry === 'string' ? JSON.parse(readFileSync(input.registry, 'utf8')) : input.registry ?? registry;
+  const opt = { ...DEFAULTS, ...input };
+  registry = withModelConfig(registry, loadModelConfig(opt.cwd, opt.config));
+  if (!opt.brief || !opt['run-dir']) throw new Error('run needs --brief and --run-dir');
+  const ids = validate(opt, registry);
+  const cwd = resolve(opt.cwd), runDir = resolve(opt['run-dir']);
+  assertFreshRun(runDir); // before directories, output, baseline or any subprocess
+  const brief = readFileSync(opt.brief, 'utf8');
+  const baseline = fingerprint(cwd, runDir); // includes startup-phase edits
+  for (const folder of ['rounds', 'moderator', 'veto']) mkdirSync(join(runDir, folder), { recursive: true });
+  const log = message => {
+    const line = `${now()} ${String(message).replace(/\s*\n\s*/g, ' ⏎ ').slice(0, 1000)}`;
+    appendFileSync(join(runDir, 'events.log'), line + '\n');
+    console.error(line);
   };
-  const save = () => writeAtomic(join(runDir, "state.json"), JSON.stringify(state, null, 2));
+  atomicWrite(join(runDir, 'brief.md'), brief);
+  const state = { status: 'starting', result: 'full', format: opt.format, mode: opt.mode, maxRounds: Number(opt.rounds), round: 0,
+    agents: {}, rounds: [], turns: [], degraded: [], warnings: [],
+    degradedAgents: [], stopReason: null, editDetection: { baseline, checks: [] } };
+  const save = () => atomicWrite(join(runDir, 'state.json'), JSON.stringify(state, null, 2));
+  const warn = message => { if (!state.warnings.includes(message)) { state.warnings.push(message); log(message); } };
+  if (baseline.errors.length) warn(`Baseline edit coverage ${baseline.coverage.status}: ${baseline.errors.join('; ')}`);
+  if (opt.format === 'roles' && !opt.roles) warn('Roles assigned by agent position; use --roles to select explicitly');
+  const roles = opt.roles ? opt.roles.split(',').map(s => s.trim()) : ROLES;
+  if (!roles.length || roles.some(role => !role)) throw new Error('Empty role');
   save();
-
-  const agents = {};
-  const ctx = { cwd, runDir, log };
-  const markDegraded = (id, what) => { if (!state.degraded.some((d) => d.agent === id && d.what === what)) state.degraded.push({ agent: id, what }); };
-
-  // Cleanup runs on every exit path: normal end, thrown error, SIGINT/SIGTERM.
-  const closeAll = () => Promise.all(Object.values(agents).map((a) => a.close().catch(() => {}))).then(() => killAllChildren(Number(opt["kill-grace"]) * 1000));
-  const onSignal = (sig) => async () => {
-    log(`received ${sig}; closing agents`);
-    state.status = "failed"; state.stopReason = `interrupted by ${sig}`; save();
-    await closeAll();
-    process.exit(130);
-  };
-  process.once("SIGINT", onSignal("SIGINT"));
-  process.once("SIGTERM", onSignal("SIGTERM"));
-
-  try {
-    await Promise.all(ids.map(async (id, i) => {
-      const role = opt.format === "roles" ? roles[i % roles.length] : null;
-      const want = defaultTransport(id);
-      state.agents[id] = { ok: false, live: true, transport: want, role, lastError: null, failedTurns: 0, nativeSessionId: null };
-      try {
-        agents[id] = await startAgent(id, want, ctx);
-      } catch (e) {
-        log(`${id} ${want} failed to start: ${e.message}`);
-        state.agents[id].lastError = e.message;
-        const other = want === "acp" ? "headless" : "acp";
-        if (opt.transport !== "auto") { state.agents[id].live = false; return; }
-        try {
-          agents[id] = await startAgent(id, other, ctx);
-          state.warnings.push(`${id}: ${want} failed at start, using ${other}`);
-        } catch (e2) {
-          log(`${id} ${other} failed to start: ${e2.message}`);
-          state.agents[id] = { ...state.agents[id], live: false, lastError: `${e.message}; ${other}: ${e2.message}` };
-          return;
-        }
-      }
-      Object.assign(agents[id], { prefix: id.toUpperCase(), role });
-      Object.assign(state.agents[id], { ok: true, transport: agents[id].transport });
-      log(`${id} started over ${agents[id].transport}${agents[id].info ? ` (${agents[id].info.name ?? "?"} ${agents[id].info.version ?? ""})` : ""}`);
-    }));
-    const live = () => ids.filter((id) => agents[id] && state.agents[id].live);
-    if (live().length < 2) { state.status = "failed"; state.result = "failed"; state.stopReason = "fewer than 2 agents available"; save(); throw new Error(state.stopReason); }
+  const participants = {}, latest = {};
+  const turnMs = Number(opt['turn-timeout']) * 1000, waitMs = Number(opt['wait-timeout']) * 1000;
+  const deadline = Date.now() + Number(opt['budget-min']) * 60_000;
+  const checkAbort = () => signal?.throwIfAborted();
+  const live = () => ids.filter(id => participants[id] && !participants[id].state.dropped);
+  const degradedLabel = () => state.result === 'degraded' ? `degraded: ${state.degraded.map(d => `${d.agent} ${d.what}`).join(', ')}` : 'all original participants';
+  const checkEdits = phase => {
+    const after = fingerprint(cwd, runDir);
+    state.editDetection.checks.push({ phase, ...after });
+    if (after.coverage.status !== 'complete') warn(`${phase}: edit detection ${after.coverage.status}: ${after.errors.join('; ')}`);
+    if (baseline.hash !== null && after.hash !== null && baseline.hash !== after.hash) warn(`${phase}: working tree content changed during audit`);
     save();
-
-    const baseline = fingerprint(cwd, runDir);
-    if (baseline === null) state.warnings.push("target is not a git repo; edit detection is off");
-    const checkEdits = (when) => {
-      if (baseline === null) return;
-      if (fingerprint(cwd, runDir) !== baseline) {
-        const w = `${when}: working tree content changed during the debate — an agent may have edited files`;
-        if (!state.warnings.includes(w)) { state.warnings.push(w); log(w); }
-      }
-    };
-    const latest = {}; // id -> { text, status, round }
-
-    // Context for an agent whose transport lost its memory: its own completed replies.
-    const withContext = (id, prompt) => {
-      const a = agents[id];
-      if (!a.needsContext || !latest[id]) return prompt;
-      const ownReplies = readdirSync(join(runDir, "rounds"))
-        .map((f) => f.match(new RegExp(`^r(\\d+)-${id}\\.md$`)))
-        .filter(Boolean)
-        .map((m) => ({ round: Number(m[1]), text: readFileSync(join(runDir, "rounds", m[0]), "utf8") }))
-        .sort((x, y) => x.round - y.round);
-      if (!ownReplies.length) return prompt;
-      const opening = openingPrompt({ brief, prefix: a.prefix, role: a.role, format: opt.format });
-      return recoveryPrompt({ opening, ownReplies, prompt });
-    };
-
-    // Recovery ladder over the whole run: 1st failed attempt restarts the same transport,
-    // 2nd moves to headless with native resume, 3rd drops the agent.
-    const recover = async (id) => {
-      const h = state.agents[id];
-      const old = agents[id];
-      await old.close().catch(() => {});
-      for (;;) {
-        if (h.failedTurns >= MAX_FAILED_TURNS) {
-          h.live = false; h.ok = false; markDegraded(id, "dropped");
-          log(`${id} dropped after ${h.failedTurns} failed attempts`);
-          return false;
-        }
-        const target = h.failedTurns === 1 ? old.transport : "headless";
-        try {
-          const a = await startAgent(id, target, { ...ctx, sessionId: old.sessionId });
-          Object.assign(a, { prefix: old.prefix, role: old.role });
-          agents[id] = a;
-          if (target !== old.transport) markDegraded(id, `switched to ${target}`);
-          h.transport = target;
-          log(`${id} recovered over ${target} (failed attempts: ${h.failedTurns})`);
-          return true;
-        } catch (e) {
-          h.failedTurns++; h.lastError = `restart over ${target}: ${e.message}`;
-          log(`${id} ${h.lastError}`);
+  };
+  // On a signal, interrupt in-flight subprocesses as well as file waits. finally
+  // awaits the same idempotent close operations before returning to the CLI.
+  let interruptCleanup;
+  const interrupt = () => { interruptCleanup = Promise.allSettled(Object.values(participants).map(p => p.close())); };
+  signal?.addEventListener('abort', interrupt, { once: true });
+  let scope = 'startup';
+  try {
+    checkAbort();
+    for (const [i, id] of ids.entries()) {
+      const initialTransport = initialTransportFor(opt, registry[id]);
+      const role = opt.format === 'roles' ? roles[i % roles.length] : null;
+      participants[id] = new Participant({ id, initialTransport, signal,
+        factory: (transport, context) => createAgent ? createAgent(id, transport, context) :
+          new (transport === 'acp' ? AcpAgent : HeadlessAgent)(id, registry[id], cwd, log, { ...agentOptions(opt), ...context, runDir }),
+        onUpdate: health => {
+          state.agents[id] = { ...state.agents[id], ...health, live: !health.dropped, role, requestedModel: registry[id].model ?? null };
+          if (!health.ok && latest[id]) latest[id].status = null;
+          for (const what of health.degradedWhat ?? []) {
+            if (state.degraded.some(d => d.agent === id && d.what === what)) continue;
+            state.degraded.push({ agent: id, what });
+            if (!state.degradedAgents.includes(id)) state.degradedAgents.push(id);
+            warn(`${id}: ${what}`);
+          }
+          state.result = state.degraded.length ? 'degraded' : state.result;
           save();
-        }
-      }
-    };
-
-    // One turn with the recovery ladder. Returns { text, stopReason } or null if the agent was dropped.
-    const attempt = async (id, prompt, label) => {
-      const h = state.agents[id];
-      for (;;) {
-        const a = agents[id];
-        const started = Date.now();
-        const record = { label, agent: id, transport: a.transport, startedAt: new Date(started).toISOString() };
-        try {
-          const r = await a.ask(withContext(id, prompt), turnMs);
-          record.stopReason = r.stopReason;
-          if (r.stopReason !== "end_turn") throw new Error(`turn stopped with ${r.stopReason}`);
-          Object.assign(record, { outcome: "ok", ms: Date.now() - started });
-          Object.assign(h, { ok: true, transport: a.transport, nativeSessionId: a.sessionId ?? h.nativeSessionId });
-          state.turns.push(record); save();
-          return r;
-        } catch (e) {
-          Object.assign(record, { outcome: "failed", error: e.message, ms: Date.now() - started });
-          state.turns.push(record);
-          h.failedTurns++; h.ok = false; h.lastError = e.message;
-          if (latest[id]) latest[id].status = null; // the stale vote never counts
-          log(`${id} ${label} failed (${h.failedTurns}/${MAX_FAILED_TURNS}): ${e.message}`);
-          save();
-          if (!(await recover(id))) { save(); return null; }
-          save();
-        }
-      }
-    };
+        },
+        onAttempt: attempt => {
+          atomicWrite(join(runDir, 'rounds', `${scope}-${id}.attempt-${attempt.failedAttempts}.json`), JSON.stringify(attempt, null, 2));
+          // Each failed attempt is its own turn record, so a turn that recovered
+          // internally still shows the failure that caused the recovery.
+          state.turns.push({ round: state.round || null, agent: id, outcome: 'failed', phase: attempt.phase,
+            transport: attempt.transport, stopReason: attempt.stopReason ?? null, error: attempt.error, recovered: true });
+          log(`${id} ${scope} failed attempt ${attempt.failedAttempts}: ${attempt.error}`);
+        },
+      });
+      state.agents[id] = { ...participants[id].state, role, requestedModel: registry[id].model ?? null, live: true };
+    }
+    const started = await Promise.allSettled(ids.map(id => participants[id].start()));
+    started.forEach((result, i) => { if (result.status === 'rejected') warn(`${ids[i]} startup failed: ${result.reason.message}`); });
+    checkAbort();
+    if (live().length < 2) throw new Error('fewer than 2 agents available after recovery');
 
     const turn = async (round, id, prompt) => {
-      writeAtomic(join(runDir, "rounds", `r${round}-${id}.prompt.md`), prompt);
-      const r = await attempt(id, prompt, `r${round}`);
-      if (!r) return null;
-      const status = parseStatus(r.text);
-      latest[id] = { text: r.text, status, round };
-      writeAtomic(join(runDir, "rounds", `r${round}-${id}.md`), r.text);
-      if (!status.parsed) log(`${id} r${round}: invalid roundtable-status (${status.error})`);
-      return { agent: id, ...status };
-    };
-    const peersOf = (id) => live().filter((p) => p !== id && latest[p])
-      .map((p) => ({ label: REGISTRY[p].label, prefix: agents[p].prefix, text: latest[p].text }));
-
-    // Moderator notes are consumed once each, in order, at the start of the next round.
-    const consumed = new Set();
-    const unreadNotes = () => {
-      const files = readdirSync(join(runDir, "moderator"))
-        .map((f) => f.match(/^r(\d+)\.md$/)).filter(Boolean)
-        .sort((x, y) => Number(x[1]) - Number(y[1]))
-        .map((m) => m[0]).filter((f) => !consumed.has(f));
-      files.forEach((f) => consumed.add(f));
-      return files.map((f) => readFileSync(join(runDir, "moderator", f), "utf8"));
-    };
-    const degradedNote = () => state.degraded.length ? ` (degraded: ${state.degraded.map((d) => `${d.agent} ${d.what}`).join(", ")})` : "";
-
-    let prevBlocking = null;
-    let verdict = null;
-    let pendingWait = null; // note file the moderator must write before the next round
-    for (let round = 1; round <= maxRounds; round++) {
-      if (pendingWait) {
-        state.status = "awaiting_moderator"; state.waitingFor = pendingWait.path; state.waitingReason = pendingWait.reason; save();
-        log(`waiting for moderator note ${pendingWait.path} (${pendingWait.reason})`);
-        const note = await waitForFile(pendingWait.path, waitMs);
-        delete state.waitingFor; delete state.waitingReason;
-        pendingWait = null;
-        if (note === null) { state.stopReason = "moderator timeout"; break; }
+      const began = Date.now();
+      atomicWrite(join(runDir, 'rounds', `r${round}-${id}.prompt.md`), prompt);
+      try {
+        const result = await participants[id].ask(prompt, turnMs);
+        const status = parseStatus(result.text);
+        latest[id] = { text: result.text, status, round, stopReason: result.stopReason };
+        state.agents[id].lastReplyStatus = status;
+        atomicWrite(join(runDir, 'rounds', `r${round}-${id}.md`), result.text);
+        state.rounds.push({ round, agent: id, durationMs: Date.now() - began, outcome: status.parsed ? 'answered' : 'invalid_status', transport: participants[id].state.transport, stopReason: result.stopReason });
+        state.turns.push({ round, agent: id, durationMs: Date.now() - began, outcome: status.parsed ? 'answered' : 'invalid_status', transport: participants[id].state.transport, stopReason: result.stopReason });
+        if (!status.parsed) log(`${id} r${round}: invalid status (${status.error})`);
+        save();
+        return { agent: id, ...status };
+      } catch (error) {
+        if (latest[id]) latest[id].status = null;
+        // Failed attempts are recorded by onAttempt as they happen, one turn record
+        // each, so an internally recovered turn does not double-count.
+        warn(`${id} r${round}: ${error.message}`);
+        save();
+        return null;
       }
-      const notes = unreadNotes();
-      if (notes.some((n) => n.trim().split("\n")[0].trim().toUpperCase() === "STOP")) { state.stopReason = "moderator stopped"; break; }
-      const moderatorNote = notes.length ? notes.join("\n\n") : null;
-
-      if (Date.now() > deadline) { state.stopReason = "budget exhausted"; break; }
-      if (live().length < 2) { state.stopReason = "fewer than 2 agents left"; break; }
-      state.round = round; state.status = "debating"; save();
-      log(`round ${round} start`);
-
-      const speakers = opt.format === "pingpong" ? [live()[(round - 1) % live().length]] : live();
-      // Peers are snapshotted before anyone speaks, so parallel speakers all see the previous round.
-      const peerSnapshot = Object.fromEntries(speakers.map((id) => [id, peersOf(id)]));
-      const results = await Promise.all(speakers.map((id) => {
-        const a = agents[id];
+    };
+    const consumedNotes = new Set();
+    const consumeNotes = throughRound => {
+      const notes = [];
+      for (let n = 1; n <= throughRound; n++) {
+        const path = join(runDir, 'moderator', `r${n}.md`);
+        if (!consumedNotes.has(path) && existsSync(path)) { notes.push(readFileSync(path, 'utf8')); consumedNotes.add(path); }
+      }
+      return notes.length ? notes.join('\n\n') : null;
+    };
+    let previousBlocking = null, moderatorNote = null;
+    for (let round = 1; round <= state.maxRounds; round++) {
+      checkAbort();
+      const pendingNote = consumeNotes(round - 1);
+      if (pendingNote) moderatorNote = pendingNote;
+      if (moderatorNote?.trim().split('\n')[0].trim().toUpperCase() === 'STOP') { state.stopReason = 'moderator stopped'; break; }
+      if (Date.now() > deadline) { state.stopReason = 'budget exhausted'; break; }
+      state.round = round; state.status = 'debating'; scope = `r${round}`; delete state.waitingFor; save();
+      const current = live();
+      const speakers = opt.format === 'pingpong' ? [current[(round - 1) % current.length]] : current;
+      // Snapshot every peer before starting any parallel turn.
+      const peerSnapshot = Object.fromEntries(speakers.map(id => [id, ids.filter(p => p !== id && latest[p]).map(p => ({ label: registry[p].label ?? p, prefix: p.toUpperCase(), text: latest[p].text }))]));
+      const results = await Promise.all(speakers.map(id => {
         const parts = [];
-        if (!latest[id]) parts.push(openingPrompt({ brief, prefix: a.prefix, role: a.role, format: opt.format }));
-        if (peerSnapshot[id].length) parts.push(critiquePrompt({ round, peers: peerSnapshot[id], moderatorNote, prefix: a.prefix }));
-        return turn(round, id, parts.join("\n\n"));
+        if (!latest[id]) parts.push(openingPrompt({ brief, prefix: id.toUpperCase(), role: state.agents[id].role, format: opt.format }));
+        if (peerSnapshot[id].length) parts.push(critiquePrompt({ round, peers: peerSnapshot[id], moderatorNote, prefix: id.toUpperCase() }));
+        return turn(round, id, parts.join('\n\n'));
       }));
-      checkEdits(`round ${round}`);
-
-      // Consensus is judged on every live agent's most recent status, not just this round's speakers.
-      const statuses = live().filter((id) => latest[id]?.status).map((id) => ({ agent: id, ...latest[id].status }));
-      verdict = assessConsensus(statuses, { round, maxRounds, minRounds: Number(opt["min-rounds"]), expectedAgents: live() });
-      if (verdict.converged && state.degraded.length) verdict = { ...verdict, reason: verdict.reason + degradedNote() };
+      checkAbort(); checkEdits(`round ${round}`);
+      const expected = live();
+      const statuses = expected.filter(id => latest[id]?.status).map(id => ({ agent: id, ...latest[id].status }));
+      const verdict = expected.length < 2 ? { converged: false, reason: 'fewer than 2 agents remain' } :
+        assessConsensus(statuses, { round, maxRounds: state.maxRounds, minRounds: Number(opt['min-rounds']), expectedAgents: expected });
+      // The verdict reason stays plain; degradation is stated once, in the stop reason.
+      const reason = state.result === 'degraded' ? `${degradedLabel()}; ${verdict.reason}` : verdict.reason;
+      atomicWrite(join(runDir, 'rounds', `r${round}.summary.json`), JSON.stringify({ round, answered: results.filter(Boolean).length, statuses, expectedAgents: expected, degraded: state.degraded, reason }, null, 2));
+      log(`round ${round}: ${reason}`);
+      if (expected.length < 2) throw new Error('fewer than 2 agents remain after recovery');
+      if (verdict.converged) { state.stopReason = state.result === 'degraded' ? `degraded convergence: ${degradedLabel()}` : `consensus: ${reason}`; break; }
+      if (round === state.maxRounds) { state.stopReason = 'round limit'; break; }
       const blocking = blockingIds(statuses);
-      writeAtomic(join(runDir, "rounds", `r${round}.summary.json`), JSON.stringify({ round, answered: results.filter(Boolean).length, statuses, blocking, verdict, degraded: state.degraded }, null, 2));
-      log(`round ${round} consensus: ${verdict.converged} (${verdict.reason})`);
-      if (verdict.converged) { state.stopReason = `consensus: ${verdict.reason}`; break; }
-      if (round === maxRounds) { state.stopReason = "round limit"; break; }
-      if (live().length < 2) { state.stopReason = "fewer than 2 agents left"; break; }
-
-      const notePath = join(runDir, "moderator", `r${round}.md`);
-      if (isDeadlock(prevBlocking, blocking)) {
-        // Even in auto mode: a human-shaped call is needed to break it.
+      const deadlock = isDeadlock(previousBlocking, blocking);
+      previousBlocking = blocking;
+      if (deadlock) {
+        // Same blocking set two rounds running: a human-shaped call is needed even
+        // in auto mode, so the moderator is asked for a note.
         state.deadlocks = [...(state.deadlocks ?? []), { round, blocking }];
-        pendingWait = { path: notePath, reason: `deadlock: same blocking set ${blocking.join(", ")} two rounds running` };
-      } else if (opt.mode === "active") {
-        pendingWait = { path: notePath, reason: "active mode" };
+        log(`deadlock: same blocking set ${blocking.join(', ')} two rounds running`);
       }
-      prevBlocking = blocking;
+      if (opt.mode === 'active' || deadlock) {
+        const path = join(runDir, 'moderator', `r${round}.md`);
+        state.status = 'awaiting_moderator'; state.waitingFor = path; state.moderatorReason = deadlock ? 'deadlock' : 'active'; save();
+        const note = await waitForFile(path, waitMs, { signal });
+        delete state.waitingFor;
+        if (note === null) { state.stopReason = 'moderator timeout'; break; }
+        moderatorNote = consumeNotes(round);
+      } else moderatorNote = consumeNotes(round);
+      if (moderatorNote?.trim().split('\n')[0].trim().toUpperCase() === 'STOP') { state.stopReason = 'moderator stopped'; break; }
     }
     delete state.waitingFor;
-    log(`debate ended: ${state.stopReason}`);
-
-    if (!opt["no-veto"] && live().length) {
-      const synthPath = join(runDir, "synthesis.md");
-      state.status = "awaiting_synthesis"; state.waitingFor = synthPath; save();
-      log(`waiting for synthesis ${synthPath}`);
-      const synthesis = await waitForFile(synthPath, waitMs);
+    state.stopReason ??= 'round limit';
+    checkAbort();
+    if (!opt['no-veto']) {
+      const path = join(runDir, 'synthesis.md');
+      state.status = 'awaiting_synthesis'; state.waitingFor = path; save();
+      const synthesis = await waitForFile(path, waitMs, { signal });
       delete state.waitingFor;
-      if (synthesis === null) {
-        state.warnings.push("no synthesis written; veto round skipped");
-      } else {
-        state.status = "veto"; save();
-        const panel = ids.filter((id) => agents[id]).map((id) => ({
-          prefix: id.toUpperCase(), label: REGISTRY[id].label, status: latest[id]?.status ?? null, text: latest[id]?.text ?? null,
-          state: !state.agents[id].live ? "dropped" : state.degraded.find((d) => d.agent === id)?.what ?? "live",
+      if (synthesis === null) warn('no synthesis written; veto round skipped');
+      else {
+        state.status = 'veto'; scope = 'veto'; save();
+        const finalPositions = ids.map(id => ({ agent: id, round: latest[id]?.round ?? null, status: latest[id]?.status ?? null,
+          lastKnownStatus: state.agents[id].lastReplyStatus ?? null, health: state.agents[id], text: latest[id]?.text ?? 'No completed reply' }));
+        const context = { result: state.result, degradedAgents: state.degradedAgents, warnings: state.warnings, finalPositions };
+        // Panel overview in the documented per-agent shape, so a veto message shows
+        // every agent's status and its own reply text.
+        const panel = ids.map(id => ({ label: registry[id].label ?? id, prefix: id.toUpperCase(),
+          status: latest[id]?.status ?? null, state: participants[id]?.state.dropped ? 'dropped' : 'live',
+          text: latest[id]?.text ?? null }));
+        const votes = await Promise.all(live().map(async id => {
+          try {
+            const { text, stopReason } = await participants[id].ask(vetoPrompt({ synthesis, prefix: id.toUpperCase(), context, panel }), turnMs);
+            atomicWrite(join(runDir, 'veto', `${id}.md`), text);
+            const s = parseStatus(text);
+            return { agent: id, approve: stopReason === 'end_turn' && s.parsed && s.stance === 'converged' && s.blocking.length === 0, stopReason, ...s };
+          } catch (error) { warn(`${id} veto failed: ${error.message}`); return { agent: id, approve: null, error: error.message }; }
         }));
-        const votes = await Promise.all(live().map(async (id) => {
-          const r = await attempt(id, vetoPrompt({ synthesis, prefix: agents[id].prefix, panel }), "veto");
-          if (!r) return { agent: id, approve: null, error: state.agents[id].lastError };
-          writeAtomic(join(runDir, "veto", `${id}.md`), r.text);
-          const s = parseStatus(r.text);
-          // attempt() only returns end_turn turns, so an approval always has stopReason end_turn.
-          return { agent: id, approve: s.parsed && s.stance === "converged" && s.blocking.length === 0, stopReason: r.stopReason, blocking: s.blocking, parsed: s.parsed, error: s.error };
-        }));
-        writeAtomic(join(runDir, "veto.json"), JSON.stringify(votes, null, 2));
+        checkAbort();
+        atomicWrite(join(runDir, 'veto.json'), JSON.stringify(votes, null, 2));
         state.veto = votes;
-        checkEdits("veto");
+        if (live().length < 2) throw new Error('fewer than 2 agents remain after veto recovery');
       }
     }
-
-    state.result = state.degraded.length ? "degraded" : verdict?.converged ? "consensus" : "no_consensus";
-    state.status = "done"; save();
-    log(`done: ${state.result}${degradedNote()}`);
-  } catch (e) {
-    if (state.status !== "failed") { state.status = "failed"; state.result = "failed"; state.stopReason ??= e.message; save(); }
-    throw e;
+    state.status = 'done';
+    // SKILL.md: `result` is consensus, no_consensus or degraded.
+    if (state.result !== 'degraded') state.result = /^consensus:/.test(state.stopReason ?? '') ? 'consensus' : 'no_consensus';
+  } catch (error) {
+    state.status = signal?.aborted ? 'interrupted' : 'failed';
+    state.stopReason = error.message;
+    state.result = 'degraded';
+    throw error;
   } finally {
-    await closeAll();
+    signal?.removeEventListener('abort', interrupt);
+    const closed = await Promise.allSettled(Object.values(participants).map(p => p.close()));
+    await interruptCleanup;
+    closed.forEach(result => { if (result.status === 'rejected') { state.status = 'failed'; state.result = 'degraded'; state.stopReason = `cleanup failed: ${result.reason.message}`; warn(state.stopReason); } });
+    delete state.waitingFor;
+    checkEdits('after veto/cleanup');
+    state.finishedAt = now(); save();
+    atomicWrite(join(runDir, 'result.json'), JSON.stringify({ status: state.status, result: state.result, stopReason: state.stopReason,
+      degradedAgents: state.degradedAgents, warnings: state.warnings, editCoverage: state.editDetection.checks.at(-1)?.coverage, agents: state.agents }, null, 2));
   }
+  if (state.status === 'failed') throw new Error(state.stopReason ?? 'cleanup failed');
+  return state;
 }
 
-// ---------- doctor ----------
-
-// Starts each agent over its default transport and sends a one-line prompt, so
-// expired keys and failed logins show up here instead of in round 1.
-async function doctor() {
-  const ids = positionals[1] ? positionals[1].split(",") : Object.keys(REGISTRY).filter((k) => !k.startsWith("_"));
-  const ctx = { cwd: process.cwd(), runDir: null, log: () => {} };
-  const pingMs = 90_000;
-  const rows = await Promise.all(ids.map(async (id) => {
-    const cfg = REGISTRY[id];
-    if (!cfg) return { agent: id, lines: ["unknown agent"] };
-    const want = defaultTransport(id);
-    const lines = [];
-    for (const t of ["acp", "headless"]) {
-      const tag = `${t}${t === want ? " (default)" : ""}`;
-      if (t === "acp" && !cfg.acp) { lines.push(`${tag}: not configured`); continue; }
-      if (t === "headless" && !cfg.headless) { lines.push(`${tag}: not configured (no native resume)`); continue; }
-      let a;
+export async function doctor(ids, { registry = REGISTRY, signal, cwd = process.cwd(), config } = {}) {
+  registry = withModelConfig(registry, loadModelConfig(cwd, config));
+  const rows = [];
+  for (const id of ids) {
+    if (!Object.hasOwn(registry, id) || id.startsWith('_')) throw new Error(`unknown agent ${id}`);
+    const row = { agent: id };
+    for (const transport of ['acp', 'headless']) {
+      const agent = new (transport === 'acp' ? AcpAgent : HeadlessAgent)(id, registry[id], cwd, () => {});
+      const abort = () => { void agent.close().catch(() => {}); };
+      signal?.addEventListener('abort', abort, { once: true });
       try {
-        a = await startAgent(id, t, ctx);
-        if (t !== want) { lines.push(`${tag}: starts${t === "headless" ? " (binary found)" : ""}`); continue; }
-        const r = await a.ask("Reply with the single word PONG and nothing else.", pingMs);
-        const ok = r.stopReason === "end_turn" && /PONG/i.test(r.text);
-        lines.push(`${tag}: ${ok ? "ok" : "FAIL"} — replied ${JSON.stringify(r.text.trim().slice(0, 40))}, stopReason ${r.stopReason}${a.info ? ` (${a.info.name ?? "?"} ${a.info.version ?? ""})` : ""}`);
-      } catch (e) {
-        lines.push(`${tag}: FAIL: ${e.message.replace(/\s+/g, " ").slice(0, 160)}`);
-      } finally {
-        await a?.close().catch(() => {});
-      }
+        signal?.throwIfAborted(); await agent.start();
+        const reply = await agent.ask('Reply exactly OK. Do not use tools or change files.', 60_000);
+        row[transport] = reply.stopReason === 'end_turn' && reply.text.trim() === 'OK' ? 'prompt OK' : 'FAIL: unexpected probe reply';
+      } catch (error) { row[transport] = `FAIL: ${error.message}`; }
+      finally { signal?.removeEventListener('abort', abort); await agent.close(); }
     }
-    return { agent: id, lines };
-  }));
-  for (const r of rows) console.log(r.lines.map((l, i) => `${(i ? "" : r.agent).padEnd(9)} ${l}`).join("\n"));
-  await killAllChildren(1000);
+    rows.push(row);
+  }
+  return rows;
 }
 
-const cmd = positionals[0];
-const main = cmd === "doctor" ? doctor : cmd === "run" ? run : null;
-if (!main) {
-  console.error("usage: roundtable.mjs run --brief FILE --run-dir DIR [--agents a,b] [--format panel|pingpong|roles] [--mode auto|active] ...\n       roundtable.mjs doctor [a,b]");
-  process.exit(2);
+export async function main(argv = process.argv.slice(2), dependencies = {}) {
+  process.env.PATH = `${join(HERE, 'node_modules', '.bin')}:${process.env.PATH}`;
+  const options = Object.fromEntries(Object.entries(DEFAULTS).map(([key, value]) => [key, { type: typeof value === 'boolean' ? 'boolean' : 'string', default: value }]));
+  for (const key of ['brief', 'run-dir', 'roles', 'config', 'models', 'registry']) options[key] = { type: 'string' };
+  options.json = { type: 'boolean', default: false };
+  options.interactive = { type: 'boolean', default: false };
+  const { positionals, values } = parseArgs({ args: argv, allowPositionals: true, options });
+  if (positionals[0] !== 'setup' && (values.models || values.interactive)) throw new Error('Use setup --models to save model choices before running');
+  const controller = new AbortController();
+  const handlers = Object.fromEntries(['SIGINT', 'SIGTERM'].map(name => [name, () => controller.abort(new Error(`interrupted by ${name}`))]));
+  for (const [name, handler] of Object.entries(handlers)) process.on(name, handler);
+  try {
+    if (positionals[0] === 'setup') {
+      const { parseModelSelections } = await import('./setup.mjs');
+      const interactive = values.interactive || (!values.json && !values.models && !!process.stdin.isTTY);
+      if (interactive && !process.stdin.isTTY && !dependencies.choose) throw new Error('Interactive setup needs a terminal; use --json then --models agent=model-id');
+      const report = await setup({ ids: values.agents.split(',').map(id => id.trim()).filter(Boolean), cwd: values.cwd,
+        path: values.config, selections: parseModelSelections(values.models), interactive, signal: controller.signal }, { registry: REGISTRY, ...dependencies });
+      console.log(JSON.stringify(report, null, 2));
+      return report;
+    }
+    // An injected registry (tests, embedding) wins over the file on disk.
+    const loaded = dependencies.registry ?? (values.registry ? JSON.parse(readFileSync(values.registry, 'utf8')) : REGISTRY);
+    if (positionals[0] === 'run') return await run({ ...values, registry: loaded }, { ...dependencies, signal: controller.signal });
+    if (positionals[0] === 'doctor') {
+      const ids = (positionals[1] ?? values.agents).split(',').map(s => s.trim()).filter(Boolean);
+      console.log(JSON.stringify(await doctor(ids, { ...dependencies, registry: loaded, signal: controller.signal, cwd: values.cwd, config: values.config }), null, 2));
+      return;
+    }
+    throw new Error('usage: roundtable.mjs run --brief FILE --run-dir DIR [options] | doctor [a,b] | setup --agents a,b [--json | --models a=model-id,b=model-id] [--config FILE]');
+  } finally { for (const [name, handler] of Object.entries(handlers)) process.off(name, handler); }
 }
-main().then(() => process.exit(0), (e) => { console.error(e.stack ?? e); process.exit(1); });
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  main().catch(error => { console.error(error.stack ?? error); process.exitCode = 1; });
+}
