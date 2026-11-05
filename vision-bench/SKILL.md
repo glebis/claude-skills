@@ -14,7 +14,7 @@ Compare images by scoring them with one or more vision LLM judges against struct
 pip install pyyaml openai anthropic mistralai
 
 # Score a single image
-python bench.py image.png --criteria photorealism --judge gemini-2.5-flash
+python bench.py image.png --criteria photorealism --judge gemini-3.5-flash-lite
 
 # Compare two AI-generated images
 python bench.py img_a.png img_b.png \
@@ -25,7 +25,7 @@ python bench.py img_a.png img_b.png \
 # Multi-judge consensus
 python bench.py img.png \
   --criteria portrait \
-  --judges gpt-4o gemini-2.5-flash claude-opus-4-5-20251022
+  --judges gpt-4o gemini-3.5-flash-lite claude-opus-4-5-20251022
 
 # OpenRouter models (any vision-capable model)
 python bench.py img_a.png img_b.png \
@@ -63,7 +63,7 @@ Custom criteria: pass any `.yaml` file as `--criteria path/to/my.yaml`.
 |--------|----------|---------|
 | `gpt-`, `o1`, `o3`, `o4` | OpenAI | `gpt-4o` |
 | `claude-` | Anthropic | `claude-sonnet-4-5-20251022` |
-| `gemini-` | Google Gemini | `gemini-2.5-flash` |
+| `gemini-` | Google Gemini | `gemini-3.5-flash-lite` |
 | `pixtral-`, `mistral-`, `ministral-` | Mistral | `pixtral-12b-2409` |
 | `openrouter/` | OpenRouter (any model) | `openrouter/meta-llama/llama-4-maverick` |
 
@@ -91,3 +91,5 @@ sops --config .sops.yaml --encrypt --input-type yaml --output-type yaml secrets.
 - `criteria/` — 11 YAML preset files
 - `.sops.yaml` — Age key config for encryption
 - `secrets.enc.yaml` — Encrypted API keys
+
+Use `--judge` or `--judges` to select another model explicitly. The Gemini path sends one image/text turn with JSON output and no tools, history, thinking or sampling settings. The 3.5 Flash-Lite default requires a live image/JSON smoke test and rubric comparison before relying on historical score comparability; offline request tests do not establish model quality.

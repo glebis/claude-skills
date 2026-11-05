@@ -4,8 +4,8 @@ vision-bench: Evaluate and compare images using vision LLMs as judges.
 
 Usage:
   python bench.py img1.png img2.png --criteria text_to_image --prompt "a cat in space"
-  python bench.py img1.png --criteria document_ocr --judge gemini-2.0-flash
-  python bench.py img1.png img2.png --judges gpt-4o gemini-2.0-flash claude-opus-4-5-20251022
+  python bench.py img1.png --criteria document_ocr --judge gemini-3.5-flash-lite
+  python bench.py img1.png img2.png --judges gpt-4o gemini-3.5-flash-lite claude-opus-4-5-20251022
 """
 import argparse
 import sys
@@ -42,7 +42,7 @@ def main():
     parser.add_argument("images", nargs="*", help="Image paths to evaluate")
     parser.add_argument("--criteria", "-c", default="text_to_image",
                         help="Preset name or path to .yaml file (default: text_to_image)")
-    parser.add_argument("--judge", "-j", default="gemini-2.5-flash",
+    parser.add_argument("--judge", "-j", default="gemini-3.5-flash-lite",
                         help="Single judge model")
     parser.add_argument("--judges", nargs="+",
                         help="Multiple judge models for consensus scoring (overrides --judge)")

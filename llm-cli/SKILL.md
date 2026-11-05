@@ -53,7 +53,7 @@ Example user requests:
 ### Google Gemini
 - **Latest Models (2025)**:
   - `gemini-2.5-pro` - Most advanced
-  - `gemini-2.5-flash` - Default fast model
+  - `gemini-3.5-flash-lite` - Default fast model
   - `gemini-2.5-flash-lite` - Speed optimized
   - `gemini-2.0-flash` - Previous generation
   - `gemini-2.5-computer-use` - UI interaction

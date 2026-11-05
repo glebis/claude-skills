@@ -40,7 +40,7 @@ class LLMSkill:
         # Try to resolve as a model
         model_config = get_model(identifier)
         if model_config:
-            return identifier, model_config["provider"]
+            return model_config["full_name"], model_config["provider"]
 
         # Try to resolve as a provider alias
         provider = resolve_provider_alias(identifier)

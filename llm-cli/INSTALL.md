@@ -144,7 +144,7 @@ Or just use the skill and it will remember your last choice!
 
 ### Test with Google
 ```bash
-/llm --model gemini-2.5-flash "Say hello"
+/llm --model gemini-3.5-flash-lite "Say hello"
 ```
 
 ### Test with Ollama

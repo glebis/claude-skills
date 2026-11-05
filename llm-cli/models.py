@@ -95,11 +95,17 @@ MODELS = {
         "description": "Most advanced Gemini model",
         "aliases": ["gemini-pro", "gemini-2.5"],
     },
+    "gemini-3.5-flash-lite": {
+        "provider": "google",
+        "full_name": "gemini-3.5-flash-lite",
+        "description": "Fast Gemini model (requires compatible llm Gemini plugin)",
+        "aliases": ["gemini-flash"],
+    },
     "gemini-2.5-flash": {
         "provider": "google",
         "full_name": "gemini-2.5-flash",
-        "description": "Default fast Gemini model",
-        "aliases": ["gemini-flash"],
+        "description": "Legacy Flash model; subject to Google automatic redirection",
+        "aliases": [],
     },
     "gemini-2.5-flash-lite": {
         "provider": "google",
