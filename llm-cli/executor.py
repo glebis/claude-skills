@@ -32,7 +32,7 @@ class LLMExecutor:
         if not content.strip():
             raise ValueError("No content provided")
 
-        cmd = ["llm", self.model]
+        cmd = ["llm", "-m", self.model]
 
         try:
             result = subprocess.run(
@@ -63,61 +63,15 @@ class LLMExecutor:
 
         Starts an interactive conversation loop that continues until user exits.
         """
-        cmd = ["llm", self.model]
-
+        # The provider plugin owns conversation history and response metadata.
         try:
-            print(f"Starting interactive session with {self.model}...")
-            print("Type 'exit', 'quit', or Ctrl+D to end conversation.\n")
-
-            # Start the llm interactive process
-            process = subprocess.Popen(
-                cmd,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-            )
-
-            try:
-                while True:
-                    # Read user input
-                    try:
-                        user_input = input("You: ").strip()
-                    except EOFError:
-                        break
-
-                    if user_input.lower() in {"exit", "quit"}:
-                        break
-
-                    if not user_input:
-                        continue
-
-                    # Send to LLM and get response
-                    try:
-                        stdout, stderr = process.communicate(
-                            input=user_input + "\n",
-                            timeout=60,
-                        )
-                        if stdout:
-                            print(f"Assistant: {stdout.strip()}\n")
-                        if stderr:
-                            print(f"Error: {stderr}", file=sys.stderr)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
-                        print("Response timeout. Ending session.")
-                        break
-
-            finally:
-                if process.poll() is None:
-                    process.terminate()
-
+            result = subprocess.run(["llm", "chat", "-m", self.model])
+            if result.returncode != 0:
+                raise RuntimeError("LLM chat failed")
         except FileNotFoundError:
-            raise RuntimeError(
-                "llm CLI not found. Install with: pip install llm"
-            )
+            raise RuntimeError("llm CLI not found. Install with: pip install llm")
         except KeyboardInterrupt:
-            print("\n\nSession ended.")
+            print("\nSession ended.")
 
     def execute_with_prompt(self, prompt: str, content: str) -> str:
         """

@@ -168,7 +168,7 @@ llm document.txt  # Treats as file if exists
 
 ### Google Gemini (2025)
 - `gemini-2.5-pro` - Most advanced
-- `gemini-2.5-flash` - Default fast
+- `gemini-3.5-flash-lite` - Default fast
 - `gemini-2.5-flash-lite` - Speed optimized
 - `gemini-2.0-flash` - Previous generation
 - `gemini-2.5-computer-use` - UI interaction
@@ -356,3 +356,9 @@ For issues:
 2. Run setup: `/llm --setup`
 3. Verify `llm` CLI: `llm --version`
 4. Check provider: `echo $PROVIDER_API_KEY`
+
+### Gemini migration (2026-11-05)
+
+`gemini-flash` resolves to `gemini-3.5-flash-lite`; explicit legacy IDs and saved model choices remain available. No saved configuration is rewritten. This wrapper sends no tool definitions, thinking budget or sampling options. Interactive history is owned by `llm chat` and its installed provider plugin, whose thought-signature and function-call handling must be verified separately.
+
+Install/configure a Gemini provider plugin for the external `llm` executable (for example `llm-gemini`), and check `llm plugins` and `llm models` for actual support. The registry alone does not install or enable a model. Test both `llm -m gemini-3.5-flash-lite "Reply OK"` and a two-turn `llm chat -m gemini-3.5-flash-lite` before adopting it. Offline tests do not verify the provider or Google API.
