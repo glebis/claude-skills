@@ -183,6 +183,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | [skill-studio](https://github.com/glebis/skill-studio) | Interview-driven skill/automation design; analyze sessions into new skills |
 | [recording](./recording/) | Demo mode — redact PII from outputs in real time while screen-sharing |
 | [skills/disk-cleanup](./skills/disk-cleanup/) | Survey and clean macOS caches, package data, crash dumps |
+| [skills/handoff](./skills/handoff/) | Hand a brief to an ACP agent in its own worktree and herdr workspace, then verify its work |
 | [wispr-fix](./wispr-fix/) | Queue and batch-apply Wispr dictation corrections |
 | [context-builder](./context-builder/) | Generate AI-transformation discovery prompts for consulting clients |
 | [meta](./meta/) | Run Claude Code commands against the telegram_agent project |

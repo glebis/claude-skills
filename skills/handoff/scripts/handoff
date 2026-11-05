@@ -1,0 +1,420 @@
+#!/usr/bin/env python3
+"""handoff — give a written brief to an ACP agent in its own git worktree and herdr workspace.
+
+    handoff new "Report importer"                 # write docs/YYYY-MM-DD-report-importer-handoff.md
+    handoff start docs/2026-11-05-x-handoff.md    # epic + worktree + launch the agent, detached
+    handoff start DOC --supervise                 # same, then wait for the agent and collect
+    handoff start DOC --here                      # worktree, branch, brief and epic only; no agent
+    handoff status ID                             # progress: commits, dirty files, last output
+    handoff collect ID                            # verify the work and record the result
+    handoff close ID [--discard]                  # remove the worktree once merged (or discarded)
+    handoff list
+
+Stdlib only. Needs git and herdr; beads (`bd`) is optional. The agent runs through herdr's
+`acp-run` (an ACP client) and never through a TUI. State lives in <git-common-dir>/handoff/<id>/,
+so nothing is added to the working tree.
+"""
+
+import argparse
+import datetime as dt
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+DEFAULT_AGENT = "cmd acp"
+EXIT_MARK = "=== acp-run exit:"
+CHECK_HEADING = re.compile(r"^#{1,6}\s+.*\b(checks?|verify|verification)\b", re.I)
+
+RULES = """
+
+---
+
+## Handoff rules (appended by the handoff skill)
+
+- You are working in your own git worktree on branch `{branch}`, cut from `{base}`. Stay inside it.
+- Commit your work on this branch as you go. Stage explicit paths only; never `git add -A` or `git add .`.
+- Do not merge, rebase onto another branch, push, or open a pull request. Merging is the owner's call.
+- Do not modify files outside this worktree.
+- If you are blocked, stop and write the blocker in your final message, together with what you tried.
+- End with a short report: what changed, the commits made, and the result of each check in the brief.
+"""
+
+
+def die(msg, code=1):
+    print(f"handoff: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def run(cmd, cwd=None, check=True):
+    proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    if check and proc.returncode != 0:
+        die(f"`{' '.join(cmd)}` failed: {(proc.stderr or proc.stdout).strip()}")
+    return proc
+
+
+def git(*args, cwd=None, check=True):
+    return run(["git", *args], cwd=cwd, check=check).stdout.strip()
+
+
+def herdr_json(*args):
+    out = run(["herdr", *args]).stdout.strip()
+    return json.loads(out)["result"] if out else {}
+
+
+def repo_root(start="."):
+    root = run(["git", "rev-parse", "--show-toplevel"], cwd=start, check=False)
+    if root.returncode != 0:
+        die("not inside a git repository")
+    return Path(root.stdout.strip())
+
+
+def state_root(root):
+    common = Path(git("rev-parse", "--git-common-dir", cwd=root))
+    if not common.is_absolute():
+        common = root / common
+    return common.resolve() / "handoff"
+
+
+def load_state(root, hid):
+    path = state_root(root) / hid / "state.json"
+    if not path.exists():
+        die(f"no handoff {hid} (see `handoff list`)")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def save_state(root, state):
+    d = state_root(root) / state["id"]
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "state.json").write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+
+
+def slugify(text):
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return "-".join(words)[:48].strip("-") or "handoff"
+
+
+def beads_available(root):
+    return shutil.which("bd") is not None and (root / ".beads").exists()
+
+
+def bd(*args, root):
+    return run(["bd", *args], cwd=root, check=False)
+
+
+def find_acp_run():
+    env = os.environ.get("HANDOFF_ACP_RUN")
+    candidates = [env] if env else []
+    candidates += [shutil.which("acp-run")]
+    here = Path(__file__).resolve().parent
+    candidates += [str(here.parent.parent / "herdr" / "scripts" / "acp-run")]
+    for base in ("~/.claude/skills", "~/.agents/skills", "~/.codex/skills"):
+        candidates.append(os.path.expanduser(f"{base}/herdr/scripts/acp-run"))
+    for c in candidates:
+        if c and os.path.isfile(c) and os.access(c, os.X_OK):
+            return c
+    die("cannot find herdr's acp-run; set HANDOFF_ACP_RUN to its path")
+
+
+def porcelain(path):
+    return sorted(git("status", "--porcelain", cwd=path, check=False).splitlines())
+
+
+def doc_title(text, fallback):
+    for line in text.splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    return fallback
+
+
+def brief_checks(text):
+    """Shell commands in fenced blocks under a heading that mentions checks or verification."""
+    cmds, in_section, in_fence = [], False, False
+    for line in text.splitlines():
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            if in_section and line.strip() and not line.lstrip().startswith("#"):
+                cmds.append(line.strip())
+            continue
+        if line.startswith("#"):
+            in_section = bool(CHECK_HEADING.match(line))
+    return cmds
+
+
+# ── commands ──────────────────────────────────────────────────────────────────
+
+
+def cmd_new(args):
+    root = repo_root()
+    slug = args.slug or slugify(args.title)
+    folder = root / (args.dir or ("docs" if (root / "docs").is_dir() else "."))
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f"{dt.date.today().isoformat()}-{slug}-handoff.md"
+    if path.exists():
+        die(f"{path.relative_to(root)} already exists")
+    path.write_text(
+        f"# {args.title}\n\n"
+        f"{dt.date.today().strftime('%-d %B %Y')} · Not started\n\n"
+        "## Problem\n\nWhat is wrong or missing, and what is known to work.\n\n"
+        "## Scope\n\nWhat to build or change. Files and areas involved.\n\n"
+        "## Not in scope\n\n- \n\n"
+        "## Done when\n\n- \n\n"
+        "## Checks\n\n```bash\n# one command per line; `handoff collect` runs these in the worktree\n```\n",
+        encoding="utf-8")
+    print(path.relative_to(root))
+
+
+def cmd_start(args):
+    root = repo_root()
+    doc = Path(args.doc)
+    doc = doc if doc.is_absolute() else (Path.cwd() / doc)
+    if not doc.is_file():
+        die(f"no such brief: {args.doc}")
+    text = doc.read_text(encoding="utf-8")
+    slug = args.slug or slugify(re.sub(r"^\d{4}-\d{2}-\d{2}-|-handoff$", "", doc.stem))
+    title = doc_title(text, slug)
+
+    base = args.base or git("branch", "--show-current", cwd=root) or "HEAD"
+    base_sha = git("rev-parse", base, cwd=root)
+    dirty = porcelain(root)
+
+    epic = None
+    if beads_available(root):
+        rel = os.path.relpath(doc, root)
+        proc = bd("create", f"Handoff: {title}", "-t", "epic", "--silent",
+                  "-d", f"Brief: {rel}. Branch cut from {base} at {base_sha[:7]}.", root=root)
+        epic = proc.stdout.strip().splitlines()[-1] if proc.returncode == 0 and proc.stdout.strip() else None
+        if not epic:
+            print(f"handoff: bd create failed, continuing without an epic: {proc.stderr.strip()}")
+    else:
+        print("handoff: no beads tracker here (bd or .beads missing); skipping the epic")
+    hid = epic or "h-" + hashlib.sha1(f"{slug}{dt.datetime.now().isoformat()}".encode()).hexdigest()[:6]
+    branch = f"handoff/{hid}-{slug}"
+
+    print(f"base: {base} @ {base_sha[:7]}")
+    if dirty:
+        print(f"note: {len(dirty)} uncommitted change(s) in the source checkout are NOT in the worktree")
+    if os.path.relpath(doc, root) in {line[3:] for line in dirty} or \
+            git("ls-files", "--error-unmatch", str(doc), cwd=root, check=False) == "":
+        print("note: the brief itself is uncommitted; the agent gets it as a file, not in the tree")
+
+    created = herdr_json("worktree", "create", "--cwd", str(root), "--branch", branch,
+                         "--base", base, "--label", f"handoff {hid}", "--no-focus", "--json")
+    pane = created["root_pane"]["pane_id"]
+    workspace = created["workspace"]["workspace_id"]
+    worktree = created["worktree"]["path"]
+
+    sdir = state_root(root) / hid
+    sdir.mkdir(parents=True, exist_ok=True)
+    brief = sdir / "brief.md"
+    brief.write_text(text + RULES.format(branch=branch, base=base), encoding="utf-8")
+    log = sdir / "run.log"
+
+    state = {
+        "id": hid, "title": title, "slug": slug, "doc": str(doc), "brief": str(brief),
+        "log": str(log), "epic": epic, "branch": branch, "base": base, "base_sha": base_sha,
+        "worktree": worktree, "workspace": workspace, "pane": pane, "agent": args.agent,
+        "source_status": dirty, "started": dt.datetime.now().isoformat(timespec="seconds"),
+        "launched": not args.here,
+    }
+    save_state(root, state)
+    print(f"id: {hid}\nbranch: {branch}\nworktree: {worktree}\nworkspace: {workspace} pane: {pane}")
+
+    if args.here:
+        print("set up only (--here); no agent launched. Work in the worktree yourself.")
+        return
+
+    command = " ".join(shlex_quote(x) for x in
+                       [find_acp_run(), "--cwd", worktree, "--brief", str(brief), "--log", str(log), "--"]) \
+        + " " + args.agent
+    run(["herdr", "pane", "run", pane, command])
+    print(f"launched `{args.agent}` via acp-run")
+
+    if not args.supervise:
+        print(f"detached. Check with: handoff status {hid}   then: handoff collect {hid}")
+        return
+    print(f"supervising (timeout {args.timeout}s)…")
+    run(["herdr", "wait", "output", pane, "--match", EXIT_MARK, "--source", "recent",
+         "--timeout", str(args.timeout * 1000)], check=False)
+    collect(root, state)
+
+
+def shlex_quote(s):
+    import shlex
+    return shlex.quote(s)
+
+
+def last_exit(state):
+    log = Path(state["log"])
+    if not log.exists():
+        return None
+    for line in reversed(log.read_text(encoding="utf-8", errors="replace").splitlines()):
+        if line.startswith(EXIT_MARK):
+            return line[len(EXIT_MARK):].strip(" =")
+    return None
+
+
+def cmd_status(args):
+    root = repo_root()
+    s = load_state(root, args.id)
+    wt = Path(s["worktree"])
+    print(f"{s['id']} · {s['title']}\nbranch {s['branch']} (from {s['base']} @ {s['base_sha'][:7]})")
+    if not wt.exists():
+        print("worktree: gone (closed)")
+        return
+    commits = git("log", "--oneline", f"{s['base_sha']}..{s['branch']}", cwd=root, check=False)
+    print(f"commits: {len(commits.splitlines()) if commits else 0}")
+    for line in commits.splitlines()[:10]:
+        print(f"  {line}")
+    dirty = porcelain(wt)
+    print(f"uncommitted in worktree: {len(dirty)}")
+    exit_reason = last_exit(s)
+    print(f"agent: {'finished — ' + exit_reason if exit_reason else ('running or not started' if s['launched'] else 'not launched (--here)')}")
+    if Path(s["log"]).exists():
+        tail = Path(s["log"]).read_text(encoding="utf-8", errors="replace").splitlines()[-args.lines:]
+        print("─" * 60 + "\n" + "\n".join(tail))
+
+
+def collect(root, s):
+    wt = Path(s["worktree"])
+    results = []
+
+    def check(name, ok, detail=""):
+        results.append((name, ok, detail))
+        print(f"{'PASS' if ok else 'FAIL'}  {name}{' — ' + detail if detail else ''}")
+
+    exit_reason = last_exit(s)
+    if s["launched"]:
+        check("agent finished", exit_reason is not None, exit_reason or "no exit line in the log yet")
+    commits = git("log", "--oneline", f"{s['base_sha']}..{s['branch']}", cwd=root, check=False)
+    n = len(commits.splitlines()) if commits else 0
+    check("branch has commits", n > 0, f"{n} commit(s)")
+    dirty = porcelain(wt) if wt.exists() else []
+    check("worktree is clean", not dirty, f"{len(dirty)} uncommitted" if dirty else "")
+    new_outside = sorted(set(porcelain(root)) - set(s.get("source_status", [])))
+    check("nothing changed outside the worktree", not new_outside,
+          (f"{len(new_outside)} new change(s) in the source checkout (may be another session): "
+           + ", ".join(x[3:] for x in new_outside[:5])) if new_outside else "")
+
+    brief_text = Path(s["brief"]).read_text(encoding="utf-8") if Path(s["brief"]).exists() else ""
+    for cmd in brief_checks(brief_text):
+        if not wt.exists():
+            check(f"check `{cmd}`", False, "worktree is gone")
+            continue
+        proc = subprocess.run(cmd, shell=True, cwd=wt, capture_output=True, text=True)
+        tail = (proc.stdout + proc.stderr).strip().splitlines()[-1:] or [""]
+        check(f"check `{cmd}`", proc.returncode == 0, f"exit {proc.returncode}: {tail[0][:160]}")
+
+    passed = all(ok for _, ok, _ in results)
+    verdict = "PASS" if passed else "FAIL"
+    summary = "\n".join(f"- {'PASS' if ok else 'FAIL'} {name}{' — ' + d if d else ''}" for name, ok, d in results)
+    report = (f"handoff collect: {verdict}\nbranch {s['branch']} · {n} commit(s)\n{summary}\n"
+              f"Merging is the owner's call: git merge {s['branch']}")
+    print(f"\nCOLLECT: {verdict}")
+    if s.get("epic") and beads_available(root):
+        proc = bd("comments", "add", s["epic"], report, root=root)
+        print("recorded on epic " + s["epic"] if proc.returncode == 0
+              else f"could not record on {s['epic']}: {proc.stderr.strip()}")
+    s["collected"] = {"verdict": verdict, "at": dt.datetime.now().isoformat(timespec="seconds")}
+    save_state(root, s)
+    if not passed:
+        sys.exit(1)
+
+
+def cmd_collect(args):
+    root = repo_root()
+    collect(root, load_state(root, args.id))
+
+
+def cmd_close(args):
+    root = repo_root()
+    s = load_state(root, args.id)
+    branch_exists = run(["git", "rev-parse", "--verify", "--quiet", s["branch"]], cwd=root, check=False).returncode == 0
+    merged = branch_exists and run(["git", "merge-base", "--is-ancestor", s["branch"], s["base"]],
+                                   cwd=root, check=False).returncode == 0
+    has_work = branch_exists and git("rev-list", "--count", f"{s['base_sha']}..{s['branch']}", cwd=root) != "0"
+    if has_work and not merged and not args.discard:
+        die(f"{s['branch']} is not merged into {s['base']}. Merge it first, or pass --discard "
+            "to remove the worktree and keep the branch.")
+    if Path(s["worktree"]).exists():
+        cmd = ["herdr", "worktree", "remove", "--workspace", s["workspace"], "--json"]
+        if args.discard:
+            cmd.insert(-1, "--force")
+        if run(cmd, check=False).returncode != 0:
+            git("worktree", "remove", *(["--force"] if args.discard else []), s["worktree"], cwd=root)
+        print(f"removed worktree {s['worktree']}")
+    if merged or not has_work:
+        if branch_exists:
+            git("branch", "-d", s["branch"], cwd=root)
+            print(f"deleted merged branch {s['branch']}")
+        if s.get("epic") and beads_available(root):
+            bd("close", s["epic"], "--reason", "handoff merged" if merged else "handoff closed with no work",
+               root=root)
+            print(f"closed epic {s['epic']}")
+    else:
+        print(f"kept unmerged branch {s['branch']}; delete it yourself with: git branch -D {s['branch']}")
+    s["closed"] = dt.datetime.now().isoformat(timespec="seconds")
+    save_state(root, s)
+
+
+def cmd_list(_args):
+    root = repo_root()
+    d = state_root(root)
+    rows = sorted(d.glob("*/state.json")) if d.exists() else []
+    if not rows:
+        print("no handoffs")
+    for p in rows:
+        s = json.loads(p.read_text(encoding="utf-8"))
+        status = "closed" if s.get("closed") else (s.get("collected", {}).get("verdict") or "open")
+        print(f"{s['id']:<12} {status:<7} {s['branch']}  ({s['started']})")
+
+
+def main():
+    p = argparse.ArgumentParser(prog="handoff", description=__doc__.split("\n\n")[0])
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    n = sub.add_parser("new", help="write a dated handoff doc from a template")
+    n.add_argument("title")
+    n.add_argument("--slug")
+    n.add_argument("--dir", help="folder for the doc (default: docs/ when it exists)")
+    n.set_defaults(fn=cmd_new)
+
+    s = sub.add_parser("start", help="create the epic and worktree, then launch the agent")
+    s.add_argument("doc", help="the handoff doc; it becomes the agent's brief")
+    s.add_argument("--agent", default=DEFAULT_AGENT, help=f"ACP agent command (default: {DEFAULT_AGENT})")
+    s.add_argument("--base", help="branch or ref to cut from (default: the current branch)")
+    s.add_argument("--slug")
+    s.add_argument("--supervise", action="store_true", help="wait for the agent, then collect")
+    s.add_argument("--here", action="store_true", help="set up worktree, branch, brief and epic only")
+    s.add_argument("--timeout", type=int, default=3600, help="seconds to supervise (default: 3600)")
+    s.set_defaults(fn=cmd_start)
+
+    st = sub.add_parser("status", help="show a handoff's progress")
+    st.add_argument("id")
+    st.add_argument("--lines", type=int, default=20)
+    st.set_defaults(fn=cmd_status)
+
+    c = sub.add_parser("collect", help="verify the work and record the result on the epic")
+    c.add_argument("id")
+    c.set_defaults(fn=cmd_collect)
+
+    cl = sub.add_parser("close", help="remove the worktree once merged, or with --discard")
+    cl.add_argument("id")
+    cl.add_argument("--discard", action="store_true",
+                    help="remove the worktree even if unmerged; the branch is kept")
+    cl.set_defaults(fn=cmd_close)
+
+    sub.add_parser("list", help="list handoffs in this repository").set_defaults(fn=cmd_list)
+
+    args = p.parse_args()
+    args.fn(args)
+
+
+if __name__ == "__main__":
+    main()
