@@ -60,6 +60,16 @@ class ConfigManager:
         self.config["available_providers"] = providers
         self.save()
 
+    def get_openai_compatible_models(self) -> list[str]:
+        """Get model IDs for the user's OpenAI-compatible gateway.
+
+        The repo ships no model names for this provider: the user lists the
+        model_id values from their llm extra-openai-models.yaml in
+        openai_compatible_models in the config file.
+        """
+        models = self.config.get("openai_compatible_models", [])
+        return [m for m in models if isinstance(m, str) and m]
+
 
 class ProviderDetector:
     """Detects available LLM providers via environment variables."""
@@ -71,6 +81,9 @@ class ProviderDetector:
         "groq": "GROQ_API_KEY",
         "openrouter": "OPENROUTER_API_KEY",
         "ollama": "OLLAMA_BASE_URL",
+        # Any OpenAI-compatible gateway, detected by base URL. The API key is
+        # stored with `llm keys set <api_key_name>` (see OPENAI_COMPATIBLE.md).
+        "openai_compatible": "OPENAI_COMPATIBLE_BASE_URL",
     }
 
     @staticmethod
@@ -136,3 +149,6 @@ class ProviderDetector:
             print("\n6. OpenRouter (unified API for 200+ models):")
             print("   export OPENROUTER_API_KEY='sk-or-...'")
             print("   Get key from: https://openrouter.ai")
+            print("\n7. Any OpenAI-compatible gateway (optional):")
+            print("   export OPENAI_COMPATIBLE_BASE_URL='https://<gateway>/v1'")
+            print("   See OPENAI_COMPATIBLE.md for the llm config")
