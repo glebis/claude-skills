@@ -64,6 +64,11 @@
       "description": "Scan and clean macOS caches, package-manager data, crash dumps, and app caches to reclaim disk space. Deterministic — a config registry (targets.json) plus survey.py (read-only) and clean.py (executor) do all measuring and deleting. Use for: freeing disk space, \"disk is full\", \"clean up my Mac\", \"what's eating my disk\"."
     },
     {
+      "name": "handoff",
+      "source": "./skills/handoff",
+      "description": "Hand a written brief to an ACP agent in its own git worktree and herdr workspace: dated doc, optional beads epic, handoff branch, launch via acp-run, then collect (commits, stray changes, the brief's checks) and close once merged. Use for: \"hand this off\", \"create a handoff\", \"start it in its own worktree\"."
+    },
+    {
       "name": "doctorg",
       "source": "./doctorg",
       "description": "Evidence-based health research using tiered trusted sources with GRADE-inspired evidence ratings. Integrates Apple Healt"

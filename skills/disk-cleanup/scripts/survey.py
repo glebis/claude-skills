@@ -65,7 +65,7 @@ def discover(reg: dict, min_mb: int) -> list[dict]:
 
 
 def build(args) -> dict:
-    reg = lib.load_json("targets.json")
+    reg = lib.load_registry()
     cfg = lib.load_config()["defaults"]
     min_mb = args.min_mb or cfg.get("min_size_mb", 10)
     rows = measure_targets(reg)

@@ -1,0 +1,16 @@
+# Reviewed findings for SkillSpector. Use with: skillspector scan . --baseline .skillspector-baseline.yaml
+version: 2
+rules:
+  - id: "AE1"
+    path: "SKILL.md"
+    message: "*assets/engine.js*"
+    reason: "Parser limit, not evasion: the shell parser reads a JavaScript template literal (backticks) as a command string. The file was read by every other analyzer and has no eval, innerHTML or network calls"
+  - id: "AE1"
+    path: "SKILL.md"
+    message: "*assets/template.html*"
+    reason: "Parser limit, not evasion: the shell parser reads the CSS function env(safe-area-inset-top) as the env command"
+  - id: "AST4"
+    path: "scripts/app_map.py"
+    reason: "Fixed argument lists with no shell: git for the commit stamp and mmdc for diagrams"
+  - id: "LP3"
+    reason: "Accepted: declaring allowed-tools would pre-approve Bash while the skill runs, which widens access. Tool use stays under the normal permission prompts"

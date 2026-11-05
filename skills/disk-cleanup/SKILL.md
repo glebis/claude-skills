@@ -43,6 +43,12 @@ python3 scripts/clean.py --preset safe --skip ollama-models --go            # ex
    Do not dump the whole JSON.
 2. **Auto-path:** for a plain "clean up safe stuff", show the `safe` total and run
    `clean.py --preset safe --go` (offer `--empty-trash`). Safe targets are regenerable.
+   **Disk-full emergency** (ENOSPC is blocking other work): don't start with the full `safe`
+   preset. It quits running apps (`electron-app-caches`: Notion, Figma, Obsidian, Codex,
+   Dropbox), and its `trash`-method targets free nothing until the Trash is emptied, which also
+   deletes the user's other trashed items. Run the command-method caches first, because they free
+   space immediately: `clean.py --ids uv-cache,npm-cache --go`. Command-method caches often free
+   far more than their `du` estimate.
 3. **Escalate to the user ONLY for** (these are genuine judgment calls the scripts deliberately
    refuse to auto-decide):
    - `medium` targets (ML models, device support, project `node_modules`) — confirm before `--allow-medium`.
@@ -93,9 +99,10 @@ files in `~/Downloads`, offer to build `config.local.json` by asking (one short 
 Then write `config.local.json` (copy `config.local.example.json` and fill it in). Confirm what
 was saved. Never commit it.
 
-Per-machine paths in `targets.json` (`allowed_roots`, the `node-modules-projects` find root
-`~/ai_projects`) are examples — adjust them to the user's layout. Targets whose paths don't
-exist on this machine simply measure 0 and are skipped.
+Projects directories live in `projects_roots` (`config.json` defaults to `~/Projects`; set your
+own in `config.local.json`). They are added to `allowed_roots` at load time and swept by the
+`node-modules-projects` target, whose find root is `@projects`. Targets whose paths don't exist
+on this machine simply measure 0 and are skipped.
 
 ## Still agent-driven (only what genuinely can't be deterministic)
 

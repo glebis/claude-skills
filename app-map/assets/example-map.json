@@ -1,0 +1,40 @@
+{
+ "project": {"name": "Tally", "sub": "Every screen in Tally, the scenarios that cross it and the tests that cover it", "footer": "Source: map.json. Refresh with app_map.py"},
+ "surfaces": [
+  {"id": "site", "name": "Website", "path": "site/", "kind": "browser"},
+  {"id": "app", "name": "Web app", "path": "app/", "kind": "unit", "kinds": {"refused": "api", "conflict": "api"}}
+ ],
+ "screens": [
+  {"id": "SITE-HOME", "s": "site", "biz": true, "n": "Home page", "w": "Pitch and price", "e": "Search, links", "x": ["SITE-BUY"], "b": "Static", "t": [], "c": "none"},
+  {"id": "SITE-BUY", "s": "site", "biz": true, "n": "Checkout", "w": "Hosted payment page", "e": "Buy", "x": ["APP-SIGNIN"], "b": "Payment provider", "t": [], "c": "none"},
+  {"id": "APP-SIGNIN", "s": "app", "n": "Sign in", "w": "Email link sign-in", "e": "Receipt email", "x": ["APP-LIST"], "b": "POST /session", "t": ["test_session.py"], "c": "ok"},
+  {"id": "APP-LIST", "s": "app", "n": "Invoice list", "w": "Invoices with status", "e": "After sign-in", "x": ["APP-EDIT"], "b": "GET /invoices", "t": [], "c": "part"},
+  {"id": "APP-EDIT", "s": "app", "n": "Invoice editor", "w": "Lines, totals, send", "e": "Invoice list", "x": [], "b": "PUT /invoices/:id", "t": [], "c": "none"}
+ ],
+ "stages": [
+  {"id": "discover", "n": "Discover", "biz": 1, "sc": ["SITE-HOME"]},
+  {"id": "buy", "n": "Buy", "biz": 1, "sc": ["SITE-BUY"]},
+  {"id": "use", "n": "Daily use", "sc": ["APP-SIGNIN", "APP-LIST", "APP-EDIT"]}
+ ],
+ "scenarios": [
+  {"id": "S-BUY-1", "st": "buy", "n": "Buy and reach the app", "sc": ["SITE-HOME", "SITE-BUY", "APP-SIGNIN"], "d": ["Pay with a test card", "Expect a receipt with a sign-in link"], "c": "none", "t": []},
+  {"id": "S-EDIT-1", "st": "use", "n": "Two tabs edit one invoice", "sc": ["APP-LIST", "APP-EDIT"], "d": ["Save in both tabs", "Expect the second save to be refused with the newer version shown"], "c": "none", "t": []}
+ ],
+ "gaps": [{"t": "No test crosses payment and first sign-in", "sc": "S-BUY-1"}],
+ "jobs": [
+  {"id": "get-paid", "t": "Get paid without chasing", "stmt": ["When a job is finished", "I want the invoice out the same day", "so the money arrives on time"], "src": "cand", "ev": "none", "fit": "part", "fitNote": "Sending works; reminders are not built", "pr": "Home page: Get paid faster", "sc": ["APP-EDIT"]}
+ ],
+ "kinds": {"unit": ["Unit", "Logic with no server"], "api": ["API", "Requests against a test server"], "browser": ["Browser run", "A real browser opens the page"]},
+ "kindGuide": {
+  "unit": {"where": "tests/test_<topic>.py", "how": "pytest with no network", "run": "pytest tests"},
+  "api": {"where": "tests/api/test_<topic>.py", "how": "pytest with the test client", "run": "pytest tests/api"},
+  "browser": {"where": "e2e/<topic>.spec.ts", "how": "Playwright against a local server", "run": "npm run e2e"}
+ },
+ "defaultKind": "unit",
+ "layers": [
+  {"n": "People-facing", "items": ["Website", "Web app"], "note": "The app calls the API"},
+  {"n": "Storage", "items": ["Postgres"]}
+ ],
+ "rules": [{"t": "The server owns totals", "d": "The browser shows totals; only the API computes them"}],
+ "testing": {"globs": ["tests/**/test_*.py"], "kinds": [{"pattern": "tests/api/", "kind": "api"}, {"pattern": "\\.py$", "kind": "unit"}]}
+}
