@@ -59,7 +59,7 @@ def select(reg, args) -> list[dict]:
 
 
 def run(args):
-    reg = lib.load_json("targets.json")
+    reg = lib.load_registry()
     roots = reg["allowed_roots"]
     disk_before = lib.disk()
     plan, advisories, refused, freed = [], [], [], 0

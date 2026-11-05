@@ -47,6 +47,15 @@ def load_config() -> dict:
     return cfg
 
 
+def load_registry() -> dict:
+    """targets.json with the configured projects_roots added to allowed_roots, so no
+    machine-specific project path lives in the committed registry."""
+    reg = load_json("targets.json")
+    projects = load_config().get("projects_roots", [])
+    reg["allowed_roots"] = reg["allowed_roots"] + [r for r in projects if r not in reg["allowed_roots"]]
+    return reg
+
+
 def expand(p: str) -> Path:
     """Expand ~ and env vars; do NOT resolve symlinks yet (preflight does that)."""
     return Path(os.path.expandvars(os.path.expanduser(p)))
@@ -232,7 +241,10 @@ def resolve_target_paths(target: dict) -> list[Path]:
     method = target.get("method")
     if method == "find-trash":
         f = target["find"]
-        out = find_dirs(f["root"], f["name"], f.get("maxdepth", 4), f.get("min_mb", 50))
+        roots = load_config().get("projects_roots", []) if f["root"] == "@projects" else [f["root"]]
+        for root in roots:
+            out += find_dirs(root, f["name"], f.get("maxdepth", 4), f.get("min_mb", 50))
+        out = sorted(set(out), key=str)
     elif method == "downloads-scan":
         out = scan_downloads(load_config().get("downloads_scan", {}))
     elif method == "simctl":

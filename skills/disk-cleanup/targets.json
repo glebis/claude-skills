@@ -9,7 +9,6 @@
     "~/.gradle",
     "~/.m2",
     "~/.ollama",
-    "~/ai_projects",
     "~/Downloads",
     "~/.Trash",
     "/private/var/folders"
@@ -355,7 +354,7 @@
       "risk": "medium",
       "method": "find-trash",
       "find": {
-        "root": "~/ai_projects",
+        "root": "@projects",
         "maxdepth": 3,
         "name": "node_modules",
         "min_mb": 50
