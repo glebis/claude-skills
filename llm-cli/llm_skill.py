@@ -19,6 +19,19 @@ class LLMSkill:
         self.config = ConfigManager()
         self.detector = ProviderDetector()
 
+    def _models_for(self, provider: str) -> list[tuple[str, dict]]:
+        """Return (name, info) pairs for a provider's model menu.
+
+        Registry providers come from models.py. The OpenAI-compatible provider
+        has no fixed names, so its menu comes from the user's config file.
+        """
+        if provider == "openai_compatible":
+            return [
+                (model_id, {"description": "OpenAI-compatible gateway model"})
+                for model_id in self.config.get_openai_compatible_models()
+            ]
+        return get_models_by_provider(provider)
+
     def select_model(self, identifier: str = None) -> tuple[str, str]:
         """
         Select model based on identifier or user choice.
@@ -46,7 +59,7 @@ class LLMSkill:
         provider = resolve_provider_alias(identifier)
         if provider:
             # Get available models for this provider
-            models = get_models_by_provider(provider)
+            models = self._models_for(provider)
             if not models:
                 print(f"❌ No models found for provider: {provider}")
                 return self._interactive_model_selection()
@@ -63,7 +76,11 @@ class LLMSkill:
 
     def _interactive_model_selection(self) -> tuple[str, str]:
         """Show interactive model selection menu."""
-        available_providers = self.detector.get_available_providers()
+        # Drop providers with no usable models (e.g. a base URL set but no
+        # openai_compatible_models in config) so the menu cannot loop on them.
+        available_providers = [
+            p for p in self.detector.get_available_providers() if self._models_for(p)
+        ]
 
         if not available_providers:
             print("❌ No LLM providers available!")
@@ -87,7 +104,7 @@ class LLMSkill:
 
     def _select_model_for_provider(self, provider: str) -> tuple[str, str]:
         """Select model from a specific provider."""
-        models = get_models_by_provider(provider)
+        models = self._models_for(provider)
 
         if not models:
             print(f"❌ No models found for provider: {provider}")
