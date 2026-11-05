@@ -119,7 +119,7 @@ function renderJourney(){
   const box=$('journey');box.replaceChildren();
   STAGES.forEach((st,i)=>{
     const n=SCEN.filter(x=>x.st===st.id).length;
-    const b=h('button',{'aria-pressed':state.stage===st.id?'true':'false',title:`${st.biz?'Business stage: ':''}${st.sc.length} screens, ${n} scenario${n===1?'':'s'}`,onclick:()=>select({stage:state.stage===st.id?null:st.id,job:null})},h('span',{style:'font-weight:600'},st.n),h('small',{},`${st.sc.length} screens`));
+    const b=h('button',{'aria-pressed':state.stage===st.id?'true':'false',title:`${st.biz?'Business stage: ':''}${st.sc.length} screen${st.sc.length===1?'':'s'}, ${n} scenario${n===1?'':'s'}`,onclick:()=>select({stage:state.stage===st.id?null:st.id,job:null})},h('span',{style:'font-weight:600'},st.n),h('small',{},`${st.sc.length} screen${st.sc.length===1?'':'s'}`));
     const wrap=h('div',{class:'stage'},b);if(i<STAGES.length-1)wrap.append(h('span',{class:'arrow','aria-hidden':'true'},'→'));
     box.append(wrap);
   });
@@ -245,7 +245,7 @@ function cellDetail(sid,k){
 function defaultDetail(){
   if(state.job&&state.view!=='jobs'){const j=JOBS.find(x=>x.id===state.job);if(j)return jobDetail(j);}
   if(state.stage){const st=STAGES.find(s=>s.id===state.stage);const sc=SCEN.filter(x=>x.st===st.id);
-    return [h('h2',{class:'dtitle'},st.n+' stage'),h('p',{class:'muted'},`${st.sc.length} screens take part in this stage. Pick one to see how you get there, what it calls and what tests it.`),h('h3',{},`Scenarios in this stage (${sc.length})`),h('div',{class:'scen-list'},sc.map(scenRow)),copyUI(sc.map(scenText).join('\n\n'),'Copy stage scenarios')];}
+    return [h('h2',{class:'dtitle'},st.n+' stage'),h('p',{class:'muted'},`${st.sc.length} screen${st.sc.length===1?' takes':'s take'} part in this stage. Pick one to see how you get there, what it calls and what tests it.`),h('h3',{},`Scenarios in this stage (${sc.length})`),h('div',{class:'scen-list'},sc.map(scenRow)),copyUI(sc.map(scenText).join('\n\n'),'Copy stage scenarios')];}
   if(state.view==='flow')return [h('h2',{},'Pick a screen, scenario or job'),h('p',{class:'muted'},'Columns follow the journey, rows are surfaces. Click a box to see what leads to it and where it goes, or choose a scenario or a job above to light its screens.')];
   if(state.view==='testing')return [h('h2',{},'Pick a cell'),h('p',{class:'muted'},'Each cell counts tests for one screen in one state. Click it to read the test names and the files they live in. Sort by a state column to find the screens with the least cover there.')];
   if(state.view==='jobs')return [h('h2',{},'Pick a job'),h('p',{class:'muted'},'Each job is a situation someone is in, what they want and why. Open one to see the screens it needs, how well tested they are and the scenarios that cross them.')];
@@ -300,7 +300,7 @@ function nextRow({s,jobs,sc}){
 function renderGaps(){
   const rows=nextRows(),none=rows.filter(r=>r.s.c==='none').length,top=rows[0],unbuilt=SCREENS.filter(s=>s.c==='gap').length;
   const n=(c,w)=>`${c} ${w}${c===1?'':'s'}`;
-  $('next-summary').replaceChildren(top?`${top.s.n} comes first: ${top.s.c==='none'?'it has no test, and ':''}${n(top.jobs.length,'job')} and ${n(top.sc.length,'scenario')} rely on it. ${n(none,'screen')} with no test, ${rows.length-none} partly tested${unbuilt?` and ${unbuilt} not built yet`:''}. Ranked by the jobs, scenarios and business touchpoints each one touches, so treat the order as a suggestion`:'Every screen on the map is marked as tested. Check the Testing map for states with no test');
+  $('next-summary').replaceChildren(top?`${top.s.n} comes first: ${top.s.c==='none'?'it has no test, and ':''}${[top.jobs.length&&n(top.jobs.length,'job'),top.sc.length&&n(top.sc.length,'scenario')].filter(Boolean).join(' and ')||'nothing else on the map'} ${top.jobs.length+top.sc.length===1?'relies':'rely'} on it. ${n(none,'screen')} with no test, ${rows.length-none} partly tested${unbuilt?` and ${unbuilt} not built yet`:''}. Ranked by the jobs, scenarios and business touchpoints each one touches, so treat the order as a suggestion`:'Every screen on the map is marked as tested. Check the Testing map for states with no test');
   const nl=$('next-list');nl.replaceChildren(...(state.nextAll?rows:rows.slice(0,8)).map(nextRow));
   if(rows.length>8)nl.append(h('button',{class:'clear',style:'align-self:flex-start;padding-left:0',onclick:()=>{state.nextAll=!state.nextAll;render();}},state.nextAll?'Show the top 8':`Show all ${rows.length}`));
   const box=$('gaplist');box.replaceChildren();
@@ -537,7 +537,7 @@ function buildLayout(){
     for(const[c,ids]of Object.entries(stacks))ids.forEach((id,i)=>{pos[id]={x:G.labelW+c*G.colW+(G.colW-G.nodeW)/2,y:y+G.pad+i*(G.nodeH+G.vgap)};});
     lanes.push({sf,y,h:hgt});y+=hgt;
   });
-  return {pos,lanes,W:G.labelW+STAGES.length*G.colW+16,H:y+8};
+  return {pos,lanes,W:G.labelW+STAGES.length*G.colW+56,H:y+8};
 }
 function edgePath(a,b){
   const w=G.nodeW,hh=G.nodeH/2;const ay=a.y+hh,by=b.y+hh;
@@ -708,6 +708,6 @@ let savedTheme='system';try{savedTheme=localStorage.getItem(THEME_KEY)||'system'
 applyTheme(savedTheme);
 $('theme-toggle').addEventListener('click',()=>{const c=isDark()?'light':'dark';applyTheme(c);try{localStorage.setItem(THEME_KEY,c);}catch(e){}});
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',labelTheme);}catch(e){}
-$('data-stamp').textContent=`Tests read from commit ${TD.meta.commit}, ${TD.meta.date}. ${TD.meta.unscreened} test files sit outside the map.`;
+$('data-stamp').textContent=`Tests read from ${TD.meta.date?`commit ${TD.meta.commit}, ${TD.meta.date}`:'a folder with no git history'}. ${TD.meta.unscreened} test file${TD.meta.unscreened===1?'':'s'} outside the map.`;
 $('f-biz').hidden=!SCREENS.some(s=>s.biz);
 fromHash();

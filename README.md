@@ -23,12 +23,13 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 ## Contents
 
-[Recent additions](#recent-additions) · [Meetings & transcripts](#meetings--transcripts) · [Research & knowledge](#research--knowledge) · [Writing, design & publishing](#writing-design--publishing) · [Images, audio & media](#images-audio--media) · [Communication](#communication) · [Development & release](#development--release) · [Thinking & decisions](#thinking--decisions) · [Personal analytics](#personal-analytics) · [Claude Code ops](#claude-code-ops) · [Lab, consulting & business](#lab-consulting--business)
+[Recent additions](#recent-additions) · [Screenshots](#screenshots) · [Meetings & transcripts](#meetings--transcripts) · [Research & knowledge](#research--knowledge) · [Writing, design & publishing](#writing-design--publishing) · [Images, audio & media](#images-audio--media) · [Communication](#communication) · [Development & release](#development--release) · [Thinking & decisions](#thinking--decisions) · [Personal analytics](#personal-analytics) · [Claude Code ops](#claude-code-ops) · [Lab, consulting & business](#lab-consulting--business)
 
 ## Recent additions
 
 | Added | Skill | What it does |
 | --- | --- | --- |
+| 2026-11 | [app-map](./app-map/) | Interactive map of an app's screens, scenarios, tests and jobs, with a ranked list of what to test next |
 | 2026-10 | [background-agents](./background-agents/) | Configure and run background agents across extensible execution backends; Trigger.dev and Cloudflare Workflows available |
 | 2026-10 | [cms-migration-checklist](./cms-migration-checklist/) | Gated WordPress → Next.js + Payload migration checklist: audit, import reconciliation, URL parity, cutover |
 | 2026-10 | [firecrawl-api](./firecrawl-api/) | Firecrawl API script with Alexandria structured-data tools and a 1,850-tool catalog; key from SOPS |
@@ -46,6 +47,13 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | 2026-06 | [app-release](./app-release/) | iOS/watchOS release pipeline to TestFlight and the App Store |
 | 2026-06 | [local-models](./local-models/) | Offline llama.cpp inference reusing models Ollama already downloaded |
 | 2026-06 | [feature-factory](./feature-factory/) | Solo-dev feature pipeline: goal-first, TDD, deterministic verification |
+
+## Screenshots
+
+| [app-map](./app-map/) | [synthetic-session-generator](./synthetic-session-generator/) | [gpt-image-2](./gpt-image-2/) |
+| --- | --- | --- |
+| <img src="./app-map/screenshot.png" alt="App map on its Test next tab: ranked screens with Copy prompt and Add to brief buttons" width="280"> | <img src="./synthetic-session-generator/screenshot.png" alt="Generated case page for a fictional client, marked synthetic" width="280"> | <img src="./gpt-image-2/screenshot.png" alt="Banner of sample images made with the skill" width="280"> |
+| Test next, from the made-up Tally example | Case page for a fictional persona | Sample image styles |
 
 ## Meetings & transcripts
 
@@ -131,6 +139,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Skill | What it does |
 | --- | --- |
+| [app-map](./app-map/) | Map screens, workflows and real tests into one page: what to test next, testing gaps, thin jobs and agent hand-off prompts |
 | [tdd](./tdd/) | Multi-agent TDD with enforced context isolation across RED→GREEN→REFACTOR |
 | [feature-factory](./feature-factory/) | Solo-dev pipeline from feature intent to shipped, with evidence gates |
 | [cms-migration-checklist](./cms-migration-checklist/) | WordPress → Next.js + Payload migration: phase detection, evidence-backed gates, known pitfalls, cutover runbook |
@@ -207,6 +216,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 skill-name/
 ├── SKILL.md          # Metadata, triggers, usage
 ├── CHANGELOG.md      # Version history
+├── screenshot.png    # What it produces, using synthetic data
 ├── scripts/          # Executable orchestration
 ├── assets/           # Resources
 └── references/       # Detailed docs
