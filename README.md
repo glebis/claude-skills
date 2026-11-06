@@ -173,6 +173,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | [chrome-history](./chrome-history/) | Query local Chrome history by date, type, keyword, site |
 | [session-finder](./session-finder/) | Semantic index of Claude Code sessions (Gemini embeddings); relaunch best match |
 | [session-search](./session-search/) | Search session transcripts with synonym-aware semantic matching |
+| [sessiondex](./sessiondex/) | One full-text index of Codex, Claude Code, OpenCode, and Pi sessions; recent, search, show, resume |
 
 ## Claude Code ops
 
