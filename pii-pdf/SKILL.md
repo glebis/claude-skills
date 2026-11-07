@@ -77,6 +77,6 @@ Parse stdout as NDJSON, one object per line. Use the process exit code and final
 - Exit `6`: output/source-path conflict; do not retry with overwrite blindly.
 - Exit `2` or `3`: bad arguments/config or unavailable dependencies/model.
 
-Check the actual generated files. The known baseline can label table headings and transaction words as PERSON after OCR block reordering. Inspect both missed PII and deletion of non-PII; test every page, including the second page. For requested leak evaluation or a report, read [references/evaluation.md](references/evaluation.md).
+Check the actual generated files. Before 0.1.6 the detector often overwrote table dates, amounts and balances with address or PERSON replacements after OCR block reordering; 0.1.6–0.1.8 limit address tails and trim/filter PERSON spans per line, but some table values can still be hit, street names can pass as PERSON, and middle lines of replaced address blocks are left blank. Inspect both missed PII and deletion of non-PII; test every page, including the second page. For requested leak evaluation or a report, read [references/evaluation.md](references/evaluation.md).
 
 Report the scope processed, errors/review flags, output locations and what was verified. Keep processing, detection coverage and leak verification distinct. Do not describe output as safe to share based only on exit `0`, empty exact-string matches or disappearance of the original image hash.

@@ -78,9 +78,18 @@ UTF-8 TXT attachments are processed with the detector. Unsupported binary attach
 
 ## Known quality limits
 
-Multiline PERSON predictions can cross table rows and damage financial information. A previous narrow test damaged 3 of 16 documents; that set reused identity patterns and is **not a general accuracy estimate**. Those historical results do not validate this release or unseen documents. CLI contract tests do not measure detector recall or redaction quality.
+Before 0.1.6, multiline PERSON and street-address predictions could cross table rows and damage dates, amounts and balances. 0.1.6–0.1.8 limit address tails and trim PERSON spans per line; this reduces but does not eliminate table damage. Street names can still be tagged as PERSON, and middle lines of a replaced address block are left blank. A previous narrow test damaged 3 of 16 documents; that set reused identity patterns and is **not a general accuracy estimate**. Those historical results do not validate this release or unseen documents. CLI contract tests do not measure detector recall or redaction quality.
 
 Vector outlines of letters are not removed. Digital signatures and XFA are not validated. Rotated or unusual pages require separate quality checks. This tool performs no exhaustive forensic audit and issues no automatic quality certificate. Even exit code 0 leaves `validated: false`.
+
+## Version history
+
+- 0.1.2: outputs are published through an exclusive placeholder and `os.replace`; 0.1.1 could move its own published file to the macOS Trash.
+- 0.1.3: labelled account numbers (including a value in the adjacent cell), document-wide propagation of found numbers, and the account number inside GB/IE IBANs; two-pass processing.
+- 0.1.4–0.1.5: multi-line addresses anchored on a postcode (UK, US ZIP, Eircode); lines are split into columns at wide gaps.
+- 0.1.6–0.1.8: table safety. An address cannot start inside a date or amount and stops at a column gap, date or amount. PERSON spans are cut at labels, separators and line breaks, each line is judged separately, and parts with digits or company/bank words are dropped.
+
+Rules from 0.1.3 onward were tuned after inspecting errors on a synthetic bank-statement set, so results on that set are not a blind evaluation.
 
 ## Exit codes
 

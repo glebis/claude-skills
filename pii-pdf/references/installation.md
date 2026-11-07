@@ -28,4 +28,4 @@ A passing synthetic smoke check does not validate arbitrary documents. Treat red
 
 Standalone Python toolkit: https://github.com/glebis/pii-pdf
 
-This skill carries CLI 0.1.2 with the same experimental detection rules. When updating the snapshot, update `assets/source.sha256` and validate setup/doctor before publishing.
+This skill carries CLI 0.1.8: the 0.1.2 publication fix plus account-number (0.1.3), multi-line address (0.1.4–0.1.5) and table-safety (0.1.6–0.1.8) rules. The standalone toolkit may lag behind this snapshot. When updating the snapshot, update `assets/source.sha256` and validate setup/doctor before publishing.

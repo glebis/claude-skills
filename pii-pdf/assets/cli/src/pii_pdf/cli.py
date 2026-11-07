@@ -14,7 +14,7 @@ import sys
 import tempfile
 import uuid
 
-VERSION = '0.1.2'
+VERSION = '0.1.8'
 ENTITIES = ('PERSON','ADDRESS','EMAIL','PHONE','IBAN','ACCOUNT')
 EXIT_CODES = {0:'completed_unvalidated',1:'internal_error',2:'invalid_arguments',3:'dependency_unavailable',4:'needs_review',5:'processing_failed_or_partial',6:'output_conflict',130:'interrupted'}
 

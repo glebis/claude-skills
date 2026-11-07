@@ -30,7 +30,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | Added | Skill | What it does |
 | --- | --- | --- |
 | 2026-11 | [research-to-integration](./research-to-integration/) | Research → bounded experiment → reusable implementation; configurable questions, autonomy and execution budgets |
-| 2026-11 | [pii-pdf](./pii-pdf/) | Local PDF PII detection/redaction, JSON CLI, setup and diagnostic smoke checks; [standalone toolkit](https://github.com/glebis/pii-pdf) |
+| 2026-11 | [pii-pdf](./pii-pdf/) | Local PDF PII detection/redaction (names, addresses, contacts, accounts, IBANs) with table-safe rules, JSON CLI, setup and diagnostic smoke checks; [standalone toolkit](https://github.com/glebis/pii-pdf) |
 | 2026-11 | [app-map](./app-map/) | Interactive map of an app's screens, scenarios, tests and jobs, with a ranked list of what to test next |
 | 2026-10 | [background-agents](./background-agents/) | Configure and run background agents across extensible execution backends; Trigger.dev and Cloudflare Workflows available |
 | 2026-10 | [cms-migration-checklist](./cms-migration-checklist/) | Gated WordPress → Next.js + Payload migration checklist: audit, import reconciliation, URL parity, cutover |
@@ -102,6 +102,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | --- | --- |
 | [present](./present/) | Narrated HTML presentations — dual article/slides mode, ElevenLabs voiceover |
 | [presentation-generator](./presentation-generator/) | Neobrutalist HTML decks with Anime.js; export to PNG/PDF/video |
+| [pii-pdf](./pii-pdf/) | Local PDF PII detection and replacement (Tesseract + spaCy + format rules) via a versioned JSON CLI; native, scanned and hidden-OCR pages |
 | [pdf-generation](./pdf-generation/) | Markdown → PDF via Pandoc; mobile (6×9in) and print (A4) layouts, EN/RU |
 | [tufte-report](./tufte-report/) | Tufte-style data reports and dashboards as standalone HTML |
 | [brand-agency](./brand-agency/) | Agency brand colors, typography, and 11 social templates via Playwright |
@@ -184,6 +185,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | [chrome-history](./chrome-history/) | Query local Chrome history by date, type, keyword, site |
 | [session-finder](./session-finder/) | Semantic index of Claude Code sessions (Gemini embeddings); relaunch best match |
 | [session-search](./session-search/) | Search session transcripts with synonym-aware semantic matching |
+| [sessiondex](./sessiondex/) | One full-text index of Codex, Claude Code, OpenCode, and Pi sessions; recent, search, show, resume |
 
 ## Claude Code ops
 

@@ -27,10 +27,35 @@ class Options:
 RULES=[
  ('EMAIL',re.compile(r'\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b')),
  ('IBAN',re.compile(r'\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30}\b')),
- ('ADDRESS',re.compile(r'\b\d{1,5}\s+(?:[A-Za-z][A-Za-z.\x27-]*\s+){1,5}(?:Street|St|Road|Rd|Lane|Ln|Avenue|Ave|Drive|Dr|Close|Way|Place|Pl|Court|Ct|Boulevard|Blvd)\b[^\n;|]*',re.I)),
+ ('ADDRESS',re.compile(r'(?<![\d.,/:\-])\b\d{1,5}\s+(?:[A-Za-z][A-Za-z.\x27-]*\s+){1,5}(?:Street|St|Road|Rd|Lane|Ln|Avenue|Ave|Drive|Dr|Close|Way|Place|Pl|Court|Ct|Boulevard|Blvd)\b[^\n;|]*',re.I)),
  ('PHONE',re.compile(r'(?<![\w])\+\d[\d ()\-]{7,22}\d(?![\w])')),
  ('ACCOUNT',re.compile(r'\b(?:Account(?:\s+(?:number|no\.?))?|A/C)\s*[:#]\s*([A-Za-z0-9][A-Za-z0-9 -]{3,35}?)(?=\s*\||\s{2,}|$)',re.I|re.M)),
 ]
+# Account numbers (0.1.3). General statement conventions, applied locally:
+# 1) a field-initial account label followed by a 6-17 digit value (spaces/hyphens allowed);
+# 2) a label-only line paired with a digits-only line to its right or directly below;
+# 3) document-wide propagation of found values (standalone tokens only), incl. the account
+#    number embedded in GB/IE IBANs (BBAN = 4 bank + 6 sort/NSC + 8 account digits).
+ACCOUNT_LABEL=r'(?:account\s+(?:number|no\.?|nr\.?|#)|acct\.?(?:\s+no\.?)?|a/c(?:\s+no\.?)?|account)'
+ACCOUNT_VALUE=r'(\d(?:[ -]?\d){5,16})(?![\w-])'
+ACCOUNT_LABELLED=re.compile(r'(?:^|[\u00b7|/,;\u2013\u2014-][ \t]*|[ \t]{2,})'+ACCOUNT_LABEL+r'[ \t]*(?:[:#.][ \t]*)?'+ACCOUNT_VALUE,re.I|re.M)
+ACCOUNT_LABEL_ONLY=re.compile(r'^\s*'+ACCOUNT_LABEL+r'\s*[:#.]?\s*$',re.I)
+ACCOUNT_VALUE_ONLY=re.compile(r'^\s*'+ACCOUNT_VALUE+r'\s*$')
+IBAN_ACCOUNT_SLICE={'GB':slice(14,22),'IE':slice(14,22)}
+def account_pattern(digits):
+ return re.compile(r'(?<![\w-])'+r'[ -]?'.join(digits)+r'(?![\w-])')
+# Multi-line addresses (0.1.4): a postcode-ending line plus the left-aligned lines directly
+# above it, up to the topmost address start (unit keyword, house number, street pattern or
+# text after an "address:" label). The postcode is the evidence, so no street-type list.
+POSTCODE_END=re.compile(r'(?:\b[A-Z]{1,2}\d[A-Z\d]?\s?\d[ABD-HJLNP-UW-Z]{2}|\b[A-Z]{2}\s\d{5}(?:-\d{4})?|\b[AC-FHKNPRTV-Y]\d[\dW]\s?[AC-FHKNPRTV-Y\d]{4})\s*[.,]?\s*$')
+ADDRESS_CUE=re.compile(r'address(?:\s+on\s+file)?\s*:\s*',re.I)
+ADDRESS_START=re.compile(r'^(?:(?:flat|apartment|apt\.?|unit|suite)\s+\w|\d{1,5}[A-Za-z]?,?\s+[A-Za-z])',re.I)
+MONEY=re.compile(r'\d[.,]\d{2}(?!\d)')
+# Table safety (0.1.6): an address tail stops at a date, a money amount or a wide gap, and
+# PERSON spans with digits, line breaks, organisation words or form labels are rejected.
+ADDRESS_TAIL_STOP=re.compile(r'\s{2,}|\s(?=\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b)|\s(?=[-+]?[$\u00a3\u20ac]?\d[\d.,]*[.,]\d{2}(?!\d))')
+NOT_PERSON=re.compile(r'\d|\n|\b(?:ltd|limited|llc|llp|plc|inc|corp|gmbh|dac|teoranta|co|company|group|partners|bank|banc|building|society|mutual|union|council|trust|services|holdings|iban|bic|swift|sort|account|statement|balance|amount|ref|reference|invoice|total)\b',re.I)
+PERSON_CUT=re.compile(r'\n|\s[-\u2013\u2014\u00b7|]\s|\s(?=(?:account|acct|a/c|iban|bic|sort|statement|balance|ref|mob|tel|phone|e-?mail|continued)\b)',re.I)
 IBAN_LENGTH={'GB':22,'DE':22,'FR':27,'NL':18,'ES':24,'IT':27,'IE':22,'BE':16,'CH':21,'AT':20}
 class Engine:
  def __init__(self, options=None):
@@ -60,13 +85,32 @@ class Engine:
      compact=value.replace(' ','')
      if len(compact)!=IBAN_LENGTH.get(compact[:2],len(compact)):continue
     if typ=='PHONE' and not 8<=len(re.sub(r'\D','',value))<=15:continue
+    if typ=='ADDRESS':
+     cut=ADDRESS_TAIL_STOP.search(value)
+     if cut:value=value[:cut.start()].rstrip(' ,;-');e=s+len(value)
     if any(s<b and e>a for a,b,_,_ in out):continue
     out.append((s,e,typ,value))
+  if 'ACCOUNT' in self.options.entities:
+   for m in ACCOUNT_LABELLED.finditer(text):
+    s,e=m.span(1)
+    if not any(s<b and e>a for a,b,_,_ in out):out.append((s,e,'ACCOUNT',text[s:e]))
+   for digits in sorted(getattr(self,'known_accounts',()),key=len,reverse=True):
+    for m in account_pattern(digits).finditer(text):
+     s,e=m.span()
+     if not any(s<b and e>a for a,b,_,_ in out):out.append((s,e,'ACCOUNT',text[s:e]))
   for ent in self.nlp(text).ents:
    if ent.label_!='PERSON' or 'PERSON' not in self.options.entities:continue
-   s,e=ent.start_char,ent.end_char
-   if any(s<b and e>a for a,b,_,_ in out):continue
-   out.append((s,e,'PERSON',ent.text))
+   # Split spans at line breaks, trim each part at a field separator or label, then judge each part.
+   pos=ent.start_char
+   for part in ent.text.split('\n'):
+    s=pos+len(part)-len(part.lstrip());txt=part.strip();pos+=len(part)+1
+    cut=PERSON_CUT.search(txt)
+    if cut:txt=txt[:cut.start()]
+    txt=txt.rstrip(' ,;:-')
+    if not re.search(r'[A-Za-z]{2}',txt) or NOT_PERSON.search(txt):continue
+    e=s+len(txt)
+    if any(s<b and e>a for a,b,_,_ in out):continue
+    out.append((s,e,'PERSON',txt))
   return sorted(out)
  def substitute(self,typ,value):
   if self.options.replacement=='blank':return ''
@@ -122,7 +166,94 @@ class Engine:
     for b in hits[1:]:r|=b
     p=self.options.padding;r+=(-p,-p,p,p)
     det.append({'type':typ,'text':value,'rect':list(r),'source':source,'replacement':self.substitute(typ,value)})
+  if 'ACCOUNT' in self.options.entities:det+=self.paired_accounts(lines,source,det)
+  if 'ADDRESS' in self.options.entities:
+   new,drop=self.address_blocks(lines,source,det)
+   det=[d for d in det if id(d) not in drop]+new
   return det
+
+ def address_blocks(self,lines,source,existing):
+  fitz=self.fitz;info=[]
+  for t,boxes in lines:
+   if not boxes or not t.strip():continue
+   # Split at wide horizontal gaps: OCR (and sometimes native) lines can join separate columns.
+   segs=[[boxes[0]]]
+   for prev,cur in zip(boxes,boxes[1:]):
+    h=max(prev[2][3]-prev[2][1],1)
+    if cur[2][0]-prev[2][2]>2.0*h:segs.append([cur])
+    else:segs[-1].append(cur)
+   for sg in segs:
+    s0,e0=sg[0][0],sg[-1][1];st=t[s0:e0]
+    if not st.strip():continue
+    cue=ADDRESS_CUE.search(st);off=cue.end() if cue else len(st)-len(st.lstrip())
+    body_boxes=[b for s,e,b in sg if e>s0+off]
+    if not body_boxes:continue
+    r=fitz.Rect(body_boxes[0])
+    for b in body_boxes[1:]:r|=fitz.Rect(b)
+    body=st[off:]
+    info.append({'body':body,'rect':r,'seg_x0':sg[0][2][0],'money':bool(MONEY.search(body)),
+                 'anchor':bool(cue and body.strip()) or bool(ADDRESS_START.match(body)) or bool(RULES[2][1].search(body))})
+  new,drop,used=[],set(),set()
+  for i,P in enumerate(info):
+   if i in used or P['money'] or not POSTCODE_END.search(P['body']):continue
+   chain=[i];cur=P
+   for _ in range(5):
+    h=max(cur['rect'].height,1);best=None
+    for j,Q in enumerate(info):
+     if j in chain or j in used or Q['money']:continue
+     gap=cur['rect'].y0-Q['rect'].y1
+     aligned=abs(Q['rect'].x0-cur['rect'].x0)<6 or abs(Q['seg_x0']-cur['rect'].x0)<6  # wrapped continuation
+     if -1<=gap<1.3*h and aligned and (best is None or gap<best[0]):best=(gap,j)
+    if best is None:break
+    chain.append(best[1]);cur=info[best[1]]
+   anchors=[k for k,j in enumerate(chain) if info[j]['anchor']]
+   if not anchors:continue
+   block=list(reversed(chain[:max(anchors)+1]))
+   n=len(block)
+   for k,j in enumerate(block):
+    L=info[j];used.add(j)
+    if self.options.replacement=='blank':new_text=''
+    elif n==1:new_text=self.substitute('ADDRESS',L['body'])
+    else:new_text='8 Sample Road' if k==0 else ('York YO1 7AA' if k==n-1 else '')
+    p=self.options.padding;r=L['rect']+(-p,-p,p,p)
+    new.append({'type':'ADDRESS','text':L['body'].strip(),'rect':list(r),'source':source+':address-block',
+                'replacement':new_text,'fragment':{'index':k,'count':n}})
+    for d in existing:
+     if d['type'] in ('ADDRESS','PERSON') and (fitz.Rect(d['rect'])&r).get_area()>0.5*fitz.Rect(d['rect']).get_area():drop.add(id(d))
+  return new,drop
+
+ def paired_accounts(self,lines,source,existing):
+  # A label-only line ("Account number") owns the nearest digits-only line on its row or just below.
+  fitz=self.fitz;out=[]
+  def bbox(boxes):
+   r=fitz.Rect(boxes[0][2])
+   for b in boxes[1:]:r|=fitz.Rect(b[2])
+   return r
+  values=[(t,bbox(b)) for t,b in lines if b and ACCOUNT_VALUE_ONLY.match(t)]
+  for t,b in lines:
+   if not b or not ACCOUNT_LABEL_ONLY.match(t):continue
+   lab=bbox(b);h=max(lab.height,1);best=None
+   for vt,vr in values:
+    same_row=abs((vr.y0+vr.y1)/2-(lab.y0+lab.y1)/2)<.6*h and 0<=vr.x0-lab.x1<220
+    below=0<=vr.y0-lab.y1<1.6*h and abs(vr.x0-lab.x0)<24
+    if not(same_row or below):continue
+    d=(vr.x0-lab.x1) if same_row else (vr.y0-lab.y1)*4
+    if best is None or d<best[0]:best=(d,vt,vr)
+   if best is None:continue
+   _,vt,vr=best;p=self.options.padding;r=vr+(-p,-p,p,p)
+   if any(e['type']=='ACCOUNT' and (fitz.Rect(e['rect'])&r).get_area()>0 for e in existing+out):continue
+   value=vt.strip()
+   out.append({'type':'ACCOUNT','text':value,'rect':list(r),'source':source+':label-pair','replacement':self.substitute('ACCOUNT',value)})
+  return out
+
+ def learn_accounts(self,detections):
+  # Collect account digits for document-wide propagation (and from GB/IE IBANs).
+  for d in detections:
+   digits=re.sub(r'\D','',d['text'])
+   if d['type']=='ACCOUNT' and 6<=len(digits)<=17:self.known_accounts.add(digits)
+   if d['type']=='IBAN':
+    c=re.sub(r'\s','',d['text']).upper();sl=IBAN_ACCOUNT_SLICE.get(c[:2])
+    if sl and len(c)==22 and c[sl].isdigit():self.known_accounts.add(c[sl])
 
  def process(self,input_path:Path,pdf_path:Path|None,evidence_dir:Path|None=None,*,overwrite:bool=False):
   started=time.perf_counter();input_path=Path(input_path);o=self.options;fitz=self.fitz
@@ -132,7 +263,7 @@ class Engine:
     raise EngineError('same_path','Input and output must be different files')
   try:doc=fitz.open(input_path)
   except Exception as exc:raise EngineError('invalid_pdf',str(exc)) from exc
-  temp=None;placeholder=None
+  temp=None;placeholder=None;self.known_accounts=set()
   record={'document':input_path.stem,'input_sha256':hashlib.sha256(input_path.read_bytes()).hexdigest(),'pages':[],'auxiliary':[],'unsupported':[],'metadata_policy':'remove document-info and XMP' if o.metadata=='strip' else 'keep document-info and XMP','status':'processed_unvalidated'}
   review=False
   try:
@@ -151,13 +282,24 @@ class Engine:
      if o.attachments=='keep':review=True
     attachments.append((name,txt))
    if o.evidence and evidence_dir is not None:Path(evidence_dir).mkdir(parents=True,exist_ok=True)
+   # Pass 1: read every page once (native + OCR) and learn account numbers document-wide.
+   self.known_accounts=set();page_lines=[]
    for pi,page in enumerate(doc):
-    detections=self.locate(self.native(page),'native');has_images=bool(page.get_images(full=True))
-    if o.ocr_mode=='never' and has_images:
-     review=True;record['unsupported'].append({'kind':'raster_detection_skipped','page':pi})
+    has_images=bool(page.get_images(full=True));ocr_lines=None
     if o.ocr_mode=='always' or (o.ocr_mode=='auto' and has_images):
      evidence=Path(evidence_dir)/f'{input_path.stem}-p{pi+1}.tsv' if evidence_dir is not None and o.evidence else None
-     for hit in self.locate(self.ocr(page,evidence),'ocr'):
+     ocr_lines=self.ocr(page,evidence)
+    native_lines=self.native(page);page_lines.append((native_lines,ocr_lines,has_images))
+    if 'ACCOUNT' in o.entities:
+     self.learn_accounts(self.locate(native_lines,'native')+(self.locate(ocr_lines,'ocr') if ocr_lines else []))
+   # Pass 2: detect with propagation, then redact.
+   for pi,page in enumerate(doc):
+    native_lines,ocr_lines,has_images=page_lines[pi]
+    detections=self.locate(native_lines,'native')
+    if o.ocr_mode=='never' and has_images:
+     review=True;record['unsupported'].append({'kind':'raster_detection_skipped','page':pi})
+    if ocr_lines is not None:
+     for hit in self.locate(ocr_lines,'ocr'):
       r=fitz.Rect(hit['rect']);duplicate=False
       for other in detections:
        q=fitz.Rect(other['rect']);inter=(r&q).get_area()

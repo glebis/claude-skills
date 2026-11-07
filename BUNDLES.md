@@ -31,7 +31,7 @@ balanced, decision-toolkit, jtbd, skill-studio
 Structured frameworks for rigorous thinking before acting.
 
 ## Bundle 7: Developer Tools
-tdd, llm-cli, github-gist, linear, session-finder, session-search, disk-cleanup, handoff
+tdd, llm-cli, github-gist, linear, session-finder, session-search, sessiondex, disk-cleanup, handoff
 
 Daily Claude Code power tools.
 
