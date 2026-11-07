@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=78.1.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pii-pdf-lab"
+version = "0.1.2"
+description = "Local PDF PII detection and redaction CLI with versioned NDJSON output"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["PyMuPDF>=1.26.7,<1.27", "spacy>=3.8,<3.9"]
+
+[project.scripts]
+pii-pdf = "pii_pdf.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
