@@ -117,7 +117,7 @@ def probe_packages(python):
 def packages_ok(packages):
     pymupdf = packages.get('PyMuPDF') or ''
     match = re.fullmatch(r'(\d+)\.(\d+)\.(\d+)', pymupdf)
-    return packages.get('pii-pdf-lab') == '0.1.2' and bool(re.fullmatch(r'3\.8\.\d+', packages.get('spacy') or '')) and bool(match and (1, 26, 7) <= tuple(map(int, match.groups())) < (1, 27, 0))
+    return packages.get('pii-pdf-lab') == '0.1.8' and bool(re.fullmatch(r'3\.8\.\d+', packages.get('spacy') or '')) and bool(match and (1, 26, 7) <= tuple(map(int, match.groups())) < (1, 27, 0))
 
 
 def main(argv=None):

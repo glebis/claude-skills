@@ -29,6 +29,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Added | Skill | What it does |
 | --- | --- | --- |
+| 2026-11 | [pii-pdf](./pii-pdf/) | Local PDF PII redaction CLI: names, addresses, contacts, accounts, IBANs; table-safe rules, doctor mode |
 | 2026-10 | [background-agents](./background-agents/) | Configure and run background agents across extensible execution backends; Trigger.dev and Cloudflare Workflows available |
 | 2026-10 | [cms-migration-checklist](./cms-migration-checklist/) | Gated WordPress → Next.js + Payload migration checklist: audit, import reconciliation, URL parity, cutover |
 | 2026-10 | [firecrawl-api](./firecrawl-api/) | Firecrawl API script with Alexandria structured-data tools and a 1,850-tool catalog; key from SOPS |
@@ -92,6 +93,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | --- | --- |
 | [present](./present/) | Narrated HTML presentations — dual article/slides mode, ElevenLabs voiceover |
 | [presentation-generator](./presentation-generator/) | Neobrutalist HTML decks with Anime.js; export to PNG/PDF/video |
+| [pii-pdf](./pii-pdf/) | Local PDF PII detection and replacement (Tesseract + spaCy + format rules) via a versioned JSON CLI; native, scanned and hidden-OCR pages |
 | [pdf-generation](./pdf-generation/) | Markdown → PDF via Pandoc; mobile (6×9in) and print (A4) layouts, EN/RU |
 | [tufte-report](./tufte-report/) | Tufte-style data reports and dashboards as standalone HTML |
 | [brand-agency](./brand-agency/) | Agency brand colors, typography, and 11 social templates via Playwright |

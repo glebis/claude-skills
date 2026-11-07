@@ -49,7 +49,7 @@ python3 "$SKILL_DIR/scripts/run.py" schema
 python3 "$SKILL_DIR/scripts/run.py" doctor
 ```
 
-The launcher uses the default isolated environment, or `--runtime PATH` for another venv; if the default is absent it can use an installed `pii-pdf` on PATH. Require CLI 0.1.2+ (0.1.1 can trash its own published outputs on macOS) and PyMuPDF 1.26.7+ for new processing; older baseline environments need setup first. Read the live `schema` JSON for current parameters, defaults and event semantics. Do not guess flags or auto-install dependencies while handling a document request. If dependencies are missing, report them or use setup mode when installation is authorized.
+The launcher uses the default isolated environment, or `--runtime PATH` for another venv; if the default is absent it can use an installed `pii-pdf` on PATH. Require CLI 0.1.2+ (0.1.1 can trash its own published outputs on macOS) and PyMuPDF 1.26.7+ for new processing; the bundled 0.1.8 adds account-number, multi-line address and table-safety rules; older baseline environments need setup first. Read the live `schema` JSON for current parameters, defaults and event semantics. Do not guess flags or auto-install dependencies while handling a document request. If dependencies are missing, report them or use setup mode when installation is authorized.
 
 ## Detection and redaction
 
@@ -77,6 +77,6 @@ Parse stdout as NDJSON, one object per line. Use the process exit code and final
 - Exit `6`: output/source-path conflict; do not retry with overwrite blindly.
 - Exit `2` or `3`: bad arguments/config or unavailable dependencies/model.
 
-Check the actual generated files. The known baseline can label table headings and transaction words as PERSON after OCR block reordering. Inspect both missed PII and deletion of non-PII; test every page, including the second page. For requested leak evaluation or a report, read [references/evaluation.md](references/evaluation.md).
+Check the actual generated files. Before 0.1.6 the detector often overwrote table dates, amounts and balances with address or PERSON replacements after OCR block reordering; 0.1.6–0.1.8 limit address tails and trim/filter PERSON spans per line, but some table values can still be hit, street names can pass as PERSON, and middle lines of replaced address blocks are left blank. Inspect both missed PII and deletion of non-PII; test every page, including the second page. For requested leak evaluation or a report, read [references/evaluation.md](references/evaluation.md).
 
 Report the scope processed, errors/review flags, output locations and what was verified. Keep processing, detection coverage and leak verification distinct. Do not describe output as safe to share based only on exit `0`, empty exact-string matches or disappearance of the original image hash.
