@@ -1,0 +1,13 @@
+{
+  "name": "research-to-integration",
+  "version": "1.0.0",
+  "description": "Research technical approaches, run bounded comparisons, and deliver reusable implementations with reproducible tests.",
+  "author": {
+    "name": "Gleb Kalinin"
+  },
+  "repository": "https://github.com/glebis/claude-skills",
+  "license": "MIT",
+  "skills": [
+    "./"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "verbosity": "standard",
+  "questions": {"mode": "bounded", "max_per_round": 3},
+  "autonomy": "agree_experiment",
+  "research_depth": "comparison",
+  "execution": {"primary": "cloud", "fallback": "reproducible_package"},
+  "implementation": {"language": "task_fit", "interface": "task_fit", "quality": "integration_ready_prototype"},
+  "budget": {"execution_minutes": 30, "per_command_timeout_seconds": 600, "download_mb": 2048, "paid_spend": 0},
+  "candidates": {"target_count_including_baseline": 3}
+}
