@@ -16,7 +16,7 @@ Then ask the agent:
 /pii-pdf setup
 ```
 
-Setup uses the bundled visible CLI source and installs dependencies in `~/.local/share/pii-pdf/venv`. It checks source hashes before installing. The English spaCy model is versioned; Tesseract and English OCR data must be available. On supported systems the setup can install missing Tesseract through the existing package manager. It does not install Homebrew or invoke sudo automatically.
+Setup uses the bundled visible CLI source and installs dependencies in `~/.local/share/pii-pdf/venv`. It checks source hashes before installing and retains an already installed compatible newer 0.1.x CLI rather than downgrading it. The English spaCy model is versioned; Tesseract and English OCR data must be available. On supported systems the setup can install missing Tesseract through the existing package manager. It does not install Homebrew or invoke sudo automatically.
 
 Check installation and a synthetic redaction scenario:
 
