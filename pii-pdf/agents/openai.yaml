@@ -1,0 +1,6 @@
+interface:
+  display_name: "PDF PII"
+  short_description: "Local PDF PII detection, redaction and setup"
+  default_prompt: "Use $pii-pdf to detect or replace personal data in these PDFs and report what was verified."
+policy:
+  allow_implicit_invocation: true

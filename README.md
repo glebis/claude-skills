@@ -29,6 +29,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Added | Skill | What it does |
 | --- | --- | --- |
+| 2026-11 | [pii-pdf](./pii-pdf/) | Local PDF PII detection/redaction, JSON CLI, setup and diagnostic smoke checks; [standalone toolkit](https://github.com/glebis/pii-pdf) |
 | 2026-11 | [app-map](./app-map/) | Interactive map of an app's screens, scenarios, tests and jobs, with a ranked list of what to test next |
 | 2026-10 | [background-agents](./background-agents/) | Configure and run background agents across extensible execution backends; Trigger.dev and Cloudflare Workflows available |
 | 2026-10 | [cms-migration-checklist](./cms-migration-checklist/) | Gated WordPress → Next.js + Payload migration checklist: audit, import reconciliation, URL parity, cutover |
