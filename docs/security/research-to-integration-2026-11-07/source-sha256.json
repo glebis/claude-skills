@@ -1,0 +1,13 @@
+{
+  ".claude-plugin/plugin.json": "e61ca577185f35b1076b716b9ca0c35d2f590443932dd8624e53e2fcb529bb67",
+  "LICENSE": "c865f0594f9e986f4d635fe7d7d1dd091d344cc06116207e216c6160bb3ed2bb",
+  "README.md": "8e7368980676ce7d47a07b4f0cea04807bb81aee7977edcabfed9aa1bc6927f1",
+  "SKILL.md": "a6ae9b3c51733a2bd0bf113634718a5235327b4254b5895fec6b82e322a3568c",
+  "assets/defaults.json": "609630d2651db179b8a5e9f7ace862f8056db2b7e4837a1073b3b9832341e074",
+  "references/configuration.md": "58945318cd8ba41ff40da66022bc72391f175953ff54de91e0c2bf58782d11a8",
+  "references/delivery-contract.md": "d90096c70217c28f7f9f7613841db8ae16c839fbd968dbd45c945f81e02bdacd",
+  "references/experiment-design.md": "03f41a4aa06352e53d775799e0b069de6440f4835d3bc5cea00d1fb81ea679a1",
+  "references/scenarios.md": "0272561e05c066ae403d9fcce6102eb45801f43c65b6b3b5d7b5aff92fe06a83",
+  "scripts/record_run.py": "56f716ecc498678a08908a4be1baec0065e5f5b4b9197df3b6afa7bb17cb5926",
+  "tests/test_record_run.py": "2a174257a2383d3c752ebf1a51fe44035ee212599caed44a04e8d72ac687e654"
+}

@@ -82,3 +82,7 @@ The source skill structure, recorder success/failure/timeout/launch-error behavi
 ```sh
 claude plugin validate ./research-to-integration
 ```
+
+## Command execution boundary
+
+Only run reviewed commands authorized for the experiment. The recorder is not a sandbox and does not validate command intent, prevent file/network access, or sanitize output. Execute untrusted backends in an appropriate isolated environment, without credentials. It runs argv without a shell, forwards only basic runtime variables by default, and accepts repeated `--pass-env NAME` options for explicitly required environment variables. HOME and credentials are not forwarded automatically. Log files are private (0600) inside a private run directory (0700 on POSIX), but may still contain secrets printed by the command: inspect and sanitize before sharing. Timeouts must be finite and positive. POSIX timeouts terminate the process group; Windows does not provide equivalent descendant containment here.

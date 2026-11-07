@@ -1,6 +1,6 @@
 {
   "name": "research-to-integration",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Research technical approaches, run bounded comparisons, and deliver reusable implementations with reproducible tests.",
   "author": {
     "name": "Gleb Kalinin"
