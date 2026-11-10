@@ -10,41 +10,50 @@ Use the `cenno` skill's `ask_user` / `ask_sequence` MCP tools (preferred) or the
 |---|---|---|---|
 | Step 0 — goal + throughput | `text` | string | one panel; free text |
 | Step 0 — "is throughput a *rate* tied to the goal?" | `confirm` | bool | gate; if no, re-ask the text |
-| Step 1 — each ordinal 0–3 (sensitivity, wait, starvation, capacity, annoyance) | `choice` `["0","1","2","3"]` | the digit as a string | robust default; cast to int for the scorer |
-| Step 1 — `necessary_condition`, `policy_gate` | `confirm` | bool | per candidate step |
+| Step 1 — every ordinal 0–3 + `necessary_condition` / `policy_gate`, per candidate step | `a2ui` `StepScore`, one per step via `ask_sequence` | JSON object per step, keyed like the scorer | preferred; see below |
+| Step 1 — fallback on older cenno: each ordinal | `choice` `["0","1","2","3"]` | the digit as a string | cast to int for the scorer |
+| Step 1 — fallback on older cenno: the two flags | `confirm` | bool | per candidate step |
 | Step 1 — verdict `ambiguous` → re-scope | `choice` | string | offer narrower scopes / time windows |
 | Step 4 — the 7 rung facts | `confirm` ×7 via `ask_sequence` | bools | maps 1:1 to `recommend_rung.py` flags |
 | Final — accept the recommended automation? | `confirm` | bool | before writing the Goal |
 
 Batch related questions with `ask_sequence` (keeps one panel up, advances instantly, auto-fills progress dots). Only hand-roll single `ask_user` calls when the next question depends on the previous answer (e.g. skip a step's scores once it's clearly disqualified).
 
-## Best: the `ScoreMatrix` control (one panel)
+## Best: one `StepScore` panel per step
 
-If the installed cenno build has the `ScoreMatrix` catalog component, score the whole matrix in a single panel. Send a raw `a2ui` payload; the control renders stacked per-step cards (sensitivity full-width + decisive, the other four reflowing 1-col on iPhone / 2-col on Mac, plus `necessary`/`policy_gate` chips), and the Score button returns the matrix as a JSON string.
+cenno's `StepScore` control (cenno builds after 0.4.1) scores **one** candidate step on every ordinal plus the two flags in a single panel: the decisive sensitivity question leads full width, the other four sit on an aligned 0–3 grid, and `necessary` / `policy gate` are toggle chips beside the Next button. Next stays disabled until every ordinal is scored — 0 is a real "none", never a default. Send one `StepScore` question **per step** through `ask_sequence` (all steps in one panel do not fit cenno's 560px panel; the sequence keeps one panel up and fills the progress dots).
+
+Use the **scorer's own keys** as the dimension/flag `value`s, so each answer is already a `score_constraints.py` row minus its `name`:
 
 ```json
-{
-  "title": "Score the constraint",
-  "flow": "question",
-  "timeout_s": 600,
-  "a2ui": [
+{"questions": [
+  {"title": "Score this step (0 none · 3 high)", "flow": "question", "timeout_s": 300,
+   "a2ui": [
     { "version": "v0.9", "createSurface": { "surfaceId": "main", "catalogId": "cenno:catalog/v1" } },
     { "version": "v0.9", "updateComponents": { "surfaceId": "main", "components": [
-      { "id": "root", "component": "ScoreMatrix",
-        "steps": ["Audience", "Offer & landing", "Conversion", "Delivery", "Retention"],
-        "legend": "0 none · 3 high",
-        "value": { "path": "/matrix" },
-        "submitAction": { "event": { "name": "submit-matrix",
-          "context": { "value": { "path": "/matrix" }, "via": "choice" } } } }
+      { "id": "root", "component": "Column", "children": ["s"] },
+      { "id": "s", "component": "StepScore", "step": "Audience",
+        "dimensions": [
+          { "value": "throughput_sensitivity", "label": "If this step were 2× faster, would throughput rise?", "decisive": true },
+          { "value": "wait_before", "label": "wait before" },
+          { "value": "downstream_starvation", "label": "starves next" },
+          { "value": "capacity_gap", "label": "capacity gap" },
+          { "value": "annoyance", "label": "annoyance" } ],
+        "flags": [ { "value": "necessary_condition", "label": "necessary" },
+                   { "value": "policy_gate", "label": "policy gate" } ],
+        "value": { "path": "/score" }, "doneLabel": "Next",
+        "selectAction": { "event": { "name": "submit-score",
+          "context": { "value": { "path": "/score" }, "via": "choice" } } } }
     ] } },
-    { "version": "v0.9", "updateDataModel": { "surfaceId": "main", "path": "/", "value": {} } }
-  ]
-}
+    { "version": "v0.9", "updateDataModel": { "surfaceId": "main", "path": "/", "value": { "score": {} } } }
+   ]},
+  {"title": "Score this step (0 none · 3 high)", "a2ui": ["… same envelope, \"step\": \"Offer & landing\" …"]}
+]}
 ```
 
-The answer comes back as a JSON string at `/matrix`: an array of `{name, sensitivity, wait, starve, cap, annoy, necessary, policy_gate}`. Map keys to the scorer (`sensitivity→throughput_sensitivity`, `wait→wait_before`, `starve→downstream_starvation`, `cap→capacity_gap`, `annoy→annoyance`, `necessary→necessary_condition`) and pipe to `score_constraints.py`. Defaults (`dimensions`, `flags`) are built in; pass them only to override. Seed `value` with prior scores to re-open a matrix.
+Each entry of `answers` is JSON text for one step, in the order sent — `"{\"throughput_sensitivity\":3,\"wait_before\":2,\"downstream_starvation\":3,\"capacity_gap\":2,\"annoyance\":1,\"necessary_condition\":false,\"policy_gate\":false}"`. `JSON.parse` it, add `"name"` from the step you sent, and pipe the array to `score_constraints.py` unchanged. Fewer answers than steps means a step timed out — re-ask that step rather than scoring it as zeros. Keep labels short (≤ ~12 characters) except the decisive one; to re-open a step, seed `/score` with its prior object.
 
-**Fallback:** if the build lacks `ScoreMatrix` (older cenno), the renderer drops unknown components — detect an empty/failed panel and fall back to the per-step `choice` flow below. Never block on the widget.
+**Fallback:** a cenno build without `StepScore` (≤ 0.4.1) cannot render it and falls back to a plain prompt, so an answer that does not parse as a JSON object means "old cenno" — switch to the per-step `choice` flow below for the remaining steps. Never block on the widget.
 
 ## Per-step scoring — fallback options (no custom control)
 
