@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Filled by scripts/render_cover.py. double-brace placeholders are replaced; do not edit by hand per event. -->
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap&subset=cyrillic" rel="stylesheet">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face {
+    font-family: 'Geist';
+    src: url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Bold.woff2') format('woff2');
+    font-weight: 700;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    width: 800px;
+    height: 800px;
+    overflow: hidden;
+  }
+
+  body {
+    width: 800px;
+    height: 800px;
+    background: #0f0f0f;
+    font-family: 'JetBrains Mono', monospace;
+    color: #e0e0e0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .frame {
+    position: absolute;
+    inset: 12px;
+    border: 1px solid #2a2a2a;
+    z-index: 9;
+    pointer-events: none;
+  }
+
+  .top-bar {
+    position: absolute;
+    top: 12px; left: 12px; right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 28px;
+    border-bottom: 1px solid #2a2a2a;
+    z-index: 10;
+  }
+
+  .top-left {
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    color: #555;
+    
+  }
+
+  .top-right {
+    font-size: 15px;
+    font-weight: 500;
+    color: #e85d04;
+    letter-spacing: 0.06em;
+  }
+
+  .photo-area {
+    position: absolute;
+    top: 30px;
+    right: -40px;
+    width: 420px;
+    height: 560px;
+    z-index: 3;
+  }
+
+  .photo-frame {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    border-radius: 6px 0 0 6px;
+  }
+
+  .photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 15%;
+    filter: grayscale(1) contrast(1.1) brightness(0.95);
+  }
+
+  .photo-scanlines {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.05) 2px,
+      rgba(0,0,0,0.05) 4px
+    );
+    pointer-events: none;
+  }
+
+  .photo-fade {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 200px;
+    background: linear-gradient(to right, #0f0f0f, transparent);
+    pointer-events: none;
+  }
+
+  .photo-fade-bottom {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 250px;
+    background: linear-gradient(to top, #0f0f0f, transparent);
+    pointer-events: none;
+  }
+
+  .photo-fade-top {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 80px;
+    background: linear-gradient(to bottom, #0f0f0f, transparent);
+    pointer-events: none;
+  }
+
+  .photo-border-left {
+    position: absolute;
+    top: 40px; bottom: 40px; left: 0;
+    width: 2px;
+    background: linear-gradient(transparent, #e85d04, transparent);
+    opacity: 0.4;
+  }
+
+  .content {
+    position: absolute;
+    top: 90px; left: 40px;
+    max-width: {{CONTENT_MAX_WIDTH}}px;
+    z-index: 8;
+  }
+
+  .title {
+    font-family: 'Geist', -apple-system, sans-serif;
+    font-size: {{TITLE_SIZE}}px;
+    font-weight: 700;
+    line-height: 1.0;
+    color: #f0f0f0;
+    margin-bottom: 24px;
+  }
+
+  .title .highlight {
+    color: #e85d04;
+  }
+
+  .accent-line {
+    width: 200px;
+    height: 3px;
+    background: #e85d04;
+    margin-bottom: 28px;
+  }
+
+  .topics {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 36px;
+  }
+
+  .topic {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+    color: #777;
+    letter-spacing: 0.02em;
+  }
+
+  .topic-marker {
+    width: 8px;
+    height: 8px;
+    background: #e85d04;
+    border-radius: 50%;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  .topic-marker.dim {
+    background: #2a2a2a;
+    opacity: 1;
+  }
+
+  .pipeline-visual {
+    position: absolute;
+    right: 40px;
+    top: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    z-index: 5;
+  }
+
+  .pipe-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .pipe-node {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #2a2a2a;
+  }
+
+  .pipe-node.active {
+    background: #e85d04;
+    box-shadow: 0 0 8px rgba(232, 93, 4, 0.4);
+  }
+
+  .pipe-node.teal {
+    background: #0d9488;
+    box-shadow: 0 0 8px rgba(13, 148, 136, 0.3);
+  }
+
+  .pipe-node.faded {
+    background: #1a1a1a;
+    opacity: 0.5;
+  }
+
+  .pipe-line {
+    width: 20px;
+    height: 2px;
+    background: #2a2a2a;
+  }
+
+  .pipe-line.active {
+    background: #e85d04;
+    opacity: 0.5;
+  }
+
+  .speaker-area {
+    position: absolute;
+    bottom: 70px;
+    left: 40px;
+    z-index: 8;
+  }
+
+  .speaker {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 30px;
+    font-weight: 400;
+    color: #999;
+    margin-bottom: 6px;
+  }
+
+  .speaker strong {
+    color: #e0e0e0;
+    font-weight: 600;
+  }
+
+  .speaker-meta {
+    font-size: 14px;
+    color: #555;
+    letter-spacing: 0.04em;
+    max-width: 500px;
+    line-height: 1.4;
+  }
+
+  .bottom-bar {
+    position: absolute;
+    bottom: 12px; left: 12px; right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 28px;
+    border-top: 1px solid #2a2a2a;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    color: #444;
+    
+    z-index: 10;
+  }
+
+  .bg-grid {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(42,42,42,0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(42,42,42,0.12) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 0;
+  }
+
+  .decay-dots {
+    position: absolute;
+    right: 30px;
+    top: 100px;
+    z-index: 2;
+    opacity: 0.15;
+  }
+
+  .decay-dots span {
+    display: block;
+    width: 3px;
+    height: 3px;
+    background: #e85d04;
+    border-radius: 50%;
+    margin: 12px 0;
+  }
+</style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="frame"></div>
+
+  <div class="top-bar">
+    <span class="top-left">{{KICKER}}</span>
+    <span class="top-right">{{DATE_LINE}}</span>
+  </div>
+
+{{PHOTO_BLOCK}}
+{{FIELD_SVG}}
+  <div class="content">
+    <div class="title">{{TITLE_HTML}}</div>
+    <div class="accent-line"></div>
+    <div class="topics">
+{{TOPICS_HTML}}
+    </div>
+  </div>
+
+{{SPEAKER_BLOCK}}
+  <div class="bottom-bar">
+    <span>{{FOOTER_LEFT}}</span>
+    <span>agency · community</span>
+  </div>
+</body>
+</html>
