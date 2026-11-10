@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bridgework</title>
+<meta name="description" content="A canvas for practising one question: what could these parts of my stack do together?">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body data-mode="field">
+<header id="bar">
+  <strong id="brand">Bridgework</strong>
+  <div class="draw" role="group" aria-label="Draw parts at random">
+    <button id="drawBtn" class="primary" title="Draw (D)">Draw</button>
+    <div class="seg" id="handSize" role="radiogroup" aria-label="How many parts to draw"></div>
+  </div>
+  <nav aria-label="Panels">
+    <button id="backBtn" class="ghost" data-act="back" hidden>Back<span class="wide"> to the stack</span></button>
+    <button id="agentBtn" data-act="agentHere" title="Prompt for an agent about what you are looking at (Q)">Prompt</button>
+    <button data-panel="practice">Practice</button>
+    <button data-panel="parts" title="Parts (/)">Parts</button>
+    <button data-panel="unlocks">Unlocks</button>
+    <button data-panel="trail">Trail <span id="trailN"></span></button>
+    <button data-panel="about" aria-label="About this sample and keyboard keys" title="About and keys (?)">?</button>
+  </nav>
+</header>
+
+<main id="viewport" aria-label="Canvas">
+  <div id="world" data-view="plain">
+    <svg id="wires" aria-hidden="true"></svg>
+    <div id="clusters" aria-hidden="true"></div>
+    <div id="tokens" role="group" aria-label="Parts of the stack"></div>
+    <section id="table" aria-label="Route" hidden></section>
+  </div>
+  <div id="lensClip" aria-hidden="true" hidden><div id="lensWorld"></div></div>
+  <button id="lensRing" hidden aria-label="Lens. Drag, or use the arrow keys, to move it over parts."><span></span></button>
+</main>
+
+<div id="lead">
+  <h1>What could these do together?</h1>
+  <p>Tap any two parts, or five. Or drag from a part’s right edge to another part.</p>
+</div>
+
+<aside id="dock" aria-label="Canvas tools">
+  <label class="dk">Arrange by
+    <select id="arrange">
+      <option value="domain">Domain</option><option value="place">Where it runs</option>
+      <option value="gives">What it gives</option><option value="evidence">Access evidence</option>
+      <option value="groups">My groups</option>
+    </select>
+  </label>
+  <div class="dk" role="radiogroup" aria-label="Show on parts" id="views"></div>
+  <button id="lensBtn" class="dk-btn" aria-pressed="false" title="Lens (L)">Lens</button>
+  <div class="zoom"><button id="zOut" aria-label="Zoom out">−</button><button id="zFit" aria-label="Fit to screen">Fit</button><button id="zIn" aria-label="Zoom in">+</button></div>
+</aside>
+
+<div id="hand" hidden aria-label="Selected parts"></div>
+<button id="sampleNote" data-panel="about"><span hidden>loading</span>Nothing is connected and no bridge has been run. Suggestions are local rules, not AI.</button>
+<aside id="panel" hidden tabindex="-1" aria-label="Details"></aside>
+<div id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>

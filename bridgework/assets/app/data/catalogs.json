@@ -1,0 +1,308 @@
+{
+ "observed_date": "2026-11-06",
+ "note": "Catalog metadata only. No inference was run. Listing is not entitlement.",
+ "nous": {
+  "source": "nous-csv",
+  "entries": 385,
+  "input_modalities": {
+   "text": 385,
+   "image": 253,
+   "video": 84,
+   "file": 132,
+   "audio": 43
+  },
+  "output_modalities": {
+   "text": 349,
+   "embeddings": 36,
+   "image": 2,
+   "audio": 2
+  },
+  "zero_price_candidates": [
+   "stealth/crouton-alpha",
+   "upstage/solar-mini4:free",
+   "stepfun/step-3.7-flash:free",
+   "meituan/longcat-2.5:free",
+   "reflection/beam-1.0-501b-a23b:free"
+  ]
+ },
+ "nvidia": {
+  "public_ids": 84,
+  "public_source": "nvidia-csv",
+  "free_source": "nvidia-free-csv",
+  "free_endpoint_cards": 45,
+  "site_total_models": 105,
+  "free_also_in_public_ids": 23,
+  "free_endpoint_cards_list": [
+   {
+    "name": "kimi-k3.1-pro",
+    "publisher": "Moonshotai",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/moonshotai/kimi-k3_1-pro"
+   },
+   {
+    "name": "Mistral Large 4",
+    "publisher": "Mistral AI",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/mistralai/mistral-large-4-1t-a52b"
+   },
+   {
+    "name": "nemotron-3.5-parse",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3.5-parse"
+   },
+   {
+    "name": "Nemotron 3.5 Bolt E4B",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3.5-bolt-e4b"
+   },
+   {
+    "name": "nemotron-3.5-rerank-8b",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3_5-rerank-8b"
+   },
+   {
+    "name": "nemotron-3.5-embed-1b",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3_5-embed-1b"
+   },
+   {
+    "name": "nemotron-3.5-embed-8b",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3_5-embed-8b"
+   },
+   {
+    "name": "minimax-m3.1-flash",
+    "publisher": "Minimaxai",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/minimaxai/minimax-m3.1-flash"
+   },
+   {
+    "name": "rfd4-proteina",
+    "publisher": "IPD",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/ipd/rfd4-proteina"
+   },
+   {
+    "name": "nemotron-3.5-super-vl-120b-a12b",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3.5-super-vl-120b-a12b"
+   },
+   {
+    "name": "Step 5 Preview",
+    "publisher": "Stepfun-ai",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/stepfun-ai/step-5-preview"
+   },
+   {
+    "name": "Kumo Tabular",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/kumo-tabular"
+   },
+   {
+    "name": "3D Body Pose",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/body-pose"
+   },
+   {
+    "name": "deepseek-v4.1-flash",
+    "publisher": "DeepSeek AI",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/deepseek-ai/deepseek-v4.1-flash"
+   },
+   {
+    "name": "Kumo Relational",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/kumo-relational"
+   },
+   {
+    "name": "glm-5-3-flash",
+    "publisher": "Z.ai",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/z-ai/glm-5-3-flash"
+   },
+   {
+    "name": "nemotron-3.5-lightning-30b-a3b",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3.5-lightning-30b-a3b"
+   },
+   {
+    "name": "muse-glimmer-30b",
+    "publisher": "Meta",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/meta/muse-glimmer-30b"
+   },
+   {
+    "name": "riva-translate-4b-instruct-v2",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/riva-translate-4b-instruct-v2"
+   },
+   {
+    "name": "ising-calibration-1.5-31b",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/ising-calibration-1.5-31b"
+   },
+   {
+    "name": "nemotron-3-embed-1b",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3-embed-1b"
+   },
+   {
+    "name": "laguna-xs-2.1",
+    "publisher": "Poolside",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/poolside/laguna-xs-2.1"
+   },
+   {
+    "name": "diffusiongemma-26b-a4b-it",
+    "publisher": "Google",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/google/diffusiongemma-26b-a4b-it"
+   },
+   {
+    "name": "nemotron-3-ultra-550b-a55b",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3-ultra-550b-a55b"
+   },
+   {
+    "name": "nemotron-3.5-content-safety",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3.5-content-safety"
+   },
+   {
+    "name": "cosmos3-nano",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/cosmos3-nano"
+   },
+   {
+    "name": "cosmos3-nano-reasoner",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/cosmos3-nano-reasoner"
+   },
+   {
+    "name": "nemotron-3-nano-omni-30b-a3b-reasoning",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+   },
+   {
+    "name": "synthetic-video-detector",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/synthetic-video-detector"
+   },
+   {
+    "name": "Active Speaker Detection",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/active-speaker-detection"
+   },
+   {
+    "name": "ising-calibration-1-35b-a3b",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/ising-calibration-1-35b-a3b"
+   },
+   {
+    "name": "gemma-4-31b-it",
+    "publisher": "Google",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/google/gemma-4-31b-it"
+   },
+   {
+    "name": "nemotron-voicechat",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/nemotron-voicechat"
+   },
+   {
+    "name": "cosmos-transfer2.5-2b",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/cosmos-transfer2_5-2b"
+   },
+   {
+    "name": "streampetr",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/streampetr"
+   },
+   {
+    "name": "llama-3.1-nemotron-safety-guard-8b-v3",
+    "publisher": "NVIDIA",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/nvidia/llama-3_1-nemotron-safety-guard-8b-v3"
+   },
+   {
+    "name": "gpt-oss-20b",
+    "publisher": "OpenAI",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/openai/gpt-oss-20b"
+   },
+   {
+    "name": "llama-guard-4-12b",
+    "publisher": "Meta",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/meta/llama-guard-4-12b"
+   },
+   {
+    "name": "Background Noise Removal",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/bnr"
+   },
+   {
+    "name": "magpie-tts-zeroshot",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/magpie-tts-zeroshot"
+   },
+   {
+    "name": "sparsedrive",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/sparsedrive"
+   },
+   {
+    "name": "bevformer",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/bevformer"
+   },
+   {
+    "name": "Studio Voice",
+    "publisher": "NVIDIA",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/nvidia/studiovoice"
+   },
+   {
+    "name": "llama-3.2-90b-vision-instruct",
+    "publisher": "Meta",
+    "in_public_ids": true,
+    "url": "https://build.nvidia.com/meta/llama-3.2-90b-vision-instruct"
+   },
+   {
+    "name": "paligemma",
+    "publisher": "Google",
+    "in_public_ids": false,
+    "url": "https://build.nvidia.com/google/google-paligemma"
+   }
+  ]
+ }
+}
