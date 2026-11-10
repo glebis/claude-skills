@@ -1,0 +1,239 @@
+{
+  "meta": {
+    "note": "Deterministic rules behind the generated examples. Edit them freely. No model is called."
+  },
+  "distance": {
+    "rule": "Two parts count as distant when they sit in different domains and run in different places. This is a sorting rule, not a measure of how good a pairing is."
+  },
+  "fit": {
+    "direct": "Same shape: what the first gives is what the second takes.",
+    "adapter": "Different shapes, and the rule table names a transformation.",
+    "none": "No transformation in the rule table. That may be a dead end, or a bridge nobody has named."
+  },
+  "adapters": {
+    "signal>text": {
+      "label": "aggregate locally, then put it in words",
+      "kind": "script + human review"
+    },
+    "signal>record": {
+      "label": "a reviewed export or aggregation",
+      "kind": "export + human review"
+    },
+    "record>text": {
+      "label": "write the record out as prose",
+      "kind": "script"
+    },
+    "text>record": {
+      "label": "pull named fields out of the text",
+      "kind": "script or model"
+    },
+    "text>action": {
+      "label": "map the text to one approved local action",
+      "kind": "human review"
+    },
+    "record>action": {
+      "label": "map a field to one approved local action",
+      "kind": "script + human review"
+    },
+    "action>text": {
+      "label": "log what happened as a line of text",
+      "kind": "script"
+    },
+    "moment>text": {
+      "label": "describe the moment in a sentence",
+      "kind": "script"
+    },
+    "text>moment": {
+      "label": "a person picks the moment; it stays a draft",
+      "kind": "human"
+    },
+    "record>moment": {
+      "label": "a person picks the moment; it stays a draft",
+      "kind": "human"
+    },
+    "moment>record": {
+      "label": "write the moment down as a dated record",
+      "kind": "script"
+    },
+    "audio>text": {
+      "label": "transcribe it",
+      "kind": "transcription step"
+    },
+    "media>text": {
+      "label": "describe the image in words",
+      "kind": "human or vision model"
+    },
+    "text>media": {
+      "label": "turn a phrase into an image search",
+      "kind": "human"
+    },
+    "file>text": {
+      "label": "open the file and extract its text",
+      "kind": "script"
+    },
+    "text>file": {
+      "label": "save it as a file",
+      "kind": "script"
+    },
+    "record>file": {
+      "label": "export it as a file",
+      "kind": "export"
+    },
+    "file>record": {
+      "label": "parse the file into rows",
+      "kind": "script"
+    },
+    "text>url": {
+      "label": "a person picks a link from the text",
+      "kind": "human"
+    },
+    "record>url": {
+      "label": "take the link out of the record",
+      "kind": "script"
+    },
+    "signal>moment": {
+      "label": "a person picks a moment from the pattern",
+      "kind": "human"
+    }
+  },
+  "goals": {
+    "body": "Build an integrated personal system",
+    "memory": "Learn",
+    "time": "Build an integrated personal system",
+    "meetings": "Deliver client work",
+    "research": "Discover ideas",
+    "models": "Discover ideas",
+    "sound": "Make creative work",
+    "images": "Make creative work",
+    "agents": "Build an integrated personal system",
+    "work": "Deliver client work"
+  },
+  "playful": [
+    {
+      "title": "Slow down {give}",
+      "outcome": "{B} receives {give} only once a week. Treat it as an event rather than a feed.",
+      "test": "Pick this week's one by hand and notice what you left out.",
+      "success": "The one you chose tells you something the rest would have hidden."
+    },
+    {
+      "title": "Let {B} misread {give} on purpose",
+      "outcome": "Hand {B} {give} in the wrong spirit and keep the most interesting failure.",
+      "test": "Imagine three wrong readings on paper before touching any tool.",
+      "success": "One misreading gives you an idea you would not have had."
+    },
+    {
+      "title": "Make {give} something you can hold",
+      "outcome": "Whatever {B} does with {give} has to end as an object or a place in the room.",
+      "test": "Sketch what would sit on the desk.",
+      "success": "Someone else can tell what it means without an explanation."
+    }
+  ],
+  "questions": [
+    {
+      "title": "What does {give} know that {B} has never been shown?",
+      "outcome": "A research direction: list what {A} sees that {B} has no way of seeing."
+    },
+    {
+      "title": "Which decision would change if {B} received {give} every week?",
+      "outcome": "Name the decision first. If none changes, this bridge may not matter."
+    },
+    {
+      "title": "What would {B} get wrong if {give} were all it knew?",
+      "outcome": "Use the error to find what is missing from {A}."
+    }
+  ],
+  "exercises": [
+    {
+      "id": "distant",
+      "name": "Two distant parts",
+      "ask": "Connect a device or data source with a tool from another domain."
+    },
+    {
+      "id": "middle",
+      "name": "Missing middle",
+      "ask": "These shapes do not match. Name the transformation that would make them fit."
+    },
+    {
+      "id": "third",
+      "name": "Add one thing",
+      "ask": "Add a third part that changes the result substantially, not one that just extends it."
+    },
+    {
+      "id": "reverse",
+      "name": "Reverse the arrow",
+      "ask": "Does the outcome change when the information flows the other way?"
+    },
+    {
+      "id": "swap",
+      "name": "Swap a resource",
+      "ask": "Substitute a free or local part and look at what you gain and lose."
+    },
+    {
+      "id": "purchase",
+      "name": "A small purchase",
+      "ask": "Which blocked bridges open at a stated cost, and which were not blocked by money at all?"
+    },
+    {
+      "id": "transfer",
+      "name": "Transfer",
+      "ask": "A fresh pair and no examples. Build the bridge unaided, then save it before you compare."
+    },
+    {
+      "id": "shortest",
+      "name": "Shortest route",
+      "ask": "Take parts away until the idea breaks. The last part you could not remove is the one that matters."
+    },
+    {
+      "id": "long",
+      "name": "The long way round",
+      "ask": "Reach the same end in at least three hops. What does each extra stop do that a direct line cannot?"
+    },
+    {
+      "id": "fanin",
+      "name": "Two into one",
+      "ask": "Bring two unrelated sources into one part. What can they show together that neither shows alone?"
+    },
+    {
+      "id": "fanout",
+      "name": "One into two",
+      "ask": "Send one thing to two places. What do you learn from the difference between what comes out?"
+    },
+    {
+      "id": "loop",
+      "name": "Close the loop",
+      "ask": "Let what comes out change what goes in next time. What stops it running away?"
+    }
+  ],
+  "shapes": [
+    {
+      "id": "hop",
+      "name": "One hop",
+      "needs": 2,
+      "invite": "Could this work with nothing in between?"
+    },
+    {
+      "id": "chain",
+      "name": "Chain",
+      "needs": 3,
+      "invite": "What would a stop along the way do to the result?"
+    },
+    {
+      "id": "fanin",
+      "name": "Two into one",
+      "needs": 3,
+      "invite": "What could two sources show that neither shows alone?"
+    },
+    {
+      "id": "fanout",
+      "name": "One into two",
+      "needs": 3,
+      "invite": "What would you learn by sending the same thing to two places?"
+    },
+    {
+      "id": "loop",
+      "name": "Loop",
+      "needs": 2,
+      "invite": "What if the end changed the beginning next time?"
+    }
+  ]
+}

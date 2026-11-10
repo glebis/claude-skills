@@ -1,0 +1,1916 @@
+{
+ "meta": {
+  "note": "Known tools: how to detect them read-only, and a template for what each takes, does and gives. Detection never reads secret values."
+ },
+ "tools": [
+  {
+   "id": "apple-health",
+   "name": "Watch + iPhone Health",
+   "domain": "body",
+   "boundary": "device",
+   "act": "observes activity and other signals you authorise",
+   "does": [
+    "observe",
+    "aggregate"
+   ],
+   "takes": [],
+   "gives": [
+    {
+     "type": "signal",
+     "label": "selected activity aggregates"
+    }
+   ],
+   "asThird": {
+    "adds": "a body signal",
+    "then": "it can respond to how the day actually went"
+   },
+   "unknown": [
+    "An export or import route that works",
+    "How fresh the data is on any Mac"
+   ],
+   "place": "device",
+   "detect": {}
+  },
+  {
+   "id": "icloud-drive",
+   "name": "iCloud Drive",
+   "domain": "memory",
+   "boundary": "sync",
+   "act": "moves files between your signed-in devices",
+   "does": [
+    "move",
+    "store"
+   ],
+   "takes": [
+    {
+     "type": "file",
+     "label": "a file you place in it"
+    }
+   ],
+   "gives": [
+    {
+     "type": "file",
+     "label": "a file available on another device"
+    }
+   ],
+   "asThird": {
+    "adds": "a handoff between devices",
+    "then": "the result can appear on another device"
+   },
+   "unknown": [
+    "How quickly a file arrives"
+   ],
+   "place": "mac",
+   "detect": {
+    "paths": [
+     "~/Library/Mobile Documents/com~apple~CloudDocs"
+    ]
+   }
+  },
+  {
+   "id": "apple-photos",
+   "name": "Apple Photos",
+   "domain": "images",
+   "boundary": "lan",
+   "act": "keeps a personal photo library you can choose from",
+   "does": [
+    "store",
+    "select"
+   ],
+   "takes": [
+    {
+     "type": "media",
+     "label": "a photo"
+    }
+   ],
+   "gives": [
+    {
+     "type": "media",
+     "label": "one image you select"
+    }
+   ],
+   "asThird": {
+    "adds": "a personal image",
+    "then": "the idea can attach to something you saw"
+   },
+   "unknown": [
+    "Permission to read the library",
+    "Whether the library is current"
+   ],
+   "place": "mac",
+   "detect": {
+    "apps": [
+     "Photos"
+    ]
+   }
+  },
+  {
+   "id": "shortcuts",
+   "name": "Shortcuts",
+   "domain": "agents",
+   "boundary": "lan",
+   "act": "connects native actions into a local handoff",
+   "does": [
+    "trigger",
+    "hand off"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a short input"
+    }
+   ],
+   "gives": [
+    {
+     "type": "action",
+     "label": "a local action or handoff"
+    }
+   ],
+   "asThird": {
+    "adds": "a physical moment",
+    "then": "it can happen at a chosen place and time rather than in a chat"
+   },
+   "unknown": [
+    "Which shortcuts exist",
+    "Whether they run over SSH"
+   ],
+   "place": "mac",
+   "detect": {
+    "clis": [
+     "shortcuts"
+    ],
+    "apps": [
+     "Shortcuts"
+    ]
+   },
+   "docs": "https://support.apple.com/guide/shortcuts-mac/welcome/mac"
+  },
+  {
+   "id": "apple-calendar",
+   "name": "Apple Calendar",
+   "domain": "time",
+   "boundary": "lan",
+   "act": "gives local time context through a native script",
+   "does": [
+    "read time",
+    "suggest"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a draft suggestion"
+    }
+   ],
+   "gives": [
+    {
+     "type": "moment",
+     "label": "a gap or event in the day"
+    }
+   ],
+   "asThird": {
+    "adds": "timing",
+    "then": "it can arrive at a chosen moment instead of whenever"
+   },
+   "unknown": [
+    "Whether the script runs",
+    "Which calendars it sees"
+   ],
+   "place": "mac",
+   "detect": {
+    "apps": [
+     "Calendar"
+    ]
+   }
+  },
+  {
+   "id": "google-calendar",
+   "name": "Google Calendar",
+   "domain": "time",
+   "boundary": "vendor",
+   "act": "gives time context and can hold a draft plan",
+   "does": [
+    "read time",
+    "schedule"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a draft suggestion"
+    }
+   ],
+   "gives": [
+    {
+     "type": "moment",
+     "label": "a gap or event in the day"
+    }
+   ],
+   "asThird": {
+    "adds": "timing",
+    "then": "it can arrive at a chosen moment instead of whenever"
+   },
+   "unknown": [
+    "Granted scopes"
+   ],
+   "place": "hosted",
+   "detect": {
+    "mcp": [
+     "calendar"
+    ]
+   },
+   "docs": "https://developers.google.com/calendar"
+  },
+  {
+   "id": "cal-com",
+   "name": "Cal.com",
+   "domain": "time",
+   "boundary": "vendor",
+   "act": "holds booking context through Composio",
+   "does": [
+    "schedule"
+   ],
+   "takes": [
+    {
+     "type": "moment",
+     "label": "an availability window"
+    }
+   ],
+   "gives": [
+    {
+     "type": "moment",
+     "label": "a booking"
+    }
+   ],
+   "asThird": {
+    "adds": "other people's time",
+    "then": "someone else can step into it"
+   },
+   "unknown": [
+    "What the connection may do"
+   ],
+   "place": "hosted",
+   "detect": {
+    "keys": [
+     "CAL_COM",
+     "CALCOM"
+    ]
+   },
+   "docs": "https://cal.com/docs"
+  },
+  {
+   "id": "obsidian",
+   "name": "Obsidian",
+   "domain": "memory",
+   "boundary": "local",
+   "act": "keeps links, notes and personal context",
+   "does": [
+    "store",
+    "link"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a new note"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a connected note or selected passage"
+    }
+   ],
+   "asThird": {
+    "adds": "memory",
+    "then": "the result links to something you already thought"
+   },
+   "unknown": [
+    "Which programmatic path works"
+   ],
+   "place": "mac",
+   "detect": {
+    "apps": [
+     "Obsidian"
+    ]
+   },
+   "docs": "https://help.obsidian.md"
+  },
+  {
+   "id": "google-drive",
+   "name": "Google Drive",
+   "domain": "memory",
+   "boundary": "vendor",
+   "act": "stores files, documents and sheets",
+   "does": [
+    "store",
+    "share"
+   ],
+   "takes": [
+    {
+     "type": "file",
+     "label": "a file"
+    }
+   ],
+   "gives": [
+    {
+     "type": "file",
+     "label": "a stored document"
+    }
+   ],
+   "asThird": {
+    "adds": "a shareable copy",
+    "then": "someone else can open the result"
+   },
+   "unknown": [
+    "Granted scopes"
+   ],
+   "place": "hosted",
+   "detect": {
+    "apps": [
+     "Google Drive"
+    ],
+    "mcp": [
+     "drive"
+    ]
+   },
+   "docs": "https://developers.google.com/drive"
+  },
+  {
+   "id": "fathom",
+   "name": "Fathom",
+   "domain": "meetings",
+   "boundary": "vendor",
+   "act": "supplies meeting records",
+   "does": [
+    "record",
+    "summarise"
+   ],
+   "takes": [],
+   "gives": [
+    {
+     "type": "text",
+     "label": "meeting notes"
+    }
+   ],
+   "asThird": {
+    "adds": "what people actually said",
+    "then": "it can be checked against a real conversation"
+   },
+   "unknown": [
+    "Account authorisation"
+   ],
+   "place": "hosted",
+   "detect": {
+    "keys": [
+     "FATHOM"
+    ],
+    "mcp": [
+     "fathom"
+    ],
+    "apps": [
+     "Fathom"
+    ]
+   },
+   "docs": "https://developers.fathom.ai"
+  },
+  {
+   "id": "granola",
+   "name": "Granola",
+   "domain": "meetings",
+   "boundary": "vendor",
+   "act": "supplies meeting notes and transcripts",
+   "does": [
+    "record",
+    "summarise"
+   ],
+   "takes": [],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a meeting transcript"
+    }
+   ],
+   "asThird": {
+    "adds": "what people actually said",
+    "then": "it can be checked against a real conversation"
+   },
+   "unknown": [
+    "Account authorisation"
+   ],
+   "place": "hosted",
+   "detect": {
+    "apps": [
+     "Granola"
+    ],
+    "mcp": [
+     "granola"
+    ]
+   }
+  },
+  {
+   "id": "descript",
+   "name": "Descript",
+   "domain": "meetings",
+   "boundary": "vendor",
+   "act": "edits video projects through their transcripts",
+   "does": [
+    "transcribe",
+    "edit"
+   ],
+   "takes": [
+    {
+     "type": "audio",
+     "label": "a recording"
+    },
+    {
+     "type": "media",
+     "label": "a video project"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "an editable transcript"
+    }
+   ],
+   "asThird": {
+    "adds": "an editable recording",
+    "then": "it can be cut and reshaped by editing words"
+   },
+   "unknown": [
+    "Project access"
+   ],
+   "place": "hosted",
+   "detect": {
+    "apps": [
+     "Descript"
+    ]
+   }
+  },
+  {
+   "id": "exa",
+   "name": "Exa",
+   "domain": "research",
+   "boundary": "vendor",
+   "act": "finds public evidence for a question",
+   "does": [
+    "retrieve",
+    "search"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a question"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a source-linked article"
+    }
+   ],
+   "asThird": {
+    "adds": "outside evidence",
+    "then": "something you did not already know can enter"
+   },
+   "unknown": [
+    "Account-specific allowance"
+   ],
+   "place": "hosted",
+   "detect": {
+    "keys": [
+     "EXA_"
+    ],
+    "mcp": [
+     "exa"
+    ]
+   },
+   "docs": "https://docs.exa.ai"
+  },
+  {
+   "id": "firecrawl",
+   "name": "Firecrawl",
+   "domain": "research",
+   "boundary": "vendor",
+   "act": "turns a URL into readable text",
+   "does": [
+    "retrieve",
+    "extract"
+   ],
+   "takes": [
+    {
+     "type": "url",
+     "label": "a page URL"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "readable page text"
+    }
+   ],
+   "asThird": {
+    "adds": "the full text of a page",
+    "then": "it can work from the source rather than a snippet"
+   },
+   "unknown": [
+    "Live quota"
+   ],
+   "place": "hosted",
+   "detect": {
+    "keys": [
+     "FIRECRAWL"
+    ],
+    "clis": [
+     "firecrawl"
+    ],
+    "mcp": [
+     "firecrawl"
+    ]
+   },
+   "docs": "https://docs.firecrawl.dev"
+  },
+  {
+   "id": "consensus",
+   "name": "Consensus",
+   "domain": "research",
+   "boundary": "vendor",
+   "act": "searches scientific research",
+   "does": [
+    "retrieve",
+    "compare"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a research question"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "paper findings"
+    }
+   ],
+   "asThird": {
+    "adds": "published findings",
+    "then": "a hunch can meet what has been studied"
+   },
+   "unknown": [
+    "Account limits"
+   ],
+   "place": "hosted",
+   "detect": {
+    "mcp": [
+     "consensus"
+    ]
+   }
+  },
+  {
+   "id": "nous",
+   "name": "Nous",
+   "domain": "models",
+   "boundary": "vendor",
+   "act": "transforms, classifies or compares text, if a model route works",
+   "does": [
+    "transform",
+    "classify",
+    "compare"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a prompt"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a generated reading"
+    },
+    {
+     "type": "record",
+     "label": "a classification"
+    }
+   ],
+   "asThird": {
+    "adds": "a model's reading",
+    "then": "a pattern can be drawn out for you to accept or refuse"
+   },
+   "unknown": [
+    "Whether any zero-price model answers",
+    "Quota and policy limits"
+   ],
+   "place": "hosted",
+   "detect": {
+    "keys": [
+     "NOUS"
+    ]
+   }
+  },
+  {
+   "id": "nvidia",
+   "name": "NVIDIA Free Endpoints",
+   "domain": "models",
+   "boundary": "vendor",
+   "act": "offers hosted models for prototyping, subject to account limits",
+   "does": [
+    "transform",
+    "compare"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a prompt"
+    },
+    {
+     "type": "record",
+     "label": "the same small dataset"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "several model readings"
+    }
+   ],
+   "asThird": {
+    "adds": "several model readings",
+    "then": "you can look at where interpretations disagree"
+   },
+   "unknown": [
+    "Which endpoints this account can call",
+    "Rate limits"
+   ],
+   "place": "hosted",
+   "detect": {
+    "keys": [
+     "NVIDIA",
+     "NGC_"
+    ]
+   }
+  },
+  {
+   "id": "ollama",
+   "name": "Ollama",
+   "domain": "models",
+   "boundary": "lan",
+   "act": "runs a local model, if one is pulled and the daemon is up",
+   "does": [
+    "transform",
+    "classify"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a prompt"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a local model reading"
+    }
+   ],
+   "asThird": {
+    "adds": "a private reading",
+    "then": "a model can read it without it leaving the network"
+   },
+   "unknown": [
+    "Which models are pulled",
+    "Quality on this hardware"
+   ],
+   "place": "mac",
+   "detect": {
+    "clis": [
+     "ollama"
+    ],
+    "apps": [
+     "Ollama"
+    ],
+    "models": "ollama"
+   },
+   "docs": "https://github.com/ollama/ollama/tree/main/docs"
+  },
+  {
+   "id": "elevenlabs",
+   "name": "ElevenLabs",
+   "domain": "sound",
+   "boundary": "vendor",
+   "act": "turns selected text into audio",
+   "does": [
+    "speak",
+    "render"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a short script"
+    }
+   ],
+   "gives": [
+    {
+     "type": "audio",
+     "label": "spoken audio"
+    }
+   ],
+   "asThird": {
+    "adds": "a voice",
+    "then": "it can be listened to on a walk rather than read at a desk"
+   },
+   "unknown": [
+    "Current plan and credits",
+    "Whether a call succeeds"
+   ],
+   "place": "hosted",
+   "detect": {
+    "keys": [
+     "ELEVENLABS",
+     "ELEVEN_"
+    ],
+    "mcp": [
+     "elevenlabs"
+    ]
+   },
+   "docs": "https://elevenlabs.io/docs"
+  },
+  {
+   "id": "deepgram",
+   "name": "Deepgram",
+   "domain": "sound",
+   "boundary": "vendor",
+   "act": "turns speech into text",
+   "does": [
+    "transcribe"
+   ],
+   "takes": [
+    {
+     "type": "audio",
+     "label": "a voice recording"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a transcript"
+    }
+   ],
+   "asThird": {
+    "adds": "spoken input",
+    "then": "you could start it by talking"
+   },
+   "unknown": [
+    "Validity and quota"
+   ],
+   "place": "hosted",
+   "detect": {
+    "keys": [
+     "DEEPGRAM"
+    ]
+   },
+   "docs": "https://developers.deepgram.com"
+  },
+  {
+   "id": "shazam",
+   "name": "Shazam",
+   "domain": "sound",
+   "boundary": "vendor",
+   "act": "identifies music",
+   "does": [
+    "identify"
+   ],
+   "takes": [
+    {
+     "type": "audio",
+     "label": "a snippet of sound"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a track identification"
+    }
+   ],
+   "asThird": {
+    "adds": "the sound of a place",
+    "then": "what was playing becomes part of the record"
+   },
+   "unknown": [
+    "Input route"
+   ],
+   "place": "hosted",
+   "detect": {
+    "apps": [
+     "Shazam"
+    ]
+   }
+  },
+  {
+   "id": "spotify",
+   "name": "Spotify",
+   "domain": "sound",
+   "boundary": "vendor",
+   "act": "holds music and playlists",
+   "does": [
+    "play",
+    "collect"
+   ],
+   "takes": [
+    {
+     "type": "record",
+     "label": "a list of tracks"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a playlist"
+    }
+   ],
+   "asThird": {
+    "adds": "a soundtrack",
+    "then": "it gains a mood you can hear"
+   },
+   "unknown": [
+    "Account authorisation"
+   ],
+   "place": "hosted",
+   "detect": {
+    "apps": [
+     "Spotify"
+    ]
+   },
+   "docs": "https://developer.spotify.com/documentation/web-api"
+  },
+  {
+   "id": "unsplash",
+   "name": "Unsplash",
+   "domain": "images",
+   "boundary": "vendor",
+   "act": "finds public images for a word or phrase",
+   "does": [
+    "retrieve"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a search phrase"
+    }
+   ],
+   "gives": [
+    {
+     "type": "media",
+     "label": "a public image"
+    }
+   ],
+   "asThird": {
+    "adds": "a picture",
+    "then": "an abstract result gets a concrete image"
+   },
+   "unknown": [
+    "Validity and rate limits"
+   ],
+   "place": "hosted",
+   "detect": {
+    "keys": [
+     "UNSPLASH"
+    ]
+   },
+   "docs": "https://unsplash.com/documentation"
+  },
+  {
+   "id": "telegram",
+   "name": "Telegram bot",
+   "domain": "work",
+   "boundary": "vendor",
+   "act": "carries short messages to and from a bot",
+   "does": [
+    "notify",
+    "receive"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a short message"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a message you sent"
+    }
+   ],
+   "asThird": {
+    "adds": "a pocket entry point",
+    "then": "you can reach it from your phone"
+   },
+   "unknown": [
+    "Which bot"
+   ],
+   "place": "hosted",
+   "detect": {
+    "apps": [
+     "Telegram"
+    ],
+    "keys": [
+     "TELEGRAM"
+    ]
+   },
+   "docs": "https://core.telegram.org/bots/api"
+  },
+  {
+   "id": "linear",
+   "name": "Linear",
+   "domain": "work",
+   "boundary": "vendor",
+   "act": "tracks issues and projects",
+   "does": [
+    "track"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "an issue draft"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "open issues"
+    }
+   ],
+   "asThird": {
+    "adds": "follow-through",
+    "then": "it becomes something tracked rather than remembered"
+   },
+   "unknown": [
+    "Scopes"
+   ],
+   "place": "hosted",
+   "detect": {
+    "apps": [
+     "Linear"
+    ],
+    "keys": [
+     "LINEAR"
+    ],
+    "mcp": [
+     "linear"
+    ]
+   },
+   "docs": "https://linear.app/developers"
+  },
+  {
+   "id": "gmail",
+   "name": "Gmail",
+   "domain": "work",
+   "boundary": "vendor",
+   "act": "holds email and can prepare drafts",
+   "does": [
+    "search",
+    "draft"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a draft"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "an email thread"
+    }
+   ],
+   "asThird": {
+    "adds": "a draft to someone",
+    "then": "it can become a message you choose to send"
+   },
+   "unknown": [
+    "Scopes"
+   ],
+   "place": "hosted",
+   "detect": {
+    "mcp": [
+     "gmail"
+    ],
+    "clis": [
+     "gws"
+    ]
+   },
+   "docs": "https://developers.google.com/gmail/api"
+  },
+  {
+   "id": "openai",
+   "name": "OpenAI API",
+   "domain": "models",
+   "place": "hosted",
+   "act": "runs hosted language, image and speech models",
+   "does": [
+    "generate",
+    "transcribe"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a prompt"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a model reply"
+    }
+   ],
+   "asThird": {
+    "adds": "a general model",
+    "then": "it can turn rough input into a draft"
+   },
+   "unknown": [
+    "Plan and rate limits",
+    "Which models the key can use"
+   ],
+   "detect": {
+    "keys": [
+     "OPENAI"
+    ]
+   },
+   "docs": "https://platform.openai.com/docs",
+   "boundary": "vendor"
+  },
+  {
+   "id": "anthropic",
+   "name": "Anthropic API",
+   "domain": "models",
+   "place": "hosted",
+   "act": "runs hosted Claude models",
+   "does": [
+    "generate",
+    "reason"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a prompt"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a model reply"
+    }
+   ],
+   "asThird": {
+    "adds": "a careful reader",
+    "then": "it can summarise or question what passes through"
+   },
+   "unknown": [
+    "Plan and rate limits"
+   ],
+   "detect": {
+    "keys": [
+     "ANTHROPIC"
+    ]
+   },
+   "docs": "https://docs.anthropic.com",
+   "boundary": "vendor"
+  },
+  {
+   "id": "claude-code",
+   "name": "Claude Code",
+   "domain": "agents",
+   "place": "mac",
+   "act": "runs a coding agent in a folder you choose",
+   "does": [
+    "act",
+    "edit"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a task"
+    }
+   ],
+   "gives": [
+    {
+     "type": "file",
+     "label": "changed files"
+    }
+   ],
+   "asThird": {
+    "adds": "an agent that can build",
+    "then": "it can turn a plan into a working script"
+   },
+   "unknown": [
+    "Which permissions are allowed"
+   ],
+   "detect": {
+    "clis": [
+     "claude"
+    ]
+   },
+   "docs": "https://docs.claude.com/en/docs/claude-code",
+   "boundary": "local"
+  },
+  {
+   "id": "codex",
+   "name": "Codex CLI",
+   "domain": "agents",
+   "place": "mac",
+   "act": "runs a coding agent in the terminal",
+   "does": [
+    "act",
+    "edit"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a task"
+    }
+   ],
+   "gives": [
+    {
+     "type": "file",
+     "label": "changed files"
+    }
+   ],
+   "asThird": {
+    "adds": "a second agent",
+    "then": "it can check or redo the first agent's work"
+   },
+   "unknown": [
+    "Account and limits"
+   ],
+   "detect": {
+    "clis": [
+     "codex"
+    ]
+   },
+   "docs": "https://github.com/openai/codex",
+   "boundary": "local"
+  },
+  {
+   "id": "lm-studio",
+   "name": "LM Studio",
+   "domain": "models",
+   "place": "mac",
+   "act": "runs local models with a local server",
+   "does": [
+    "generate"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a prompt"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a local model reply"
+    }
+   ],
+   "asThird": {
+    "adds": "a private model",
+    "then": "it can read without anything leaving the machine"
+   },
+   "unknown": [
+    "Which models are downloaded",
+    "Quality on this hardware"
+   ],
+   "detect": {
+    "apps": [
+     "LM Studio"
+    ],
+    "clis": [
+     "lms"
+    ],
+    "models": "lmstudio"
+   },
+   "docs": "https://lmstudio.ai/docs",
+   "boundary": "local"
+  },
+  {
+   "id": "ffmpeg",
+   "name": "ffmpeg",
+   "domain": "sound",
+   "place": "mac",
+   "act": "converts, cuts and joins audio and video",
+   "does": [
+    "convert",
+    "cut"
+   ],
+   "takes": [
+    {
+     "type": "media",
+     "label": "a recording"
+    }
+   ],
+   "gives": [
+    {
+     "type": "audio",
+     "label": "a cleaned or cut file"
+    }
+   ],
+   "asThird": {
+    "adds": "a media workbench",
+    "then": "it can trim, join or reformat on the way"
+   },
+   "unknown": [],
+   "detect": {
+    "clis": [
+     "ffmpeg"
+    ]
+   },
+   "docs": "https://ffmpeg.org/documentation.html",
+   "boundary": "local"
+  },
+  {
+   "id": "whisper",
+   "name": "Local Whisper",
+   "domain": "sound",
+   "place": "mac",
+   "act": "transcribes speech on this machine",
+   "does": [
+    "transcribe"
+   ],
+   "takes": [
+    {
+     "type": "audio",
+     "label": "a recording"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a transcript"
+    }
+   ],
+   "asThird": {
+    "adds": "private transcription",
+    "then": "it can turn speech into text without a vendor"
+   },
+   "unknown": [
+    "Which model size is installed",
+    "Speed on this hardware"
+   ],
+   "detect": {
+    "clis": [
+     "whisper",
+     "whisper-cli",
+     "whisper-cpp",
+     "mlx_whisper"
+    ]
+   },
+   "docs": "https://github.com/openai/whisper",
+   "boundary": "local"
+  },
+  {
+   "id": "github",
+   "name": "GitHub CLI",
+   "domain": "work",
+   "place": "mac",
+   "act": "reads and writes repositories, issues and pull requests",
+   "does": [
+    "track",
+    "publish"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "an issue or change"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "an issue, pull request or release"
+    }
+   ],
+   "asThird": {
+    "adds": "a public record",
+    "then": "it can leave a trace others can follow"
+   },
+   "unknown": [
+    "Which accounts are signed in"
+   ],
+   "detect": {
+    "clis": [
+     "gh"
+    ]
+   },
+   "docs": "https://cli.github.com/manual",
+   "boundary": "local"
+  },
+  {
+   "id": "notion",
+   "name": "Notion",
+   "domain": "memory",
+   "place": "hosted",
+   "act": "keeps shared pages and databases",
+   "does": [
+    "store",
+    "organise"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a page or row"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a database row"
+    }
+   ],
+   "asThird": {
+    "adds": "a shared table",
+    "then": "other people can see and sort the result"
+   },
+   "unknown": [
+    "Workspace permissions"
+   ],
+   "detect": {
+    "apps": [
+     "Notion"
+    ],
+    "keys": [
+     "NOTION"
+    ],
+    "mcp": [
+     "notion"
+    ]
+   },
+   "docs": "https://developers.notion.com",
+   "boundary": "vendor"
+  },
+  {
+   "id": "slack",
+   "name": "Slack",
+   "domain": "work",
+   "place": "hosted",
+   "act": "carries team messages and channels",
+   "does": [
+    "notify",
+    "discuss"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a message"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a thread"
+    }
+   ],
+   "asThird": {
+    "adds": "an audience",
+    "then": "it can reach a team instead of only you"
+   },
+   "unknown": [
+    "Which workspaces allow apps"
+   ],
+   "detect": {
+    "apps": [
+     "Slack"
+    ],
+    "mcp": [
+     "slack"
+    ],
+    "keys": [
+     "SLACK"
+    ]
+   },
+   "docs": "https://api.slack.com",
+   "boundary": "vendor"
+  },
+  {
+   "id": "zoom",
+   "name": "Zoom",
+   "domain": "meetings",
+   "place": "hosted",
+   "act": "hosts calls and can record them",
+   "does": [
+    "record",
+    "meet"
+   ],
+   "takes": [
+    {
+     "type": "moment",
+     "label": "a scheduled call"
+    }
+   ],
+   "gives": [
+    {
+     "type": "media",
+     "label": "a call recording"
+    }
+   ],
+   "asThird": {
+    "adds": "a live conversation",
+    "then": "it can happen with people, not just to a file"
+   },
+   "unknown": [
+    "Whether cloud recording is enabled"
+   ],
+   "detect": {
+    "apps": [
+     "zoom.us"
+    ]
+   },
+   "docs": "https://developers.zoom.us",
+   "boundary": "vendor"
+  },
+  {
+   "id": "raycast",
+   "name": "Raycast",
+   "domain": "agents",
+   "place": "mac",
+   "act": "launches commands and scripts from the keyboard",
+   "does": [
+    "trigger",
+    "act"
+   ],
+   "takes": [
+    {
+     "type": "action",
+     "label": "a keystroke"
+    }
+   ],
+   "gives": [
+    {
+     "type": "action",
+     "label": "a script run"
+    }
+   ],
+   "asThird": {
+    "adds": "a keyboard trigger",
+    "then": "it can start on demand instead of on a schedule"
+   },
+   "unknown": [
+    "Which extensions are installed"
+   ],
+   "detect": {
+    "apps": [
+     "Raycast"
+    ]
+   },
+   "docs": "https://developers.raycast.com",
+   "boundary": "local"
+  },
+  {
+   "id": "keyboard-maestro",
+   "name": "Keyboard Maestro",
+   "domain": "agents",
+   "place": "mac",
+   "act": "runs macros on triggers",
+   "does": [
+    "trigger",
+    "act"
+   ],
+   "takes": [
+    {
+     "type": "action",
+     "label": "a trigger"
+    }
+   ],
+   "gives": [
+    {
+     "type": "action",
+     "label": "a macro run"
+    }
+   ],
+   "asThird": {
+    "adds": "a trigger",
+    "then": "it can run when something happens on the Mac"
+   },
+   "unknown": [
+    "Which macros exist"
+   ],
+   "detect": {
+    "apps": [
+     "Keyboard Maestro"
+    ]
+   },
+   "docs": "https://wiki.keyboardmaestro.com",
+   "boundary": "local"
+  },
+  {
+   "id": "apple-notes",
+   "name": "Apple Notes",
+   "domain": "memory",
+   "place": "mac",
+   "act": "keeps quick notes that sync across devices",
+   "does": [
+    "store"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a note"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a note"
+    }
+   ],
+   "asThird": {
+    "adds": "a quick capture",
+    "then": "it can catch an idea on any device"
+   },
+   "unknown": [
+    "A programmatic route in or out"
+   ],
+   "detect": {
+    "apps": [
+     "Notes"
+    ]
+   },
+   "boundary": "local"
+  },
+  {
+   "id": "apple-reminders",
+   "name": "Apple Reminders",
+   "domain": "time",
+   "place": "mac",
+   "act": "keeps to-dos with dates and places",
+   "does": [
+    "remind"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a to-do"
+    }
+   ],
+   "gives": [
+    {
+     "type": "moment",
+     "label": "a reminder at a time or place"
+    }
+   ],
+   "asThird": {
+    "adds": "a nudge",
+    "then": "it can come back at the right moment"
+   },
+   "unknown": [
+    "Which lists sync"
+   ],
+   "detect": {
+    "apps": [
+     "Reminders"
+    ]
+   },
+   "boundary": "local"
+  },
+  {
+   "id": "voice-memos",
+   "name": "Voice Memos",
+   "domain": "sound",
+   "place": "device",
+   "act": "records audio on the phone or Mac",
+   "does": [
+    "record"
+   ],
+   "takes": [
+    {
+     "type": "signal",
+     "label": "speech"
+    }
+   ],
+   "gives": [
+    {
+     "type": "audio",
+     "label": "a recording"
+    }
+   ],
+   "asThird": {
+    "adds": "a voice capture",
+    "then": "it can start from speech instead of typing"
+   },
+   "unknown": [
+    "Where recordings sync"
+   ],
+   "detect": {
+    "apps": [
+     "VoiceMemos"
+    ]
+   },
+   "boundary": "device"
+  },
+  {
+   "id": "todoist",
+   "name": "Todoist",
+   "domain": "time",
+   "place": "hosted",
+   "act": "keeps tasks and projects",
+   "does": [
+    "track"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a task"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a task with a date"
+    }
+   ],
+   "asThird": {
+    "adds": "a commitment",
+    "then": "it becomes something you agreed to do"
+   },
+   "unknown": [
+    "Plan limits"
+   ],
+   "detect": {
+    "apps": [
+     "Todoist"
+    ],
+    "keys": [
+     "TODOIST"
+    ]
+   },
+   "docs": "https://developer.todoist.com",
+   "boundary": "vendor"
+  },
+  {
+   "id": "things",
+   "name": "Things",
+   "domain": "time",
+   "place": "mac",
+   "act": "keeps personal tasks",
+   "does": [
+    "track"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a task"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a task"
+    }
+   ],
+   "asThird": {
+    "adds": "a commitment",
+    "then": "it becomes something you agreed to do"
+   },
+   "unknown": [
+    "A programmatic route in"
+   ],
+   "detect": {
+    "apps": [
+     "Things3"
+    ]
+   },
+   "docs": "https://culturedcode.com/things/support/articles/2803573/",
+   "boundary": "local"
+  },
+  {
+   "id": "readwise",
+   "name": "Readwise",
+   "domain": "research",
+   "place": "hosted",
+   "act": "collects highlights from reading",
+   "does": [
+    "collect"
+   ],
+   "takes": [
+    {
+     "type": "url",
+     "label": "an article or book"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "highlights"
+    }
+   ],
+   "asThird": {
+    "adds": "your past reading",
+    "then": "it can bring back what you marked"
+   },
+   "unknown": [
+    "Plan and export limits"
+   ],
+   "detect": {
+    "keys": [
+     "READWISE"
+    ],
+    "mcp": [
+     "readwise"
+    ]
+   },
+   "docs": "https://readwise.io/api_deets",
+   "boundary": "vendor"
+  },
+  {
+   "id": "zotero",
+   "name": "Zotero",
+   "domain": "research",
+   "place": "mac",
+   "act": "keeps papers and citations",
+   "does": [
+    "store",
+    "cite"
+   ],
+   "takes": [
+    {
+     "type": "url",
+     "label": "a paper"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a citation with a PDF"
+    }
+   ],
+   "asThird": {
+    "adds": "citations",
+    "then": "it can point back to a source"
+   },
+   "unknown": [
+    "Whether the local API is on"
+   ],
+   "detect": {
+    "apps": [
+     "Zotero"
+    ]
+   },
+   "docs": "https://www.zotero.org/support/dev/web_api/v3/start",
+   "boundary": "local"
+  },
+  {
+   "id": "docker",
+   "name": "Docker",
+   "domain": "agents",
+   "place": "mac",
+   "act": "runs services in containers",
+   "does": [
+    "host"
+   ],
+   "takes": [
+    {
+     "type": "file",
+     "label": "a service definition"
+    }
+   ],
+   "gives": [
+    {
+     "type": "action",
+     "label": "a running service"
+    }
+   ],
+   "asThird": {
+    "adds": "a sandbox",
+    "then": "it can run something without touching the rest"
+   },
+   "unknown": [
+    "Which images exist"
+   ],
+   "detect": {
+    "clis": [
+     "docker"
+    ]
+   },
+   "docs": "https://docs.docker.com",
+   "boundary": "local"
+  },
+  {
+   "id": "tailscale",
+   "name": "Tailscale",
+   "domain": "agents",
+   "place": "mac",
+   "act": "joins your devices into a private network",
+   "does": [
+    "connect"
+   ],
+   "takes": [
+    {
+     "type": "action",
+     "label": "a request from another device"
+    }
+   ],
+   "gives": [
+    {
+     "type": "action",
+     "label": "a private connection"
+    }
+   ],
+   "asThird": {
+    "adds": "reach",
+    "then": "it can run on one machine and be used from another"
+   },
+   "unknown": [
+    "Which devices are in the network"
+   ],
+   "detect": {
+    "apps": [
+     "Tailscale"
+    ],
+    "clis": [
+     "tailscale"
+    ]
+   },
+   "docs": "https://tailscale.com/kb",
+   "boundary": "local"
+  },
+  {
+   "id": "home-assistant",
+   "name": "Home Assistant",
+   "domain": "body",
+   "place": "home",
+   "act": "reads and controls devices at home",
+   "does": [
+    "observe",
+    "act"
+   ],
+   "takes": [
+    {
+     "type": "action",
+     "label": "a command"
+    }
+   ],
+   "gives": [
+    {
+     "type": "signal",
+     "label": "a sensor reading"
+    }
+   ],
+   "asThird": {
+    "adds": "the room itself",
+    "then": "it can respond to light, presence or temperature"
+   },
+   "unknown": [
+    "Which devices are exposed"
+   ],
+   "detect": {
+    "keys": [
+     "HASS",
+     "HOME_ASSISTANT"
+    ],
+    "mcp": [
+     "home-assistant",
+     "homeassistant"
+    ]
+   },
+   "docs": "https://developers.home-assistant.io",
+   "boundary": "lan"
+  },
+  {
+   "id": "figma",
+   "name": "Figma",
+   "domain": "images",
+   "place": "hosted",
+   "act": "holds shared designs",
+   "does": [
+    "design"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a brief"
+    }
+   ],
+   "gives": [
+    {
+     "type": "file",
+     "label": "a design frame"
+    }
+   ],
+   "asThird": {
+    "adds": "a visual",
+    "then": "it can be seen, not only read"
+   },
+   "unknown": [
+    "Plan and API access"
+   ],
+   "detect": {
+    "apps": [
+     "Figma"
+    ],
+    "mcp": [
+     "figma"
+    ],
+    "keys": [
+     "FIGMA"
+    ]
+   },
+   "docs": "https://www.figma.com/developers",
+   "boundary": "vendor"
+  }
+ ]
+}

@@ -1,0 +1,1921 @@
+{
+ "meta": {
+  "observed_date": "2026-11-06",
+  "timezone": "Europe/Berlin",
+  "stack_name": "Demo stack (synthetic)",
+  "note": "A made-up stack for trying Bridgework. Run the audit to build your own. Nothing is connected and no bridge has been run."
+ },
+ "sources": {
+  "index": {
+   "title": "Demo notes: API and Connector Index",
+   "where": "demo-notes/API and Connector Index.md",
+   "checked": "2026-11-06"
+  },
+  "snapshot": {
+   "title": "Demo notes: API and connector snapshot",
+   "where": "demo-notes/20261106-api-connectors-snapshot.json",
+   "checked": "2026-11-06"
+  },
+  "remote": {
+   "title": "Demo notes: Remote hosts, agent integrations and model access",
+   "where": "demo-notes/20261106-remote-hosts-integrations.md",
+   "checked": "2026-11-06"
+  },
+  "remote-json": {
+   "title": "Demo notes: Remote access details",
+   "where": "demo-notes/20261106-remote-access-details.json",
+   "checked": "2026-11-06"
+  },
+  "nous-csv": {
+   "title": "Demo notes: Nous model catalog",
+   "where": "demo-notes/20261106-nous-models.csv",
+   "url": "https://inference-api.nousresearch.com/v1/models",
+   "checked": "2026-11-06"
+  },
+  "nvidia-csv": {
+   "title": "Demo notes: NVIDIA public endpoint IDs",
+   "where": "demo-notes/20261106-nvidia-public-models.csv",
+   "url": "https://integrate.api.nvidia.com/v1/models",
+   "checked": "2026-11-06"
+  },
+  "nvidia-free-csv": {
+   "title": "Demo notes: NVIDIA Free Endpoint cards",
+   "where": "demo-notes/20261106-nvidia-free-models.csv",
+   "url": "https://build.nvidia.com/models?filters=nimType%3Anim_type_preview",
+   "checked": "2026-11-06"
+  },
+  "connections": {
+   "title": "Demo notes: Stack Connections: capabilities and opportunities",
+   "where": "demo-notes/Stack Connections - Capabilities and Opportunities.md",
+   "checked": "2026-11-06"
+  },
+  "brief": {
+   "title": "Prototype brief",
+   "where": "Task brief, 6 November 2026",
+   "checked": "2026-11-06"
+  }
+ },
+ "places": [
+  {
+   "id": "device",
+   "label": "iPhone / Watch"
+  },
+  {
+   "id": "mac",
+   "label": "This Mac"
+  },
+  {
+   "id": "home",
+   "label": "Home server (LAN)"
+  },
+  {
+   "id": "vps",
+   "label": "Rented server"
+  },
+  {
+   "id": "hosted",
+   "label": "Hosted API"
+  }
+ ],
+ "boundaries": [
+  {
+   "id": "device",
+   "label": "Stays on the device",
+   "local": true
+  },
+  {
+   "id": "local",
+   "label": "Stays on this Mac",
+   "local": true
+  },
+  {
+   "id": "lan",
+   "label": "Stays on the home network",
+   "local": true
+  },
+  {
+   "id": "sync",
+   "label": "Passes through a vendor sync service",
+   "local": false
+  },
+  {
+   "id": "own-cloud",
+   "label": "Leaves for a server you run",
+   "local": false
+  },
+  {
+   "id": "vendor",
+   "label": "Leaves for a vendor's service",
+   "local": false
+  }
+ ],
+ "domains": [
+  {
+   "id": "body",
+   "label": "Body and devices"
+  },
+  {
+   "id": "memory",
+   "label": "Notes and files"
+  },
+  {
+   "id": "time",
+   "label": "Time"
+  },
+  {
+   "id": "meetings",
+   "label": "Meetings"
+  },
+  {
+   "id": "research",
+   "label": "Research"
+  },
+  {
+   "id": "models",
+   "label": "Models"
+  },
+  {
+   "id": "sound",
+   "label": "Voice and sound"
+  },
+  {
+   "id": "images",
+   "label": "Images"
+  },
+  {
+   "id": "agents",
+   "label": "Agents and hosts"
+  },
+  {
+   "id": "work",
+   "label": "Work and messages"
+  }
+ ],
+ "types": [
+  {
+   "id": "text",
+   "label": "Text",
+   "shape": "square"
+  },
+  {
+   "id": "record",
+   "label": "Structured record",
+   "shape": "diamond"
+  },
+  {
+   "id": "audio",
+   "label": "Audio",
+   "shape": "circle"
+  },
+  {
+   "id": "media",
+   "label": "Image or video",
+   "shape": "triangle"
+  },
+  {
+   "id": "moment",
+   "label": "A moment in time",
+   "shape": "half"
+  },
+  {
+   "id": "file",
+   "label": "File",
+   "shape": "hexagon"
+  },
+  {
+   "id": "signal",
+   "label": "Activity aggregate",
+   "shape": "bars"
+  },
+  {
+   "id": "action",
+   "label": "Local action",
+   "shape": "chevron"
+  },
+  {
+   "id": "url",
+   "label": "URL",
+   "shape": "ring"
+  }
+ ],
+ "evidence": [
+  {
+   "id": "unknown",
+   "label": "Unknown",
+   "meaning": "Named, but nothing inspected."
+  },
+  {
+   "id": "user-confirmed",
+   "label": "User-confirmed",
+   "meaning": "The owner said so. Live health and entitlements stay separate."
+  },
+  {
+   "id": "configured",
+   "label": "Configured",
+   "meaning": "A credential or config entry exists. Validity, quota and scope are untested."
+  },
+  {
+   "id": "installed",
+   "label": "Installed",
+   "meaning": "A tool, executable or path is present. That does not prove authentication or a working call."
+  },
+  {
+   "id": "metadata-passed",
+   "label": "Metadata request passed",
+   "meaning": "A read-only metadata request returned. No inference or action was run."
+  },
+  {
+   "id": "account-connected",
+   "label": "Account connected",
+   "meaning": "A broker reports an active connection. No action was run through it."
+  },
+  {
+   "id": "e2e-verified",
+   "label": "End-to-end verified",
+   "meaning": "A real run produced the outcome. Nothing in this sample has reached this state."
+  }
+ ],
+ "gaps": [
+  {
+   "from": "apple-health",
+   "to": "health-db",
+   "statement": "No verified route from iCloud Health to this SQLite database. The script has no HealthKit import. This is never drawn as a working arrow.",
+   "source": "remote"
+  }
+ ],
+ "resources": [
+  {
+   "id": "apple-health",
+   "name": "Watch + iPhone Health",
+   "domain": "body",
+   "place": "device",
+   "boundary": "device",
+   "evidence": "user-confirmed",
+   "act": "observes activity and other signals you authorise",
+   "does": [
+    "observe",
+    "aggregate"
+   ],
+   "takes": [],
+   "gives": [
+    {
+     "type": "signal",
+     "label": "selected activity aggregates"
+    }
+   ],
+   "asThird": {
+    "adds": "a body signal",
+    "then": "it can respond to how the day actually went"
+   },
+   "gates": [
+    {
+     "label": "Watch, iPhone and iCloud sync",
+     "state": "pass",
+     "detail": "User-confirmed",
+     "src": "remote"
+    },
+    {
+     "label": "Route to local tools",
+     "state": "fail",
+     "detail": "Local import route not established",
+     "src": "remote"
+    },
+    {
+     "label": "Health records read",
+     "state": "unknown",
+     "detail": "No personal records were read",
+     "src": "remote"
+    }
+   ],
+   "constraints": {
+    "auth": "Authorised per device through HealthKit",
+    "freshness": "Sync freshness not inspected",
+    "data": "Personal health data. Choose what leaves the device."
+   },
+   "unknown": [
+    "An export or import route that works",
+    "How fresh the data is on any Mac"
+   ],
+   "sources": [
+    "remote",
+    "index"
+   ]
+  },
+  {
+   "id": "health-db",
+   "name": "Health query script",
+   "domain": "body",
+   "place": "home",
+   "boundary": "lan",
+   "evidence": "installed",
+   "act": "queries and exports a local SQLite database",
+   "does": [
+    "query",
+    "export"
+   ],
+   "takes": [
+    {
+     "type": "record",
+     "label": "rows already in the local database"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a local query result"
+    }
+   ],
+   "asThird": {
+    "adds": "a local history",
+    "then": "today can be read against earlier days"
+   },
+   "gates": [
+    {
+     "label": "Script source inspected",
+     "state": "pass",
+     "detail": "SQLite query/export, no network libraries",
+     "src": "remote-json"
+    },
+    {
+     "label": "HealthKit import",
+     "state": "fail",
+     "detail": "None in the script",
+     "src": "remote-json"
+    },
+    {
+     "label": "Data present and fresh",
+     "state": "unknown",
+     "detail": "Not inspected",
+     "src": "remote-json"
+    }
+   ],
+   "constraints": {
+    "deps": "A database that something has to fill",
+    "freshness": "Unknown"
+   },
+   "unknown": [
+    "Whether the database holds current data",
+    "What filled it, if anything"
+   ],
+   "sources": [
+    "remote-json"
+   ]
+  },
+  {
+   "id": "icloud-drive",
+   "name": "iCloud Drive",
+   "domain": "memory",
+   "place": "home",
+   "boundary": "sync",
+   "evidence": "user-confirmed",
+   "act": "moves files between your signed-in devices",
+   "does": [
+    "move",
+    "store"
+   ],
+   "takes": [
+    {
+     "type": "file",
+     "label": "a file you place in it"
+    }
+   ],
+   "gives": [
+    {
+     "type": "file",
+     "label": "a file available on another device"
+    }
+   ],
+   "asThird": {
+    "adds": "a handoff between devices",
+    "then": "the result can appear on another device"
+   },
+   "gates": [
+    {
+     "label": "Sync layer",
+     "state": "pass",
+     "detail": "User-confirmed; directory present on the home server",
+     "src": "remote"
+    },
+    {
+     "label": "Freshness",
+     "state": "unknown",
+     "detail": "Not tested. iCloud sync is not a general API permission.",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "freshness": "Sync timing not tested"
+   },
+   "unknown": [
+    "How quickly a file arrives"
+   ],
+   "sources": [
+    "remote",
+    "index"
+   ]
+  },
+  {
+   "id": "apple-photos",
+   "name": "Apple Photos",
+   "domain": "images",
+   "place": "home",
+   "boundary": "lan",
+   "evidence": "installed",
+   "act": "keeps a personal photo library you can choose from",
+   "does": [
+    "store",
+    "select"
+   ],
+   "takes": [
+    {
+     "type": "media",
+     "label": "a photo"
+    }
+   ],
+   "gives": [
+    {
+     "type": "media",
+     "label": "one image you select"
+    }
+   ],
+   "asThird": {
+    "adds": "a personal image",
+    "then": "the idea can attach to something you saw"
+   },
+   "gates": [
+    {
+     "label": "Library path and processes",
+     "state": "pass",
+     "detail": "Observed on the home server",
+     "src": "index"
+    },
+    {
+     "label": "Media access",
+     "state": "unknown",
+     "detail": "No media read; permissions untested",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "data": "Private images. Select explicitly.",
+    "freshness": "Sync settings untested"
+   },
+   "unknown": [
+    "Permission to read the library",
+    "Whether the library is current"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "shortcuts",
+   "name": "Shortcuts",
+   "domain": "agents",
+   "place": "home",
+   "boundary": "lan",
+   "evidence": "installed",
+   "act": "connects native actions into a local handoff",
+   "does": [
+    "trigger",
+    "hand off"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a short input"
+    }
+   ],
+   "gives": [
+    {
+     "type": "action",
+     "label": "a local action or handoff"
+    }
+   ],
+   "asThird": {
+    "adds": "a physical moment",
+    "then": "it can happen at a chosen place and time rather than in a chat"
+   },
+   "gates": [
+    {
+     "label": "CLI and directory",
+     "state": "pass",
+     "detail": "/usr/bin/shortcuts on the home server",
+     "src": "index"
+    },
+    {
+     "label": "Individual shortcuts",
+     "state": "unknown",
+     "detail": "None listed or run",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "deps": "Each shortcut has its own permissions"
+   },
+   "unknown": [
+    "Which shortcuts exist",
+    "Whether they run over SSH"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "apple-calendar",
+   "name": "Apple Calendar",
+   "domain": "time",
+   "place": "home",
+   "boundary": "lan",
+   "evidence": "installed",
+   "act": "gives local time context through a native script",
+   "does": [
+    "read time",
+    "suggest"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a draft suggestion"
+    }
+   ],
+   "gives": [
+    {
+     "type": "moment",
+     "label": "a gap or event in the day"
+    }
+   ],
+   "asThird": {
+    "adds": "timing",
+    "then": "it can arrive at a chosen moment instead of whenever"
+   },
+   "gates": [
+    {
+     "label": "Script and path",
+     "state": "pass",
+     "detail": "A sync script and the Calendar directory are present",
+     "src": "index"
+    },
+    {
+     "label": "Execution",
+     "state": "unknown",
+     "detail": "Not run; native permission untested",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "auth": "Native permission not tested"
+   },
+   "unknown": [
+    "Whether the script runs",
+    "Which calendars it sees"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "google-calendar",
+   "name": "Google Calendar",
+   "domain": "time",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "installed",
+   "act": "gives time context and can hold a draft plan",
+   "does": [
+    "read time",
+    "schedule"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a draft suggestion"
+    }
+   ],
+   "gives": [
+    {
+     "type": "moment",
+     "label": "a gap or event in the day"
+    }
+   ],
+   "asThird": {
+    "adds": "timing",
+    "then": "it can arrive at a chosen moment instead of whenever"
+   },
+   "gates": [
+    {
+     "label": "Connector",
+     "state": "pass",
+     "detail": "Installed and enabled; 15 tools exposed",
+     "src": "index"
+    },
+    {
+     "label": "Write",
+     "state": "unknown",
+     "detail": "No write tested",
+     "src": "connections"
+    }
+   ],
+   "constraints": {
+    "auth": "OAuth scopes and expiry untested"
+   },
+   "unknown": [
+    "Granted scopes"
+   ],
+   "sources": [
+    "index",
+    "connections"
+   ]
+  },
+  {
+   "id": "cal-com",
+   "name": "Cal.com",
+   "domain": "time",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "account-connected",
+   "act": "holds booking context through Composio",
+   "does": [
+    "schedule"
+   ],
+   "takes": [
+    {
+     "type": "moment",
+     "label": "an availability window"
+    }
+   ],
+   "gives": [
+    {
+     "type": "moment",
+     "label": "a booking"
+    }
+   ],
+   "asThird": {
+    "adds": "other people's time",
+    "then": "someone else can step into it"
+   },
+   "gates": [
+    {
+     "label": "Composio connection",
+     "state": "pass",
+     "detail": "Active connection returned",
+     "src": "index"
+    },
+    {
+     "label": "Action",
+     "state": "unknown",
+     "detail": "Nothing run through it",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "deps": "Goes through a broker"
+   },
+   "unknown": [
+    "What the connection may do"
+   ],
+   "sources": [
+    "index",
+    "snapshot"
+   ]
+  },
+  {
+   "id": "obsidian",
+   "name": "Obsidian",
+   "domain": "memory",
+   "place": "mac",
+   "boundary": "local",
+   "evidence": "configured",
+   "act": "keeps links, notes and personal context",
+   "does": [
+    "store",
+    "link"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a new note"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a connected note or selected passage"
+    }
+   ],
+   "asThird": {
+    "adds": "memory",
+    "then": "the result links to something you already thought"
+   },
+   "gates": [
+    {
+     "label": "Local vault",
+     "state": "pass",
+     "detail": "Present",
+     "src": "connections"
+    },
+    {
+     "label": "Programmatic route",
+     "state": "unknown",
+     "detail": "Key stored; endpoint untested. A key does not imply vault access.",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "data": "Personal notes"
+   },
+   "unknown": [
+    "Which programmatic path works"
+   ],
+   "sources": [
+    "index",
+    "connections"
+   ]
+  },
+  {
+   "id": "notes-index",
+   "name": "Research question map",
+   "domain": "memory",
+   "place": "mac",
+   "boundary": "local",
+   "evidence": "unknown",
+   "act": "holds the questions you are currently following",
+   "does": [
+    "hold questions"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a new observation"
+    },
+    {
+     "type": "moment",
+     "label": "a moment to use"
+    },
+    {
+     "type": "media",
+     "label": "an image to think with"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "an open question"
+    }
+   ],
+   "asThird": {
+    "adds": "a direction",
+    "then": "the result is aimed at something you are trying to find out"
+   },
+   "gates": [
+    {
+     "label": "Exists as a file",
+     "state": "unknown",
+     "detail": "Named in the brief; nothing inspected",
+     "src": "brief"
+    }
+   ],
+   "constraints": {},
+   "unknown": [
+    "Whether it exists yet, and in what form"
+   ],
+   "sources": [
+    "brief"
+   ]
+  },
+  {
+   "id": "small-dataset",
+   "name": "A small dataset",
+   "domain": "memory",
+   "place": "mac",
+   "boundary": "local",
+   "evidence": "unknown",
+   "act": "gives every tool the same material to work on",
+   "does": [
+    "hold examples"
+   ],
+   "takes": [
+    {
+     "type": "record",
+     "label": "a labelled example"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a few fixed examples"
+    }
+   ],
+   "asThird": {
+    "adds": "a fixed yardstick",
+    "then": "two results can be compared on the same material"
+   },
+   "gates": [
+    {
+     "label": "Exists",
+     "state": "unknown",
+     "detail": "You would choose it",
+     "src": "brief"
+    }
+   ],
+   "constraints": {},
+   "unknown": [
+    "What it contains"
+   ],
+   "sources": [
+    "brief"
+   ]
+  },
+  {
+   "id": "google-drive",
+   "name": "Google Drive",
+   "domain": "memory",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "installed",
+   "act": "stores files, documents and sheets",
+   "does": [
+    "store",
+    "share"
+   ],
+   "takes": [
+    {
+     "type": "file",
+     "label": "a file"
+    }
+   ],
+   "gives": [
+    {
+     "type": "file",
+     "label": "a stored document"
+    }
+   ],
+   "asThird": {
+    "adds": "a shareable copy",
+    "then": "someone else can open the result"
+   },
+   "gates": [
+    {
+     "label": "Connector",
+     "state": "pass",
+     "detail": "Installed and enabled; 45 tools exposed",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "auth": "OAuth scopes untested"
+   },
+   "unknown": [
+    "Granted scopes"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "fathom",
+   "name": "Fathom",
+   "domain": "meetings",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "installed",
+   "act": "supplies meeting records",
+   "does": [
+    "record",
+    "summarise"
+   ],
+   "takes": [],
+   "gives": [
+    {
+     "type": "text",
+     "label": "meeting notes"
+    }
+   ],
+   "asThird": {
+    "adds": "what people actually said",
+    "then": "it can be checked against a real conversation"
+   },
+   "gates": [
+    {
+     "label": "Tools",
+     "state": "pass",
+     "detail": "12 tools exposed; installation not separately confirmed",
+     "src": "index"
+    },
+    {
+     "label": "Source selection",
+     "state": "unknown",
+     "detail": "Authorisation and selection still matter",
+     "src": "connections"
+    }
+   ],
+   "constraints": {
+    "data": "Other people's words. Check before reuse."
+   },
+   "unknown": [
+    "Account authorisation"
+   ],
+   "sources": [
+    "index",
+    "connections"
+   ]
+  },
+  {
+   "id": "granola",
+   "name": "Granola",
+   "domain": "meetings",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "installed",
+   "act": "supplies meeting notes and transcripts",
+   "does": [
+    "record",
+    "summarise"
+   ],
+   "takes": [],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a meeting transcript"
+    }
+   ],
+   "asThird": {
+    "adds": "what people actually said",
+    "then": "it can be checked against a real conversation"
+   },
+   "gates": [
+    {
+     "label": "Connector",
+     "state": "pass",
+     "detail": "Installed and enabled; 17 tools exposed",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "data": "Other people's words. Check before reuse."
+   },
+   "unknown": [
+    "Account authorisation"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "descript",
+   "name": "Descript",
+   "domain": "meetings",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "installed",
+   "act": "edits video projects through their transcripts",
+   "does": [
+    "transcribe",
+    "edit"
+   ],
+   "takes": [
+    {
+     "type": "audio",
+     "label": "a recording"
+    },
+    {
+     "type": "media",
+     "label": "a video project"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "an editable transcript"
+    }
+   ],
+   "asThird": {
+    "adds": "an editable recording",
+    "then": "it can be cut and reshaped by editing words"
+   },
+   "gates": [
+    {
+     "label": "Connector",
+     "state": "pass",
+     "detail": "Installed and enabled; 18 tools exposed",
+     "src": "index"
+    }
+   ],
+   "constraints": {},
+   "unknown": [
+    "Project access"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "exa",
+   "name": "Exa",
+   "domain": "research",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "configured",
+   "act": "finds public evidence for a question",
+   "does": [
+    "retrieve",
+    "search"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a question"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a source-linked article"
+    }
+   ],
+   "asThird": {
+    "adds": "outside evidence",
+    "then": "something you did not already know can enter"
+   },
+   "gates": [
+    {
+     "label": "Credential",
+     "state": "pass",
+     "detail": "Stored; tools exposed",
+     "src": "index"
+    },
+    {
+     "label": "Allowance",
+     "state": "unknown",
+     "detail": "Advertised free allowance; account quota untested",
+     "src": "connections"
+    }
+   ],
+   "constraints": {
+    "cost": "Free allowance advertised; see Unlocks",
+    "data": "Your query leaves the machine"
+   },
+   "unknown": [
+    "Account-specific allowance"
+   ],
+   "sources": [
+    "index",
+    "connections"
+   ]
+  },
+  {
+   "id": "firecrawl",
+   "name": "Firecrawl",
+   "domain": "research",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "configured",
+   "act": "turns a URL into readable text",
+   "does": [
+    "retrieve",
+    "extract"
+   ],
+   "takes": [
+    {
+     "type": "url",
+     "label": "a page URL"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "readable page text"
+    }
+   ],
+   "asThird": {
+    "adds": "the full text of a page",
+    "then": "it can work from the source rather than a snippet"
+   },
+   "gates": [
+    {
+     "label": "Credential and plugin",
+     "state": "pass",
+     "detail": "Stored; plugin installed",
+     "src": "index"
+    },
+    {
+     "label": "Quota",
+     "state": "unknown",
+     "detail": "Live quota untested",
+     "src": "connections"
+    }
+   ],
+   "constraints": {
+    "cost": "Free allowance advertised; see Unlocks"
+   },
+   "unknown": [
+    "Live quota"
+   ],
+   "sources": [
+    "index",
+    "connections"
+   ]
+  },
+  {
+   "id": "consensus",
+   "name": "Consensus",
+   "domain": "research",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "installed",
+   "act": "searches scientific research",
+   "does": [
+    "retrieve",
+    "compare"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a research question"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "paper findings"
+    }
+   ],
+   "asThird": {
+    "adds": "published findings",
+    "then": "a hunch can meet what has been studied"
+   },
+   "gates": [
+    {
+     "label": "Tools",
+     "state": "pass",
+     "detail": "6 tools exposed; installation not separately confirmed",
+     "src": "index"
+    }
+   ],
+   "constraints": {},
+   "unknown": [
+    "Account limits"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "nous",
+   "name": "Nous",
+   "domain": "models",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "metadata-passed",
+   "act": "transforms, classifies or compares text, if a model route works",
+   "does": [
+    "transform",
+    "classify",
+    "compare"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a prompt"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a generated reading"
+    },
+    {
+     "type": "record",
+     "label": "a classification"
+    }
+   ],
+   "asThird": {
+    "adds": "a model's reading",
+    "then": "a pattern can be drawn out for you to accept or refuse"
+   },
+   "gates": [
+    {
+     "label": "Model catalog",
+     "state": "pass",
+     "detail": "385 entries returned by a metadata GET",
+     "src": "nous-csv"
+    },
+    {
+     "label": "Zero-price entries",
+     "state": "partial",
+     "detail": "5 candidates. Other limits may apply.",
+     "src": "remote"
+    },
+    {
+     "label": "Paid access",
+     "state": "fail",
+     "detail": "paid_access false; no active subscription",
+     "src": "remote"
+    },
+    {
+     "label": "Managed connector rollout",
+     "state": "pass",
+     "detail": "managed_tools true",
+     "src": "remote"
+    },
+    {
+     "label": "Free tool pool",
+     "state": "fail",
+     "detail": "tool_access.enabled false",
+     "src": "remote"
+    },
+    {
+     "label": "Connector catalog",
+     "state": "partial",
+     "detail": "54 entries in the catalog. This is a catalog.",
+     "src": "remote"
+    },
+    {
+     "label": "Connected accounts",
+     "state": "fail",
+     "detail": "0 connected accounts",
+     "src": "remote"
+    },
+    {
+     "label": "Inference",
+     "state": "unknown",
+     "detail": "No inference run",
+     "src": "remote"
+    }
+   ],
+   "constraints": {
+    "cost": "Paid access false; see Unlocks",
+    "data": "Prompts leave the machine"
+   },
+   "unknown": [
+    "Whether any zero-price model answers",
+    "Quota and policy limits"
+   ],
+   "sources": [
+    "remote",
+    "nous-csv"
+   ]
+  },
+  {
+   "id": "nvidia",
+   "name": "NVIDIA Free Endpoints",
+   "domain": "models",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "user-confirmed",
+   "act": "offers hosted models for prototyping, subject to account limits",
+   "does": [
+    "transform",
+    "compare"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a prompt"
+    },
+    {
+     "type": "record",
+     "label": "the same small dataset"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "several model readings"
+    }
+   ],
+   "asThird": {
+    "adds": "several model readings",
+    "then": "you can look at where interpretations disagree"
+   },
+   "gates": [
+    {
+     "label": "Free account",
+     "state": "pass",
+     "detail": "User-confirmed",
+     "src": "index"
+    },
+    {
+     "label": "Public endpoint IDs",
+     "state": "partial",
+     "detail": "84 IDs. This is not a list of free models.",
+     "src": "nvidia-csv"
+    },
+    {
+     "label": "Free Endpoint cards",
+     "state": "partial",
+     "detail": "45 of 105 site models; 23 of the 45 match the ID list",
+     "src": "nvidia-free-csv"
+    },
+    {
+     "label": "Per-account access",
+     "state": "unknown",
+     "detail": "Not tested; public data only by request",
+     "src": "remote"
+    },
+    {
+     "label": "Rate limits",
+     "state": "unknown",
+     "detail": "No exact allowance inferred",
+     "src": "remote"
+    }
+   ],
+   "constraints": {
+    "cost": "Free for prototyping per public docs; limits apply",
+    "data": "Prompts leave the machine"
+   },
+   "unknown": [
+    "Which endpoints this account can call",
+    "Rate limits"
+   ],
+   "sources": [
+    "remote",
+    "nvidia-csv",
+    "nvidia-free-csv"
+   ]
+  },
+  {
+   "id": "ollama",
+   "name": "Ollama on the home server",
+   "domain": "models",
+   "place": "home",
+   "boundary": "lan",
+   "evidence": "installed",
+   "act": "runs a local model, if one is pulled and the daemon is up",
+   "does": [
+    "transform",
+    "classify"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a prompt"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a local model reading"
+    }
+   ],
+   "asThird": {
+    "adds": "a private reading",
+    "then": "a model can read it without it leaving the network"
+   },
+   "gates": [
+    {
+     "label": "Executable",
+     "state": "pass",
+     "detail": "0.18.2 on the home server",
+     "src": "remote"
+    },
+    {
+     "label": "Daemon and models",
+     "state": "unknown",
+     "detail": "Local endpoint not verified",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "latency": "Not measured",
+    "deps": "A pulled model that fits the home server"
+   },
+   "unknown": [
+    "Which models are pulled",
+    "Quality on this hardware"
+   ],
+   "sources": [
+    "remote",
+    "index"
+   ]
+  },
+  {
+   "id": "elevenlabs",
+   "name": "ElevenLabs",
+   "domain": "sound",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "configured",
+   "act": "turns selected text into audio",
+   "does": [
+    "speak",
+    "render"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a short script"
+    }
+   ],
+   "gives": [
+    {
+     "type": "audio",
+     "label": "spoken audio"
+    }
+   ],
+   "asThird": {
+    "adds": "a voice",
+    "then": "it can be listened to on a walk rather than read at a desk"
+   },
+   "gates": [
+    {
+     "label": "Keys",
+     "state": "pass",
+     "detail": "Nonempty assignments in project dotenv files",
+     "src": "index"
+    },
+    {
+     "label": "Credits and voice permissions",
+     "state": "unknown",
+     "detail": "Current plan unknown; no call made",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "cost": "Plan unknown; see Unlocks",
+    "data": "The script leaves the machine"
+   },
+   "unknown": [
+    "Current plan and credits",
+    "Whether a call succeeds"
+   ],
+   "sources": [
+    "index",
+    "connections"
+   ]
+  },
+  {
+   "id": "deepgram",
+   "name": "Deepgram",
+   "domain": "sound",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "configured",
+   "act": "turns speech into text",
+   "does": [
+    "transcribe"
+   ],
+   "takes": [
+    {
+     "type": "audio",
+     "label": "a voice recording"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a transcript"
+    }
+   ],
+   "asThird": {
+    "adds": "spoken input",
+    "then": "you could start it by talking"
+   },
+   "gates": [
+    {
+     "label": "Key",
+     "state": "pass",
+     "detail": "Stored",
+     "src": "index"
+    },
+    {
+     "label": "Transcription",
+     "state": "unknown",
+     "detail": "No request made",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "data": "Audio leaves the machine"
+   },
+   "unknown": [
+    "Validity and quota"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "shazam",
+   "name": "Shazam",
+   "domain": "sound",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "installed",
+   "act": "identifies music",
+   "does": [
+    "identify"
+   ],
+   "takes": [
+    {
+     "type": "audio",
+     "label": "a snippet of sound"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a track identification"
+    }
+   ],
+   "asThird": {
+    "adds": "the sound of a place",
+    "then": "what was playing becomes part of the record"
+   },
+   "gates": [
+    {
+     "label": "Tools",
+     "state": "pass",
+     "detail": "10 tools exposed; installation not separately confirmed",
+     "src": "index"
+    }
+   ],
+   "constraints": {},
+   "unknown": [
+    "Input route"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "spotify",
+   "name": "Spotify",
+   "domain": "sound",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "installed",
+   "act": "holds music and playlists",
+   "does": [
+    "play",
+    "collect"
+   ],
+   "takes": [
+    {
+     "type": "record",
+     "label": "a list of tracks"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a playlist"
+    }
+   ],
+   "asThird": {
+    "adds": "a soundtrack",
+    "then": "it gains a mood you can hear"
+   },
+   "gates": [
+    {
+     "label": "Tools",
+     "state": "pass",
+     "detail": "12 tools exposed; installation not separately confirmed",
+     "src": "index"
+    }
+   ],
+   "constraints": {},
+   "unknown": [
+    "Account authorisation"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "unsplash",
+   "name": "Unsplash",
+   "domain": "images",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "configured",
+   "act": "finds public images for a word or phrase",
+   "does": [
+    "retrieve"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a search phrase"
+    }
+   ],
+   "gives": [
+    {
+     "type": "media",
+     "label": "a public image"
+    }
+   ],
+   "asThird": {
+    "adds": "a picture",
+    "then": "an abstract result gets a concrete image"
+   },
+   "gates": [
+    {
+     "label": "Key",
+     "state": "pass",
+     "detail": "Stored",
+     "src": "index"
+    },
+    {
+     "label": "Search",
+     "state": "unknown",
+     "detail": "No request made",
+     "src": "index"
+    }
+   ],
+   "constraints": {},
+   "unknown": [
+    "Validity and rate limits"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "agent-vps",
+   "name": "Agent on a rented server",
+   "domain": "agents",
+   "place": "vps",
+   "boundary": "own-cloud",
+   "evidence": "configured",
+   "act": "keeps a worker running and coordinates tasks",
+   "does": [
+    "persist",
+    "coordinate",
+    "propose"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a task message"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a job or result record"
+    }
+   ],
+   "asThird": {
+    "adds": "persistence",
+    "then": "it can keep going while your laptop is closed"
+   },
+   "gates": [
+    {
+     "label": "Gateway",
+     "state": "pass",
+     "detail": "Agent gateway running; a chat connector is configured",
+     "src": "remote"
+    },
+    {
+     "label": "Provider and model",
+     "state": "partial",
+     "detail": "Nous selected; openai/gpt-6.1-terra configured. This does not establish successful inference.",
+     "src": "remote"
+    },
+    {
+     "label": "Bundled support",
+     "state": "partial",
+     "detail": "107 manifests, 59 toolsets, 60 SKILL.md files. Bundled is not configured.",
+     "src": "remote"
+    },
+    {
+     "label": "Custom plugins",
+     "state": "fail",
+     "detail": "Directory empty",
+     "src": "remote"
+    },
+    {
+     "label": "MCP servers",
+     "state": "fail",
+     "detail": "No entries in the inspected root config",
+     "src": "remote"
+    },
+    {
+     "label": "End-to-end task",
+     "state": "unknown",
+     "detail": "A running gateway is not a task test",
+     "src": "remote"
+    }
+   ],
+   "constraints": {
+    "cost": "Existing server cost; amount not in the packet",
+    "deps": "Depends on a model route that works"
+   },
+   "unknown": [
+    "Whether the configured model answers"
+   ],
+   "sources": [
+    "remote",
+    "remote-json"
+   ]
+  },
+  {
+   "id": "home-server",
+   "name": "Home server tools",
+   "domain": "agents",
+   "place": "home",
+   "boundary": "lan",
+   "evidence": "installed",
+   "act": "runs native tools and local programs",
+   "does": [
+    "run",
+    "execute"
+   ],
+   "takes": [
+    {
+     "type": "record",
+     "label": "a bounded job"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "a local command result"
+    }
+   ],
+   "asThird": {
+    "adds": "a local worker",
+    "then": "a native step can happen on hardware you own"
+   },
+   "gates": [
+    {
+     "label": "SSH",
+     "state": "pass",
+     "detail": "Reachable on the LAN",
+     "src": "remote"
+    },
+    {
+     "label": "CLIs",
+     "state": "pass",
+     "detail": "Several executables, including an agent, Shortcuts and Ollama",
+     "src": "remote"
+    },
+    {
+     "label": "Custom agent plugins",
+     "state": "unknown",
+     "detail": "Plugin directories exist; enabled state unverified",
+     "src": "remote"
+    },
+    {
+     "label": "Tool runs",
+     "state": "unknown",
+     "detail": "Not exhaustively tested",
+     "src": "remote"
+    }
+   ],
+   "constraints": {
+    "auth": "SSH reachability is not a permission model"
+   },
+   "unknown": [
+    "Credentials per tool",
+    "Service health"
+   ],
+   "sources": [
+    "remote",
+    "remote-json"
+   ]
+  },
+  {
+   "id": "telegram",
+   "name": "Telegram bot",
+   "domain": "work",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "configured",
+   "act": "carries short messages to and from a bot",
+   "does": [
+    "notify",
+    "receive"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a short message"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "a message you sent"
+    }
+   ],
+   "asThird": {
+    "adds": "a pocket entry point",
+    "then": "you can reach it from your phone"
+   },
+   "gates": [
+    {
+     "label": "Bot tokens",
+     "state": "pass",
+     "detail": "Stored. Different tokens are separate identities.",
+     "src": "index"
+    },
+    {
+     "label": "Send",
+     "state": "unknown",
+     "detail": "No message sent",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "data": "Messages leave the machine"
+   },
+   "unknown": [
+    "Which bot"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "linear",
+   "name": "Linear",
+   "domain": "work",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "installed",
+   "act": "tracks issues and projects",
+   "does": [
+    "track"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "an issue draft"
+    }
+   ],
+   "gives": [
+    {
+     "type": "record",
+     "label": "open issues"
+    }
+   ],
+   "asThird": {
+    "adds": "follow-through",
+    "then": "it becomes something tracked rather than remembered"
+   },
+   "gates": [
+    {
+     "label": "Connector",
+     "state": "pass",
+     "detail": "Installed and enabled; 91 tools exposed",
+     "src": "index"
+    }
+   ],
+   "constraints": {},
+   "unknown": [
+    "Scopes"
+   ],
+   "sources": [
+    "index"
+   ]
+  },
+  {
+   "id": "gmail",
+   "name": "Gmail",
+   "domain": "work",
+   "place": "hosted",
+   "boundary": "vendor",
+   "evidence": "installed",
+   "act": "holds email and can prepare drafts",
+   "does": [
+    "search",
+    "draft"
+   ],
+   "takes": [
+    {
+     "type": "text",
+     "label": "a draft"
+    }
+   ],
+   "gives": [
+    {
+     "type": "text",
+     "label": "an email thread"
+    }
+   ],
+   "asThird": {
+    "adds": "a draft to someone",
+    "then": "it can become a message you choose to send"
+   },
+   "gates": [
+    {
+     "label": "Connector",
+     "state": "pass",
+     "detail": "Installed and enabled; 21 tools exposed",
+     "src": "index"
+    }
+   ],
+   "constraints": {
+    "data": "Other people's words"
+   },
+   "unknown": [
+    "Scopes"
+   ],
+   "sources": [
+    "index"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "checked": "2026-11-06",
+    "note": "Provider-listed prices from the supplied evidence, checked 6 November 2026. Not rechecked after that date. Taxes not stated in the evidence. Nothing here was purchased or activated. Your current plan may already cover some of these."
+  },
+  "offers": [
+    {
+      "id": "glue-script", "name": "Home server + a small handoff script", "vendor": "Your own time", "kind": "glue",
+      "prices": [{ "basis": "none", "amount": 0, "currency": "USD", "label": "No new service fee established" }],
+      "conditions": "Implementation time remains. No cross-host worker or native action was activated.",
+      "setup": "An evening or more: write a job format, a read-only worker and a result check.",
+      "dependencies": ["Identity and permissions between hosts", "A recovery rule for failed jobs"],
+      "source": "connections", "checked": "2026-11-06"
+    },
+    {
+      "id": "exa-free", "name": "Exa free API allowance", "vendor": "Exa", "kind": "grant",
+      "prices": [{ "basis": "free-allowance", "amount": 0, "currency": "USD", "label": "USD 0; advertises USD 10 monthly credits plus onboarding credit" }],
+      "conditions": "Existing key found. Account-specific allowance not checked.",
+      "setup": "None if the key works; test with one query.",
+      "dependencies": ["A valid key"],
+      "url": "https://exa.ai/pricing", "checked": "2026-11-06"
+    },
+    {
+      "id": "firecrawl-free", "name": "Firecrawl free allowance", "vendor": "Firecrawl", "kind": "grant",
+      "prices": [{ "basis": "free-allowance", "amount": 0, "currency": "USD", "label": "USD 0; 1,000 credits per month" }],
+      "conditions": "Some formats cost more credits. Live quota untested.",
+      "setup": "None if the key works.",
+      "dependencies": ["A valid key"],
+      "url": "https://www.firecrawl.dev/pricing", "checked": "2026-11-06"
+    },
+    {
+      "id": "elevenlabs-starter", "name": "ElevenLabs Starter", "vendor": "ElevenLabs", "kind": "new-capability",
+      "prices": [{ "basis": "monthly", "amount": 6, "currency": "USD", "label": "USD 6 per month after the displayed first-month offer" }],
+      "conditions": "Current plan unknown; an existing subscription may already include it. API and product billing differ.",
+      "setup": "Check the current plan first, then one test call.",
+      "dependencies": ["Permission to reuse the source material"],
+      "url": "https://elevenlabs.io/pricing", "checked": "2026-11-06"
+    },
+    {
+      "id": "firecrawl-hobby", "name": "Firecrawl Hobby", "vendor": "Firecrawl", "kind": "more-quota",
+      "prices": [
+        { "basis": "monthly", "amount": 19, "currency": "USD", "label": "USD 19 per month" },
+        { "basis": "annual-equivalent", "amount": 16, "currency": "USD", "label": "USD 16 per month equivalent, billed yearly" }
+      ],
+      "conditions": "Primarily buys volume and concurrency, not a new capability.",
+      "setup": "Only worth it once a working prototype actually hits the free limit.",
+      "dependencies": ["A working prototype that hits the limit"],
+      "url": "https://www.firecrawl.dev/pricing", "checked": "2026-11-06"
+    },
+    {
+      "id": "nous-plus", "name": "Nous Plus", "vendor": "Nous Research", "kind": "new-capability",
+      "prices": [{ "basis": "monthly", "amount": 20, "currency": "USD", "label": "USD 20 per month" }],
+      "conditions": "Usage within daily, weekly and monthly limits. Existing server cost does not automatically disappear.",
+      "setup": "Change the account gate, then test one call from the agent.",
+      "dependencies": ["A measured model-access or hosting bottleneck"],
+      "url": "https://portal.nousresearch.com/manage-subscription", "checked": "2026-11-06"
+    },
+    {
+      "id": "nous-api", "name": "Nous direct API keys", "vendor": "Nous Research", "kind": "more-quota",
+      "prices": [{ "basis": "usage", "amount": null, "currency": "USD", "label": "Pay as you go; rate not in the evidence" }],
+      "conditions": "Cannot be compared with a fixed budget until a rate and a usage estimate exist.",
+      "setup": "Unknown until rates are checked.",
+      "dependencies": ["A usage estimate"],
+      "url": "https://portal.nousresearch.com/manage-subscription", "checked": "2026-11-06"
+    }
+  ],
+  "opportunities": [
+    {
+      "id": "op-bridge-first", "goal": "Build an integrated personal system",
+      "outcome": "A cloud agent can ask for one bounded native task",
+      "existing": ["agent-vps", "home-server"], "missing": "A job and result contract",
+      "offer": "glue-script", "change": "A piece of glue removes the bottleneck. A larger model plan would not.",
+      "test": "A proposed read-only job that returns executable availability, without adding a service",
+      "bridge": "agent-home"
+    },
+    {
+      "id": "op-evidence", "goal": "Discover ideas",
+      "outcome": "A curiosity prompt backed by public evidence",
+      "existing": ["exa", "obsidian"], "missing": "A public-evidence input that costs nothing new",
+      "offer": "exa-free", "change": "A free grant may already cover this. Check before paying for anything.",
+      "test": "Run one question by hand and link one result to one old note",
+      "bridge": "field-guide"
+    },
+    {
+      "id": "op-articles", "goal": "Learn",
+      "outcome": "A few selected articles become linked notes",
+      "existing": ["firecrawl", "obsidian"], "missing": "URL-to-readable-text for small prototypes",
+      "offer": "firecrawl-free", "change": "A free allowance covers a handful of pages.",
+      "test": "Convert three chosen URLs and keep only the passages you would quote",
+      "bridge": "articles-free"
+    },
+    {
+      "id": "op-licensed-voice", "goal": "Deliver client work",
+      "outcome": "A narrated recap you are allowed to hand to a client",
+      "existing": ["fathom", "elevenlabs"], "missing": "Commercial licensing for the voice",
+      "offer": "elevenlabs-starter", "change": "A new right, not more volume. Your current plan may already include it.",
+      "test": "Check the plan page, then narrate one invented recap",
+      "bridge": "client-recap"
+    },
+    {
+      "id": "op-volume", "goal": "Learn",
+      "outcome": "A larger monthly reading sweep",
+      "existing": ["firecrawl", "obsidian"], "missing": "More extraction capacity",
+      "offer": "firecrawl-hobby", "change": "More quota for an existing capability. Nothing new becomes possible.",
+      "test": "First show the free allowance is the actual limit",
+      "bridge": "articles-sweep"
+    },
+    {
+      "id": "op-paid-route", "goal": "Build an integrated personal system",
+      "outcome": "The agent reaches paid-model routes within included limits",
+      "existing": ["agent-vps", "nous"], "missing": "Paid access, which the account reports as false",
+      "offer": "nous-plus", "change": "Opens a gate, but only worth it after a zero-price model has been tried.",
+      "test": "Try one zero-price candidate first and write down what it could not do",
+      "bridge": "agent-paid"
+    },
+    {
+      "id": "op-usage", "goal": "Build an integrated personal system",
+      "outcome": "Direct model calls without a subscription",
+      "existing": ["nous"], "missing": "A fixed price to compare",
+      "offer": "nous-api", "change": "More quota, billed by use. This cannot be placed inside a fixed budget yet.",
+      "test": "Find the rate, then estimate one week of calls",
+      "bridge": null
+    }
+  ]
+}

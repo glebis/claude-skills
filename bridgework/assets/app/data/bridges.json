@@ -1,0 +1,281 @@
+{
+  "meta": {
+    "note": "Authored example proposals seeded from the source packet. None was implemented or tested. These are not correct answers."
+  },
+  "seeds": [
+    {
+      "id": "watch-voice", "from": "apple-health", "to": "elevenlabs", "kind": "practical", "goal": "Make creative work",
+      "title": "A spoken reflection that shifts with the day",
+      "outcome": "A short voice note whose emphasis changes with the day's activity.",
+      "middle": { "label": "Local reviewed export and aggregation", "kind": "human review + script" },
+      "dependency": "A local reviewed export route, and a working voice quota and call.",
+      "why": ["Named in the source packet as a grounded combination.", "A personal signal meets an output you can listen to, away from a screen."],
+      "unknown": ["No verified export route from Health to a local tool", "ElevenLabs plan and credits", "Whether a spoken summary feels useful or creepy"],
+      "test": "Write one synthetic activity summary and one script by hand. Generate nothing yet: read it aloud and judge it.",
+      "success": "You would want to hear tomorrow's.",
+      "source": "connections",
+      "variants": {
+        "local": {
+          "title": "A written reflection that never leaves the network",
+          "outcome": "A local model drafts the reflection and you read it. The inventory holds no local voice, so the audio is lost.",
+          "middle": { "label": "Local aggregation, then a local prompt", "kind": "script" },
+          "parts": ["apple-health", "ollama"],
+          "unknown": ["No verified export route from Health", "Which local model is pulled"]
+        }
+      },
+      "thirds": {
+        "apple-calendar": { "outcome": "The reflection reads activity against what the calendar said the day would be: planned versus lived.", "adds": "contrast between plan and day" },
+        "google-calendar": { "outcome": "The reflection reads activity against what the calendar said the day would be: planned versus lived.", "adds": "contrast between plan and day" },
+        "obsidian": { "outcome": "Each reflection is kept as a note, so a month of them can be read back as a diary you never wrote.", "adds": "a diary that accumulates" },
+        "spotify": { "outcome": "The reflection ends with a track whose mood contrasts with the day, as a small provocation rather than a report.", "adds": "a soundtrack that argues with the numbers" }
+      },
+      "reverse": {
+        "title": "Say it first, then watch the day answer",
+        "outcome": "A spoken prompt in the morning, then a look at whether the evening aggregate moved. Nothing is written to the device.",
+        "middle": { "label": "A person listens, moves or does not, then reads the aggregate", "kind": "human" },
+        "why": ["The arrow now runs from voice to body, and the only bridge is you."]
+      }
+    },
+    {
+      "id": "watch-narrator", "from": "apple-health", "to": "elevenlabs", "kind": "playful", "goal": "Make creative work",
+      "title": "Your legs hire a narrator",
+      "outcome": "A nature-documentary voice describes your day as if you were a rare animal seen from a hide.",
+      "middle": { "label": "Pick one number; write the line yourself", "kind": "human" },
+      "dependency": "One hand-picked number and a voice call that works.",
+      "why": ["A deliberate mismatch of register: dry measurements in a dramatic voice."],
+      "unknown": ["Whether it stays funny on day three"],
+      "test": "Write three narrator lines for a made-up step count. Read them aloud to someone.",
+      "success": "Somebody laughs, or you learn why they did not.",
+      "source": "brief"
+    },
+    {
+      "id": "decision-ritual", "from": "fathom", "to": "shortcuts", "kind": "practical", "goal": "Build an integrated personal system",
+      "title": "One unresolved decision at the end of the day",
+      "outcome": "A physical closing ritual: at a local moment you chose, one open decision from a meeting appears.",
+      "middle": { "label": "Retrieve one selected note, turn it into a local action", "kind": "human review + script" },
+      "dependency": "A note-to-action step and an approved trigger. No automatic messages or calendar writes.",
+      "why": ["Named in the source packet.", "Text from a hosted record becomes something that happens in the room."],
+      "unknown": ["Which shortcuts exist on the home server", "Whether Fathom notes can be selected this way"],
+      "test": "Choose one meeting and draft the action without running it.",
+      "success": "You can say what you would have done differently tonight.",
+      "source": "connections",
+      "variants": {
+        "local": {
+          "title": "Copy the decision by hand into a local ritual",
+          "outcome": "You paste one decision into a local shortcut yourself. Nothing is fetched from a hosted service.",
+          "middle": { "label": "Your hands are the bridge", "kind": "human" },
+          "parts": ["obsidian", "shortcuts"],
+          "unknown": ["Whether copying by hand survives a busy week"]
+        }
+      },
+      "thirds": {
+        "apple-calendar": { "outcome": "The decision appears in the first real gap after your last meeting rather than at a fixed hour.", "adds": "a moment that moves with the day" },
+        "elevenlabs": { "outcome": "The room speaks the open decision aloud, once, in a voice you picked.", "adds": "a voice in the room" }
+      },
+      "reverse": {
+        "title": "End the day by writing the question for tomorrow's meeting",
+        "outcome": "A local ritual captures one question that you carry into the next meeting. It stays a personal note: nothing is sent into Fathom.",
+        "middle": { "label": "You carry it", "kind": "human" },
+        "why": ["Fathom accepts nothing here, so the reversed arrow runs through a person."]
+      }
+    },
+    {
+      "id": "disagreement", "from": "small-dataset", "to": "nvidia", "kind": "playful", "goal": "Learn",
+      "title": "A model disagreement exhibit",
+      "outcome": "The same few examples, several readings side by side. You invent a use for the differences.",
+      "middle": { "label": "A controlled benchmark runner", "kind": "script" },
+      "dependency": "A runner, plus checking free access and rate limits before any call.",
+      "why": ["Named in the source packet.", "Differences between models are treated as material rather than noise."],
+      "unknown": ["Which Free Endpoint cards this account can call", "Rate limits", "Whether a card's catalog ID is its inference ID"],
+      "test": "Define three questions and a comparison rubric before making any calls.",
+      "success": "You can predict one disagreement before you see it.",
+      "source": "connections",
+      "variants": {
+        "local": {
+          "title": "A disagreement between local models",
+          "outcome": "Two locally pulled models read the same examples. The range of voices is probably narrower.",
+          "middle": { "label": "A loop over local models", "kind": "script" },
+          "parts": ["small-dataset", "ollama"],
+          "unknown": ["Which models are pulled on the home server"]
+        }
+      },
+      "thirds": {
+        "elevenlabs": { "outcome": "Each model's reading gets its own voice, so the exhibit becomes a short radio play of disagreement.", "adds": "a cast of voices" },
+        "nous": { "outcome": "A zero-price Nous candidate joins, so the exhibit spans two providers' habits rather than one catalog.", "adds": "a second provider's habits" }
+      }
+    },
+    {
+      "id": "field-guide", "from": "exa", "to": "obsidian", "kind": "practical", "goal": "Discover ideas",
+      "title": "A new article meets an old note",
+      "outcome": "One written guide connecting a fresh article to something you already care about.",
+      "middle": { "label": "Retrieval, source acceptance and editorial selection", "kind": "human review" },
+      "dependency": "You choose the article and the note. An API key does not imply vault access.",
+      "why": ["Named in the source packet.", "Outside evidence meets personal context."],
+      "unknown": ["Exa account allowance", "A programmatic route into the vault"],
+      "test": "Make one short written guide using one article and one selected note.",
+      "success": "The old note means something slightly different afterwards.",
+      "source": "connections",
+      "offer": "exa-free",
+      "thirds": {
+        "elevenlabs": { "outcome": "A personal audio field guide: three minutes on a walk that connect a new article to an old note.", "adds": "a walking format" },
+        "unsplash": { "outcome": "The guide opens with one image chosen to disagree with the text.", "adds": "an image that argues" }
+      }
+    },
+    {
+      "id": "agent-home", "from": "agent-vps", "to": "home-server", "kind": "practical", "goal": "Build an integrated personal system",
+      "title": "The cloud proposes, the home server does",
+      "outcome": "An agent proposes work in the cloud and asks a local worker for one bounded native task.",
+      "middle": { "label": "An explicit job and result contract", "kind": "contract + script" },
+      "dependency": "Job schema, identity, permitted actions, idempotency, recovery and result checking.",
+      "why": ["Named in the source packet.", "SSH reachability alone is not this system."],
+      "unknown": ["Whether the configured model answers", "How failures are recovered"],
+      "test": "A proposed read-only job that returns executable availability, without adding a service.",
+      "success": "A job fails on purpose and the record says why.",
+      "source": "connections",
+      "offer": "glue-script",
+      "thirds": {
+        "shortcuts": { "outcome": "The bounded task becomes a native action on Apple hardware, which the Linux host could never do itself.", "adds": "native Apple actions" },
+        "telegram": { "outcome": "You approve each job from your phone before the home server runs it.", "adds": "a human approval step" }
+      },
+      "reverse": {
+        "title": "The home server asks the cloud to keep watch",
+        "outcome": "The local machine hands a long, boring wait to a host that does not sleep, and reads the result in the morning.",
+        "middle": { "label": "The same contract, in the other direction", "kind": "contract + script" },
+        "why": ["Reversing shows which side needs to be reachable. A LAN host calling out needs no open port."]
+      }
+    },
+    {
+      "id": "gap-prompt", "from": "google-calendar", "to": "notes-index", "kind": "question", "goal": "Learn",
+      "title": "What could you observe in this gap?",
+      "outcome": "A free moment becomes one concrete observation prompt. It stays a draft suggestion, with no calendar write.",
+      "middle": { "label": "A rule matching time and context to a question", "kind": "script" },
+      "dependency": "A research map that exists, and a matching rule.",
+      "why": ["Named in the source packet.", "Time context is usually read for scheduling, seldom for curiosity."],
+      "unknown": ["Whether the map exists yet", "Whether prompts are welcome in a free moment"],
+      "test": "Draft three prompts for an existing gap. Do not create events.",
+      "success": "You actually do one of them.",
+      "source": "connections",
+      "variants": {
+        "local": {
+          "title": "The same prompt from the native calendar",
+          "outcome": "Apple Calendar supplies the gap through the local script, so the matching stays on your machines.",
+          "middle": { "label": "A local matching rule", "kind": "script" },
+          "parts": ["apple-calendar", "notes-index"],
+          "unknown": ["Whether the calendar script runs"]
+        }
+      }
+    },
+    {
+      "id": "image-cue", "from": "apple-photos", "to": "notes-index", "kind": "practical", "goal": "Learn",
+      "title": "A personal image becomes a memory cue",
+      "outcome": "One photo you chose becomes a visual explanation for a question you are following.",
+      "middle": { "label": "Selection, transformation and narrative judgement", "kind": "human" },
+      "dependency": "Explicit selection of one non-private image.",
+      "why": ["Named in the source packet."],
+      "unknown": ["Photos access", "Whether the map exists yet"],
+      "test": "Use one explicitly selected non-private image and draft two interpretations.",
+      "success": "You remember the question a week later because of the picture.",
+      "source": "connections"
+    },
+    {
+      "id": "health-export", "from": "apple-health", "to": "health-db", "kind": "practical", "goal": "Build an integrated personal system",
+      "title": "A deliberate manual export",
+      "outcome": "You export a selection by hand, review it and import it. No automatic route is implied.",
+      "middle": { "label": "A manual export you review", "kind": "export + human review" },
+      "dependency": "An export format and an importer, neither of which is established.",
+      "why": ["The direct route is explicitly unverified, so the only honest bridge is a person doing it once."],
+      "unknown": ["Export format", "Whether the script's schema fits"],
+      "test": "List the columns you would want. Export nothing yet.",
+      "success": "You can name the one column you actually need.",
+      "source": "remote"
+    },
+    {
+      "id": "client-recap", "from": "fathom", "to": "elevenlabs", "kind": "practical", "goal": "Deliver client work",
+      "title": "A narrated recap for a client",
+      "outcome": "A short recap in a licensed voice, built from notes the client has approved for reuse.",
+      "middle": { "label": "Rewrite and permission check", "kind": "human review" },
+      "dependency": "Client permission, and a plan with commercial licensing.",
+      "why": ["The published plan adds commercial licensing, which is what this outcome needs."],
+      "unknown": ["Whether the current plan already includes it"],
+      "test": "Check the plan page, then narrate one invented recap.",
+      "success": "You would send it without an apology.",
+      "source": "connections",
+      "offer": "elevenlabs-starter"
+    },
+    {
+      "id": "agent-paid", "from": "agent-vps", "to": "nous", "kind": "practical", "goal": "Build an integrated personal system",
+      "title": "A persistent agent on an included route",
+      "outcome": "The agent uses included paid-model routes within daily, weekly and monthly limits.",
+      "middle": { "label": "Paid access enabled on the account", "kind": "plan change" },
+      "dependency": "The account currently reports paid access false. A measured bottleneck should come first.",
+      "why": ["Removes a named gate, but is worth it only if a zero-price model has failed a real task."],
+      "unknown": ["Whether any zero-price model is enough", "Whether the configured model answers"],
+      "test": "Try one zero-price candidate first and write down what it could not do.",
+      "success": "You can name the task that needs the paid route.",
+      "source": "connections",
+      "offer": "nous-plus"
+    },
+    {
+      "id": "agent-free", "from": "agent-vps", "to": "nous", "kind": "question", "goal": "Learn",
+      "title": "What can a zero-price model not do?",
+      "outcome": "Before paying, find the real edge of the five zero-price candidates.",
+      "middle": { "label": "A small task list and a written verdict", "kind": "human review" },
+      "dependency": "A zero-price entry that answers. Other limits may apply.",
+      "why": ["Five entries have zero prompt and completion prices. That is a candidate, not a test."],
+      "unknown": ["Inference has not been tried"],
+      "test": "Write the three tasks first. Run nothing yet.",
+      "success": "You have a task list you would use on any model.",
+      "source": "remote"
+    },
+    {
+      "id": "articles-free", "from": "firecrawl", "to": "obsidian", "kind": "practical", "goal": "Learn",
+      "title": "A few articles become linked notes",
+      "outcome": "Three chosen pages become readable notes. You keep only the passages you would quote.",
+      "middle": { "label": "Your selection of passages", "kind": "human review" },
+      "dependency": "A route into the vault, or pasting by hand.",
+      "why": ["The free allowance covers small prototypes."],
+      "unknown": ["Live quota", "Credits per format"],
+      "test": "Convert three chosen URLs and keep only the passages you would quote.",
+      "success": "You link one passage to an existing note.",
+      "source": "connections",
+      "offer": "firecrawl-free"
+    },
+    {
+      "id": "articles-sweep", "from": "firecrawl", "to": "obsidian", "kind": "practical", "goal": "Learn",
+      "title": "A larger monthly reading sweep",
+      "outcome": "Many more pages per month. This is more of the same, not a new capability.",
+      "middle": { "label": "A list of pages and a filter", "kind": "script" },
+      "dependency": "Evidence that a working prototype hit the free limit.",
+      "why": ["Listed as an alternative. It buys volume and concurrency."],
+      "unknown": ["Whether you read that much"],
+      "test": "First show the free allowance is the real limit.",
+      "success": "You can show a month where the limit stopped you.",
+      "source": "connections",
+      "offer": "firecrawl-hobby"
+    },
+    {
+      "id": "three-readings", "from": "granola", "to": "nvidia", "kind": "question", "goal": "Discover ideas",
+      "title": "What did three readers hear in the same meeting?",
+      "outcome": "One anonymised transcript, read by several models. Where they diverge may show what the meeting left unclear.",
+      "middle": { "label": "Anonymise, then a fixed prompt", "kind": "human review + script" },
+      "dependency": "Permission to reuse the transcript, and access to more than one endpoint.",
+      "why": ["Disagreement between readers can be a signal about the source."],
+      "unknown": ["Which endpoints this account can call"],
+      "test": "Write the fixed prompt and predict the disagreement. Call nothing.",
+      "success": "You find a question you should have asked in the meeting.",
+      "source": "brief"
+    }
+  ],
+  "swaps": [
+    { "from": "elevenlabs", "to": "nvidia", "label": "Use a public Free Endpoint voice card (magpie-tts-zeroshot)", "gain": "No new subscription", "loss": "Voice quality and rights unknown; still hosted", "unknown": "The card is not matched to the public ID list; account access untested", "source": "nvidia-free-csv" },
+    { "from": "nvidia", "to": "ollama", "label": "Use a local model on the home server", "gain": "Data stays on the network; no rate limit from a provider", "loss": "Fewer and smaller models; less disagreement to observe", "unknown": "Daemon not verified; models pulled unknown", "source": "index" },
+    { "from": "nous", "to": "ollama", "label": "Use a local model on the home server", "gain": "Data stays on the network", "loss": "Smaller catalog", "unknown": "Daemon not verified; models pulled unknown", "source": "index" },
+    { "from": "nous", "to": "nvidia", "label": "Use a Free Endpoint card", "gain": "A free account already exists", "loss": "Different catalog; the IDs differ", "unknown": "Per-account access and limits untested", "source": "remote" },
+    { "from": "exa", "to": "firecrawl", "label": "Fetch a page you already found", "gain": "Whole pages rather than search results", "loss": "You have to find the URL yourself", "unknown": "Live quota untested", "source": "connections" },
+    { "from": "fathom", "to": "granola", "label": "Use the other meeting record", "gain": "Connector shown as installed and enabled", "loss": "Different meetings may be covered", "unknown": "Which meetings exist in each", "source": "index" },
+    { "from": "granola", "to": "fathom", "label": "Use the other meeting record", "gain": "A second record of the same habit", "loss": "Installation not separately confirmed", "unknown": "Which meetings exist in each", "source": "index" },
+    { "from": "google-calendar", "to": "apple-calendar", "label": "Use the native calendar", "gain": "Runs on the home server; no vendor connector in the path", "loss": "Depends on a script that has not been run", "unknown": "Native permission and account configuration", "source": "index" },
+    { "from": "agent-vps", "to": "home-server", "label": "Run the worker at home", "gain": "Native Apple tools; data stays on the network", "loss": "Sleeps, moves and loses power with your home", "unknown": "The agent's provider on the home server has no identified default model", "source": "remote" },
+    { "from": "deepgram", "to": "descript", "label": "Use the editor's transcript", "gain": "An editable transcript", "loss": "Heavier workflow for a single voice note", "unknown": "Project access", "source": "index" }
+  ]
+}
