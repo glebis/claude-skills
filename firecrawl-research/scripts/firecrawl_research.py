@@ -18,7 +18,7 @@ SKILL_DIR = Path(__file__).parent.parent
 load_dotenv(SKILL_DIR / '.env')
 
 FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY')
-FIRECRAWL_BASE_URL = 'https://api.firecrawl.dev/v1'
+FIRECRAWL_BASE_URL = 'https://api.firecrawl.dev/v2'
 
 # Free tier: 5 requests/minute
 RATE_LIMIT_DELAY = 12  # seconds between requests
@@ -87,7 +87,7 @@ def search_firecrawl(query, limit=5):
 
     if response.status_code == 200:
         data = response.json()
-        return data.get('data', [])
+        return data.get('data', {}).get('web', [])
     else:
         print(f"Error {response.status_code}: {response.text}")
         return []
