@@ -201,7 +201,7 @@ pip install python-dotenv requests
 ```
 
 **FireCrawl Features Used:**
-- `/v1/search` endpoint - Search with automatic scraping
+- `/v2/search` endpoint - Search with automatic scraping
 - `scrapeOptions.formats: ['markdown']` - Markdown output
 - `scrapeOptions.onlyMainContent: true` - Filter noise
 

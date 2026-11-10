@@ -317,7 +317,7 @@ def run(address, options, max_credits=None, ledger_path=None, budget=None, after
 def search(query, limit=5, fmt="markdown"):
     """Search the web and return scraped results."""
     r = requests.post(
-        f"{BASE}/search",
+        f"{BASE_V2}/search",
         headers=HEADERS,
         timeout=120,
         json={
@@ -332,7 +332,7 @@ def search(query, limit=5, fmt="markdown"):
     if r.status_code != 200:
         die(f"Search failed ({r.status_code}): {r.text}")
 
-    results = r.json().get("data", [])
+    results = r.json().get("data", {}).get("web", [])
 
     if fmt == "json":
         print(json.dumps(results, indent=2, ensure_ascii=False))
@@ -357,7 +357,7 @@ def search(query, limit=5, fmt="markdown"):
 def scrape(url, fmt="markdown"):
     """Scrape a single URL and return content."""
     r = requests.post(
-        f"{BASE}/scrape",
+        f"{BASE_V2}/scrape",
         headers=HEADERS,
         timeout=120,
         json={
@@ -413,7 +413,7 @@ def extract(urls, prompt, fmt="markdown"):
 def map_site(url, limit=100):
     """Get all URLs from a website."""
     r = requests.post(
-        f"{BASE}/map",
+        f"{BASE_V2}/map",
         headers=HEADERS,
         timeout=120,
         json={"url": url, "limit": limit},
@@ -422,7 +422,7 @@ def map_site(url, limit=100):
         die(f"Map failed ({r.status_code}): {r.text}")
 
     data = r.json()
-    links = data.get("links", [])
+    links = [link["url"] for link in data.get("links", [])]
     for link in links:
         print(link)
     print(f"\nTotal: {len(links)} URLs")

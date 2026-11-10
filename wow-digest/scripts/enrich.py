@@ -19,7 +19,7 @@ except ImportError:
     sys.exit(1)
 
 FIRECRAWL_API_KEY = os.environ.get("FIRECRAWL_API_KEY", "")
-FIRECRAWL_URL = "https://api.firecrawl.dev/v1/scrape"
+FIRECRAWL_URL = "https://api.firecrawl.dev/v2/scrape"
 MIN_SNIPPET_LENGTH = 150
 MAX_FETCHES_PER_RUN = 15
 FETCH_DELAY = 1.0
