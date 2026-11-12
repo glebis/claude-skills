@@ -41,7 +41,7 @@ python3 $S map "https://docs.example.com" -n 500 -o sitemap.txt
 
 ## Alexandria (structured data providers)
 
-[Alexandria](https://www.firecrawl.dev/alexandria) is Firecrawl's catalogue of data providers that return typed, sourced records (e.g. arXiv papers, podcast episodes). Use it when a task needs the same fields across many entities, exact figures, or provenance. Use web search or scrape when pages already answer the question. It requires an API key on a team with Alexandria access; the keyless tier has none.
+[Alexandria](https://alexandria.firecrawl.dev) is Firecrawl's catalogue of data providers that return typed, sourced records (e.g. arXiv papers, podcast episodes). Use it when a task needs the same fields across many entities, exact figures, or provenance. Use web search or scrape when pages already answer the question. It requires an API key on a team with Alexandria access; the keyless tier has none.
 
 Flow: check the local catalog → inspect the contract → run.
 
