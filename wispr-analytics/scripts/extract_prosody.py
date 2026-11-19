@@ -96,30 +96,42 @@ def open_readonly(db_path):
     return conn
 
 
+# A clip counts as speech only if Wispr transcribed at least one word.
+SPEECH_SQL = "COALESCE(numWords, 0) > 0"
+
+
 def count_period(conn, start, end):
-    """Return (total_in_period, with_audio_in_period)."""
+    """Return (total_in_period, with_audio_in_period, non_speech_with_audio).
+
+    Non-speech = audio retained but nothing transcribed (numWords = 0): aborted
+    hotkey presses, system sounds, background audio. Their F0 is not the user's
+    voice (observed ~380-570 Hz, HNR ~4 dB) and would skew every aggregate.
+    """
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(f"""
         SELECT COUNT(*) AS total,
-               SUM(CASE WHEN audio IS NOT NULL THEN 1 ELSE 0 END) AS with_audio
+               SUM(CASE WHEN audio IS NOT NULL THEN 1 ELSE 0 END) AS with_audio,
+               SUM(CASE WHEN audio IS NOT NULL AND NOT ({SPEECH_SQL})
+                        THEN 1 ELSE 0 END) AS non_speech
         FROM History
         WHERE isArchived = 0
           AND timestamp >= ? AND timestamp <= ?
     """, (start, end))
     r = cur.fetchone()
-    return r["total"] or 0, r["with_audio"] or 0
+    return r["total"] or 0, r["with_audio"] or 0, r["non_speech"] or 0
 
 
 def fetch_audio_rows(conn, start, end, limit):
     """Fetch period rows that have audio, newest first, capped at `limit`."""
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(f"""
         SELECT timestamp, app, numWords, duration, speechDuration,
                detectedLanguage, language, audio
         FROM History
         WHERE isArchived = 0
           AND timestamp >= ? AND timestamp <= ?
           AND audio IS NOT NULL
+          AND {SPEECH_SQL}
         ORDER BY timestamp DESC
         LIMIT ?
     """, (start, end, limit))
@@ -334,8 +346,8 @@ def daily_trend(clips):
     return rows
 
 
-def build_report(period_label, total, with_audio, processed, skipped_no_voice,
-                 truncated, limit, clips):
+def build_report(period_label, total, with_audio, non_speech, processed,
+                 skipped_no_voice, truncated, limit, clips):
     overall = aggregate(clips)
     langs = by_language(clips)
     trend = daily_trend(clips)
@@ -350,6 +362,7 @@ def build_report(period_label, total, with_audio, processed, skipped_no_voice,
         "coverage": {
             "total_dictations_in_period": total,
             "dictations_with_audio": with_audio,
+            "clips_excluded_non_speech": non_speech,
             "clips_processed": processed,
             "clips_skipped_no_voice": skipped_no_voice,
             "truncated_by_limit": truncated,
@@ -376,7 +389,9 @@ def format_text(report):
     lines.append("")
     lines.append(f"**Coverage**: {cov['dictations_with_audio']} of "
                  f"{cov['total_dictations_in_period']} dictations in this period had "
-                 f"retained audio. Processed {cov['clips_processed']} clips "
+                 f"retained audio; {cov['clips_excluded_non_speech']} excluded as "
+                 f"non-speech (0 words transcribed). Processed "
+                 f"{cov['clips_processed']} clips "
                  f"({cov['clips_skipped_no_voice']} skipped: no voiced frames).")
     if cov["truncated_by_limit"]:
         lines.append(f"> NOTE: more clips had audio than the --limit of {cov['limit']}; "
@@ -481,13 +496,14 @@ def main():
                     else args.period)
 
     conn = open_readonly(DB_PATH)
-    total, with_audio = count_period(conn, start, end)
+    total, with_audio, non_speech = count_period(conn, start, end)
     rows = fetch_audio_rows(conn, start, end, args.limit)
     conn.close()
 
-    truncated = with_audio > args.limit
+    speech_clips = with_audio - non_speech
+    truncated = speech_clips > args.limit
     if truncated:
-        print(f"[prosody] NOTE: {with_audio} clips have audio but --limit={args.limit}; "
+        print(f"[prosody] NOTE: {speech_clips} speech clips have audio but --limit={args.limit}; "
               f"processing newest {args.limit}. Coverage truncated.", file=sys.stderr)
 
     print(f"[prosody] Processing {len(rows)} clips for period '{args.period}'...",
@@ -512,7 +528,7 @@ def main():
             "speech": row["speechDuration"] or 0,
         })
 
-    report = build_report(period_label, total, with_audio, len(rows),
+    report = build_report(period_label, total, with_audio, non_speech, len(rows),
                           skipped_no_voice, truncated, args.limit, clips)
 
     if args.format == "json":
