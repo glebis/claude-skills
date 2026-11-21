@@ -1,0 +1,137 @@
+{
+  "north_light_award": {
+    "short": "North Light Award",
+    "date": "2026-12-10",
+    "euro": 15,
+    "price": "€15 per entry of up to 5 images",
+    "formats": [
+      "Awards & competitions"
+    ],
+    "genres": [
+      "art",
+      "documentary"
+    ],
+    "photoSummary": "Up to 5 images",
+    "printSummary": "Digital entry; finalists print at organiser cost",
+    "rightsSummary": "Non-exclusive promotional licence, 2 years",
+    "timeNote": "23:59 CET"
+  },
+  "quiet_faces_portrait_prize": {
+    "short": "Quiet Faces",
+    "date": "2026-12-31",
+    "euro": 0,
+    "price": "Free",
+    "formats": [
+      "Awards & competitions"
+    ],
+    "genres": [
+      "portrait"
+    ],
+    "photoSummary": "1–3 portraits",
+    "printSummary": "Digital only",
+    "rightsSummary": "—",
+    "timeNote": "23:59 CET"
+  },
+  "harbour_street_festival": {
+    "short": "Harbour Street",
+    "date": "2027-01-15",
+    "euro": 22.5,
+    "price": "€22.50 per series",
+    "formats": [
+      "Exhibitions & festivals"
+    ],
+    "genres": [
+      "documentary"
+    ],
+    "photoSummary": "Series of 8–12 images",
+    "printSummary": "Selected artists ship prints; festival pays return",
+    "rightsSummary": "Exhibition and catalogue use during the festival",
+    "timeNote": "23:59 CET"
+  },
+  "paper_room_photobook": {
+    "short": "Paper Room Dummy",
+    "date": "2027-01-31",
+    "euro": 40,
+    "price": "€40 per dummy",
+    "formats": [
+      "Publications & photobooks",
+      "Awards & competitions"
+    ],
+    "genres": [
+      "art"
+    ],
+    "photoSummary": "One physical dummy + PDF",
+    "printSummary": "Physical dummy shipped at entrant cost",
+    "rightsSummary": "Exclusive first-edition rights for 18 months if selected",
+    "timeNote": "23:59 CET",
+    "rightsNote": "Exclusive only if selected."
+  },
+  "meridian_residency": {
+    "short": "Meridian Residency",
+    "date": "2027-02-14",
+    "euro": 0,
+    "price": "Free",
+    "formats": [
+      "Grants & residencies"
+    ],
+    "genres": [
+      "art",
+      "documentary"
+    ],
+    "photoSummary": "Portfolio of 15 images + proposal",
+    "printSummary": "Production budget during residency",
+    "rightsSummary": "Artist keeps all rights",
+    "timeNote": "23:59 CET"
+  },
+  "after_dark_projection": {
+    "short": "After Dark",
+    "date": "2027-03-01",
+    "euro": 9.1,
+    "price": "US$10 per entry",
+    "formats": [
+      "Exhibitions & festivals"
+    ],
+    "genres": [
+      "art"
+    ],
+    "photoSummary": "Up to 3 images",
+    "printSummary": "No prints: digital projection",
+    "rightsSummary": "Projection and festival promotion, 1 year",
+    "timeNote": "23:59 CET",
+    "feeNote": "Converted from US$ for comparison"
+  },
+  "salt_and_silver_grant": {
+    "short": "Salt & Silver Grant",
+    "date": "2027-03-20",
+    "euro": 12,
+    "price": "€12",
+    "formats": [
+      "Grants & residencies"
+    ],
+    "genres": [
+      "documentary",
+      "portrait"
+    ],
+    "photoSummary": "10–20 scans",
+    "printSummary": "Darkroom access included",
+    "rightsSummary": "Non-exclusive, project promotion only",
+    "timeNote": "23:59 CET"
+  },
+  "monsoon_zine_open": {
+    "short": "Monsoon Zine",
+    "date": "2027-04-30",
+    "euro": 0,
+    "price": "Free",
+    "formats": [
+      "Publications & photobooks"
+    ],
+    "genres": [
+      "documentary",
+      "art"
+    ],
+    "photoSummary": "Up to 20 spreads as PDF",
+    "printSummary": "Selected zines printed by publisher",
+    "rightsSummary": "Print run rights for one edition",
+    "timeNote": "23:59 CET"
+  }
+}

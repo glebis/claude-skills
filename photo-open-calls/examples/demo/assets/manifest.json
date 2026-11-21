@@ -1,0 +1,68 @@
+[
+  {
+    "id": "north_light_award",
+    "type": "Winning image (synthetic)",
+    "caption": "Generated dusk coastline made for the demo.",
+    "credit": "Synthetic image generated for this demo",
+    "short_credit": "Demo",
+    "local_path": "assets/previews/north_light_award.webp",
+    "mime": "image/webp",
+    "source_url": "https://example.org/north_light_award",
+    "image_url": null
+  },
+  {
+    "id": "quiet_faces_portrait_prize",
+    "type": "Winning portrait (synthetic)",
+    "caption": "Generated silhouette portrait made for the demo.",
+    "credit": "Synthetic image generated for this demo",
+    "short_credit": "Demo",
+    "local_path": "assets/previews/quiet_faces_portrait_prize.webp",
+    "mime": "image/webp",
+    "source_url": "https://example.org/quiet_faces_portrait_prize",
+    "image_url": null
+  },
+  {
+    "id": "harbour_street_festival",
+    "type": "Exhibition view (synthetic)",
+    "caption": "Generated street abstraction made for the demo.",
+    "credit": "Synthetic image generated for this demo",
+    "short_credit": "Demo",
+    "local_path": "assets/previews/harbour_street_festival.webp",
+    "mime": "image/webp",
+    "source_url": "https://example.org/harbour_street_festival",
+    "image_url": null
+  },
+  {
+    "id": "paper_room_photobook",
+    "type": "Shortlisted dummy (synthetic)",
+    "caption": "Generated still life made for the demo.",
+    "credit": "Synthetic image generated for this demo",
+    "short_credit": "Demo",
+    "local_path": "assets/previews/paper_room_photobook.webp",
+    "mime": "image/webp",
+    "source_url": "https://example.org/paper_room_photobook",
+    "image_url": null
+  },
+  {
+    "id": "meridian_residency",
+    "type": "Programme poster (synthetic)",
+    "caption": "Generated poster made for the demo.",
+    "credit": "Synthetic image generated for this demo",
+    "short_credit": "Demo",
+    "local_path": "assets/previews/meridian_residency.webp",
+    "mime": "image/webp",
+    "source_url": "https://example.org/meridian_residency",
+    "image_url": null
+  },
+  {
+    "id": "after_dark_projection",
+    "type": "Projection still (synthetic)",
+    "caption": "Generated night city made for the demo.",
+    "credit": "Synthetic image generated for this demo",
+    "short_credit": "Demo",
+    "local_path": "assets/previews/after_dark_projection.webp",
+    "mime": "image/webp",
+    "source_url": "https://example.org/after_dark_projection",
+    "image_url": null
+  }
+]
