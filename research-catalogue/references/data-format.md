@@ -148,7 +148,7 @@ A field spec is `{"label": "…", "field": "…", "as": "…"}`. Renderers:
 | *(none)* | Escaped text; lists join with · |
 | `md` | Text with https links |
 | `join` | List joined with ·; with `"facet"`, uses that facet's labels |
-| `tags` | List as mono tags; with `"facet"`, uses its labels |
+| `tags` | List as tags; with `"facet"`, uses its labels |
 | `dashNote` | Value starting with — shows the dash, then the rest on its own line |
 | `link` | A https value as a link (`linkLabel` optional) |
 | `strong` | Bold line (table only) |
