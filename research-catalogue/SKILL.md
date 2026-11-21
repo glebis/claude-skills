@@ -77,7 +77,7 @@ Use the language of the user's request for `title`, `dek`, labels and `strings`,
 
 ## Preserve the interface
 
-The page design is documented in `references/design.md`. Keep: matted images shown whole; serif masthead with an italic accent; sentence-case chrome with mono capitals only for utility labels; filters collapsed by default with one-click choices (no dropdowns); cards and a sortable comparison table; favourites; full details in a dialog with sources and credits; light and dark themes; square edges and no decorative borders; visible focus. With dates: relative markers and the timeline with its sentence. With verification: badges whose shape carries the status.
+The page design is documented in `references/design.md`. Keep: matted images shown whole; serif masthead with an italic accent; sentence case everywhere, never capitals; filters collapsed by default with one-click choices (no dropdowns); cards and a sortable comparison table; favourites; full details in a dialog with sources and credits; light and dark themes; square edges and no decorative borders; visible focus. With dates: relative markers and the timeline with its sentence. With verification: badges whose shape carries the status.
 
 State lives in the URL (facets, toggles, search, sort and direction, view, open record via `?item=<id>`) and is restored on load and Back/Forward. No statistics hero, instructional sections or generic copyright footer.
 

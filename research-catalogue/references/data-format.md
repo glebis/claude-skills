@@ -93,6 +93,7 @@ Each value is a number or `null`. Options:
 | `zeroLabel` | Text for 0 (currency defaults to "Free") |
 | `zeroFilter`, `zeroKey` | Adds a toggle for items whose value is 0; `zeroKey` is its URL parameter |
 | `card: false`, `table: false` | Hide from cards or table |
+| `hideEmpty: true` | For a measure that applies to only some items (model prices in a news catalogue): cards and the dialog leave it out when the value is missing instead of showing `—`; the table still shows `—` and sorts it last. Leave it off when a missing value means "not found" |
 | `sortLabel`, `sortChip` | Table header text and the label in the Order group |
 | `detail` | Boxes in the dialog instead of the default value box; `withCost` appends the formatted value |
 
@@ -108,6 +109,19 @@ Up to three measures show as boxes on cards. The first table measure shares the 
 ```
 
 All keys are optional; the values shown are the defaults. Each record may carry `status`, `checked` (`YYYY-MM-DD`), `confidence` (free text, e.g. `high`) and `verificationNote` (markdown with links). The third element of each value is its tone: `ok`, `warn` or `alert`. `filter` adds a Status facet. A record without a status shows "not yet checked".
+
+`quiet` (list of status values, e.g. `["verified"]`) hides those badges in cards, rows and the list, so only the exceptions stand out; the dialog still shows every status. With `layout: "stream"`, the timeline sentence becomes a verification summary ("27 of 33 confirmed at the original source. Still open: reported only (5)…") whose counts filter the list. A `checked` date equal to the research date is shown only in the dialog.
+
+### layout (optional)
+
+`"layout": "stream"` replaces cards with a dated list for news-like research (news, releases, changelogs, papers): date in the margin once per day, the full `name` as headline (opens the dialog), one summary line, and a quiet meta line. Sorted by date, the list is grouped by week ("This week", "Last week", "3 – 9 Nov"); any other sort lists items flat with a date on each. The table view stays.
+
+```json
+"layout": "stream",
+"stream": {"summary": "what", "meta": ["org", "topic"]}
+```
+
+`summary` defaults to the first card row's field; `meta` lists fields or facet keys (shown with facet labels), defaulting to the subtitle. Measures with a value join the meta line; badges appear only for statuses not in `verification.quiet`.
 
 ### facets
 
@@ -134,7 +148,7 @@ A field spec is `{"label": "…", "field": "…", "as": "…"}`. Renderers:
 | *(none)* | Escaped text; lists join with · |
 | `md` | Text with https links |
 | `join` | List joined with ·; with `"facet"`, uses that facet's labels |
-| `tags` | List as mono tags; with `"facet"`, uses its labels |
+| `tags` | List as tags; with `"facet"`, uses its labels |
 | `dashNote` | Value starting with — shows the dash, then the rest on its own line |
 | `link` | A https value as a link (`linkLabel` optional) |
 | `strong` | Bold line (table only) |
