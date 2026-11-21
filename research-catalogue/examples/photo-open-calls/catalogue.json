@@ -29,31 +29,8 @@
     },
     "countdown": true,
     "soonDays": 30,
-    "timeline": true
-  },
-  "cost": {
-    "field": "euro",
-    "currency": "EUR",
-    "label": "Entry fee",
-    "sortLabel": "Fee",
-    "note": "price",
-    "tableNote": "feeNote",
-    "approxIf": [
-      "US$",
-      "£"
-    ],
-    "freeFilter": "No entry fee",
-    "detail": [
-      {
-        "label": "Fees & packages",
-        "field": "fee"
-      },
-      {
-        "label": "Selected package for comparison",
-        "field": "price",
-        "withCost": true
-      }
-    ]
+    "timeline": true,
+    "kind": "deadline"
   },
   "facets": [
     {
@@ -252,15 +229,47 @@
     "criteria": "Selection criteria & budget",
     "emptyEdition": "No open calls in this edition yet",
     "emptyMessage": "Opportunities will appear after the research is updated.",
-    "byDate": "By deadline",
-    "byCost": "By price",
     "tableRegion": "Open-call comparison; scroll right if needed",
     "details": "Full terms & sources",
     "detailsShort": "Full terms",
-    "researched": "Full terms as researched on {date}",
-    "timeline": "Deadline timeline",
-    "allPast": "Every deadline in this edition has passed.",
-    "rangeOne": "Deadline {date}",
-    "rangeMany": "Deadlines {from} – {to}"
+    "researched": "Full terms as researched on {date}"
+  },
+  "measures": [
+    {
+      "key": "cost",
+      "field": "euro",
+      "label": "Entry fee",
+      "sortLabel": "Fee",
+      "sortChip": "By price",
+      "format": "currency",
+      "currency": "EUR",
+      "note": "price",
+      "tableNote": "feeNote",
+      "approxIf": [
+        "US$",
+        "£"
+      ],
+      "zeroLabel": "Free",
+      "zeroFilter": "No entry fee",
+      "zeroKey": "free",
+      "better": "low",
+      "detail": [
+        {
+          "label": "Fees & packages",
+          "field": "fee"
+        },
+        {
+          "label": "Selected package for comparison",
+          "field": "price",
+          "withCost": true
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "field": "status",
+    "checked": "checked",
+    "confidence": "confidence",
+    "note": "verificationNote"
   }
 }

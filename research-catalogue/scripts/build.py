@@ -5,7 +5,8 @@ Never publishes. Standard library only.
 
 Project folder (the data) holds:
   catalogue.json        what the collection is: title, nouns, facets, card rows,
-                        table columns, detail fields, optional date and cost blocks
+                        table columns, detail fields, optional date (any kind),
+                        measures (any numbers) and verification blocks
   items.json            full researched records (array, each with a stable "id")
   items-meta.json       optional compact display fields keyed by id, merged in
   snapshot.json         {"date", "label", ...} of the last research run
@@ -26,7 +27,8 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SKILL_TEMPLATE = SCRIPT_DIR.parent / 'assets' / 'template.html'
-RESERVED = {'sort', 'direction', 'view', 'q', 'free', 'favorites', 'call'}
+RESERVED = {'sort', 'direction', 'view', 'q', 'favorites', 'item', 'call', 'date', 'name'}
+DATE_KINDS = {'deadline', 'event', 'published', 'other'}
 ISO = re.compile(r'\d{4}-\d{2}-\d{2}')
 
 # Interface copy. A project overrides any of these under "strings" in catalogue.json.
@@ -72,17 +74,15 @@ DEFAULT_STRINGS = {
     'creatorCredit': 'Creator / credit',
     'imageSource': 'Official image source',
     'free': 'Free',
-    'closed': 'Closed',
-    'leftToday': 'Closes today',
-    'leftOne': '1 day left',
-    'leftMany': '{n} days left',
+    'byMeasure': 'By {label}',
     'today': 'Today',
-    'next': 'Next to close',
     'and': 'and',
     'more': '{n} more',
-    'allPast': 'Every date in this edition has passed.',
-    'rangeOne': 'Date {date}',
-    'rangeMany': 'Dates {from} – {to}',
+    'status': 'Status',
+    'verification': 'Verification',
+    'checked': 'checked {date}',
+    'confidence': '{level} confidence',
+    'notChecked': 'not yet checked',
     'sortAsc': 'sort ascending',
     'sortedAsc': 'ascending; switch to descending',
     'sortedDesc': 'descending; switch to ascending',
@@ -93,6 +93,82 @@ DEFAULT_STRINGS = {
     'snapshot': 'Snapshot: {date}.',
 }
 DEFAULT_FIELDS = {'name': 'name', 'short': 'short', 'subtitle': 'place', 'url': 'url', 'sources': 'extra'}
+
+# Date wording depends on what the date means. Project "strings" still win.
+DATE_STRINGS = {
+    'deadline': {
+        'dateLabel': 'Deadline', 'timeline': 'Deadline timeline', 'byDate': 'By deadline',
+        'next': 'Next to close', 'closed': 'Closed', 'leftToday': 'Closes today', 'leftOne': '1 day left', 'leftMany': '{n} days left',
+        'allPast': 'Every deadline in this edition has passed.', 'rangeOne': 'Deadline {date}', 'rangeMany': 'Deadlines {from} – {to}',
+    },
+    'event': {
+        'dateLabel': 'Date', 'timeline': 'Event timeline', 'byDate': 'By date',
+        'next': 'Next up', 'closed': 'Past', 'leftToday': 'Today', 'leftOne': 'Tomorrow', 'leftMany': 'In {n} days',
+        'allPast': 'Every event in this edition has passed.', 'rangeOne': 'Date {date}', 'rangeMany': 'Dates {from} – {to}',
+    },
+    'published': {
+        'dateLabel': 'Published', 'timeline': 'Publication timeline', 'byDate': 'Newest first',
+        'latest': 'Most recent', 'ageFuture': 'Forthcoming', 'ageToday': 'Today', 'ageOne': 'Yesterday', 'ageDays': '{n} days ago',
+        'ageMonth': '1 month ago', 'ageMonths': '{n} months ago', 'ageYear': '1 year ago', 'ageYears': '{n} years ago',
+        'rangeOne': 'Published {date}', 'rangeMany': 'Published {from} – {to}',
+    },
+    'other': {
+        'dateLabel': 'Date', 'timeline': 'Timeline', 'byDate': 'By date',
+        'rangeOne': 'Date {date}', 'rangeMany': 'Dates {from} – {to}',
+    },
+}
+
+DEFAULT_STATUSES = [
+    ['verified', 'Verified', 'ok'],
+    ['unverified', 'Unverified', 'warn'],
+    ['conflicting', 'Conflicting sources', 'alert'],
+    ['outdated', 'Needs re-check', 'warn'],
+]
+
+
+def lower_first(text):
+    return text[:1].lower() + text[1:]
+
+
+def normalise_measures(schema, strings):
+    """Turn the legacy single "cost" block into the first measure and fill measure defaults."""
+    measures = [dict(m) for m in schema.get('measures', [])]
+    if 'cost' in schema:
+        c = schema['cost']
+        measures.insert(0, {
+            'key': 'cost', 'field': c['field'], 'label': c.get('label', 'Price'), 'sortLabel': c.get('sortLabel'),
+            'sortChip': strings.get('byCost'), 'format': 'currency', 'currency': c.get('currency', 'EUR'),
+            'note': c.get('note'), 'tableNote': c.get('tableNote'), 'approxIf': c.get('approxIf', []),
+            'zeroLabel': strings['free'], 'zeroFilter': c.get('freeFilter'), 'zeroKey': 'free', 'detail': c.get('detail'),
+        })
+    for m in measures:
+        m.setdefault('key', m['field'])
+        m.setdefault('format', 'number')
+        m.setdefault('better', 'low')
+        m['sortLabel'] = m.get('sortLabel') or m['label']
+        m['sortChip'] = m.get('sortChip') or fill(strings['byMeasure'], {'label': lower_first(m['label'])})
+        if m.get('zeroFilter'):
+            m.setdefault('zeroKey', m['key'] + '-zero')
+        if m['format'] == 'currency' and m.get('zeroLabel') is None:
+            m['zeroLabel'] = strings['free']
+    keys = [m['key'] for m in measures] + [m['zeroKey'] for m in measures if m.get('zeroFilter')]
+    assert len(set(keys)) == len(keys), 'Measure keys must be unique'
+    return measures
+
+
+def normalise_verification(schema, strings):
+    v = schema.get('verification')
+    if not v:
+        return None
+    v = {'field': 'status', 'checked': 'checked', 'confidence': 'confidence', 'note': 'verificationNote', 'filter': True, **v}
+    values = v.get('values') or DEFAULT_STATUSES
+    v['values'] = [list(x) + [''] * (3 - len(x)) for x in values]
+    if v['filter']:
+        schema.setdefault('facets', []).append({
+            'key': 'status', 'field': v['field'], 'label': strings['status'], 'counts': True,
+            'options': [[value, label] for value, label, _ in v['values']],
+        })
+    return v
 
 
 def default_project():
@@ -200,18 +276,32 @@ def main():
     assert len(set(ids)) == len(ids), 'Duplicate item id'
     if meta:
         assert set(meta) == set(ids), 'items-meta.json ids must match items.json ids'
-    for item in items:
-        item.update(meta.get(item['id'], {}))
-        if 'date' in schema:
-            value = item.get(schema['date']['field'])
-            assert value in (None, '') or ISO.fullmatch(value), f'{item["id"]}: date must be YYYY-MM-DD, got {value!r}'
-        if 'cost' in schema:
-            value = item.get(schema['cost']['field'])
-            assert value is None or isinstance(value, (int, float)), f'{item["id"]}: cost must be a number, got {value!r}'
-
     language = schema.get('language', 'en')
     locale = schema.get('locale') or ('en-GB' if language == 'en' else language)
-    strings = {**DEFAULT_STRINGS, **schema.get('strings', {})}
+    date_block = dict(schema['date']) if 'date' in schema else None
+    if date_block:
+        date_block.setdefault('kind', 'deadline')
+        assert date_block['kind'] in DATE_KINDS, f'date.kind must be one of {sorted(DATE_KINDS)}'
+    strings = {**DEFAULT_STRINGS, **DATE_STRINGS[date_block['kind'] if date_block else 'other'], **schema.get('strings', {})}
+    if date_block:
+        date_block.setdefault('label', strings['dateLabel'])
+    measures = normalise_measures(schema, strings)
+    verification = normalise_verification(schema, strings)
+
+    for item in items:
+        item.update(meta.get(item['id'], {}))
+        if date_block:
+            value = item.get(date_block['field'])
+            assert value in (None, '') or ISO.fullmatch(value), f'{item["id"]}: date must be YYYY-MM-DD, got {value!r}'
+        for m in measures:
+            value = item.get(m['field'])
+            assert value is None or isinstance(value, (int, float)), f'{item["id"]}: {m["field"]} must be a number or null, got {value!r}'
+        if verification and item.get(verification['checked']):
+            assert ISO.fullmatch(item[verification['checked']]), f'{item["id"]}: checked date must be YYYY-MM-DD'
+
+    taken = {m['key'] for m in measures} | {m['zeroKey'] for m in measures if m.get('zeroFilter')} | {s['key'] for s in schema.get('sorts', [])}
+    for facet in schema.get('facets', []):
+        assert facet['key'] not in taken, f'Facet key "{facet["key"]}" clashes with a measure or sort key'
     resolve_facets(schema, items)
     images = schema.get('images', manifest_path.exists())
     if images:
@@ -238,7 +328,10 @@ def main():
     page_title = schema.get('pageTitle') or ' '.join(filter(None, [title.get('lead'), title.get('accent')])) or 'Research catalogue'
 
     page_schema = {
-        **{k: v for k, v in schema.items() if k not in {'strings', 'dek', 'description', 'title', 'pageTitle'}},
+        **{k: v for k, v in schema.items() if k not in {'strings', 'dek', 'description', 'title', 'pageTitle', 'cost', 'date', 'measures', 'verification'}},
+        'date': date_block,
+        'measures': measures,
+        'verification': verification,
         'fields': {**DEFAULT_FIELDS, **schema.get('fields', {})},
         'noun': schema.get('noun', {'one': 'entry', 'many': 'entries'}),
         'storageKey': schema.get('storageKey', 'research-catalogue'),

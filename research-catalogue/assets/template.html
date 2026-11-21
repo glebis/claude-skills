@@ -59,6 +59,7 @@ h1 em{font-style:italic;color:var(--accent)}
 .month{position:absolute;white-space:nowrap;top:0;bottom:0;padding:8px 0 0 8px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--label);box-shadow:inset 1px 0 0 color-mix(in srgb,var(--faint) 45%,transparent)}
 .today{position:absolute;top:0;bottom:0;width:2px;background:var(--ink)}
 .today span{position:absolute;bottom:6px;left:6px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.today.flip span{left:auto;right:6px}
 .mark{position:absolute;width:12px;height:12px;margin-left:-6px;border:0;padding:0;background:var(--accent);transition:transform 150ms var(--ease-out),opacity .2s,background .2s}
 .mark:before{content:"";position:absolute;inset:-6px}
 .mark.soon{background:var(--soon)}
@@ -127,6 +128,11 @@ input::placeholder{color:var(--muted)}
 .item-card h2 a{color:var(--ink);text-decoration:none}
 .item-card h2 a:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
 .place{font-size:14px;color:var(--muted);margin:0;display:block}
+.status-line{display:flex;gap:6px 10px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;background:var(--surface);color:var(--label);white-space:nowrap}
+.badge:before{content:"";width:7px;height:7px;background:currentColor;flex-shrink:0}
+.badge.warn{color:var(--muted)}.badge.warn:before{background:transparent;box-shadow:inset 0 0 0 1.5px currentColor}
+.badge.alert{color:var(--soon)}.badge.alert:before{transform:rotate(45deg) scale(.85)}
 .save{width:40px;height:40px;flex-shrink:0;border:0;border-radius:0;background:var(--surface);color:var(--muted);display:grid;place-items:center;transition:background .15s,color .15s,transform 120ms var(--ease-out)}
 .save svg{width:16px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7}
 .save[aria-pressed=true]{color:var(--accent);background:var(--pale)}.save[aria-pressed=true] svg{fill:currentColor}
@@ -169,7 +175,7 @@ a.item-title:hover{text-decoration:underline}
 .sort-header{border:0;background:transparent;color:inherit;padding:3px 0;min-height:30px;font:inherit;letter-spacing:inherit;text-transform:inherit;text-align:left}
 .sort-header:hover{color:var(--accent)}
 .sort-header span{margin-left:5px}
-.sort-pair{display:flex;flex-wrap:nowrap;align-items:center;gap:6px}.sort-pair .sort-header{white-space:nowrap;flex:0 0 auto}.sort-pair button+button:before{content:"/ ";color:var(--muted)}
+.sort-pair{display:flex;flex-wrap:wrap;align-items:center;gap:0 6px}.sort-pair .sort-header{white-space:nowrap;flex:0 0 auto}.sort-pair button+button:before{content:"/ ";color:var(--muted)}
 th[aria-sort]:not([aria-sort="none"]){color:var(--ink)}
 th:first-child .sort-header{width:100%}
 
@@ -242,7 +248,7 @@ dialog[open]::backdrop{background:var(--backdrop);backdrop-filter:blur(3px)}
 <section class="ribbon" id="ribbon" aria-label="{{s:timeline}}" hidden><div class="ribbon-head"><p class="ribbon-lede" id="ribbon-lede"></p><span class="ribbon-range" id="ribbon-range"></span></div><div class="track" id="track" aria-hidden="true"></div></section>
 
 <section class="toolbar" aria-label="{{s:filtersLabel}}"><details id="filter-panel"><summary>{{s:filters}}<span id="active-filters" class="filter-summary"></span></summary><div class="filter-content">
-<div class="searchline"><label class="searchbox"><span class="search-label">{{s:search}}</span><input id="search" type="search" placeholder="{{s:searchPlaceholder}}" autocomplete="off"></label><button class="toggle" id="free" aria-pressed="false" hidden></button><button class="toggle" id="favorites" aria-pressed="false">{{s:favourites}} <span id="favorites-count">0</span></button></div>
+<div class="searchline"><label class="searchbox"><span class="search-label">{{s:search}}</span><input id="search" type="search" placeholder="{{s:searchPlaceholder}}" autocomplete="off"></label><span id="toggles" class="choices"></span><button class="toggle" id="favorites" aria-pressed="false">{{s:favourites}} <span id="favorites-count">0</span></button></div>
 <div class="filter-grid" id="filter-grid"></div>
 __CRITERIA_BLOCK__</div></details></section>
 
@@ -257,8 +263,10 @@ const SCHEMA=JSON.parse($('schema').textContent);
 const ITEMS=JSON.parse($('item-data').textContent);
 const S=SCHEMA.strings;
 const F=SCHEMA.fields;
-const D=SCHEMA.date||null;       // optional: dated collections get countdowns, a timeline and date sorting
-const C=SCHEMA.cost||null;       // optional: priced collections get a cost box, a free toggle and cost sorting
+const D=SCHEMA.date||null;            // optional; kind: deadline | event | published | other
+const KIND=D?D.kind:'';
+const M=SCHEMA.measures||[];          // numeric fields: price, score, year, size...
+const V=SCHEMA.verification||null;    // optional per-item status, checked date, confidence
 const FACETS=SCHEMA.facets||[];
 const IMAGES=SCHEMA.images!==false;
 const LOCALE=SCHEMA.locale;
@@ -295,23 +303,39 @@ function cell(spec,c){
  const html=show(spec,c);return `<p class="cell-copy ${html==='—'?'dash':''}">${html}</p>`;
 }
 
+/* Dates: wording follows the kind — deadlines count down, events say "in n days", publications age. */
 const dates=new Intl.DateTimeFormat(LOCALE,{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
 const shortDates=new Intl.DateTimeFormat(LOCALE,{day:'numeric',month:'short',timeZone:'UTC'});
 const months=new Intl.DateTimeFormat(LOCALE,{month:'short',timeZone:'UTC'});
-const money=C?new Intl.NumberFormat(LOCALE,{style:'currency',currency:C.currency||'EUR',maximumFractionDigits:2}):null;
 const DAY=864e5;
 const todayUTC=(()=>{const n=new Date();return Date.UTC(n.getFullYear(),n.getMonth(),n.getDate());})();
-const hasDate=c=>!!D&&/^\d{4}-\d{2}-\d{2}$/.test(c[D.field]||'');
+const ISO=/^\d{4}-\d{2}-\d{2}$/;
+const hasDate=c=>!!D&&ISO.test(c[D.field]||'');
 const isoOf=c=>hasDate(c)?c[D.field]:null;
-const stamp=c=>Date.parse(isoOf(c)+'T00:00:00Z');
-const daysLeft=c=>Math.round((stamp(c)-todayUTC)/DAY);
-function leftText(c){if(!hasDate(c))return '';const d=daysLeft(c);return d<0?S.closed:d===0?S.leftToday:d===1?S.leftOne:fmt(S.leftMany,{n:d});}
-function leftClass(c){if(!hasDate(c))return '';const d=daysLeft(c);return d<0?'closed':d<=(D.soonDays??30)?'soon':'';}
+const stampOf=iso=>Date.parse(iso+'T00:00:00Z');
+const stamp=c=>stampOf(isoOf(c));
+const daysFrom=c=>Math.round((stamp(c)-todayUTC)/DAY);
 const isoText=iso=>dates.format(new Date(iso+'T12:00:00Z'));
 const dateText=c=>hasDate(c)?isoText(isoOf(c)):'—';
-const costOf=c=>C&&typeof c[C.field]==='number'?c[C.field]:null;
-function costText(c){const v=costOf(c);if(v===null)return '—';if(v===0)return S.free;const note=String(c[C.note]||'');return ((C.approxIf||[]).some(s=>note.includes(s))?'≈ ':'')+money.format(v);}
-const COUNTDOWN=!!D&&D.countdown!==false;
+function ageText(days){if(days<0)return S.ageFuture;if(days===0)return S.ageToday;if(days===1)return S.ageOne;if(days<60)return fmt(S.ageDays,{n:days});const mo=Math.round(days/30.44);if(days<730)return mo===1?S.ageMonth:fmt(S.ageMonths,{n:mo});const y=Math.round(days/365.25);return y===1?S.ageYear:fmt(S.ageYears,{n:y});}
+function relText(c){if(!hasDate(c)||KIND==='other')return '';const d=daysFrom(c);if(KIND==='published')return ageText(-d);return d<0?S.closed:d===0?S.leftToday:d===1?S.leftOne:fmt(S.leftMany,{n:d});}
+function relClass(c){if(!hasDate(c)||KIND==='published'||KIND==='other')return '';const d=daysFrom(c);return d<0?'closed':KIND==='deadline'&&d<=(D.soonDays??30)?'soon':'';}
+const COUNTDOWN=!!D&&D.countdown!==false&&KIND!=='other';
+
+/* Measures: any numbers. Each knows its format, unit and which direction is better. */
+const mVal=(m,c)=>typeof c[m.field]==='number'?c[m.field]:null;
+const numberFormats=new Map();
+function numberFormat(m){if(!numberFormats.has(m.key)){const o=m.format==='currency'?{style:'currency',currency:m.currency||'EUR',maximumFractionDigits:m.decimals??2}:m.format==='percent'?{style:'percent',maximumFractionDigits:m.decimals??0}:m.format==='integer'?{maximumFractionDigits:0}:{maximumFractionDigits:m.decimals??2};numberFormats.set(m.key,new Intl.NumberFormat(LOCALE,o));}return numberFormats.get(m.key);}
+function mText(m,c){const v=mVal(m,c);if(v===null)return '—';if(v===0&&m.zeroLabel)return m.zeroLabel;const text=m.format==='year'?String(v):numberFormat(m).format(v);const note=String(c[m.note]||'');return ((m.approxIf||[]).some(s=>note.includes(s))?'≈ ':'')+text+(m.unit?' '+m.unit:'');}
+const TABLE_M=M.filter(m=>m.table!==false);
+const PAIRED=TABLE_M[0]||null;        // shares the date column, as deadline / fee did
+const OWN_COLUMNS=TABLE_M.slice(1);
+const CARD_M=M.filter(m=>m.card!==false);
+
+/* Verification: a status badge whose shape (not only colour) carries the meaning. */
+const STATUS=V?Object.fromEntries(V.values.map(([value,label,tone])=>[value,{label,tone}])):{};
+function badge(c){if(!V)return '';const s=STATUS[c[V.field]];return s?`<span class="badge ${esc(s.tone)}">${esc(s.label)}</span>`:`<span class="badge warn">${esc(S.notChecked)}</span>`;}
+function statusLine(c){if(!V)return '';const checked=ISO.test(c[V.checked]||'')?fmt(S.checked,{date:shortDates.format(new Date(c[V.checked]+'T12:00:00Z'))}):'';return `<div class="status-line">${badge(c)}${checked?`<span>${esc(checked)}</span>`:''}</div>`;}
 
 function imgHTML(c){const a=c.image||{};if(!a.src)return `<div class="no-image">${esc(S.noImage)}</div>`;return `<button class="thumbnail" data-detail="${esc(c.id)}" aria-label="${esc(S.imageAndDetails)}: ${esc(nameOf(c))}"><img src="${esc(a.src)}" alt="${esc(a.caption||'')}" loading="lazy" decoding="async"></button>`;}
 function knownCredit(v){return typeof v==='string'&&v.trim()!==''&&!/^[—–.-]+$/.test(v.trim());}
@@ -320,9 +344,16 @@ const titleLink=(c,cls)=>isHttps(c[F.url])?`<a class="${cls}" href="${esc(c[F.ur
 const subtitle=c=>F.subtitle&&c[F.subtitle]?`<p class="place">${esc(c[F.subtitle])}</p>`:'';
 
 let saved;try{saved=new Set(JSON.parse(localStorage.getItem(KEY+':favorites')||'[]').filter(id=>ITEMS.some(c=>c.id===id)));}catch{saved=new Set();}
-const SORTS=[...(D?[['date',S.byDate]]:[]),...(C?[['cost',S.byCost]]:[]),...(SCHEMA.sorts||[]).map(s=>[s.key,s.label]),['name',S.byName]];
-const defaults={sort:SCHEMA.defaultSort||SORTS[0][0],direction:'asc',view:'gallery',q:'',free:false,favorites:false,call:''};
+const SORTS=[...(D?[['date',S.byDate]]:[]),...M.map(m=>[m.key,m.sortChip]),...(SCHEMA.sorts||[]).map(s=>[s.key,s.label]),['name',S.byName]];
+const CUSTOM=Object.fromEntries((SCHEMA.sorts||[]).map(s=>[s.key,s]));
+const MEASURE=Object.fromEntries(M.map(m=>[m.key,m]));
+/* The first click on a sort uses its natural direction: newest first, higher-is-better descending. */
+function naturalDirection(key){if(key==='date')return KIND==='published'?'desc':'asc';if(MEASURE[key])return MEASURE[key].better==='high'?'desc':'asc';if(CUSTOM[key])return CUSTOM[key].better==='high'?'desc':'asc';return 'asc';}
+const TOGGLES=M.filter(m=>m.zeroFilter);
+const defaultSort=SCHEMA.defaultSort||SORTS[0][0];
+const defaults={sort:defaultSort,direction:naturalDirection(defaultSort),view:'gallery',q:'',favorites:false,item:''};
 for(const f of FACETS)defaults[f.key]='';
+for(const m of TOGGLES)defaults[m.zeroKey]=false;
 const state={...defaults};
 const bookmark='<svg viewBox="0 0 20 22" aria-hidden="true"><path d="M4 2h12v18l-6-4-6 4z"/></svg>';
 const saveButton=c=>`<button class="save" data-save="${esc(c.id)}" aria-pressed="${saved.has(c.id)}" aria-label="${esc(saved.has(c.id)?S.removeFavourite:S.addFavourite)}: ${esc(nameOf(c))}">${bookmark}</button>`;
@@ -332,63 +363,78 @@ function buildFilters(){
  const groups=FACETS.map(f=>{const count=v=>ITEMS.filter(c=>v===''||list(c[f.key]).includes(v)).length;const opts=[['',f.all||S.all],...f.options];return `<div class="filter-group"><span class="group-label">${esc(f.label)}</span><div class="choices" role="group" aria-label="${esc(f.label)}">${opts.map(([v,l])=>`<button class="chip" data-filter="${esc(f.key)}" data-value="${esc(v)}">${esc(l)}${f.counts?` <span class="n">${count(v)}</span>`:''}</button>`).join('')}</div></div>`;});
  if(SORTS.length>1)groups.push(`<div class="filter-group"><span class="group-label">${esc(S.order)}</span><div class="choices" role="group" aria-label="${esc(S.order)}">${SORTS.map(([v,l])=>`<button class="chip" data-filter="sort" data-value="${esc(v)}">${esc(l)}</button>`).join('')}</div></div>`);
  $('filter-grid').innerHTML=groups.join('');
- if(C&&C.freeFilter){$('free').hidden=false;$('free').textContent=C.freeFilter;}
+ $('toggles').innerHTML=TOGGLES.map(m=>`<button class="toggle" data-toggle="${esc(m.zeroKey)}" aria-pressed="false">${esc(m.zeroFilter)}</button>`).join('');
 }
+const sortButton=(key,label)=>`<button class="sort-header" data-sort="${esc(key)}">${esc(label)}<span aria-hidden="true">↕</span></button>`;
 function buildTable(){
- const timing=[D&&['date',D.label],C&&['cost',C.sortLabel||C.label]].filter(Boolean);
- const head=[`<th scope="col" data-sorts="name"><button class="sort-header" data-sort="name">${esc(S.nameColumn)}<span aria-hidden="true">↕</span></button></th>`];
- if(timing.length)head.push(`<th scope="col" data-sorts="${timing.map(t=>t[0]).join(' ')}"><div class="sort-pair">${timing.map(([k,l])=>`<button class="sort-header" data-sort="${k}">${esc(l)}<span aria-hidden="true">↕</span></button>`).join('')}</div></th>`);
+ const paired=[D&&['date',D.label],PAIRED&&[PAIRED.key,PAIRED.sortLabel]].filter(Boolean);
+ const head=[`<th scope="col" data-sorts="name">${sortButton('name',S.nameColumn)}</th>`];
+ if(paired.length)head.push(`<th scope="col" data-sorts="${paired.map(t=>esc(t[0])).join(' ')}"><div class="sort-pair">${paired.map(([k,l])=>sortButton(k,l)).join('')}</div></th>`);
+ for(const m of OWN_COLUMNS)head.push(`<th scope="col" data-sorts="${esc(m.key)}">${sortButton(m.key,m.sortLabel)}</th>`);
  for(const col of SCHEMA.table||[])head.push(`<th scope="col">${esc(col.label)}</th>`);
  $('head').innerHTML=head.join('');
- const rest=(SCHEMA.table||[]).length;const first=rest?21:60,time=timing.length?16:0;const each=rest?(100-first-time)/rest:0;
  /* Wide screens share the width in percentages; narrow screens scroll a table of fixed pixel columns. */
+ const narrow=OWN_COLUMNS.length,rest=(SCHEMA.table||[]).length,first=rest||narrow?21:60,time=paired.length?16:0;
+ const each=rest+narrow?(100-first-time)/(rest+narrow*.6):0;
  const col=(pct,px)=>`<col style="--pct:${pct}%;--px:${px}px">`;
- $('cols').innerHTML=col(timing.length||rest?first:100,220)+(timing.length?col(rest?time:100-first,190):'')+(SCHEMA.table||[]).map(()=>col(each,210)).join('');
- const t=document.querySelector('table');t.style.setProperty('--table-min',(220+(timing.length?190:0)+rest*210)+'px');t.style.setProperty('--table-min-sm',(180+(timing.length?190:0)+rest*210)+'px');
+ $('cols').innerHTML=col(paired.length||rest||narrow?first:100,220)+(paired.length?col(rest||narrow?time:100-first,190):'')+OWN_COLUMNS.map(()=>col(each*.6,130)).join('')+(SCHEMA.table||[]).map(()=>col(each,210)).join('');
+ const px=(paired.length?190:0)+narrow*130+rest*210;
+ const t=document.querySelector('table');t.style.setProperty('--table-min',(220+px)+'px');t.style.setProperty('--table-min-sm',(180+px)+'px');
 }
-function timingBoxes(c){
+function facts(c){
  const boxes=[];
- if(D)boxes.push(`<div><span class="field-label">${esc(D.label)}</span><span class="date">${esc(dateText(c))}</span>${D.note?`<span class="small">${esc(c[D.note])}</span>`:''}${COUNTDOWN&&!IMAGES&&hasDate(c)?`<span class="small ${leftClass(c)}">${esc(leftText(c))}</span>`:''}</div>`);
- if(C)boxes.push(`<div><span class="field-label">${esc(C.label)}</span><span class="fee ${costOf(c)===0?'free':''}">${esc(costText(c))}</span>${C.note?`<span class="fee-label">${esc(c[C.note])}</span>`:''}</div>`);
- return boxes.length?`<div class="card-timing ${boxes.length===1?'single':''}">${boxes.join('')}</div>`:'';
+ if(D)boxes.push(`<div><span class="field-label">${esc(D.label)}</span><span class="date">${esc(dateText(c))}</span>${D.note&&c[D.note]?`<span class="small">${esc(c[D.note])}</span>`:''}${COUNTDOWN&&!IMAGES&&hasDate(c)?`<span class="small ${relClass(c)}">${esc(relText(c))}</span>`:''}</div>`);
+ for(const m of CARD_M)boxes.push(`<div><span class="field-label">${esc(m.label)}</span><span class="fee ${mVal(m,c)===0&&m.zeroLabel?'free':''}">${esc(mText(m,c))}</span>${m.note&&c[m.note]?`<span class="fee-label">${esc(c[m.note])}</span>`:''}</div>`);
+ if(!boxes.length)return '';
+ const columns=boxes.length===2&&D?'1.25fr 1fr':`repeat(${Math.min(boxes.length,3)},minmax(0,1fr))`;
+ return `<div class="card-timing" style="grid-template-columns:${columns}">${boxes.join('')}</div>`;
 }
 function cardHTML(c,i){
- const image=IMAGES?`<div class="card-image"><div class="mat">${COUNTDOWN&&hasDate(c)?`<span class="left ${leftClass(c)}">${esc(leftText(c))}</span>`:''}${imgHTML(c)}</div>${creditHTML(c)}</div>`:'';
+ const image=IMAGES?`<div class="card-image"><div class="mat">${COUNTDOWN&&hasDate(c)?`<span class="left ${relClass(c)}">${esc(relText(c))}</span>`:''}${imgHTML(c)}</div>${creditHTML(c)}</div>`:'';
  const rows=(SCHEMA.card||[]).map(r=>`<div><dt>${esc(r.label)}</dt><dd>${show(r,c)}${r.sub?`<p>${show({field:r.sub,as:r.subAs},c)}</p>`:''}</dd></div>`).join('');
- return `<article class="item-card" data-id="${esc(c.id)}" style="--i:${Math.min(i,8)}">${image}<div class="card-content"><div class="card-heading"><div><h2>${titleLink(c,'')}</h2>${subtitle(c)}</div>${saveButton(c)}</div>${timingBoxes(c)}${rows?`<dl class="card-fields">${rows}</dl>`:''}<button class="details-button" data-detail="${esc(c.id)}">${esc(S.details)}</button></div></article>`;
+ return `<article class="item-card" data-id="${esc(c.id)}" style="--i:${Math.min(i,8)}">${image}<div class="card-content"><div class="card-heading"><div><h2>${titleLink(c,'')}</h2>${subtitle(c)}${statusLine(c)}</div>${saveButton(c)}</div>${facts(c)}${rows?`<dl class="card-fields">${rows}</dl>`:''}<button class="details-button" data-detail="${esc(c.id)}">${esc(S.details)}</button></div></article>`;
 }
+const measureCell=(m,c,withNotes)=>`<span class="fee ${mVal(m,c)===0&&m.zeroLabel?'free':''}">${esc(mText(m,c))}</span>${withNotes&&m.note&&c[m.note]?`<span class="fee-label">${esc(c[m.note])}</span>`:''}${withNotes&&m.tableNote&&c[m.tableNote]?`<div class="small">${esc(c[m.tableNote])}</div>`:''}`;
 function rowHTML(c){
- const first=`<td>${titleLink(c,'item-title')}${F.subtitle&&c[F.subtitle]?`<span class="place">${esc(c[F.subtitle])}</span>`:''}${IMAGES?imgHTML(c)+creditHTML(c):''}<div class="row-actions"><button class="details-button" data-detail="${esc(c.id)}">${esc(S.detailsShort)}</button>${saveButton(c)}</div></td>`;
- let timing='';
- if(D||C){timing=`<td><span class="mobile-label">${esc([D&&D.label,C&&C.label].filter(Boolean).join(' / '))}</span>`;
-  if(D)timing+=`<span class="date">${esc(dateText(c))}</span>${D.note?`<div class="small">${esc(c[D.note])}</div>`:''}${COUNTDOWN&&hasDate(c)?`<div class="small ${leftClass(c)}">${esc(leftText(c))}</div>`:''}`;
-  if(C)timing+=`<span class="fee ${costOf(c)===0?'free':''}">${esc(costText(c))}</span>${C.note?`<span class="fee-label">${esc(c[C.note])}</span>`:''}${C.tableNote&&c[C.tableNote]?`<div class="small">${esc(c[C.tableNote])}</div>`:''}`;
-  timing+='</td>';}
+ const first=`<td>${titleLink(c,'item-title')}${F.subtitle&&c[F.subtitle]?`<span class="place">${esc(c[F.subtitle])}</span>`:''}${statusLine(c)}${IMAGES?imgHTML(c)+creditHTML(c):''}<div class="row-actions"><button class="details-button" data-detail="${esc(c.id)}">${esc(S.detailsShort)}</button>${saveButton(c)}</div></td>`;
+ let paired='';
+ if(D||PAIRED){paired=`<td><span class="mobile-label">${esc([D&&D.label,PAIRED&&PAIRED.label].filter(Boolean).join(' / '))}</span>`;
+  if(D)paired+=`<span class="date">${esc(dateText(c))}</span>${D.note&&c[D.note]?`<div class="small">${esc(c[D.note])}</div>`:''}${COUNTDOWN&&hasDate(c)?`<div class="small ${relClass(c)}">${esc(relText(c))}</div>`:''}`;
+  if(PAIRED)paired+=measureCell(PAIRED,c,true);
+  paired+='</td>';}
+ const own=OWN_COLUMNS.map(m=>`<td><span class="mobile-label">${esc(m.label)}</span>${measureCell(m,c,true)}</td>`).join('');
  const rest=(SCHEMA.table||[]).map(col=>`<td><span class="mobile-label">${esc(col.label)}</span>${(col.show||[]).map(s=>cell(s,c)).join('')}</td>`).join('');
- return `<tr data-id="${esc(c.id)}">${first}${timing}${rest}</tr>`;
+ return `<tr data-id="${esc(c.id)}">${first}${paired}${own}${rest}</tr>`;
 }
 
 /* Timeline: a visual index of every dated item; filtered-out marks fade. */
 let ribbonBuilt=false;
+function nameButtons(group){const names=group.slice(0,3).map(c=>`<button class="linkish" data-detail="${esc(c.id)}">${esc(nameOf(c))}</button>`);const joined=names.length>1?names.slice(0,-1).join(', ')+' '+esc(S.and)+' '+names.at(-1):names[0];return joined+(group.length>3?' '+esc(S.and)+' '+esc(fmt(S.more,{n:group.length-3})):'');}
+function ledeHTML(sorted){
+ if(KIND==='other')return '';
+ if(KIND==='published'){const past=sorted.filter(c=>daysFrom(c)<=0);if(!past.length)return '';const last=past.at(-1);const same=past.filter(c=>isoOf(c)===isoOf(last));return `${esc(S.latest)}: ${nameButtons(same)}, ${esc(dateText(last))} · ${esc(relText(last).toLocaleLowerCase(LOCALE))}.`;}
+ const up=sorted.filter(c=>daysFrom(c)>=0);if(!up.length)return esc(S.allPast);
+ const next=up.filter(c=>isoOf(c)===isoOf(up[0]));return `${esc(S.next)}: ${nameButtons(next)}, ${esc(dateText(next[0]))} · ${esc(relText(next[0]).toLocaleLowerCase(LOCALE))}.`;
+}
 function buildRibbon(){
  const dated=ITEMS.filter(hasDate);
  if(!D||D.timeline===false||!dated.length)return;
  $('ribbon').hidden=false;
- const ts=dated.map(stamp);const start=Math.min(todayUTC,...ts)-4*DAY;const end=Math.max(...ts)+10*DAY;const span=end-start;const pct=t=>((t-start)/span*100).toFixed(3)+'%';
- let html='';const d=new Date(start);d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+1);
- for(;d.getTime()<end;d.setUTCMonth(d.getUTCMonth()+1)){const t=d.getTime();html+=`<span class="month" style="left:${pct(t)};right:calc(100% - ${pct(Math.min(end,Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)))})">${months.format(d)}${d.getUTCMonth()===0?' ’'+String(d.getUTCFullYear()).slice(2):''}</span>`;}
- if(todayUTC>=start&&todayUTC<=end)html+=`<span class="today" style="left:${pct(todayUTC)}"><span>${esc(S.today)}</span></span>`;
+ const ts=dated.map(stamp);const start=Math.min(...(KIND==='published'?ts:[todayUTC,...ts]))-4*DAY;const end=Math.max(...(KIND==='published'?[todayUTC,...ts]:ts))+10*DAY;const span=end-start;const pct=t=>((t-start)/span*100).toFixed(3)+'%';
+ const yearly=span>540*DAY;
+ let html='';const d=new Date(start);d.setUTCDate(1);d.setUTCMonth(yearly?0:d.getUTCMonth()+1);if(yearly)d.setUTCFullYear(d.getUTCFullYear()+1);
+ const step=()=>yearly?d.setUTCFullYear(d.getUTCFullYear()+1):d.setUTCMonth(d.getUTCMonth()+1);
+ for(;d.getTime()<end;step()){const t=d.getTime();const nextT=yearly?Date.UTC(d.getUTCFullYear()+1,0,1):Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1);html+=`<span class="month" style="left:${pct(t)};right:calc(100% - ${pct(Math.min(end,nextT))})">${yearly?d.getUTCFullYear():months.format(d)+(d.getUTCMonth()===0?' ’'+String(d.getUTCFullYear()).slice(2):'')}</span>`;}
+ if(todayUTC>=start&&todayUTC<=end)html+=`<span class="today${(todayUTC-start)/span>.85?' flip':''}" style="left:${pct(todayUTC)}"><span>${esc(S.today)}</span></span>`;
  const stacks={};const W=$('track').clientWidth||800;const size=innerWidth<650?11:14;
  const byDate=(a,b)=>isoOf(a).localeCompare(isoOf(b))||nameOf(a).localeCompare(nameOf(b),LOCALE);
- for(const c of [...dated].sort(byDate)){const key=Math.round((stamp(c)-start)/span*W/size);const n=stacks[key]=(stacks[key]||0)+1;html+=`<button class="mark ${leftClass(c)}" tabindex="-1" data-detail="${esc(c.id)}" data-mark="${esc(c.id)}" style="left:${pct(stamp(c))};bottom:${10+(n-1)*size}px" aria-label="${esc(nameOf(c))}"></button>`;}
+ for(const c of [...dated].sort(byDate)){const key=Math.round((stamp(c)-start)/span*W/size);const n=stacks[key]=(stacks[key]||0)+1;html+=`<button class="mark ${relClass(c)}" tabindex="-1" data-detail="${esc(c.id)}" data-mark="${esc(c.id)}" style="left:${pct(stamp(c))};bottom:${10+(n-1)*size}px" aria-label="${esc(nameOf(c))}"></button>`;}
  $('track').innerHTML=html;
  const sorted=[...dated].sort(byDate),first=sorted[0],last=sorted.at(-1);
- $('ribbon-range').textContent=isoOf(first)===isoOf(last)?fmt(S.rangeOne,{date:dateText(first)}):fmt(S.rangeMany,{from:shortDates.format(new Date(isoOf(first)+'T12:00:00Z')),to:dateText(last)});
- const up=sorted.filter(c=>daysLeft(c)>=0);
- if(!up.length)$('ribbon-lede').textContent=S.allPast;
- else{const next=up.filter(c=>isoOf(c)===isoOf(up[0]));const names=next.slice(0,3).map(c=>`<button class="linkish" data-detail="${esc(c.id)}">${esc(nameOf(c))}</button>`);const joined=names.length>1?names.slice(0,-1).join(', ')+' '+esc(S.and)+' '+names.at(-1):names[0];const more=next.length>3?' '+esc(S.and)+' '+esc(fmt(S.more,{n:next.length-3})):'';$('ribbon-lede').innerHTML=`${esc(S.next)}: ${joined}${more}, ${esc(dateText(next[0]))} · ${esc(leftText(next[0]).toLocaleLowerCase(LOCALE))}.`;}
+ $('ribbon-range').textContent=isoOf(first)===isoOf(last)?fmt(S.rangeOne,{date:dateText(first)}):fmt(S.rangeMany,{from:shortDates.format(new Date(isoOf(first)+'T12:00:00Z'))+(isoOf(first).slice(0,4)!==isoOf(last).slice(0,4)?' '+isoOf(first).slice(0,4):''),to:dateText(last)});
+ const lede=ledeHTML(sorted);$('ribbon-lede').innerHTML=lede;$('ribbon-lede').hidden=!lede;
  const tip=document.createElement('div');tip.className='tip';$('track').append(tip);
- $('track').addEventListener('pointerover',e=>{const m=e.target.closest('.mark');if(!m)return;const c=ITEMS.find(x=>x.id===m.dataset.mark);tip.innerHTML=`${esc(nameOf(c))}<small>${[dateText(c),C&&costText(c),leftText(c)].filter(Boolean).map(esc).join(' · ')}</small>`;tip.style.left=m.style.left;tip.style.bottom=`calc(${m.style.bottom} + 22px)`;tip.style.setProperty('--tx','-50%');const r=tip.getBoundingClientRect(),tr=$('track').getBoundingClientRect();tip.style.setProperty('--tx',r.left<tr.left?'0%':r.right>tr.right?'-100%':'-50%');tip.classList.add('show');});
+ $('track').addEventListener('pointerover',e=>{const m=e.target.closest('.mark');if(!m)return;const c=ITEMS.find(x=>x.id===m.dataset.mark);tip.innerHTML=`${esc(nameOf(c))}<small>${[dateText(c),M[0]&&mText(M[0],c),relText(c)].filter(Boolean).map(esc).join(' · ')}</small>`;tip.style.left=m.style.left;tip.style.bottom=`calc(${m.style.bottom} + 22px)`;tip.style.setProperty('--tx','-50%');const r=tip.getBoundingClientRect(),tr=$('track').getBoundingClientRect();tip.style.setProperty('--tx',r.left<tr.left?'0%':r.right>tr.right?'-100%':'-50%');tip.classList.add('show');});
  $('track').addEventListener('pointerout',e=>{if(e.target.closest('.mark'))tip.classList.remove('show');});
  $('ribbon').addEventListener('click',e=>{const t=e.target.closest('[data-detail]');if(t)openDetail(t.dataset.detail);});
  ribbonBuilt=true;
@@ -396,8 +442,7 @@ function buildRibbon(){
 function updateRibbon(ids){if(!ribbonBuilt)return;document.querySelectorAll('.mark').forEach(m=>m.classList.toggle('out',!ids.has(m.dataset.mark)));}
 
 /* Sorting: missing values always go last, whatever the direction. */
-const CUSTOM=Object.fromEntries((SCHEMA.sorts||[]).map(s=>[s.key,s]));
-function sortValue(c,key){if(key==='date')return isoOf(c);if(key==='cost')return costOf(c);if(key==='name')return nameOf(c);const v=c[CUSTOM[key].field];return v===''||v==='—'?null:v;}
+function sortValue(c,key){if(key==='date')return isoOf(c);if(key==='name')return nameOf(c);if(MEASURE[key])return mVal(MEASURE[key],c);const v=c[CUSTOM[key].field];return v===''||v==='—'?null:v;}
 function tie(a,b){return (hasDate(a)&&hasDate(b)?isoOf(a).localeCompare(isoOf(b)):0)||nameOf(a).localeCompare(nameOf(b),LOCALE);}
 function compare(a,b){const va=sortValue(a,state.sort),vb=sortValue(b,state.sort);if(va==null&&vb==null)return tie(a,b);if(va==null)return 1;if(vb==null)return -1;const d=typeof va==='number'&&typeof vb==='number'?va-vb:String(va).localeCompare(String(vb),LOCALE);return (state.direction==='desc'?-1:1)*d||tie(a,b);}
 const searchFields=SCHEMA.search||null;
@@ -406,31 +451,33 @@ const HAY=new Map(ITEMS.map(c=>[c.id,haystack(c)]));
 
 function readURL(){
  Object.assign(state,defaults);const p=new URL(location.href).searchParams;
+ if(p.has('call')&&!p.has('item'))p.set('item',p.get('call'));   // links made before ?call= became ?item=
  for(const key of Object.keys(defaults))if(p.has(key))state[key]=typeof defaults[key]==='boolean'?p.get(key)==='1':p.get(key);
- if(state.call&&!ITEMS.some(c=>c.id===state.call))state.call='';
+ if(state.item&&!ITEMS.some(c=>c.id===state.item))state.item='';
  for(const f of FACETS)if(state[f.key]&&!f.options.some(([v])=>v===state[f.key]))state[f.key]='';
  if(!SORTS.some(([v])=>v===state.sort))state.sort=defaults.sort;
+ if(!p.has('direction'))state.direction=naturalDirection(state.sort);
  if(!['gallery','table'].includes(state.view))state.view=defaults.view;
- if(!['asc','desc'].includes(state.direction))state.direction='asc';
- if(!(C&&C.freeFilter))state.free=false;
+ if(!['asc','desc'].includes(state.direction))state.direction=naturalDirection(state.sort);
  $('search').value=state.q;
 }
 function writeURL(mode){
- if(!mode)return;const url=new URL(location.href);
- for(const key of Object.keys(defaults)){url.searchParams.delete(key);if(state[key]!==defaults[key])url.searchParams.set(key,typeof state[key]==='boolean'?'1':state[key]);}
+ if(!mode)return;const url=new URL(location.href);url.searchParams.delete('call');
+ for(const key of Object.keys(defaults)){url.searchParams.delete(key);const dflt=key==='direction'?naturalDirection(state.sort):defaults[key];if(state[key]!==dflt)url.searchParams.set(key,typeof state[key]==='boolean'?'1':state[key]);}
  if(url.href!==location.href)try{history[mode==='replace'?'replaceState':'pushState'](null,'',url);}catch{}
 }
-function hasFilters(){return FACETS.some(f=>state[f.key])||state.free||state.favorites||!!state.q.trim();}
+function hasFilters(){return FACETS.some(f=>state[f.key])||TOGGLES.some(m=>state[m.zeroKey])||state.favorites||!!state.q.trim();}
 let firstRender=true;
 function render(mode='push'){
  const savedFocus=document.activeElement?.dataset.save;
  const previousSaves=savedFocus?[...document.querySelectorAll('#results [data-save]')].filter(b=>b.offsetParent!==null).map(b=>b.dataset.save):[];
  document.querySelectorAll('#filter-grid [data-filter]').forEach(b=>b.setAttribute('aria-pressed',state[b.dataset.filter]===b.dataset.value));
- $('free').setAttribute('aria-pressed',state.free);$('favorites').setAttribute('aria-pressed',state.favorites);$('favorites-count').textContent=saved.size;
+ document.querySelectorAll('[data-toggle]').forEach(b=>b.setAttribute('aria-pressed',state[b.dataset.toggle]));
+ $('favorites').setAttribute('aria-pressed',state.favorites);$('favorites-count').textContent=saved.size;
  state.q=$('search').value;const q=state.q.trim().toLocaleLowerCase(LOCALE);
- const active=FACETS.filter(f=>state[f.key]).length+[state.free,state.favorites,!!q,state.sort!==defaults.sort||state.direction!=='asc'].filter(Boolean).length;
+ const active=FACETS.filter(f=>state[f.key]).length+TOGGLES.filter(m=>state[m.zeroKey]).length+[state.favorites,!!q,state.sort!==defaults.sort||state.direction!==naturalDirection(state.sort)].filter(Boolean).length;
  $('active-filters').textContent=active?fmt(S.active,{n:active}):'';
- const filtered=ITEMS.filter(c=>FACETS.every(f=>!state[f.key]||list(c[f.key]).includes(state[f.key]))&&(!state.free||costOf(c)===0)&&(!state.favorites||saved.has(c.id))&&(!q||HAY.get(c.id).includes(q))).sort(compare);
+ const filtered=ITEMS.filter(c=>FACETS.every(f=>!state[f.key]||list(c[f.key]).includes(state[f.key]))&&TOGGLES.every(m=>!state[m.zeroKey]||mVal(m,c)===0)&&(!state.favorites||saved.has(c.id))&&(!q||HAY.get(c.id).includes(q))).sort(compare);
  $('result-count').textContent=fmt(S.count,{n:filtered.length,total:ITEMS.length,noun:ITEMS.length===1?SCHEMA.noun.one:SCHEMA.noun.many});
  $('empty').hidden=filtered.length>0;$('table-wrap').hidden=state.view!=='table'||!filtered.length;$('cards').hidden=state.view!=='gallery'||!filtered.length;
  $('cards').classList.toggle('intro',firstRender);
@@ -441,10 +488,10 @@ function render(mode='push'){
  $('empty-title').textContent=ITEMS.length?fmt(S.noMatches,{noun:SCHEMA.noun.many}):fmt(S.emptyEdition,{noun:SCHEMA.noun.many});
  $('empty-message').hidden=!!ITEMS.length;$('empty-message').textContent=ITEMS.length?'':S.emptyMessage;
  $('empty-reset').hidden=!ITEMS.length||!hasFilters();$('reset').hidden=!hasFilters();
- const dir=state.direction==='asc';
- document.querySelectorAll('[data-sort]').forEach(b=>{const on=b.dataset.sort===state.sort;b.querySelector('span').textContent=on?(dir?'↑':'↓'):'↕';b.setAttribute('aria-label',b.textContent.replace(/[↑↓↕]/g,'').trim()+': '+(on?(dir?S.sortedAsc:S.sortedDesc):S.sortAsc));});
- document.querySelectorAll('th[data-sorts]').forEach(th=>th.setAttribute('aria-sort',th.dataset.sorts.split(' ').includes(state.sort)?(dir?'ascending':'descending'):'none'));
- const label=(SORTS.find(([v])=>v===state.sort)||[,''])[1];document.querySelector('.sort-status').textContent=label+': '+(dir?S.ascending:S.descending);
+ const asc=state.direction==='asc';
+ document.querySelectorAll('[data-sort]').forEach(b=>{const on=b.dataset.sort===state.sort;b.querySelector('span').textContent=on?(asc?'↑':'↓'):'↕';b.setAttribute('aria-label',b.textContent.replace(/[↑↓↕]/g,'').trim()+': '+(on?(asc?S.sortedAsc:S.sortedDesc):S.sortAsc));});
+ document.querySelectorAll('th[data-sorts]').forEach(th=>th.setAttribute('aria-sort',th.dataset.sorts.split(' ').includes(state.sort)?(asc?'ascending':'descending'):'none'));
+ const label=(SORTS.find(([v])=>v===state.sort)||[,''])[1];document.querySelector('.sort-status').textContent=label+': '+(asc?S.ascending:S.descending);
  if(savedFocus){const current=[...document.querySelectorAll('#results [data-save]')].filter(b=>b.offsetParent!==null);const index=previousSaves.indexOf(savedFocus);const target=current.find(b=>b.dataset.save===savedFocus)||current[Math.min(Math.max(index,0),current.length-1)]||$('favorites');if(target===$('favorites'))$('filter-panel').open=true;target.focus({preventScroll:true});}
  firstRender=false;
  writeURL(mode);
@@ -452,36 +499,37 @@ function render(mode='push'){
 function openDetail(id,fromHistory){
  const c=ITEMS.find(c=>c.id===id);if(!c)return;$('detail').dataset.id=id;const a=c.image||{};
  const figure=!IMAGES?'':a.src?`<figure class="detail-figure"><div class="mat"><img src="${esc(a.src)}" alt="${esc(a.caption||'')}"></div><figcaption><p>${a.type?`<strong>${esc(a.type)}.</strong> `:''}${esc(a.caption||'')}</p>${knownCredit(a.credit)?`<p>${esc(S.creatorCredit)}: ${esc(a.credit)}</p>`:''}${isHttps(a.source_url)?link(S.imageSource,a.source_url):''}</figcaption></figure>`:`<figure class="detail-figure"><div class="mat"><div class="no-image">${esc(S.noImage)}</div></div><figcaption>${esc(S.noImageLong)}</figcaption></figure>`;
- const lead=[];
- if(D){const dl=D.detail||{};lead.push(`<div><span class="field-label">${esc(dl.label||D.label)}${COUNTDOWN&&hasDate(c)?` · <span class="${leftClass(c)}">${esc(leftText(c))}</span>`:''}</span><p>${dl.field?md(c[dl.field]):esc(dateText(c))+(D.note&&c[D.note]?' · '+esc(c[D.note]):'')}</p></div>`);}
- if(C){const specs=C.detail||[{label:C.label,field:C.note,withCost:true}];for(const s of specs)lead.push(`<div><span class="field-label">${esc(s.label)}</span><p>${s.field?md(c[s.field]):''}${s.withCost&&costOf(c)!==null&&(costOf(c)!==0||!s.field)?(s.field?' · ':'')+esc(costText(c)):''}</p></div>`);}
- for(const s of (SCHEMA.detail?.lead||[]))lead.push(`<div><span class="field-label">${esc(s.label)}</span><p>${show(s,c)}</p></div>`);
+ const lead=[];const box=(label,body)=>`<div><span class="field-label">${label}</span><p>${body}</p></div>`;
+ if(V){const level=c[V.confidence];const checked=ISO.test(c[V.checked]||'')?fmt(S.checked,{date:isoText(c[V.checked])}):'';lead.push(box(esc(S.verification),[badge(c),checked&&esc(checked),level&&esc(fmt(S.confidence,{level}))].filter(Boolean).join(' · ')+(V.note&&c[V.note]?`<br>${md(c[V.note])}`:'')));}
+ if(D){const dl=D.detail||{};lead.push(box(esc(dl.label||D.label)+(COUNTDOWN&&hasDate(c)?` · <span class="${relClass(c)}">${esc(relText(c))}</span>`:''),dl.field?md(c[dl.field]):esc(dateText(c))+(D.note&&c[D.note]?' · '+esc(c[D.note]):'')));}
+ for(const m of M){if(m.detail){for(const s of m.detail)lead.push(box(esc(s.label),(s.field?md(c[s.field]):'')+(s.withCost&&mVal(m,c)!==null&&(mVal(m,c)!==0||!s.field)?(s.field?' · ':'')+esc(mText(m,c)):'')));}else lead.push(box(esc(m.label),esc(mText(m,c))+(m.note&&c[m.note]?' · '+esc(c[m.note]):'')));}
+ for(const s of (SCHEMA.detail?.lead||[]))lead.push(box(esc(s.label),show(s,c)));
  const top=figure||lead.length?`<div class="detail-top ${figure&&lead.length?'':'single'}">${figure}${lead.length?`<div class="detail-lead">${lead.join('')}</div>`:''}</div>`:'';
  const sub=(SCHEMA.detail?.subtitle||[F.subtitle]).filter(Boolean).map(k=>list(c[k]).map(x=>facetLabel(k,x)).join(' · ')).filter(Boolean).map(esc).join(' · ');
  const fields=(SCHEMA.detail?.fields||[]).map(s=>`<section class="detail-field"><h3>${esc(s.label)}</h3><p>${show(s,c)}</p></section>`).join('');
  $('detail-body').innerHTML=`<h2 id="detail-title">${esc(fullName(c))}</h2>${sub?`<p class="dialog-place">${sub}</p>`:''}${top}${fields?`<div class="detail-grid">${fields}</div>`:''}<div class="sources">${isHttps(c[F.url])?`<a class="primary" href="${esc(c[F.url])}" target="_blank" rel="noopener noreferrer">${esc(S.source)}</a>`:''}${F.sources&&c[F.sources]?'<p>'+md(c[F.sources])+'</p>':''}</div>`;
  if(!$('detail').open)$('detail').showModal();$('detail').scrollTop=0;
- if(!fromHistory&&state.call!==id){state.call=id;writeURL('push');}
+ if(!fromHistory&&state.item!==id){state.item=id;writeURL('push');}
 }
-function syncDialog(){const d=$('detail');if(state.call){if(!d.open||d.dataset.id!==state.call)openDetail(state.call,true);}else if(d.open)d.close();}
-function reset(){for(const f of FACETS)state[f.key]='';state.free=false;state.favorites=false;$('search').value='';state.sort=defaults.sort;state.direction='asc';render();document.querySelector('[data-view][aria-pressed="true"]').focus({preventScroll:true});}
+function syncDialog(){const d=$('detail');if(state.item){if(!d.open||d.dataset.id!==state.item)openDetail(state.item,true);}else if(d.open)d.close();}
+function reset(){for(const f of FACETS)state[f.key]='';for(const m of TOGGLES)state[m.zeroKey]=false;state.favorites=false;$('search').value='';state.sort=defaults.sort;state.direction=defaults.direction;render();document.querySelector('[data-view][aria-pressed="true"]').focus({preventScroll:true});}
 
-$('detail').addEventListener('close',()=>{if(state.call){state.call='';writeURL('push');}});
-$('filter-grid').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;state[b.dataset.filter]=b.dataset.value;if(b.dataset.filter==='sort')state.direction='asc';render();});
-$('head').addEventListener('click',e=>{const b=e.target.closest('[data-sort]');if(!b)return;state.direction=state.sort===b.dataset.sort&&state.direction==='asc'?'desc':'asc';state.sort=b.dataset.sort;render();});
+$('detail').addEventListener('close',()=>{if(state.item){state.item='';writeURL('push');}});
+$('filter-grid').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;state[b.dataset.filter]=b.dataset.value;if(b.dataset.filter==='sort')state.direction=naturalDirection(b.dataset.value);render();});
+$('toggles').addEventListener('click',e=>{const b=e.target.closest('[data-toggle]');if(!b)return;state[b.dataset.toggle]=!state[b.dataset.toggle];render();});
+$('head').addEventListener('click',e=>{const b=e.target.closest('[data-sort]');if(!b)return;const key=b.dataset.sort;state.direction=state.sort===key?(state.direction==='asc'?'desc':'asc'):naturalDirection(key);state.sort=key;render();});
 $('results').addEventListener('click',e=>{
  const v=e.target.closest('[data-view]');if(v){state.view=v.dataset.view;render();return;}
  const d=e.target.closest('[data-detail]');if(d){openDetail(d.dataset.detail);return;}
  const s=e.target.closest('[data-save]');if(s){const id=s.dataset.save;saved.has(id)?saved.delete(id):saved.add(id);try{localStorage.setItem(KEY+':favorites',JSON.stringify([...saved]));}catch{}render();}
 });
 $('search').addEventListener('input',()=>render('replace'));
-$('free').addEventListener('click',()=>{state.free=!state.free;render();});
 $('favorites').addEventListener('click',()=>{state.favorites=!state.favorites;render();});
 $('reset').addEventListener('click',reset);$('empty-reset').addEventListener('click',reset);
 $('close').addEventListener('click',()=>$('detail').close());
 $('detail').addEventListener('click',e=>{if(e.target===$('detail')){const r=$('detail').getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)$('detail').close();}});
 $('print').addEventListener('click',()=>window.print());
-$('download').addEventListener('click',()=>{const clone=document.documentElement.cloneNode(true);for(const id of ['rows','cards','detail-body','track','filter-grid','head','cols'])clone.querySelector('#'+id).innerHTML='';clone.querySelector('#detail').removeAttribute('open');clone.removeAttribute('data-theme');const blob=new Blob(['<!doctype html>\n'+clone.outerHTML],{type:'text/html;charset=utf-8'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=KEY+'_'+SCHEMA.snapshot.date+'.html';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);});
+$('download').addEventListener('click',()=>{const clone=document.documentElement.cloneNode(true);for(const id of ['rows','cards','detail-body','track','filter-grid','toggles','head','cols'])clone.querySelector('#'+id).innerHTML='';clone.querySelector('#detail').removeAttribute('open');clone.removeAttribute('data-theme');const blob=new Blob(['<!doctype html>\n'+clone.outerHTML],{type:'text/html;charset=utf-8'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=KEY+'_'+SCHEMA.snapshot.date+'.html';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);});
 document.addEventListener('error',e=>{if(e.target.tagName==='IMG'){const img=e.target;img.hidden=true;const note=document.createElement('span');note.className='no-image';note.textContent=S.imageFailed;img.parentElement.append(note);}},true);
 
 /* Theme: follows the system; the button pins a choice for this browser. */

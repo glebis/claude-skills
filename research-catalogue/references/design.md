@@ -38,16 +38,17 @@ What the collection is — its nouns, facets, card rows, table columns and detai
 Dark neutral ink for titles, warm brown actions, light terracotta selected states and paper surfaces on a quiet neutral canvas.
 
 ## Typography
-Serif page heading; system sans-serif for data. Dates and prices have a larger, heavier weight with tabular figures.
+Serif page heading; system sans-serif for data. Dates and measures have a larger, heavier weight with tabular figures.
 
 ## Layout
 Bounded canvas; concise heading and filters collapsed by default; direct filter groups and selection criteria live inside the disclosure. Three card columns become two and then one. On narrow screens filter choices scroll within their group. The comparison table fits desktop width in percentage columns; below 1000px it switches to fixed pixel columns and scrolls inside its own container with the name column pinned (180px on phones), never widening the page. No statistics hero, instructional sections or generic copyright footer.
 
 ## Optional blocks
 - **Images** (`images`, default on when `assets/manifest.json` exists): matted image on cards, table and dialog; off gives text cards.
-- **Date** (`date`): date box, days-left marker (`countdown`), timeline (`timeline`), date sorting. Without it none of these render.
-- **Cost** (`cost`): price box, "free" toggle (`freeFilter`), cost sorting. Without it none of these render.
-The date and cost columns share one table column with a sort pair when both exist.
+- **Date** (`date`): date box, relative marker (`countdown`), timeline (`timeline`), date sorting. `kind` sets the wording: deadlines count down and turn urgent within `soonDays`; events say "In n days"; publications age ("3 months ago") and sort newest first; `other` shows dates only.
+- **Measures** (`measures`): any number of numeric facts (price, size, score, year). Up to three show as boxes on cards; the first shares the date's table column with a sort pair (which may wrap onto two lines), the rest get their own sortable columns. Each starts sorting in its better direction.
+- **Verification** (`verification`): a status badge with a last-checked date on cards and table rows, a status filter, and a verification box with confidence and notes in the dialog. Status is carried by badge shape as well as colour: filled square for verified, hollow square for unverified or needing a re-check, diamond for conflicting sources.
+Without a block, none of its parts render.
 
 ## Elevation & Depth
 Flat, borderless surfaces. Separate content through spacing, typography and surface colour rather than decorative outlines. A modal overlays the page for full details and image credits.
@@ -56,22 +57,22 @@ Flat, borderless surfaces. Separate content through spacing, typography and surf
 Square edges throughout: cards, controls, input fields, table surfaces and dialog use zero border radius and no decorative borders. Preserve visible keyboard focus outlines and disclosure chevrons.
 
 ## Components
-Search; one button group per facet plus the sort order, with visible pressed states and optional counts; free and favourites toggles; gallery/table selector; cards; table rows; full-details dialog. Small choice sets use direct buttons, never dropdowns.
+Search; one button group per facet plus the sort order, with visible pressed states and optional counts; zero-value toggles (such as free entry) and favourites; gallery/table selector; cards; table rows; full-details dialog. Small choice sets use direct buttons, never dropdowns.
 
 ## Do's and Don'ts
 Preserve factual copy and image credits. Keep unknown values visible as —. Missing values sort last in both directions.
 
 ## Interaction continuity
-Facets, search, sort and direction, view and the open item are restored from URL parameters on load and Back/Forward; the filter disclosure still starts collapsed. Activated controls retain focus. Name, date and cost headers toggle sort direction with `aria-sort`. Empty editions and zero filter matches use separate states and only useful reset actions.
+Facets, search, sort and direction, view and the open item are restored from URL parameters on load and Back/Forward; the filter disclosure still starts collapsed. Activated controls retain focus. Name, date and measure headers toggle sort direction with `aria-sort`. Empty editions and zero filter matches use separate states and only useful reset actions.
 
 ## Language
 Interface copy lives in the builder's default strings and the project's `strings` overrides; dates and currency follow `locale` (en-GB for English). Translation does not advance the research snapshot or verify facts anew.
 
 ## Timeline
-When the collection has dates, a compact timeline under the masthead places every dated item on a month axis with a Today line. Marks stack when dates are close, turn the urgent colour within `soonDays` (default 30), fade when filtered out, show a tooltip on hover and open full details on click. The track is a redundant visual index (aria-hidden, marks not in tab order); the sentence above it ("Next to close: <linked items>, <date> · <days left>.") is readable and its names are buttons. Cards and table remain the full accessible path.
+When the collection has dates, a compact timeline under the masthead places every dated item on a month axis (a year axis when the range exceeds about 18 months) with a Today line, whose label flips to the left near the right edge. Marks stack when dates are close, turn the urgent colour within `soonDays` (default 30), fade when filtered out, show a tooltip on hover and open full details on click. The track is a redundant visual index (aria-hidden, marks not in tab order); the sentence above it ("Next to close: …" for deadlines, "Next up: …" for events, "Most recent: …" for publications) is readable and its names are buttons. Cards and table remain the full accessible path.
 
-## Days left
-Derived in the browser from today's date against the researched date, not a research fact; past dates read "Closed".
+## Relative dates
+Days left, "in n days" and ages are derived in the browser from today's date against the researched date, not research facts; past deadlines read "Closed", past events "Past".
 
 ## Theme
 Light by default from the system setting; a dark theme (neutral near-black, light terracotta accent) follows prefers-color-scheme, and the sun/moon button pins a choice per browser.

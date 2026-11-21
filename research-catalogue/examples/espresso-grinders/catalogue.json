@@ -13,16 +13,6 @@
   },
   "storageKey": "espresso-grinders-demo",
   "images": false,
-  "cost": {
-    "field": "price",
-    "currency": "EUR",
-    "label": "Price",
-    "note": "priceNote",
-    "approxIf": [
-      "US$"
-    ],
-    "freeFilter": "Free to try"
-  },
   "facets": [
     {
       "key": "burr",
@@ -33,13 +23,6 @@
       "key": "use",
       "label": "Use",
       "counts": true
-    }
-  ],
-  "sorts": [
-    {
-      "key": "noise",
-      "label": "Quietest first",
-      "field": "noiseDb"
     }
   ],
   "search": [
@@ -62,10 +45,6 @@
       "as": "join"
     },
     {
-      "label": "Noise",
-      "field": "noise"
-    },
-    {
       "label": "Verdict",
       "field": "verdict",
       "as": "dashNote"
@@ -85,14 +64,6 @@
         {
           "field": "steps",
           "as": "note"
-        }
-      ]
-    },
-    {
-      "label": "Noise",
-      "show": [
-        {
-          "field": "noise"
         }
       ]
     },
@@ -135,10 +106,6 @@
         "field": "steps"
       },
       {
-        "label": "Noise",
-        "field": "noise"
-      },
-      {
         "label": "Retention",
         "field": "retention"
       },
@@ -159,5 +126,30 @@
     "searchPlaceholder": "Name, maker or burr type",
     "criteria": "Selection criteria & budget",
     "source": "Maker’s page →"
-  }
+  },
+  "measures": [
+    {
+      "key": "price",
+      "field": "price",
+      "label": "Price",
+      "format": "currency",
+      "currency": "EUR",
+      "note": "priceNote",
+      "approxIf": [
+        "US$"
+      ],
+      "zeroFilter": "Free to try",
+      "better": "low"
+    },
+    {
+      "key": "noise",
+      "field": "noiseDb",
+      "label": "Noise",
+      "unit": "dB(A)",
+      "format": "number",
+      "decimals": 0,
+      "better": "low",
+      "sortChip": "Quietest first"
+    }
+  ]
 }

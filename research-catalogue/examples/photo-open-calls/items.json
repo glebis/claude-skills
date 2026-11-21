@@ -14,7 +14,10 @@
     "winners": "2026 winners are a made-up list.",
     "eligibility": "Open to all photographers over 18.",
     "benefit": "Cash prize and group show.",
-    "extra": "[Rules (example)](https://example.org/north_light_award/rules)"
+    "extra": "[Rules (example)](https://example.org/north_light_award/rules)",
+    "status": "verified",
+    "confidence": "high",
+    "checked": "2026-11-21"
   },
   {
     "id": "quiet_faces_portrait_prize",
@@ -31,7 +34,10 @@
     "winners": "—",
     "eligibility": "No nationality restriction.",
     "benefit": "Online feature and residency week.",
-    "extra": "[Rules (example)](https://example.org/quiet_faces_portrait_prize/rules)"
+    "extra": "[Rules (example)](https://example.org/quiet_faces_portrait_prize/rules)",
+    "status": "verified",
+    "confidence": "high",
+    "checked": "2026-11-21"
   },
   {
     "id": "harbour_street_festival",
@@ -48,7 +54,11 @@
     "winners": "[2026 programme](https://example.org/harbour/2026) — exhibitors, not winners.",
     "eligibility": "International; English statement required.",
     "benefit": "Exhibition, catalogue, travel grant €300.",
-    "extra": "[Rules (example)](https://example.org/harbour_street_festival/rules)"
+    "extra": "[Rules (example)](https://example.org/harbour_street_festival/rules)",
+    "status": "unverified",
+    "confidence": "medium",
+    "checked": "2026-11-21",
+    "verificationNote": "Rules page announced but not yet published; dates from the organiser's newsletter."
   },
   {
     "id": "paper_room_photobook",
@@ -65,7 +75,10 @@
     "winners": "—. [Shortlist archive](https://example.org/paper-room/shortlist) — shortlists only.",
     "eligibility": "Unpublished projects only.",
     "benefit": "Publication of 500 copies.",
-    "extra": "[Rules (example)](https://example.org/paper_room_photobook/rules)"
+    "extra": "[Rules (example)](https://example.org/paper_room_photobook/rules)",
+    "status": "verified",
+    "confidence": "medium",
+    "checked": "2026-11-21"
   },
   {
     "id": "meridian_residency",
@@ -82,7 +95,11 @@
     "winners": "Past residents listed as a made-up archive.",
     "eligibility": "Over 21, any nationality; visa costs not covered.",
     "benefit": "Six weeks, studio and AUD 4 000 stipend.",
-    "extra": "[Rules (example)](https://example.org/meridian_residency/rules)"
+    "extra": "[Rules (example)](https://example.org/meridian_residency/rules)",
+    "status": "conflicting",
+    "confidence": "low",
+    "checked": "2026-11-21",
+    "verificationNote": "Rules PDF says 15 January, the submission portal says 31 January."
   },
   {
     "id": "after_dark_projection",
@@ -99,7 +116,10 @@
     "winners": "—",
     "eligibility": "Open worldwide.",
     "benefit": "Projection during a three-night event.",
-    "extra": "[Rules (example)](https://example.org/after_dark_projection/rules)"
+    "extra": "[Rules (example)](https://example.org/after_dark_projection/rules)",
+    "status": "verified",
+    "confidence": "high",
+    "checked": "2026-11-21"
   },
   {
     "id": "salt_and_silver_grant",
@@ -116,7 +136,11 @@
     "winners": "—",
     "eligibility": "Photographers working on film.",
     "benefit": "€2 000 grant and darkroom time.",
-    "extra": "[Rules (example)](https://example.org/salt_and_silver_grant/rules)"
+    "extra": "[Rules (example)](https://example.org/salt_and_silver_grant/rules)",
+    "status": "outdated",
+    "confidence": "medium",
+    "checked": "2026-08-02",
+    "verificationNote": "Last edition's terms; the new edition has not confirmed fees."
   },
   {
     "id": "monsoon_zine_open",
@@ -133,6 +157,9 @@
     "winners": "—",
     "eligibility": "Open to all; regional projects prioritised.",
     "benefit": "Publication and 20 author copies.",
-    "extra": "[Rules (example)](https://example.org/monsoon_zine_open/rules)"
+    "extra": "[Rules (example)](https://example.org/monsoon_zine_open/rules)",
+    "status": "verified",
+    "confidence": "high",
+    "checked": "2026-11-21"
   }
 ]
