@@ -48,6 +48,7 @@ Bounded canvas; concise heading and filters collapsed by default; direct filter 
 - **Date** (`date`): date box, relative marker (`countdown`), timeline (`timeline`), date sorting. `kind` sets the wording: deadlines count down and turn urgent within `soonDays`; events say "In n days"; publications age ("3 months ago") and sort newest first; `other` shows dates only.
 - **Measures** (`measures`): any number of numeric facts (price, size, score, year). Up to three show as boxes on cards; the first shares the date's table column with a sort pair (which may wrap onto two lines), the rest get their own sortable columns. Each starts sorting in its better direction.
 - **Verification** (`verification`): a status badge with a last-checked date on cards and table rows, a status filter, and a verification box with confidence and notes in the dialog. Status is carried by badge shape as well as colour: filled square for verified, hollow square for unverified or needing a re-check, diamond for conflicting sources.
+- **Stream** (`layout: "stream"`): for dated research read newest first. A single reading column instead of cards: margin date, serif headline as a button, one muted summary line, a meta line with source, topic and any measure. Week headings (serif, larger than headlines) carry the grouping; hairline separators between items; the bookmark stays transparent until saved. No mono caps labels in the list.
 Without a block, none of its parts render.
 
 ## Elevation & Depth

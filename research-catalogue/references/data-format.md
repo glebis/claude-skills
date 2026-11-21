@@ -110,6 +110,19 @@ Up to three measures show as boxes on cards. The first table measure shares the 
 
 All keys are optional; the values shown are the defaults. Each record may carry `status`, `checked` (`YYYY-MM-DD`), `confidence` (free text, e.g. `high`) and `verificationNote` (markdown with links). The third element of each value is its tone: `ok`, `warn` or `alert`. `filter` adds a Status facet. A record without a status shows "not yet checked".
 
+`quiet` (list of status values, e.g. `["verified"]`) hides those badges in cards, rows and the list, so only the exceptions stand out; the dialog still shows every status. With `layout: "stream"`, the timeline sentence becomes a verification summary ("27 of 33 confirmed at the original source. Still open: reported only (5)…") whose counts filter the list. A `checked` date equal to the research date is shown only in the dialog.
+
+### layout (optional)
+
+`"layout": "stream"` replaces cards with a dated list for news-like research (news, releases, changelogs, papers): date in the margin once per day, the full `name` as headline (opens the dialog), one summary line, and a quiet meta line. Sorted by date, the list is grouped by week ("This week", "Last week", "3 – 9 Nov"); any other sort lists items flat with a date on each. The table view stays.
+
+```json
+"layout": "stream",
+"stream": {"summary": "what", "meta": ["org", "topic"]}
+```
+
+`summary` defaults to the first card row's field; `meta` lists fields or facet keys (shown with facet labels), defaulting to the subtitle. Measures with a value join the meta line; badges appear only for statuses not in `verification.quiet`.
+
 ### facets
 
 ```json
