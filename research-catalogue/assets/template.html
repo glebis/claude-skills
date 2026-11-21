@@ -384,7 +384,7 @@ function buildTable(){
 function facts(c){
  const boxes=[];
  if(D)boxes.push(`<div><span class="field-label">${esc(D.label)}</span><span class="date">${esc(dateText(c))}</span>${D.note&&c[D.note]?`<span class="small">${esc(c[D.note])}</span>`:''}${COUNTDOWN&&!IMAGES&&hasDate(c)?`<span class="small ${relClass(c)}">${esc(relText(c))}</span>`:''}</div>`);
- for(const m of CARD_M)boxes.push(`<div><span class="field-label">${esc(m.label)}</span><span class="fee ${mVal(m,c)===0&&m.zeroLabel?'free':''}">${esc(mText(m,c))}</span>${m.note&&c[m.note]?`<span class="fee-label">${esc(c[m.note])}</span>`:''}</div>`);
+ for(const m of CARD_M){if(m.hideEmpty&&mVal(m,c)===null)continue;boxes.push(`<div><span class="field-label">${esc(m.label)}</span><span class="fee ${mVal(m,c)===0&&m.zeroLabel?'free':''}">${esc(mText(m,c))}</span>${m.note&&c[m.note]?`<span class="fee-label">${esc(c[m.note])}</span>`:''}</div>`);}
  if(!boxes.length)return '';
  const columns=boxes.length===2&&D?'1.25fr 1fr':`repeat(${Math.min(boxes.length,3)},minmax(0,1fr))`;
  return `<div class="card-timing" style="grid-template-columns:${columns}">${boxes.join('')}</div>`;
@@ -435,7 +435,7 @@ function buildRibbon(){
  /* Only as tall as the highest stack of marks: month labels, then one row per stacked mark. */
  const depth=Math.max(1,...Object.values(stacks));$('track').style.height=(innerWidth<650?36:40)+depth*size+10+'px';
  const sorted=[...dated].sort(byDate),first=sorted[0],last=sorted.at(-1);
- $('ribbon-range').textContent=isoOf(first)===isoOf(last)?fmt(S.rangeOne,{date:dateText(first)}):fmt(S.rangeMany,{from:shortDates.format(new Date(isoOf(first)+'T12:00:00Z'))+(isoOf(first).slice(0,4)!==isoOf(last).slice(0,4)?' '+isoOf(first).slice(0,4):''),to:dateText(last)});
+ $('ribbon-range').textContent=isoOf(first)===isoOf(last)?fmt(S.rangeOne,{date:dateText(first)}):fmt(S.rangeMany,{from:shortDates.format(new Date(isoOf(first)+'T12:00:00Z'))+(isoOf(first).slice(0,4)!==isoOf(last).slice(0,4)?' '+isoOf(first).slice(0,4):''),to:shortDates.format(new Date(isoOf(last)+'T12:00:00Z'))+' '+isoOf(last).slice(0,4)});
  const lede=ledeHTML(sorted);$('ribbon-lede').innerHTML=lede;$('ribbon-lede').hidden=!lede;
  const tip=document.createElement('div');tip.className='tip';$('track').append(tip);
  $('track').addEventListener('pointerover',e=>{const m=e.target.closest('.mark');if(!m)return;const c=ITEMS.find(x=>x.id===m.dataset.mark);tip.innerHTML=`${esc(nameOf(c))}<small>${[dateText(c),M[0]&&mText(M[0],c),relText(c)].filter(Boolean).map(esc).join(' · ')}</small>`;tip.style.left=m.style.left;tip.style.bottom=`calc(${m.style.bottom} + 22px)`;tip.style.setProperty('--tx','-50%');const r=tip.getBoundingClientRect(),tr=$('track').getBoundingClientRect();tip.style.setProperty('--tx',r.left<tr.left?'0%':r.right>tr.right?'-100%':'-50%');tip.classList.add('show');});
@@ -506,7 +506,7 @@ function openDetail(id,fromHistory){
  const lead=[];const box=(label,body)=>`<div><span class="field-label">${label}</span><p>${body}</p></div>`;
  if(V){const level=c[V.confidence];const checked=ISO.test(c[V.checked]||'')?fmt(S.checked,{date:isoText(c[V.checked])}):'';lead.push(box(esc(S.verification),[badge(c),checked&&esc(checked),level&&esc(fmt(S.confidence,{level}))].filter(Boolean).join(' · ')+(V.note&&c[V.note]?`<br>${md(c[V.note])}`:'')));}
  if(D){const dl=D.detail||{};lead.push(box(esc(dl.label||D.label)+(COUNTDOWN&&hasDate(c)?` · <span class="${relClass(c)}">${esc(relText(c))}</span>`:''),dl.field?md(c[dl.field]):esc(dateText(c))+(D.note&&c[D.note]?' · '+esc(c[D.note]):'')));}
- for(const m of M){if(m.detail){for(const s of m.detail)lead.push(box(esc(s.label),(s.field?md(c[s.field]):'')+(s.withCost&&mVal(m,c)!==null&&(mVal(m,c)!==0||!s.field)?(s.field?' · ':'')+esc(mText(m,c)):'')));}else lead.push(box(esc(m.label),esc(mText(m,c))+(m.note&&c[m.note]?' · '+esc(c[m.note]):'')));}
+ for(const m of M){if(m.detail){for(const s of m.detail)lead.push(box(esc(s.label),(s.field?md(c[s.field]):'')+(s.withCost&&mVal(m,c)!==null&&(mVal(m,c)!==0||!s.field)?(s.field?' · ':'')+esc(mText(m,c)):'')));}else if(!(m.hideEmpty&&mVal(m,c)===null))lead.push(box(esc(m.label),esc(mText(m,c))+(m.note&&c[m.note]?' · '+esc(c[m.note]):'')));}
  for(const s of (SCHEMA.detail?.lead||[]))lead.push(box(esc(s.label),show(s,c)));
  const top=figure||lead.length?`<div class="detail-top ${figure&&lead.length?'':'single'}">${figure}${lead.length?`<div class="detail-lead">${lead.join('')}</div>`:''}</div>`:'';
  const sub=(SCHEMA.detail?.subtitle||[F.subtitle]).filter(Boolean).map(k=>list(c[k]).map(x=>facetLabel(k,x)).join(' · ')).filter(Boolean).map(esc).join(' · ');

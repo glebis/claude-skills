@@ -93,6 +93,7 @@ Each value is a number or `null`. Options:
 | `zeroLabel` | Text for 0 (currency defaults to "Free") |
 | `zeroFilter`, `zeroKey` | Adds a toggle for items whose value is 0; `zeroKey` is its URL parameter |
 | `card: false`, `table: false` | Hide from cards or table |
+| `hideEmpty: true` | For a measure that applies to only some items (model prices in a news catalogue): cards and the dialog leave it out when the value is missing instead of showing `—`; the table still shows `—` and sorts it last. Leave it off when a missing value means "not found" |
 | `sortLabel`, `sortChip` | Table header text and the label in the Order group |
 | `detail` | Boxes in the dialog instead of the default value box; `withCost` appends the formatted value |
 
