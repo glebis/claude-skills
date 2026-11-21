@@ -58,8 +58,8 @@ h1 em{font-style:italic;color:var(--accent)}
 .track{position:relative;height:108px;background:var(--surface)}
 .month{position:absolute;white-space:nowrap;top:0;bottom:0;padding:8px 0 0 8px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--label);box-shadow:inset 1px 0 0 color-mix(in srgb,var(--faint) 45%,transparent)}
 .today{position:absolute;top:0;bottom:0;width:2px;background:var(--ink)}
-.today span{position:absolute;bottom:6px;left:6px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
-.today.flip span{left:auto;right:6px}
+.today span{position:absolute;top:calc(100% + 4px);left:-1px;color:var(--label);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.today.flip span{left:auto;right:-1px}
 .mark{position:absolute;width:12px;height:12px;margin-left:-6px;border:0;padding:0;background:var(--accent);transition:transform 150ms var(--ease-out),opacity .2s,background .2s}
 .mark:before{content:"";position:absolute;inset:-6px}
 .mark.soon{background:var(--soon)}
@@ -420,7 +420,8 @@ function buildRibbon(){
  const dated=ITEMS.filter(hasDate);
  if(!D||D.timeline===false||!dated.length)return;
  $('ribbon').hidden=false;
- const ts=dated.map(stamp);const start=Math.min(...(KIND==='published'?ts:[todayUTC,...ts]))-4*DAY;const end=Math.max(...(KIND==='published'?[todayUTC,...ts]:ts))+10*DAY;const span=end-start;const pct=t=>((t-start)/span*100).toFixed(3)+'%';
+ /* Pad each side by a share of the range, so edge marks never touch the frame on long axes. */
+ const ts=dated.map(stamp);const lo=Math.min(...(KIND==='published'?ts:[todayUTC,...ts])),hi=Math.max(...(KIND==='published'?[todayUTC,...ts]:ts));const pad=Math.max(4*DAY,(hi-lo)*.03);const start=lo-pad;const end=hi+Math.max(10*DAY,pad);const span=end-start;const pct=t=>((t-start)/span*100).toFixed(3)+'%';
  const yearly=span>540*DAY;
  let html='';const d=new Date(start);d.setUTCDate(1);d.setUTCMonth(yearly?0:d.getUTCMonth()+1);if(yearly)d.setUTCFullYear(d.getUTCFullYear()+1);
  const step=()=>yearly?d.setUTCFullYear(d.getUTCFullYear()+1):d.setUTCMonth(d.getUTCMonth()+1);
@@ -428,8 +429,11 @@ function buildRibbon(){
  if(todayUTC>=start&&todayUTC<=end)html+=`<span class="today${(todayUTC-start)/span>.85?' flip':''}" style="left:${pct(todayUTC)}"><span>${esc(S.today)}</span></span>`;
  const stacks={};const W=$('track').clientWidth||800;const size=innerWidth<650?11:14;
  const byDate=(a,b)=>isoOf(a).localeCompare(isoOf(b))||nameOf(a).localeCompare(nameOf(b),LOCALE);
- for(const c of [...dated].sort(byDate)){const key=Math.round((stamp(c)-start)/span*W/size);const n=stacks[key]=(stacks[key]||0)+1;html+=`<button class="mark ${relClass(c)}" tabindex="-1" data-detail="${esc(c.id)}" data-mark="${esc(c.id)}" style="left:${pct(stamp(c))};bottom:${10+(n-1)*size}px" aria-label="${esc(nameOf(c))}"></button>`;}
+ /* A mark goes on the lowest row whose last mark is at least one mark-width away, so close dates stack instead of overlapping. */
+ const rows=[];for(const c of [...dated].sort(byDate)){const x=(stamp(c)-start)/span*W;let r=rows.findIndex(last=>x-last>=size);if(r<0){r=rows.length;rows.push(x);}else rows[r]=x;const n=stacks[c.id]=r+1;html+=`<button class="mark ${relClass(c)}" tabindex="-1" data-detail="${esc(c.id)}" data-mark="${esc(c.id)}" style="left:${pct(stamp(c))};bottom:${10+(n-1)*size}px" aria-label="${esc(nameOf(c))}"></button>`;}
  $('track').innerHTML=html;
+ /* Only as tall as the highest stack of marks: month labels, then one row per stacked mark. */
+ const depth=Math.max(1,...Object.values(stacks));$('track').style.height=(innerWidth<650?36:40)+depth*size+10+'px';
  const sorted=[...dated].sort(byDate),first=sorted[0],last=sorted.at(-1);
  $('ribbon-range').textContent=isoOf(first)===isoOf(last)?fmt(S.rangeOne,{date:dateText(first)}):fmt(S.rangeMany,{from:shortDates.format(new Date(isoOf(first)+'T12:00:00Z'))+(isoOf(first).slice(0,4)!==isoOf(last).slice(0,4)?' '+isoOf(first).slice(0,4):''),to:dateText(last)});
  const lede=ledeHTML(sorted);$('ribbon-lede').innerHTML=lede;$('ribbon-lede').hidden=!lede;
