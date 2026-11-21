@@ -29,7 +29,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Added | Skill | What it does |
 | --- | --- | --- |
-| 2026-11 | [research-catalogue](./research-catalogue/) | Research any collection of comparable things (open calls, grants, products, venues) against your criteria and build a standalone catalogue: cards, comparison table, facets, optional deadline timeline, light/dark |
+| 2026-11 | [research-catalogue](./research-catalogue/) | Research any collection (opportunities, products, studies, sources) against your question and build a standalone catalogue: cards, comparison table, facets, any dates and numbers, per-item verification status, light/dark |
 | 2026-11 | [bridgework](./bridgework/) | Consent-gated, names-only audit of your stack, then a local canvas for practising what two tools could do together, with an agent prompt at every step |
 | 2026-11 | [luma-event](./luma-event/) | AGENCY event on Lu.ma: generated cover, Zoom meeting, event page, contact invites, announcement draft |
 | 2026-11 | [research-to-integration](./research-to-integration/) | Research → bounded experiment → reusable implementation; configurable questions, autonomy and execution budgets |
@@ -94,7 +94,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | [temple-generator](./temple-generator/) | Turn a vault into a 3D interactive knowledge map with generative audio |
 | [daydream](./daydream/) | Multi-agent mining of non-obvious connections between vault notes |
 | [insight-extractor](./insight-extractor/) | Parse `/insights` output into trackable markdown action items |
-| [research-catalogue](./research-catalogue/) | Verified research on any collection → one standalone HTML catalogue, shaped by a per-project `catalogue.json` (facets, card rows, table columns, optional dates and prices); synthetic open-calls and espresso-grinder demos |
+| [research-catalogue](./research-catalogue/) | Verified research on any collection → one standalone HTML catalogue, shaped by a per-project `catalogue.json`: facets, dates of any kind (deadlines, events, publications), numeric measures, verification badges; general research method; synthetic open-calls, product and literature-review demos |
 | [weekly-digest](./weekly-digest/) | Research, score, and publish a weekly industry digest on any topic |
 | [wow-digest](./wow-digest/) | Daily digest of genuinely surprising items, scored for epistemic friction |
 | [rag-eval](./rag-eval/) | Tune RAG pipelines with structured evals instead of eyeballing |

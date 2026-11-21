@@ -1,0 +1,141 @@
+{
+  "language": "en",
+  "pageTitle": "Sleep and Memory Studies",
+  "title": {
+    "lead": "Sleep and",
+    "accent": "memory studies"
+  },
+  "dek": "Six fictional studies on how sleep affects memory, with sample sizes, effect sizes and how well each claim is verified. A synthetic demo of a literature review. Researched {snapshot}.",
+  "description": "Fictional literature review: sleep and memory studies with design, sample size, effect size and verification status.",
+  "noun": {
+    "one": "study",
+    "many": "studies"
+  },
+  "storageKey": "sleep-memory-demo",
+  "images": false,
+  "fields": {
+    "subtitle": "authors"
+  },
+  "date": {
+    "field": "published",
+    "kind": "published"
+  },
+  "measures": [
+    {
+      "key": "participants",
+      "field": "participants",
+      "label": "Participants",
+      "format": "integer",
+      "better": "high",
+      "sortChip": "Largest sample"
+    },
+    {
+      "key": "effect",
+      "field": "effect",
+      "label": "Effect size (d)",
+      "sortLabel": "Effect",
+      "format": "number",
+      "decimals": 2,
+      "better": "high",
+      "sortChip": "Largest effect"
+    }
+  ],
+  "verification": {
+    "field": "status",
+    "checked": "checked",
+    "confidence": "confidence",
+    "note": "verificationNote"
+  },
+  "facets": [
+    {
+      "key": "design",
+      "label": "Design",
+      "counts": true
+    },
+    {
+      "key": "population",
+      "label": "Population",
+      "counts": true
+    }
+  ],
+  "defaultSort": "date",
+  "search": [
+    "name",
+    "short",
+    "authors",
+    "design",
+    "population",
+    "finding"
+  ],
+  "card": [
+    {
+      "label": "Design",
+      "field": "design",
+      "sub": "population"
+    },
+    {
+      "label": "Finding",
+      "field": "finding"
+    }
+  ],
+  "table": [
+    {
+      "label": "Design / population",
+      "show": [
+        {
+          "field": "design",
+          "as": "strong"
+        },
+        {
+          "field": "population",
+          "as": "note"
+        }
+      ]
+    },
+    {
+      "label": "Finding",
+      "show": [
+        {
+          "field": "finding"
+        }
+      ]
+    },
+    {
+      "label": "Limitations",
+      "show": [
+        {
+          "field": "limitations"
+        }
+      ]
+    }
+  ],
+  "detail": {
+    "subtitle": [
+      "authors",
+      "design"
+    ],
+    "fields": [
+      {
+        "label": "Finding",
+        "field": "finding",
+        "as": "md"
+      },
+      {
+        "label": "Limitations",
+        "field": "limitations",
+        "as": "md"
+      },
+      {
+        "label": "Population",
+        "field": "population"
+      }
+    ]
+  },
+  "strings": {
+    "nameColumn": "Study",
+    "searchPlaceholder": "Title, author, design or finding",
+    "source": "Paper →",
+    "details": "Full summary & sources",
+    "detailsShort": "Summary"
+  }
+}
