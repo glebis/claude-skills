@@ -1,0 +1,163 @@
+{
+  "language": "en",
+  "pageTitle": "Espresso Grinders",
+  "title": {
+    "lead": "Home",
+    "accent": "Espresso grinders"
+  },
+  "dek": "Seven fictional grinders compared on price, burrs, noise and retention. A synthetic demo of a catalogue without dates or images. Researched {snapshot}.",
+  "description": "Fictional espresso grinder comparison: price, burr type, noise, retention.",
+  "noun": {
+    "one": "grinder",
+    "many": "grinders"
+  },
+  "storageKey": "espresso-grinders-demo",
+  "images": false,
+  "cost": {
+    "field": "price",
+    "currency": "EUR",
+    "label": "Price",
+    "note": "priceNote",
+    "approxIf": [
+      "US$"
+    ],
+    "freeFilter": "Free to try"
+  },
+  "facets": [
+    {
+      "key": "burr",
+      "label": "Burrs",
+      "counts": true
+    },
+    {
+      "key": "use",
+      "label": "Use",
+      "counts": true
+    }
+  ],
+  "sorts": [
+    {
+      "key": "noise",
+      "label": "Quietest first",
+      "field": "noiseDb"
+    }
+  ],
+  "search": [
+    "name",
+    "short",
+    "place",
+    "burr",
+    "use",
+    "verdict"
+  ],
+  "card": [
+    {
+      "label": "Burrs",
+      "field": "burr",
+      "sub": "steps"
+    },
+    {
+      "label": "Use",
+      "field": "use",
+      "as": "join"
+    },
+    {
+      "label": "Noise",
+      "field": "noise"
+    },
+    {
+      "label": "Verdict",
+      "field": "verdict",
+      "as": "dashNote"
+    }
+  ],
+  "table": [
+    {
+      "label": "Burrs / steps",
+      "show": [
+        {
+          "field": "use",
+          "as": "tags"
+        },
+        {
+          "field": "burr"
+        },
+        {
+          "field": "steps",
+          "as": "note"
+        }
+      ]
+    },
+    {
+      "label": "Noise",
+      "show": [
+        {
+          "field": "noise"
+        }
+      ]
+    },
+    {
+      "label": "Retention",
+      "show": [
+        {
+          "field": "retention"
+        }
+      ]
+    },
+    {
+      "label": "Verdict",
+      "show": [
+        {
+          "field": "verdict",
+          "as": "dashNote"
+        }
+      ]
+    }
+  ],
+  "detail": {
+    "subtitle": [
+      "place"
+    ],
+    "lead": [
+      {
+        "label": "Burrs",
+        "field": "burr"
+      },
+      {
+        "label": "Use",
+        "field": "use",
+        "as": "join"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Grind settings",
+        "field": "steps"
+      },
+      {
+        "label": "Noise",
+        "field": "noise"
+      },
+      {
+        "label": "Retention",
+        "field": "retention"
+      },
+      {
+        "label": "Verdict",
+        "field": "verdict",
+        "as": "dashNote"
+      },
+      {
+        "label": "Research notes",
+        "field": "notes",
+        "as": "md"
+      }
+    ]
+  },
+  "strings": {
+    "nameColumn": "Grinder",
+    "searchPlaceholder": "Name, maker or burr type",
+    "criteria": "Selection criteria & budget",
+    "source": "Maker’s page →"
+  }
+}

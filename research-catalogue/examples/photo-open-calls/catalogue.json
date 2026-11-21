@@ -1,0 +1,266 @@
+{
+  "language": "en",
+  "pageTitle": "Photography Open Calls",
+  "title": {
+    "lead": "Photography",
+    "accent": "Open calls"
+  },
+  "dek": "Open calls for portrait, art and documentary work, chosen for modest fees and at least a month to prepare. Researched {snapshot}.",
+  "description": "Photography open calls: fees, deadlines, genres, photo counts, printing, rights and past winners.",
+  "noun": {
+    "one": "opportunity",
+    "many": "opportunities"
+  },
+  "storageKey": "photo-open-calls",
+  "fields": {
+    "name": "name",
+    "short": "short",
+    "subtitle": "place",
+    "url": "url",
+    "sources": "extra"
+  },
+  "date": {
+    "field": "date",
+    "label": "Deadline",
+    "note": "timeNote",
+    "detail": {
+      "label": "Submission deadline",
+      "field": "deadline"
+    },
+    "countdown": true,
+    "soonDays": 30,
+    "timeline": true
+  },
+  "cost": {
+    "field": "euro",
+    "currency": "EUR",
+    "label": "Entry fee",
+    "sortLabel": "Fee",
+    "note": "price",
+    "tableNote": "feeNote",
+    "approxIf": [
+      "US$",
+      "£"
+    ],
+    "freeFilter": "No entry fee",
+    "detail": [
+      {
+        "label": "Fees & packages",
+        "field": "fee"
+      },
+      {
+        "label": "Selected package for comparison",
+        "field": "price",
+        "withCost": true
+      }
+    ]
+  },
+  "facets": [
+    {
+      "key": "region",
+      "field": "group",
+      "label": "Region",
+      "values": [
+        "Nordics",
+        "Mediterranean",
+        "Asia Pacific"
+      ],
+      "other": "Other countries",
+      "counts": true,
+      "all": "All regions"
+    },
+    {
+      "key": "format",
+      "field": "formats",
+      "label": "Format",
+      "options": [
+        [
+          "Awards & competitions",
+          "Awards"
+        ],
+        [
+          "Exhibitions & festivals",
+          "Exhibitions"
+        ],
+        [
+          "Publications & photobooks",
+          "Publications"
+        ],
+        [
+          "Grants & residencies",
+          "Residencies"
+        ]
+      ]
+    },
+    {
+      "key": "genre",
+      "field": "genres",
+      "label": "Genre",
+      "options": [
+        [
+          "portrait",
+          "Portrait"
+        ],
+        [
+          "art",
+          "Art"
+        ],
+        [
+          "documentary",
+          "Documentary"
+        ]
+      ]
+    }
+  ],
+  "search": [
+    "name",
+    "short",
+    "place",
+    "style",
+    "photos",
+    "print",
+    "rights",
+    "region",
+    "formats"
+  ],
+  "card": [
+    {
+      "label": "Genre",
+      "field": "genres",
+      "as": "join",
+      "facet": "genre",
+      "sub": "style"
+    },
+    {
+      "label": "Photos",
+      "field": "photoSummary"
+    },
+    {
+      "label": "Printing",
+      "field": "printSummary"
+    },
+    {
+      "label": "Rights",
+      "field": "rightsSummary"
+    },
+    {
+      "label": "Winners",
+      "field": "winners",
+      "as": "dashNote"
+    }
+  ],
+  "table": [
+    {
+      "label": "Style / photo count",
+      "show": [
+        {
+          "field": "genres",
+          "as": "tags",
+          "facet": "genre"
+        },
+        {
+          "field": "style"
+        },
+        {
+          "field": "photoSummary",
+          "as": "strong"
+        }
+      ]
+    },
+    {
+      "label": "Printing required",
+      "show": [
+        {
+          "field": "printSummary"
+        }
+      ]
+    },
+    {
+      "label": "Publication rights",
+      "show": [
+        {
+          "field": "rightsSummary"
+        },
+        {
+          "field": "rightsNote",
+          "as": "note"
+        }
+      ]
+    },
+    {
+      "label": "Past winners",
+      "show": [
+        {
+          "field": "winners",
+          "as": "dashNote"
+        }
+      ]
+    }
+  ],
+  "detail": {
+    "subtitle": [
+      "place",
+      "region"
+    ],
+    "fields": [
+      {
+        "label": "Style & theme",
+        "field": "style",
+        "as": "md"
+      },
+      {
+        "label": "Number of photos",
+        "field": "photos",
+        "as": "md"
+      },
+      {
+        "label": "Printing & production",
+        "field": "print",
+        "as": "md"
+      },
+      {
+        "label": "Publication rights",
+        "field": "rights",
+        "as": "md"
+      },
+      {
+        "label": "Eligibility & requirements",
+        "field": "eligibility",
+        "as": "md"
+      },
+      {
+        "label": "Benefits / additional costs",
+        "field": "benefit",
+        "as": "md"
+      },
+      {
+        "label": "Past winners",
+        "field": "winners",
+        "as": "dashNote"
+      },
+      {
+        "label": "Format",
+        "field": "formats",
+        "as": "join"
+      }
+    ]
+  },
+  "strings": {
+    "skip": "Skip to opportunities",
+    "nameColumn": "Open call",
+    "searchPlaceholder": "Name, country or theme",
+    "criteria": "Selection criteria & budget",
+    "emptyEdition": "No open calls in this edition yet",
+    "emptyMessage": "Opportunities will appear after the research is updated.",
+    "byDate": "By deadline",
+    "byCost": "By price",
+    "tableRegion": "Open-call comparison; scroll right if needed",
+    "details": "Full terms & sources",
+    "detailsShort": "Full terms",
+    "researched": "Full terms as researched on {date}",
+    "timeline": "Deadline timeline",
+    "allPast": "Every deadline in this edition has passed.",
+    "rangeOne": "Deadline {date}",
+    "rangeMany": "Deadlines {from} – {to}"
+  }
+}

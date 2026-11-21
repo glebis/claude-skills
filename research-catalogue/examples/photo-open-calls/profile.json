@@ -1,10 +1,4 @@
 {
-  "regions": [
-    "Nordics",
-    "Mediterranean",
-    "Asia Pacific",
-    "Other countries"
-  ],
   "criteria": [
     "**Up to €50** per fixed-fee application",
     "Deadline **from {minDeadline}**",
