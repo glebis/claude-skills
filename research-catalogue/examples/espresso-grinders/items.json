@@ -1,0 +1,146 @@
+[
+  {
+    "id": "fjell_c40",
+    "name": "Fjell C40 Conical Grinder",
+    "short": "Fjell C40",
+    "place": "Fjell Works · Norway",
+    "url": "https://example.org/fjell_c40",
+    "burr": "Conical",
+    "use": [
+      "Espresso",
+      "Filter"
+    ],
+    "price": 329,
+    "priceNote": "€329 list price",
+    "noiseDb": 62,
+    "noise": "62 dB(A) at 30 cm",
+    "steps": "40 stepless",
+    "retention": "Low (0.3 g)",
+    "verdict": "Sweet, forgiving shots; slow for filter.",
+    "notes": "Fictional product for the demo.",
+    "extra": "[Spec sheet (example)](https://example.org/fjell_c40/specs)"
+  },
+  {
+    "id": "ostra_flat64",
+    "name": "Ostra Flat 64",
+    "short": "Ostra 64",
+    "place": "Ostra Labs · Portugal",
+    "url": "https://example.org/ostra_flat64",
+    "burr": "Flat",
+    "use": [
+      "Espresso"
+    ],
+    "price": 549,
+    "priceNote": "€549 list price",
+    "noiseDb": 71,
+    "noise": "71 dB(A) at 30 cm",
+    "steps": "Stepless",
+    "retention": "Very low (0.1 g)",
+    "verdict": "Clear, bright espresso; loud on light roasts.",
+    "notes": "Fictional product for the demo.",
+    "extra": "[Spec sheet (example)](https://example.org/ostra_flat64/specs)"
+  },
+  {
+    "id": "pebble_hand",
+    "name": "Pebble Hand Grinder",
+    "short": "Pebble",
+    "place": "Pebble & Co · Japan",
+    "url": "https://example.org/pebble_hand",
+    "burr": "Conical",
+    "use": [
+      "Filter",
+      "Travel"
+    ],
+    "price": 129,
+    "priceNote": "€129 list price",
+    "noiseDb": null,
+    "noise": "—",
+    "steps": "30 clicks",
+    "retention": "None (hand)",
+    "verdict": "Quiet by definition; slow for espresso.",
+    "notes": "Noise not applicable: hand grinder.",
+    "extra": "[Spec sheet (example)](https://example.org/pebble_hand/specs)"
+  },
+  {
+    "id": "mill_one",
+    "name": "Mill One Single-Dose",
+    "short": "Mill One",
+    "place": "Mill Studio · Germany",
+    "url": "https://example.org/mill_one",
+    "burr": "Flat",
+    "use": [
+      "Espresso",
+      "Filter"
+    ],
+    "price": 799,
+    "priceNote": "€799 list price",
+    "noiseDb": 58,
+    "noise": "58 dB(A) at 30 cm",
+    "steps": "Stepless",
+    "retention": "Near zero",
+    "verdict": "Best all-rounder in the set; big and heavy.",
+    "notes": "Fictional product for the demo.",
+    "extra": "[Spec sheet (example)](https://example.org/mill_one/specs)"
+  },
+  {
+    "id": "tern_mini",
+    "name": "Tern Mini",
+    "short": "Tern Mini",
+    "place": "Tern · Taiwan",
+    "url": "https://example.org/tern_mini",
+    "burr": "Conical",
+    "use": [
+      "Filter"
+    ],
+    "price": 89,
+    "priceNote": "US$95 list price; ≈ €89 at demo rate",
+    "noiseDb": 66,
+    "noise": "66 dB(A) at 30 cm",
+    "steps": "18 steps",
+    "retention": "Moderate (0.8 g)",
+    "verdict": "Fine for one cup a day; coarse steps.",
+    "notes": "Converted at a made-up rate for the demo.",
+    "extra": "[Spec sheet (example)](https://example.org/tern_mini/specs)"
+  },
+  {
+    "id": "alder_doser",
+    "name": "Alder Doser 54",
+    "short": "Alder 54",
+    "place": "Alder Coffee · Italy",
+    "url": "https://example.org/alder_doser",
+    "burr": "Flat",
+    "use": [
+      "Espresso"
+    ],
+    "price": null,
+    "priceNote": "Price not published",
+    "noiseDb": 69,
+    "noise": "69 dB(A) at 30 cm",
+    "steps": "Stepped, 50",
+    "retention": "High (2 g)",
+    "verdict": "—",
+    "notes": "Price and retention claims unverified.",
+    "extra": "[Spec sheet (example)](https://example.org/alder_doser/specs)"
+  },
+  {
+    "id": "kiln_dual",
+    "name": "Kiln Dual Burr",
+    "short": "Kiln Dual",
+    "place": "Kiln Instruments · UK",
+    "url": "https://example.org/kiln_dual",
+    "burr": "Flat",
+    "use": [
+      "Espresso",
+      "Filter"
+    ],
+    "price": 0,
+    "priceNote": "Loan programme: free 30-day trial",
+    "noiseDb": 64,
+    "noise": "64 dB(A) at 30 cm",
+    "steps": "Stepless",
+    "retention": "Low (0.4 g)",
+    "verdict": "— reviews pending: [loan terms](https://example.org/kiln_dual/loan)",
+    "notes": "Free only as a loan; listed to test the free filter.",
+    "extra": "[Spec sheet (example)](https://example.org/kiln_dual/specs)"
+  }
+]
