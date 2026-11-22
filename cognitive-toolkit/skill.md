@@ -1,75 +1,94 @@
 ---
 name: cognitive-toolkit
-description: Evidence-based CBT and DBT intervention skills — guided thought records, opposite action, DEAR MAN roleplay, crisis skills with optional HRV biofeedback. Configurable therapeutic pushback. Triggers on "/cbt", "/dbt", "/thought-record", "/record", "/opposite", "/opposite-action", "I need to work through something", "help me with a thought", "cognitive distortion", "I'm spiraling", "can we do a thought record".
+description: Guided CBT and DBT practice exercises — thought record, opposite action, TIPP, DEAR MAN (with roleplay), wise mind, chain analysis and behavioral activation — with configurable Socratic pushback and optional health context. Triggers on "/cbt", "/dbt", "/thought-record", "/record", "/opposite", "/opposite-action", "/tipp", "/dear-man", "/wise-mind", "/chain", "/activate", "I need to work through something", "help me with a thought", "cognitive distortion", "I'm spiraling", "can we do a thought record", "I need to calm down", "help me ask for something", "how do I say no", "I can't decide", "why did I do that", "I don't feel like doing anything".
 ---
 
 # Cognitive Toolkit
 
-Interactive CBT and DBT guided exercises with configurable therapeutic pushback and optional health data integration.
+Interactive CBT and DBT guided exercises with configurable pushback and optional health data context. A practice tool for between therapy sessions — not a therapist, not a diagnostic tool.
 
 ## Usage
 
 ```
-/cbt                        # start with check-in → technique recommendation
+/cbt                        # check-in → technique recommendation
 /cbt thought-record         # jump directly to thought record
 /cbt opposite-action        # jump directly to opposite action
-/cbt --pushback firm        # override pushback level for this session
-/cbt --no-health            # skip health data pull even if available
+/cbt tipp                   # calm the body first (acute distress)
+/cbt dear-man               # prepare a request or a no; optional roleplay
+/cbt wise-mind              # a decision pulled two ways
+/cbt chain-analysis         # reconstruct something you did and regret
+/cbt behavioral-activation  # plan one small activity when mood is low
+/cbt overview dear-man      # show a one-page map of a technique
+/cbt --pushback firm        # override pushback level (off|gentle|moderate|firm)
+/cbt --no-health            # skip health data even if available
+/cbt --lang ru              # run the session in Russian (en|ru)
 ```
 
-## How it works
+## What to read
 
-1. Read `references/thought-record.md` — thought record protocol (ABC model, cognitive distortion taxonomy, reframe scaffold)
-2. Read `references/opposite-action.md` — opposite action + DEAR MAN + TIPP crisis skills
-3. Read `references/pushback-config.md` — pushback levels, triggers, and mid-session override commands
-4. Read `references/health-integration.md` — HRV/sleep pull, biofeedback interpretation, skip logic
+Always read first:
 
-## Session Flow
+1. `references/session-engine.md` — the session state machine, safety rules, navigation commands, and the **only** definition of the saved-session format and path.
+2. `references/pushback-config.md` — the **only** definition of pushback levels and the default.
 
-**Without technique argument** (full flow):
-1. Check-in — mood (0–10), brief situation summary
-2. Recommend — match presenting issue to technique based on check-in
-3. Load technique — read the relevant reference file
-4. Protocol — run the full guided exercise
-5. Close — summary, insight, one takeaway
-6. Save — write session to vault output
+Then read only what the session needs:
 
-**With technique argument** (direct jump):
-1. Brief mood check (0–10, one line)
-2. Load technique — read the relevant reference file
-3. Protocol — run the full guided exercise
-4. Close — summary, insight, one takeaway
-5. Save — write session to vault output
+3. The reference file of the chosen technique (table below) — after the technique is chosen, not before.
+4. `references/health-integration.md` — only if a health MCP is available and `--no-health` was not passed.
+5. `references/language-ru.md` — only when the session language is Russian. How the language is chosen, including the optional question at first start, is in `session-engine.md`.
 
 ## Available Techniques
 
-| Command | Technique | Reference | Wave |
-|---|---|---|---|
-| `thought-record` | Thought Record (ABC + reframe) | `references/thought-record.md` | 1 |
-| `opposite-action` | Opposite Action (DBT emotion regulation) | `references/opposite-action.md` | 1 |
-| `dear-man` | DEAR MAN assertiveness roleplay | `references/opposite-action.md` | 2 |
-| `tipp` | TIPP crisis/distress tolerance | `references/opposite-action.md` | 2 |
-| `chain` | Chain Analysis (behavior chain) | `references/thought-record.md` | 3 |
-| `activation` | Behavioral Activation (depression) | `references/thought-record.md` | 3 |
-| `wise-mind` | Wise Mind (emotion vs. reason) | `references/opposite-action.md` | 3 |
+| Command | Technique | Reference |
+|---|---|---|
+| `thought-record` | Thought Record (7 steps, CBT) | `references/thought-record.md` |
+| `opposite-action` | Opposite Action (4 steps, DBT) | `references/opposite-action.md` |
+| `tipp` | TIPP (body-based, for acute distress, DBT) | `references/tipp.md` |
+| `dear-man` | DEAR MAN (7 steps + optional roleplay, DBT) | `references/dear-man.md` |
+| `wise-mind` | Wise Mind (6 steps, DBT) | `references/wise-mind.md` |
+| `chain-analysis` | Chain Analysis (6 steps, DBT) | `references/chain-analysis.md` |
+| `behavioral-activation` | Behavioral Activation (6 steps, CBT) | `references/behavioral-activation.md` |
+
+Each file says when the technique is the wrong tool (a "When NOT to use" section, or a "Not for" line). Read it before the first step and follow it even when the user asked for the technique by name.
+
+### Anything else
+
+A technique that is not in this table has **no protocol file**. Do not run it from memory or improvise a version. Say it is not built and offer an available technique or an unstructured conversation instead.
+
+## Technique overview (optional)
+
+`/cbt overview [technique]`, or a request such as "show me the map of DEAR MAN", shows a one-page picture of the technique: when to use it, when not to, the steps, which steps are core, and where it can branch.
+
+The pictures are ready-made files, `assets/overviews/<technique>.svg`, one per technique in the table above.
+
+1. If the sketch canvas tools are available (`sketch_open_canvas`, `sketch_set_svg`), open a canvas named `cbt-<technique>`, load the file's content into it, and call `sketch_zoom_to_fit`. The user can then annotate it.
+2. Otherwise open the file in the system viewer (`open <path>` on macOS) or, failing that, give its path.
+
+Rules:
+
+- Use the file as it is. Do not redraw a technique from memory, and do not restyle it. If the file is missing, say so.
+- Without a technique name, list the seven and ask which.
+- Offer the overview at most once per session, when the user asks what a technique involves before choosing. Never offer it during a safety response or acute distress; a picture is not what is needed then.
+- Showing an overview is not a session: no check-in, no rating, nothing saved.
+
+The files are generated by `scripts/build_overviews.py` from the protocol files and `assets/overviews/captions.json`. After changing a technique's steps, run the script; `--check` reports a mismatch.
+
+## Session Flow
+
+Defined in `references/session-engine.md`. In short: check-in → safety screen → technique selection → guided protocol → close → save.
+
+With a technique argument, skip the recommendation step but keep the check-in and the safety screen.
 
 ## Pushback
 
-See `references/pushback-config.md` for full configuration.
-
-- Defaults loaded from `references/pushback-config.md` (default: `gentle`)
-- Per-session override: `/cbt --pushback [gentle|moderate|firm]`
-- Mid-session commands: `softer`, `harder`, `no pushback` adjust level in real time
-- Pushback is Socratic, not confrontational — "What evidence supports that?" not "That's wrong"
+- Levels: `off` (0), `gentle` (1), `moderate` (2, default), `firm` (3) — defined in `references/pushback-config.md`.
+- Per-session override: `/cbt --pushback [off|gentle|moderate|firm]`.
+- Mid-session: `softer`, `harder`, `no pushback`.
+- Pushback is Socratic, never confrontational, and always yields.
 
 ## Health Data
 
-See `references/health-integration.md` for full integration logic.
-
-- Optional: pulled from health MCP if available at session start
-- Surfaces HRV, sleep quality, resting HR as contextual framing only
-- Skip silently if health data unavailable or if `--no-health` flag passed
-- Never gate a session on health data — it's context, not gatekeeper
+Optional context only — never a gate, never a score of how the session went. Rules in `references/health-integration.md`.
 
 ## Telegram Entry Points
 
@@ -77,21 +96,19 @@ See `references/health-integration.md` for full integration logic.
 |---|---|
 | `/record` | `thought-record` |
 | `/opposite` | `opposite-action` |
-| `/dear` | `dear-man` |
 | `/tipp` | `tipp` |
-| `/checkin` | full check-in flow |
+| `/dearman` | `dear-man` |
 | `/wise` | `wise-mind` |
-| `/settings` | adjust pushback level and health toggle |
+| `/chain` | `chain-analysis` |
+| `/activate` | `behavioral-activation` |
+| `/checkin` | full check-in flow |
+| `/settings` | adjust pushback level, health toggle and language |
 
-## Anti-patterns
+When running under Hermes, also read `hermes/HERMES_ADAPTER.md`.
 
-- NOT a diagnostic tool — never assess, label, or diagnose
-- NOT a therapist replacement — this is a practice tool for between sessions
-- Frame suggestions as "research suggests" not "you should"
-- If user expresses emergency, suicidal ideation, or acute crisis: stop the technique immediately, acknowledge, and provide crisis resources (e.g., Telefonseelsorge 0800 111 0 111 in Germany, international directory at findahelpline.com)
+## Boundaries
 
-## Vault Output
-
-Sessions saved to: `~/Brains/brain/cognitive-toolkit/sessions/YYYYMMDD-[technique]-NN.md`
-
-Format: frontmatter with date, technique, mood-before, mood-after + full session transcript.
+- Not a diagnostic tool — never assess, label, or diagnose.
+- Not a therapist replacement.
+- Frame suggestions as "research suggests", not "you should".
+- Safety overrides every protocol: the crisis rules in `references/session-engine.md` apply at every step of every technique.
