@@ -109,9 +109,12 @@ python3 scripts/extract_prosody.py --period 2026-06-11 --limit 600
 
 # Save to a file
 python3 scripts/extract_prosody.py --period week --output /tmp/prosody-week.md
+
+# Daily trend dashboard (HTML, Chart.js): volume, pitch, pitch variation, HNR, rate, pauses
+python3 scripts/extract_prosody.py --period month --limit 1000 --graphs /tmp/voice-trends.html
 ```
 
-Args: `--period` (same semantics as `extract_wispr.py`: today/yesterday/week/month/`YYYY-MM-DD`/`YYYY-MM-DD:YYYY-MM-DD`), `--format text|json`, `--limit N` (cap clips processed, default 300 to bound runtime -- logs to stderr when it truncates), `--output PATH`. The DB is opened strictly read-only (`mode=ro&immutable=1`).
+Args: `--period` (same semantics as `extract_wispr.py`: today/yesterday/week/month/`YYYY-MM-DD`/`YYYY-MM-DD:YYYY-MM-DD`), `--format text|json`, `--limit N` (cap clips processed, default 300 to bound runtime -- logs to stderr when it truncates), `--output PATH`, `--graphs PATH` (HTML dashboard of daily trends with an English/Russian split, period baselines as dashed lines, and point size scaled by clips per day). Clips with 0 transcribed words (aborted presses, system sounds) are excluded as non-speech and counted in the coverage line. The DB is opened strictly read-only (`mode=ro&immutable=1`).
 
 Performance: audio analysis is ~15-20s for 300 clips (slow vs SQL). The default `--limit 300` keeps single runs fast; raise it for full coverage of a busy period.
 

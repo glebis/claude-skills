@@ -1,0 +1,67 @@
+{
+  "name": "doc-red",
+  "description": "Documentary-theatre poster: condensed grotesque caps, bold/light pairs, red accent on light grey, a faint transcript texture.",
+  "mood": [
+    "documentary",
+    "theatre",
+    "serious-funny",
+    "poster",
+    "activist"
+  ],
+  "fonts": [
+    {
+      "family": "Roboto Condensed",
+      "file": "RobotoCondensed-wght.ttf",
+      "weight": "100 900"
+    },
+    {
+      "family": "PT Mono",
+      "file": "PTMono-Regular.ttf"
+    }
+  ],
+  "type": {
+    "display": "Roboto Condensed",
+    "text": "Roboto Condensed",
+    "mono": "PT Mono",
+    "case": "upper",
+    "hero_weight": 900,
+    "light_weight": 300,
+    "strong_weight": 700,
+    "leading": 0.92,
+    "tracking": "0em",
+    "align": "left",
+    "fill_chars": {
+      "ru": 10,
+      "en": 11
+    }
+  },
+  "color": {
+    "bg": "#ECECEC",
+    "ink": "#111111",
+    "accent": "#DE4941",
+    "accent_ink": "#B8322A",
+    "on_accent": "#FFFFFF",
+    "cta_bg": "#DE4941",
+    "cta_ink": "#FFFFFF",
+    "cta_date": "#000000"
+  },
+  "shape": {
+    "radius": 40,
+    "rule_w": 216,
+    "rule_h": 16,
+    "button": "fill",
+    "plate": "fill"
+  },
+  "texture": {
+    "bg_text_opacity": 0.07,
+    "bg_text_rotate": -4
+  },
+  "motion": {
+    "slide_move": 0.03,
+    "footage_move": 0.05
+  },
+  "grade": {
+    "contrast": 1.06,
+    "saturation": 0.92
+  }
+}

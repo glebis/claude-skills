@@ -1,0 +1,13 @@
+{
+ "sources": {"A": "footage/hall.mp4", "B": "footage/stage.mov"},
+ "fps": 30, "xfade": 0, "move_amount": 0.06,
+ "shots": [
+  {"slide": "slides/hook.png", "dur": 1.8, "note": "hook"},
+  {"src": "B", "in": 3.0, "dur": 0.9, "zoom": 1.0, "c": [0.5, 0.5], "move": "in", "note": "wide: gesture"},
+  {"src": "A", "in": 7.2, "dur": 1.0, "zoom": 1.4, "c": [0.42, 0.36], "move": "in", "note": "two-shot: action vs deadpan"},
+  {"src": "A", "in": 7.9, "dur": 0.8, "zoom": 1.9, "c": [0.25, 0.30], "move": "in", "note": "close: action"},
+  {"src": "A", "in": 8.5, "dur": 0.8, "zoom": 1.9, "c": [0.56, 0.30], "move": "in", "note": "close: reaction", "caption": "slides/cap_repeat.png"},
+  {"src": "B", "in": 5.5, "dur": 0.7, "zoom": 1.0, "c": [0.5, 0.5], "move": "none", "note": "whip pan"},
+  {"slide": "slides/cta.png", "dur": 2.6, "note": "CTA"}
+ ]
+}

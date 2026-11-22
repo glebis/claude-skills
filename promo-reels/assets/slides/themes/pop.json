@@ -1,0 +1,73 @@
+{
+  "name": "pop",
+  "description": "Loud and friendly: wide rounded display caps, sunny yellow, hot pink accent, pill buttons.",
+  "mood": [
+    "comedy",
+    "kids",
+    "festival",
+    "party",
+    "launch",
+    "playful"
+  ],
+  "fonts": [
+    {
+      "family": "Unbounded",
+      "file": "Unbounded-wght.ttf",
+      "weight": "200 900"
+    },
+    {
+      "family": "Inter",
+      "file": "Inter-wght.ttf",
+      "weight": "100 900"
+    },
+    {
+      "family": "PT Mono",
+      "file": "PTMono-Regular.ttf"
+    }
+  ],
+  "type": {
+    "display": "Unbounded",
+    "text": "Inter",
+    "mono": "PT Mono",
+    "case": "upper",
+    "hero_weight": 900,
+    "light_weight": 400,
+    "strong_weight": 800,
+    "leading": 1.05,
+    "tracking": "0em",
+    "align": "left",
+    "fill_chars": {
+      "ru": 6,
+      "en": 7
+    }
+  },
+  "color": {
+    "bg": "#FFE14D",
+    "ink": "#111111",
+    "accent": "#FF3D7F",
+    "accent_ink": "#111111",
+    "on_accent": "#111111",
+    "cta_bg": "#111111",
+    "cta_ink": "#FFE14D",
+    "cta_date": "#FF3D7F"
+  },
+  "shape": {
+    "radius": 999,
+    "rule_w": 0,
+    "rule_h": 0,
+    "button": "fill",
+    "plate": "fill"
+  },
+  "texture": {
+    "bg_text_opacity": 0,
+    "bg_text_rotate": 0
+  },
+  "motion": {
+    "slide_move": 0.04,
+    "footage_move": 0.06
+  },
+  "grade": {
+    "contrast": 1.08,
+    "saturation": 1.1
+  }
+}

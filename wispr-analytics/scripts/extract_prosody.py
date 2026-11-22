@@ -96,30 +96,42 @@ def open_readonly(db_path):
     return conn
 
 
+# A clip counts as speech only if Wispr transcribed at least one word.
+SPEECH_SQL = "COALESCE(numWords, 0) > 0"
+
+
 def count_period(conn, start, end):
-    """Return (total_in_period, with_audio_in_period)."""
+    """Return (total_in_period, with_audio_in_period, non_speech_with_audio).
+
+    Non-speech = audio retained but nothing transcribed (numWords = 0): aborted
+    hotkey presses, system sounds, background audio. Their F0 is not the user's
+    voice (observed ~380-570 Hz, HNR ~4 dB) and would skew every aggregate.
+    """
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(f"""
         SELECT COUNT(*) AS total,
-               SUM(CASE WHEN audio IS NOT NULL THEN 1 ELSE 0 END) AS with_audio
+               SUM(CASE WHEN audio IS NOT NULL THEN 1 ELSE 0 END) AS with_audio,
+               SUM(CASE WHEN audio IS NOT NULL AND NOT ({SPEECH_SQL})
+                        THEN 1 ELSE 0 END) AS non_speech
         FROM History
         WHERE isArchived = 0
           AND timestamp >= ? AND timestamp <= ?
     """, (start, end))
     r = cur.fetchone()
-    return r["total"] or 0, r["with_audio"] or 0
+    return r["total"] or 0, r["with_audio"] or 0, r["non_speech"] or 0
 
 
 def fetch_audio_rows(conn, start, end, limit):
     """Fetch period rows that have audio, newest first, capped at `limit`."""
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(f"""
         SELECT timestamp, app, numWords, duration, speechDuration,
                detectedLanguage, language, audio
         FROM History
         WHERE isArchived = 0
           AND timestamp >= ? AND timestamp <= ?
           AND audio IS NOT NULL
+          AND {SPEECH_SQL}
         ORDER BY timestamp DESC
         LIMIT ?
     """, (start, end, limit))
@@ -334,8 +346,192 @@ def daily_trend(clips):
     return rows
 
 
-def build_report(period_label, total, with_audio, processed, skipped_no_voice,
-                 truncated, limit, clips):
+# --------------------------------------------------------------------------
+# HTML trend dashboard (--graphs)
+# --------------------------------------------------------------------------
+
+GRAPH_METRICS = [
+    # key, title, unit, subtitle
+    ("f0_mean", "Pitch (mean F0)", "Hz", "Your speaking pitch. Sustained shifts can track arousal or strain"),
+    ("f0_cv", "Pitch variation (F0 CV)", "", "Flatter = more monotone or transactional, higher = more animated"),
+    ("hnr", "Voice clarity (HNR)", "dB", "Drops can track vocal fatigue, a cold, or a noisier room"),
+    ("wpm", "Speaking rate", "WPM", "Words per minute of active speech"),
+    ("pause_ratio", "Pause share", "", "Share of each dictation spent not speaking"),
+]
+
+
+def _mean_or_none(vals, nd=3):
+    vals = [v for v in vals if v is not None and _finite(v) is not None]
+    return round(statistics.mean(vals), nd) if vals else None
+
+
+def daily_series(clips):
+    """Per-day metrics split into all / en / ru, for charting."""
+    dates = sorted({c["date"] for c in clips})
+    groups = {"all": clips,
+              "en": [c for c in clips if c["lang"] == "en"],
+              "ru": [c for c in clips if c["lang"] == "ru"]}
+    out = {"dates": dates, "volume": {"clips": [], "words": []}, "series": {}}
+    for d in dates:
+        day = [c for c in clips if c["date"] == d]
+        out["volume"]["clips"].append(len(day))
+        out["volume"]["words"].append(sum(c.get("words", 0) for c in day))
+    for g, cs in groups.items():
+        out["series"][g] = {}
+        for key, *_ in GRAPH_METRICS:
+            vals, base = [], []
+            for d in dates:
+                day = [c for c in cs if c["date"] == d]
+                if key in ("wpm", "pause_ratio"):
+                    v = _mean_or_none([c[key] for c in day])
+                else:
+                    v = _mean_or_none([c["feat"].get(key) for c in day if c["feat"]])
+                vals.append(v)
+            if key in ("wpm", "pause_ratio"):
+                b = _mean_or_none([c[key] for c in cs])
+            else:
+                b = _mean_or_none([c["feat"].get(key) for c in cs if c["feat"]])
+            out["series"][g][key] = {"values": vals, "baseline": b,
+                                     "n": [len([c for c in cs if c["date"] == d]) for d in dates]}
+    return out
+
+
+def generate_graphs_html(report, clips, output_path):
+    """Write a self-contained HTML dashboard of daily prosody trends."""
+    data = daily_series(clips)
+    data["metrics"] = [{"key": k, "title": t, "unit": u, "sub": s}
+                       for k, t, u, s in GRAPH_METRICS]
+    cov = report["coverage"]
+    coverage = (f"{cov['clips_processed']} speech clips analysed · "
+                f"{cov['clips_excluded_non_speech']} non-speech excluded · "
+                f"{cov['dictations_with_audio']} of {cov['total_dictations_in_period']} "
+                f"dictations had retained audio")
+    span = (f"{data['dates'][0]} to {data['dates'][-1]}" if data["dates"]
+            else report["period"])
+    html = _GRAPHS_TEMPLATE.replace("__TITLE__", f"Voice trends: {span}") \
+        .replace("__COVERAGE__", coverage) \
+        .replace("__DATA__", json.dumps(data, ensure_ascii=False))
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_path).write_text(html, encoding="utf-8")
+    return output_path
+
+
+_GRAPHS_TEMPLATE = r"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wispr Voice Trends</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#fbfaf7;--fg:#1d1d1b;--muted:#6b6a65;--grid:#e6e3dc;--card:#fff;
+ --all:#3a3a38;--en:#2f6fb0;--ru:#c4572a;--vol:#b9b4a8;--base:#9a968c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171716;--fg:#ecebe6;
+ --muted:#9b9a94;--grid:#2c2c2a;--card:#1f1f1e;--all:#d8d6cf;--en:#6ea8e6;--ru:#ec8a5e;--vol:#4a4842;--base:#77746c}}
+:root[data-theme="dark"]{--bg:#171716;--fg:#ecebe6;--muted:#9b9a94;--grid:#2c2c2a;--card:#1f1f1e;
+ --all:#d8d6cf;--en:#6ea8e6;--ru:#ec8a5e;--vol:#4a4842;--base:#77746c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Inter",sans-serif}
+main{max-width:1100px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:26px;margin:0 0 4px;font-weight:600}
+.cov{color:var(--muted);font-size:13px;margin:0 0 8px}
+.note{color:var(--muted);font-size:13px;margin:0 0 24px;max-width:70ch}
+.ctl{display:flex;gap:8px;margin:0 0 20px;flex-wrap:wrap}
+.ctl button{font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--grid);
+ background:var(--card);color:var(--fg);cursor:pointer;min-height:36px}
+.ctl button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:12px;padding:16px}
+.card h2{font-size:15px;margin:0;font-weight:600}
+.card p{color:var(--muted);font-size:12.5px;margin:2px 0 10px}
+.card.wide{grid-column:1/-1}
+.cv{position:relative;height:220px}
+</style></head><body><main>
+<h1>__TITLE__</h1>
+<p class="cov">__COVERAGE__</p>
+<p class="note">Daily means. The dashed line is your baseline for the whole period. Point size
+reflects how many clips that day had, so a small dot rests on little data. These are reflection
+proxies, not measurements: mic, room, a cold and language all move them.</p>
+<div class="ctl" role="group" aria-label="Language">
+ <button data-g="split" aria-pressed="true">English vs Russian</button>
+ <button data-g="all" aria-pressed="false">All speech</button>
+</div>
+<div class="grid" id="grid">
+ <section class="card wide"><h2>Volume</h2><p>Speech clips and words per day</p><div class="cv"><canvas id="vol"></canvas></div></section>
+</div></main>
+<script>
+const D = __DATA__;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const charts = [];
+let mode = "split";
+try { mode = localStorage.getItem("wpv-mode") || "split"; } catch (e) {}
+
+function radius(n){ return n ? Math.max(2, Math.min(7, Math.sqrt(n) * 0.9)) : 0; }
+
+function base(){
+  Chart.defaults.color = css("--muted");
+  Chart.defaults.borderColor = css("--grid");
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+}
+
+function lineSet(label, s, color, extra){
+  return Object.assign({label, data: s.values, borderColor: color, backgroundColor: color,
+    pointRadius: s.n.map(radius), pointHoverRadius: 7, tension: .25, spanGaps: true, borderWidth: 2}, extra||{});
+}
+function baseSet(label, v, color){
+  return {label, data: D.dates.map(() => v), borderColor: color, borderDash: [5,4],
+    borderWidth: 1.2, pointRadius: 0, pointHoverRadius: 0, fill: false};
+}
+
+function build(){
+  charts.splice(0).forEach(c => c.destroy());
+  document.querySelectorAll(".metric").forEach(n => n.remove());
+  base();
+  const grid = document.getElementById("grid");
+  charts.push(new Chart(document.getElementById("vol"), {
+    data: {labels: D.dates, datasets: [
+      {type: "bar", label: "Clips", data: D.volume.clips, backgroundColor: css("--vol"), yAxisID: "y", borderRadius: 3},
+      {type: "line", label: "Words", data: D.volume.words, borderColor: css("--all"), backgroundColor: css("--all"),
+       yAxisID: "y1", tension: .25, pointRadius: 2}]},
+    options: {maintainAspectRatio: false, interaction: {mode: "index", intersect: false},
+      scales: {y: {beginAtZero: true, title: {display: true, text: "clips"}},
+               y1: {position: "right", beginAtZero: true, grid: {drawOnChartArea: false}, title: {display: true, text: "words"}}}}
+  }));
+  D.metrics.forEach(m => {
+    const sec = document.createElement("section");
+    sec.className = "card metric";
+    sec.innerHTML = `<h2>${m.title}${m.unit ? " · " + m.unit : ""}</h2><p>${m.sub}</p><div class="cv"><canvas></canvas></div>`;
+    grid.appendChild(sec);
+    const ds = [];
+    if (mode === "split") {
+      const en = D.series.en[m.key], ru = D.series.ru[m.key];
+      ds.push(lineSet("English", en, css("--en")), lineSet("Russian", ru, css("--ru")));
+      ds.push(baseSet("English baseline", en.baseline, css("--en")), baseSet("Russian baseline", ru.baseline, css("--ru")));
+    } else {
+      const a = D.series.all[m.key];
+      ds.push(lineSet("All speech", a, css("--all")), baseSet("Baseline", a.baseline, css("--base")));
+    }
+    charts.push(new Chart(sec.querySelector("canvas"), {type: "line", data: {labels: D.dates, datasets: ds},
+      options: {maintainAspectRatio: false, interaction: {mode: "index", intersect: false},
+        plugins: {legend: {labels: {boxWidth: 12, filter: i => !i.text.includes("baseline") && i.text !== "Baseline"}},
+          tooltip: {callbacks: {afterLabel: ctx => {
+            const g = mode === "split" ? (ctx.datasetIndex === 0 ? "en" : ctx.datasetIndex === 1 ? "ru" : null) : (ctx.datasetIndex === 0 ? "all" : null);
+            return g ? `clips: ${D.series[g][m.key].n[ctx.dataIndex]}` : "";
+          }}}},
+        scales: {y: {grace: "8%"}}}}));
+  });
+  document.querySelectorAll(".ctl button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.g === mode)));
+}
+
+document.querySelectorAll(".ctl button").forEach(b => b.addEventListener("click", () => {
+  mode = b.dataset.g; try { localStorage.setItem("wpv-mode", mode); } catch (e) {} build();
+}));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", build);
+build();
+</script></body></html>
+"""
+
+
+def build_report(period_label, total, with_audio, non_speech, processed,
+                 skipped_no_voice, truncated, limit, clips):
     overall = aggregate(clips)
     langs = by_language(clips)
     trend = daily_trend(clips)
@@ -350,6 +546,7 @@ def build_report(period_label, total, with_audio, processed, skipped_no_voice,
         "coverage": {
             "total_dictations_in_period": total,
             "dictations_with_audio": with_audio,
+            "clips_excluded_non_speech": non_speech,
             "clips_processed": processed,
             "clips_skipped_no_voice": skipped_no_voice,
             "truncated_by_limit": truncated,
@@ -376,7 +573,9 @@ def format_text(report):
     lines.append("")
     lines.append(f"**Coverage**: {cov['dictations_with_audio']} of "
                  f"{cov['total_dictations_in_period']} dictations in this period had "
-                 f"retained audio. Processed {cov['clips_processed']} clips "
+                 f"retained audio; {cov['clips_excluded_non_speech']} excluded as "
+                 f"non-speech (0 words transcribed). Processed "
+                 f"{cov['clips_processed']} clips "
                  f"({cov['clips_skipped_no_voice']} skipped: no voiced frames).")
     if cov["truncated_by_limit"]:
         lines.append(f"> NOTE: more clips had audio than the --limit of {cov['limit']}; "
@@ -469,6 +668,8 @@ def main():
                              "Logs when coverage is truncated.")
     parser.add_argument("--output", default=None,
                         help="Output file path (default: stdout)")
+    parser.add_argument("--graphs", default=None,
+                        help="Also write an HTML dashboard of daily voice trends to this path")
     args = parser.parse_args()
 
     if not os.path.exists(DB_PATH):
@@ -481,13 +682,14 @@ def main():
                     else args.period)
 
     conn = open_readonly(DB_PATH)
-    total, with_audio = count_period(conn, start, end)
+    total, with_audio, non_speech = count_period(conn, start, end)
     rows = fetch_audio_rows(conn, start, end, args.limit)
     conn.close()
 
-    truncated = with_audio > args.limit
+    speech_clips = with_audio - non_speech
+    truncated = speech_clips > args.limit
     if truncated:
-        print(f"[prosody] NOTE: {with_audio} clips have audio but --limit={args.limit}; "
+        print(f"[prosody] NOTE: {speech_clips} speech clips have audio but --limit={args.limit}; "
               f"processing newest {args.limit}. Coverage truncated.", file=sys.stderr)
 
     print(f"[prosody] Processing {len(rows)} clips for period '{args.period}'...",
@@ -510,10 +712,15 @@ def main():
             "wpm": wpm,
             "pause_ratio": pause_ratio,
             "speech": row["speechDuration"] or 0,
+            "words": row["numWords"] or 0,
         })
 
-    report = build_report(period_label, total, with_audio, len(rows),
+    report = build_report(period_label, total, with_audio, non_speech, len(rows),
                           skipped_no_voice, truncated, args.limit, clips)
+
+    if args.graphs:
+        path = generate_graphs_html(report, clips, args.graphs)
+        print(f"Graphs written to {path}", file=sys.stderr)
 
     if args.format == "json":
         result = json.dumps(report, ensure_ascii=False, indent=2)

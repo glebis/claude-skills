@@ -2,7 +2,7 @@
 
 A 4-step DBT emotion regulation technique from Marsha Linehan's Dialectical Behavior Therapy (Linehan, 1993). Based on the principle that emotions are maintained by their action urges — and that acting opposite to those urges, all the way, changes the emotional experience itself.
 
-Session duration: 3–5 minutes in Telegram exchange format.
+Session duration: roughly 5 minutes.
 
 ---
 
@@ -100,6 +100,8 @@ See `pushback-config.md` for full level behavior. Pushback zones for this techni
 - **Level 1–2:** "Is the *intensity* of the urge proportional to what actually happened — or is it larger than the situation warrants?"
 - **Level 3:** "Notice what just happened — the emotion is building a case for the urge. That's what emotions do. They're very convincing. But is the case based on the facts, or on the feeling?"
 
+**Never push back when the urge is about safety.** If the user describes threats, violence, coercion, or an unsafe person or place, the fear is justified by definition: treat the urge to avoid or leave as justified at every pushback level, do not use the lines above, and never suggest approaching the source of the fear. Follow the Safety section of `session-engine.md`.
+
 ---
 
 ## Step 4: Act Opposite
@@ -135,15 +137,16 @@ See `pushback-config.md` for full level behavior. Pushback zones for this techni
 
 ## Session Output Body
 
-Template for session log:
+Body template for the saved session. Frontmatter, filename and path are defined once in `session-engine.md`.
 
 ```
 - Emotion: [named]
 - Action Urge: [described]
 - Justified?: [Yes/No + brief reasoning]
-- Opposite Action: [identified]
+- Opposite Action: [identified, or "n/a — urge justified, skillful action: ..."]
 - Committed to: [yes / no / partial]
-- Outcome: [if followed up]
 ```
 
-Skipped steps: log with `[skipped]` in the relevant field. Skip data flows to `cognitive-toolkit/patterns/` for longitudinal review.
+This technique has no emotion rating of its own, so the check-in and close ratings from `session-engine.md` supply `pre_intensity` and `post_intensity`. If the urge was justified, record `outcome: justified-exit`.
+
+Skipped steps: log with `[skipped]` in the relevant field and list them in `steps_skipped`.

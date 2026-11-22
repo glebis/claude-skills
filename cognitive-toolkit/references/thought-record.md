@@ -15,7 +15,7 @@ Pushback behavior for each step is governed by `pushback-config.md`. Session sta
 - **Post-conflict review** — after a difficult interaction where the user is still stewing
 - **Pre-performance anxiety** — when worry thoughts are undermining upcoming action
 
-Not ideal for: acute crisis states (use TIPP first), somatic/dissociative states (check HRV, consider grounding), or users who need behavioral activation rather than cognitive work.
+Not for: acute distress or crisis (follow the Safety section of `session-engine.md` and settle first), or a thought that is simply accurate — a real loss, a real threat, a real mistake. Restructuring an accurate thought is invalidating; see the Accuracy Check after Step 5.
 
 ---
 
@@ -144,7 +144,7 @@ Note: shame and guilt are often confused. Shame = "I am bad." Guilt = "I did som
 
 ### Move-to-next criterion
 
-At least one emotion is named with an intensity rating (0–10). Record as baseline.
+At least one emotion is named with an intensity rating (0–10). Record the strongest as `pre_intensity` — this replaces the check-in rating, so do not ask for a second number.
 
 ---
 
@@ -222,15 +222,50 @@ If user still can't → accept, advance, log skip.
 
 *1st exchange:* Same as Level 2 first exchange.
 
-*2nd exchange:* "I notice this feels like a dead end — and that's actually important data. Sometimes when we absolutely cannot find counter-evidence, the thought is touching something really core. Is there something uncomfortable about the idea that this thought might not be entirely true?"
+*2nd exchange:* "I notice this feels like a dead end. That can mean two things: the feeling is too loud right now to see around it, or the thought is mostly accurate. Which does it feel like to you?"
+
+If the user says the thought is accurate → go to the Accuracy Check below. Do not keep pushing.
 
 *3rd exchange:* "Let's try the minimal version: Not 'this thought is totally wrong' — just, is there one small piece of the picture it might be missing?"
 
-*After 3 failed exchanges* → yield, advance, log skip with note: "Evidence against: user unable to generate — may indicate core belief or high emotional load."
+*After 3 failed exchanges* → yield, advance, log skip with note: "Evidence against: none generated."
 
 ### Move-to-next criterion
 
-At least 1 piece of counter-evidence is captured, or user has been given 2–3 genuine opportunities and unable to produce any (logged as skip).
+At least 1 piece of counter-evidence is captured, or the user has had the number of opportunities their pushback level allows and produced none (logged as skip), or the Accuracy Check below applies.
+
+---
+
+## Accuracy Check (between Steps 5 and 6)
+
+**Pushback zone: none — pushback is switched off here regardless of level**
+
+A thought record assumes the automatic thought is distorted. Sometimes it is not. Before asking for a balanced thought, check which case this is.
+
+**The check applies when any of these is true:**
+
+- The evidence FOR is strong and factual, and the evidence AGAINST is empty or thin after honest effort.
+- The thought describes a real event rather than a prediction or a judgment ("my father died", "I was laid off", "I did say that to her").
+- The thought is about real danger (threats, violence, coercion, an unsafe person or place). Treat it as accurate without further testing — see Safety in `session-engine.md`.
+- The user says the thought is accurate.
+
+**If the thought is accurate — say so and exit the technique.** Do not ask for counter-evidence again and do not ask for a balanced thought.
+
+<!-- TODO(Gleb): replace the interim wording below with your own. This is the line that tells
+     someone their painful thought is true, so tone matters more here than anywhere else in the
+     toolkit. Things to decide: how plainly to say "this is true"; whether to name the emotion
+     as fitting the facts; whether to offer one next move or a choice. -->
+
+Interim wording:
+> "From what you've laid out, this thought looks accurate — it isn't a distortion to correct. So the question changes from 'is this true?' to 'given that it's true, what would help?'"
+
+Then offer one of these, and follow the user's choice:
+
+- **Something can be done about it** → problem-solving: what is the smallest next action, and when?
+- **Nothing can be done about it** (a loss, something in the past) → coping: what would make the next few hours more bearable? Who could they tell?
+- **Part of it is accurate and part is not** (accurate event, inflated conclusion — "I made a mistake" vs. "I'm a failure") → split them, keep the accurate part as is, and continue to Step 6 with only the inflated part.
+
+Record `outcome: accurate-thought-exit` (or continue normally in the split case). Go to Step 7 for the re-rating, then close. An unchanged rating after an accurate-thought exit is expected, not a failure.
 
 ---
 
@@ -291,21 +326,17 @@ Follow up by naming which step seemed most impactful, if the user doesn't know.
 **Increase in intensity:**
 > "That happens sometimes — examining a thought closely can temporarily intensify the feeling. It usually settles. How are you right now — do you want to do a brief grounding exercise, or are you okay to continue?"
 
-If increase is significant (3+ points) and user seems distressed: offer TIPP technique or brief grounding before closing.
+If the increase is significant (3+ points) and the user seems distressed: follow the acute-distress rule in the Safety section of `session-engine.md` before closing.
+
+Record the rating as `post_intensity` — this replaces the close-phase re-rating.
 
 ---
 
 ## Session Output Body
 
-Use this template to format the structured output after completing all 7 steps. The output goes into the user's session note or is spoken back if in voice mode.
+Body template for the saved session. Frontmatter, filename and path are defined once in `session-engine.md` — do not add a second frontmatter block here.
 
 ```
----
-technique: Thought Record
-date: [YYYY-MM-DD]
-duration: [approximate]
----
-
 **Situation**
 [One sentence — objective, factual trigger]
 
@@ -324,18 +355,17 @@ Belief intensity (pre): [0–100% if captured]
 **Evidence AGAINST**
 - [Counter-evidence as generated by user]
 - [...]
-[If skipped: "User unable to generate counter-evidence — possible core belief or high emotional load."]
+[If skipped: "None generated."]
+
+**Accuracy Check**
+[Omit unless it applied. "Thought judged accurate — moved to problem-solving / coping" + what was chosen.]
 
 **Balanced Thought**
-[User's balanced reframe, in their words]
+[User's balanced reframe, in their words. Omit after an accurate-thought exit.]
 
 **Outcome**
 Emotion (post): [emotion name(s)] — [intensity]/10
-Delta: [+/– points] [e.g., "–3 (significant shift)" / "no change" / "+1 (temporary intensification)"]
-
-**Genetic Context** *(include only if relevant genomic data is available)*
-[e.g., "BDNF Val/Val: cognitive flexibility typically requires more repetitions to consolidate. Consider revisiting this thought record in 24–48 hours."]
-[e.g., "DRD2 reward deficit: emotional reasoning distortions may feel more sticky. Extra work in Step 5 is normal and expected."]
+Delta: [+/– points]
 ```
 
 ---

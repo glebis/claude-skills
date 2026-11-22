@@ -1,39 +1,39 @@
 # Pushback Configuration
 
-Central authority on therapeutic pushback behavior — the bot's ability to hold the frame when users skip uncomfortable steps.
+The single source of truth for pushback: the level names, the default, and how many times the toolkit holds the frame when a user wants to skip an uncomfortable step. Other files point here instead of restating levels.
 
 ---
 
 ## Principles
 
-1. **Never coercive** — always yields eventually. The user is in control.
-2. **Names, doesn't diagnose** — "I notice you want to move past this" not "You're avoiding."
-3. **Step-aware** — only activates within a technique, never when switching techniques.
-4. **Skips are recorded** — logged in session output for longitudinal tracking.
+1. **Never coercive** — always yields. The user is in control.
+2. **Names, doesn't diagnose** — "I notice you want to move past this", not "You're avoiding". No interpretation of *why* the user wants to skip.
+3. **Step-aware** — only inside a technique step, never when switching techniques or stopping.
+4. **Safety and accuracy switch it off** — no pushback during a safety response, TIPP, the thought record's Accuracy Check, a justified check about real danger, or a need for rest in Behavioral Activation, whatever the level.
+5. **Skips are recorded** — logged in `steps_skipped` in the saved session.
 
 ---
 
-## Level 0: Off
+## Levels
 
-No pushback. "next" / "skip" immediately advances.
+One naming scheme everywhere: flags, mid-session commands, and the `pushback_level` frontmatter field all use these names.
 
-**Use case:** Experienced practitioners who know the techniques and self-direct.
+| # | Name | Behavior | Exchanges before yielding |
+|---|---|---|---|
+| 0 | `off` | No pushback. `next` / `skip` advances at once. | 0 |
+| 1 | `gentle` | One soft redirect. | 1 |
+| 2 | `moderate` | Names the wish to skip, offers a different angle. | 2 |
+| 3 | `firm` | As moderate, plus one question about what makes the step hard. | 3 |
 
----
+**Default: `moderate` (2).** It is set here and nowhere else. There is no separate config file.
 
-## Level 1: Gentle
+### Level 1: gentle
 
-One soft redirect, then yields.
+"This step often matters most — want to give it a try?"
 
-**Example:** "This step often matters most — want to give it a try?"
+If the user insists → yield, advance, log skip.
 
-If user insists → yield, advance, log skip.
-
----
-
-## Level 2: Moderate (default)
-
-Names avoidance, offers alternative framing, yields after 2 attempts.
+### Level 2: moderate (default)
 
 **1st exchange:** "I notice you want to move past examining the evidence — that's often where the discomfort is, and also where things shift. What if we try just one piece of counter-evidence?"
 
@@ -41,29 +41,27 @@ Names avoidance, offers alternative framing, yields after 2 attempts.
 
 **3rd insistence** → yield, advance, log skip.
 
----
+### Level 3: firm
 
-## Level 3: Firm
+**1st exchange:** same as moderate.
 
-Names avoidance, explores resistance, up to 3 exchanges, yields with explicit note.
+**2nd exchange:** "What's making this hard to sit with?" If the user engages, work with what they say, then return to the step once.
 
-**1st exchange:** "I notice you want to move past examining the evidence — that's often where the discomfort is, and also where things shift. What if we try just one piece of counter-evidence?"
+**3rd exchange:** if the user still wants to skip → "OK, we'll skip the evidence step. Let's continue." Log the skip. Do not comment on what the skip means.
 
-**2nd exchange:** "What's making this hard to sit with?" *(explores resistance itself — this IS therapeutic work)*
-
-**3rd exchange:** If user engages, work with it then redirect; if user insists → "OK. I want to note that we're skipping the evidence examination — that's a pattern worth watching over time. Let's continue."
+Technique files may give step-specific wording for each level. Their wording replaces the examples above; the number of exchanges per level does not change.
 
 ---
 
 ## Pushback Zones
 
-Not all steps are equal. Each technique reference marks steps as:
+Each technique marks its steps:
 
-- **Core** — pushback applies fully. The therapeutic work happens here.
-- **Supportive** — always gentle (max 1 exchange). Setup and context steps.
+- **Core** — the level applies fully. The therapeutic work happens here.
+- **Supportive** — at most one gentle exchange, whatever the level. Setup and context steps.
 - **Closing** — no pushback ever. Summary and re-rating.
 
-### Example: Thought Record
+### Thought Record
 
 | Step | Name | Zone |
 |------|------|------|
@@ -72,32 +70,25 @@ Not all steps are equal. Each technique reference marks steps as:
 | 3 | Emotion | Supportive |
 | 4 | Evidence For | **Core** |
 | 5 | Evidence Against | **Core** |
+| — | Accuracy Check | none |
 | 6 | Balanced Thought | **Core** |
 | 7 | Re-rate Emotion | Closing |
 
-Steps 4–5 are where cognitive restructuring happens. Step 6 consolidates it. Step 7 is measurement only — never push.
+Zones for every other technique are listed in that technique's own file.
 
 ---
 
-## Mid-Session Adjustment
+## Changing the Level
 
-Users can shift the level during a session:
+- **At start:** `/cbt --pushback [off|gentle|moderate|firm]`
+- **"harder"** → up by one (cap at `firm`). "Got it, I'll push a bit more."
+- **"softer"** → down by one (floor at `off`). "OK, lighter touch."
+- **"no pushback"** → `off`. "OK, no pushback."
 
-- **"harder"** → increase by 1 (cap at 3). Acknowledge: "Got it, I'll push a bit more."
-- **"softer"** → decrease by 1 (floor at 0). Acknowledge: "OK, lighter touch."
-
-Applies for current session only. Default in `config.md` unchanged.
+Changes last for the current session only.
 
 ---
 
-## Longitudinal Pattern Tracking
+## Skip Tracking
 
-Over multiple sessions, skip patterns tell a story:
-
-- Always skipping Evidence Against? May indicate difficulty with self-compassion.
-- Always skipping Emotion Rating? May indicate alexithymia or emotional avoidance.
-- Same step skipped across techniques? Cross-technique pattern worth surfacing.
-
-Skip data accumulates in session output logs. The `cognitive-toolkit/patterns/` directory is reserved for weekly and monthly reviews.
-
-**Wave 1 scope:** Skip logging only. Pattern analysis is not implemented yet — the infrastructure is being laid now.
+Skips are logged per session in `steps_skipped`. Reviewing them across sessions (for example, always skipping Evidence Against) is not implemented yet — there is no review skill and no `patterns/` output. Do not tell the user that patterns are being analysed.

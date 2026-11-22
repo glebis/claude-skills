@@ -1,0 +1,68 @@
+{
+  "name": "editorial",
+  "description": "Magazine cover: high-contrast serif in sentence case, centred, cream paper, deep green accent, thin rules.",
+  "mood": [
+    "literary",
+    "classical",
+    "gallery",
+    "lecture",
+    "premium",
+    "calm"
+  ],
+  "fonts": [
+    {
+      "family": "Playfair Display",
+      "file": "PlayfairDisplay-wght.ttf",
+      "weight": "400 900"
+    },
+    {
+      "family": "PT Mono",
+      "file": "PTMono-Regular.ttf"
+    }
+  ],
+  "type": {
+    "display": "Playfair Display",
+    "text": "Playfair Display",
+    "mono": "PT Mono",
+    "case": "none",
+    "hero_weight": 800,
+    "light_weight": 400,
+    "strong_weight": 700,
+    "leading": 1.0,
+    "tracking": "0em",
+    "align": "center",
+    "fill_chars": {
+      "ru": 10,
+      "en": 12
+    }
+  },
+  "color": {
+    "bg": "#F4EFE6",
+    "ink": "#1B1B1B",
+    "accent": "#1F5C4A",
+    "accent_ink": "#1F5C4A",
+    "on_accent": "#F4EFE6",
+    "cta_bg": "#1B1B1B",
+    "cta_ink": "#F4EFE6",
+    "cta_date": "#C9B98F"
+  },
+  "shape": {
+    "radius": 0,
+    "rule_w": 120,
+    "rule_h": 4,
+    "button": "outline",
+    "plate": "fill"
+  },
+  "texture": {
+    "bg_text_opacity": 0,
+    "bg_text_rotate": 0
+  },
+  "motion": {
+    "slide_move": 0.02,
+    "footage_move": 0.04
+  },
+  "grade": {
+    "contrast": 1.03,
+    "saturation": 0.85
+  }
+}

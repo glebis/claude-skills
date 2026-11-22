@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: "Claude Cognitive Toolkit: Evidence-Based CBT/DBT Skills for AI Assistants"
+title: "Claude Cognitive Toolkit: Guided CBT/DBT Practice Exercises for AI Assistants"
 message: "If you reference this toolkit in academic or professional work, please cite it using these metadata."
 type: software
 authors:
@@ -8,8 +8,8 @@ authors:
     email: glebis@gmail.com
 repository-code: "https://github.com/glebis/claude-cognitive-toolkit"
 license: MIT
-version: 0.1.0
-date-released: "2026-04-26"
+version: 0.2.0
+date-released: "2026-11-14"
 keywords:
   - cognitive behavioral therapy
   - dialectical behavior therapy
@@ -18,9 +18,5 @@ keywords:
   - thought record
   - cognitive distortion
   - emotion regulation
-  - HRV biofeedback
   - developer mental health
   - Opposite Action
-  - DEAR MAN
-  - Wise Mind
-  - affect labeling

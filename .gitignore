@@ -51,3 +51,6 @@ cms-migration-checklist/references/eroskosmos-lessons.md
 # Generated image drafts (large binaries, local only)
 drafts/
 **/drafts/
+
+# Command Code local settings (per-machine permissions, taste)
+.commandcode/

@@ -1,0 +1,68 @@
+{
+  "name": "night",
+  "description": "Club night: black background, heavy caps, acid-lime accent, square buttons.",
+  "mood": [
+    "music",
+    "club",
+    "concert",
+    "nightlife",
+    "dark",
+    "sport"
+  ],
+  "fonts": [
+    {
+      "family": "Inter",
+      "file": "Inter-wght.ttf",
+      "weight": "100 900"
+    },
+    {
+      "family": "PT Mono",
+      "file": "PTMono-Regular.ttf"
+    }
+  ],
+  "type": {
+    "display": "Inter",
+    "text": "Inter",
+    "mono": "PT Mono",
+    "case": "upper",
+    "hero_weight": 900,
+    "light_weight": 400,
+    "strong_weight": 800,
+    "leading": 0.9,
+    "tracking": "-0.01em",
+    "align": "left",
+    "fill_chars": {
+      "ru": 8,
+      "en": 9
+    }
+  },
+  "color": {
+    "bg": "#0E0E10",
+    "ink": "#F2F2F2",
+    "accent": "#C6FF3D",
+    "accent_ink": "#C6FF3D",
+    "on_accent": "#0E0E10",
+    "cta_bg": "#C6FF3D",
+    "cta_ink": "#0E0E10",
+    "cta_date": "#0E0E10"
+  },
+  "shape": {
+    "radius": 0,
+    "rule_w": 216,
+    "rule_h": 12,
+    "button": "fill",
+    "plate": "fill"
+  },
+  "texture": {
+    "bg_text_opacity": 0,
+    "bg_text_rotate": 0
+  },
+  "motion": {
+    "slide_move": 0.04,
+    "footage_move": 0.06
+  },
+  "grade": {
+    "contrast": 1.12,
+    "saturation": 0.9
+  }
+}

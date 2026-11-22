@@ -1,7 +1,7 @@
 {
   "name": "cognitive-toolkit",
-  "version": "0.1.0",
-  "description": "Evidence-based CBT and DBT intervention skills for AI assistants. Implements 7-step thought records with Burns' distortion detection, Opposite Action, DEAR MAN roleplay, TIPP crisis survival, Wise Mind, and affect labeling. Configurable pushback levels 0–3. Optional HRV biofeedback via Apple Health and Aurora Ring.",
+  "version": "0.2.0",
+  "description": "Guided CBT and DBT practice exercises for AI assistants: thought record, Opposite Action, TIPP, DEAR MAN with roleplay, Wise Mind, Chain Analysis and Behavioral Activation. Configurable pushback levels 0–3. Optional HRV context from a health MCP.",
   "author": "Gleb Kalinin",
   "homepage": "https://github.com/glebis/claude-cognitive-toolkit",
   "keywords": [
@@ -20,7 +20,11 @@
     "hrv-biofeedback",
     "apple-health",
     "obsidian",
-    "pkm"
+    "pkm",
+    "distress-tolerance",
+    "interpersonal-effectiveness",
+    "behavioral-activation",
+    "chain-analysis"
   ],
   "license": "MIT"
 }

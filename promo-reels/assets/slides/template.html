@@ -1,0 +1,98 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<title>slide</title>
+<!-- Style comes only from design tokens (themes/*.json or a project style.json), flattened by slides.py
+     into CSS variables: --type-*, --color-*, --shape-*, --texture-*. Fonts are bundled TTFs (assets/fonts)
+     or files the style names, copied next to this page and loaded with FontFace — no network needed. -->
+<style>
+body{margin:0;padding:0;background:none}
+.slide{width:1080px;height:1920px;position:relative;overflow:hidden;
+  font-family:var(--type-display),sans-serif;text-transform:var(--type-case);line-height:var(--type-leading);
+  letter-spacing:var(--type-tracking);text-align:var(--type-align)}
+/* Content box = Instagram Reels safe zone */
+.box{position:absolute;left:60px;right:140px;top:250px;bottom:450px;display:flex;flex-direction:column}
+.box>*{flex-shrink:0}
+.grow{flex:1 1 0}
+.bgdoc{position:absolute;inset:-60px;font:300 49px/1.25 var(--type-text),sans-serif;color:var(--color-ink);
+  opacity:var(--texture-bg_text_opacity);text-transform:none;letter-spacing:0;text-align:left;
+  transform:rotate(calc(var(--texture-bg_text_rotate) * 1deg));padding:20px}
+.rule{height:var(--shape-rule_h);width:var(--shape-rule_w);background:var(--color-accent);margin-top:60px;align-self:var(--type-align_self)}
+.btn{padding:.55em .4em;text-align:center;font-weight:var(--type-strong_weight)}
+.btn-fill{background:var(--color-accent);color:var(--color-on_accent);border-radius:var(--shape-radius)}
+.btn-outline{border:.09em solid currentColor;border-radius:var(--shape-radius)}
+.btn-underline{padding:.2em 0;border-bottom:.12em solid var(--color-accent);text-align:var(--type-align)}
+.btn-none{padding:0;text-align:var(--type-align)}
+.plate{background:var(--color-accent);color:var(--color-on_accent);font-weight:var(--type-hero_weight);padding:.04em .2em;
+  box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.label{background:var(--color-bg);color:var(--color-ink);font-weight:var(--type-strong_weight);padding:.08em .3em}
+</style></head><body>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+// Build one slide from JSON with textContent only (copy can contain anything).
+const D = JSON.parse(document.getElementById('data').textContent);
+const T = D.theme, V = D.vars, S = D.slide;
+const root = document.documentElement.style;
+for (const [k, v] of Object.entries(V)) root.setProperty('--' + k, v);
+document.documentElement.lang = D.lang || 'ru';
+
+function el(tag, attrs = {}, text) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) k === 'style' ? e.style.cssText = v : e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
+const slide = el('div', { class: 'slide', 'data-name': S.name });
+const box = el('div', { class: 'box' });
+const grow = () => el('div', { class: 'grow' });
+const W = n => `font-weight:var(--type-${n}_weight)`;
+const button = T.shape.button || 'fill';
+
+if (S.type === 'hook') {
+  // hook lines fill the width (poster stack); title/date/action step down the modular scale
+  slide.style.cssText = 'background:var(--color-bg);color:var(--color-ink)';
+  if (S.bg_text && +T.texture.bg_text_opacity > 0) slide.append(el('div', { class: 'bgdoc' }, S.bg_text));
+  S.lines.forEach((l, i) => box.append(el('div', { 'data-t': '', 'data-fill': '', ...(i === 0 ? { 'data-ref': '' } : {}),
+    style: `${W(i === 0 ? 'hero' : 'light')};${i ? 'margin-top:.1em' : ''}` }, l)));
+  if (+T.shape.rule_h > 0) box.append(el('div', { class: 'rule' }));
+  box.append(grow());
+  if (S.title) box.append(el('div', { 'data-t': '', 'data-step': '-1', style: W('hero') }, S.title));
+  if (S.date || S.venue) {
+    const row = el('div', { 'data-t': '', 'data-step': '-2', style: 'margin-top:.25em' });
+    if (S.date) row.append(el('span', { style: `${W('strong')};color:var(--color-accent_ink)` }, S.date));
+    if (S.date && S.venue) row.append(' ');
+    if (S.venue) row.append(el('span', { style: W('light') }, S.venue));
+    box.append(row);
+  }
+  if (S.action) box.append(el('div', { 'data-t': '', 'data-step': '-2', class: `btn btn-${button}`, style: 'margin-top:.6em' }, S.action));
+} else if (S.type === 'cta') {
+  slide.style.cssText = 'background:var(--color-cta_bg);color:var(--color-cta_ink)';
+  if (S.kicker) box.append(el('div', { 'data-t': '', 'data-step': '-2', style: W('light') }, S.kicker));
+  box.append(el('div', { 'data-t': '', 'data-fill': '', 'data-ref': '', style: `${W('hero')};margin-top:.15em` }, S.title));
+  if (S.date_big) box.append(el('div', { 'data-t': '', 'data-fill': '', 'data-max': '420', style: `${W('hero')};color:var(--color-cta_date);margin-top:.1em` }, S.date_big));
+  box.append(grow());
+  if (S.action) box.append(el('div', { 'data-t': '', 'data-step': '-2', style: `border-top:10px solid var(--color-cta_ink);padding-top:.5em;${W('strong')}` }, S.action));
+} else if (S.type === 'caption') {
+  // transparent overlay for footage: accent plate at the top of the safe zone, optional label at the bottom
+  const cap = el('div', { 'data-t': '', 'data-wrap': String(S.max_lines || 4), 'data-max': '150', 'data-min': '80', style: 'line-height:1.28' });
+  cap.append(el('span', { class: 'plate' }, S.text));
+  box.append(cap, grow());
+  if (S.label) { const l = el('div', { 'data-t': '', 'data-step': '-2', style: 'line-height:1.3' }); l.append(el('span', { class: 'label' }, S.label)); box.append(l); }
+  box.dataset.ref = '200';
+}
+slide.append(box);
+document.body.append(slide);
+</script>
+<script src="fit.js"></script>
+<script src="audit.js"></script>
+<script>
+// Load the style's fonts explicitly; measuring with a fallback font gives a false "fits".
+Promise.all((T.fonts || []).map(f => new FontFace(f.family, `url(fonts/${encodeURIComponent(f.file)})`, { weight: f.weight || 'normal' })
+  .load().then(face => document.fonts.add(face))))
+  .then(() => document.fonts.ready)
+  .then(() => { fitAll(); audit(); document.title = 'audit-done'; })
+  .catch(err => {
+    const pre = document.body.appendChild(Object.assign(document.createElement('pre'), { id: 'audit-result' }));
+    pre.textContent = JSON.stringify([{ text: 'FONT', issues: ['font failed to load: ' + err] }]);
+  });
+</script>
+</body></html>
