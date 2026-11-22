@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<!-- Token-driven cover. Filled by scripts/brand_cover.py via string.Template ($name).
+     All colours/fonts come from the brand's design.tokens.json as --token CSS vars;
+     edit layout here, never hardcode brand values. Units are vw/vh so one template
+     serves youtube (16:9), og (1.9:1) and square formats. -->
+<html lang="$lang">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="$fonts_css">
+<style>
+:root { $token_vars }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100vw; height: 100vh; overflow: hidden; }
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  position: relative;
+}
+.art { position: absolute; inset: 0; z-index: 0; }
+.art img { position: absolute; height: auto; display: block; }
+.copy {
+  position: absolute; z-index: 2;
+  left: 6vw; top: 0; bottom: 0; width: 54vw;
+  display: flex; flex-direction: column; justify-content: center; gap: 2.6vh;
+}
+.wordmark {
+  font-family: var(--font-display); font-weight: var(--weight-wordmark);
+  font-size: 1.7vw; letter-spacing: .04em;
+}
+.label {
+  font-family: var(--font-label); font-size: 1.5vw; color: var(--color-muted);
+  letter-spacing: .02em;
+}
+h1 {
+  font-weight: var(--weight-display); font-size: $hero_size;
+  line-height: var(--lineHeight-hero); letter-spacing: -.03em;
+}
+h1 em {
+  display: block; font-style: italic; font-weight: var(--weight-regular);
+  font-family: var(--font-editorial); color: var(--color-primary);
+  font-size-adjust: var(--illustration-hero-serif-size-adjust);
+}
+.brace { width: 46vw; height: 4vh; margin-top: .5vh; }
+.brace path { fill: none; stroke: var(--color-text); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.kicker { font-size: 1.9vw; color: var(--color-muted); max-width: 46vw; line-height: 1.35; }
+/* Square / portrait formats: text sits in the lower half */
+@media (max-aspect-ratio: 1/1) {
+  .copy { top: auto; bottom: 6vh; width: 88vw; justify-content: flex-end; }
+  .wordmark { font-size: 3vw; } .label { font-size: 2.6vw; } .kicker { font-size: 3vw; max-width: 80vw; }
+  .brace { width: 80vw; }
+}
+</style>
+</head>
+<body>
+<div class="art">$layers</div>
+<div class="copy">
+  <div class="wordmark">$wordmark</div>
+  <div class="label">$label</div>
+  <h1>$hero<em>$emphasis</em></h1>
+  <svg class="brace" viewBox="0 0 600 40" preserveAspectRatio="none"><path d="M2 4 Q2 18 40 18 H285 Q300 18 300 38 Q300 18 315 18 H560 Q598 18 598 4"/></svg>
+  <div class="kicker">$kicker</div>
+</div>
+</body>
+</html>

@@ -159,23 +159,54 @@ def parse_meeting(path: Path):
 
     fm, body = split_frontmatter(content)
 
+    page_path = None
     lab_match = re.search(r'([a-z0-9-]+)-internal-(\d+)', str(path))
     if lab_match:
+        # Legacy layout: resolve through the registry too, so the URL comes from
+        # labs.json instead of being re-derived here (agency-docs-nrb).
         slug = lab_match.group(1)
         lab = lab_match.group(2).zfill(2)
-    else:
-        # Registered non-legacy layout: match the meetings_dir from labs.json.
-        slug, lab = "claude-code", "??"
         try:
             import lab_layout
+            page_path = lab_layout.resolve(slug, lab=lab, meeting=path.stem)['page_url']
+        except Exception:
+            page_path = None
+    else:
+        # Registered non-legacy layout: match the meetings_dir from labs.json.
+        # Unregistered fallback: the content dir name IS the route on this site
+        # (/goal-driven-ai-en/meetings/NN). GDA 01 #02: an unregistered new lab used to
+        # fall through to "claude-code-lab-??" links in the index.
+        site_dir = path.parent.parent.name
+        slug, lab = site_dir, "01"
+        page_path = f"/{site_dir}/meetings/{path.stem.zfill(2) if path.stem.isdigit() else path.stem}"
+        registered = False
+        try:
+            import lab_layout
+            # meetings_dir is a TEMPLATE ("content/docs/goal-driven-ai-{lab}/meetings");
+            # match it as a regex capturing {lab}. A literal substring test never matched
+            # templated dirs, so GDA 01 fell through to "claude-code-lab-??" URLs.
+            posix = path.as_posix()
             for reg_slug, entry in lab_layout.load_registry().items():
                 d = entry.get('meetings_dir', '')
-                site_part = d.removeprefix('content/docs/').split('/meetings')[0]
-                if site_part and site_part in str(path):
-                    slug, lab = entry.get('site_slug', reg_slug), "01"
+                if not d:
+                    continue
+                rx = re.escape(d).replace(r'\{lab\}', r'(?P<lab>\d{1,3})') + r'/[^/]+\.mdx$'
+                m = re.search(rx, posix)
+                if m:
+                    lab = (m.groupdict().get('lab') or "01").zfill(2)
+                    layout = lab_layout.resolve(reg_slug, lab=lab, meeting=path.stem)
+                    slug, page_path = layout.get('site_slug', reg_slug), layout['page_url']
+                    registered = True
                     break
         except Exception:
             pass
+        if not registered:
+            print(f"  ! {site_dir}: not in labs.json — using /{site_dir}/meetings/… ; register it")
+    if not page_path:
+        # Never emit a guess: a wrong URL silently 404s in the published index
+        # (agency-docs-nrb / agency-docs-c6d). Fail loudly instead.
+        print(f"  FATAL: no page_url resolved for {path} — register the lab in labs.json")
+        return None
     number = path.stem.zfill(2) if path.stem.isdigit() else path.stem
 
     title = str(fm.get('title', '')).strip()
@@ -219,7 +250,7 @@ def parse_meeting(path: Path):
         "links": links,
         "body": body,
         "path": str(path),
-        "url": f"https://{site_domain()}/{slug}-lab-{lab}/meetings/{number}",
+        "url": f"https://{site_domain()}{page_path}",
     }
 
 

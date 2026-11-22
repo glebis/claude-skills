@@ -73,6 +73,25 @@ def ts_to_seconds(ts: str) -> float:
 def load_segments(path: Path):
     """Return list of (seconds, text)."""
     raw = path.read_text(encoding="utf-8", errors="replace")
+    # Wispr Flow meeting NDJSON (live.ndjson: startRecordingMs; refined.ndjson: "MM:SS",
+    # minutes may exceed 59). Lives in ~/Library/Application Support/Wispr Flow/meetings/<id>/
+    if path.suffix == ".ndjson":
+        out = []
+        for line in raw.splitlines():
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if "text" not in d:
+                continue  # meta header
+            if "startRecordingMs" in d:
+                sec = d["startRecordingMs"] / 1000
+            elif "timestamp" in d:
+                sec = ts_to_seconds(str(d["timestamp"]))
+            else:
+                continue
+            out.append((sec, d["text"].strip()))
+        return out
     # Fathom JSON
     if path.suffix == ".json" or raw.lstrip().startswith(("{", "[")):
         data = json.loads(raw)
@@ -130,6 +149,34 @@ NEAR_S = 45          # weak marker attaches to a strong anchor within this dista
 SPAN_PRE_S = 5       # span padding before first marker
 SPAN_POST_S = 20     # span padding after last marker
 SPAN_MERGE_S = 60    # merge spans closer than this
+
+
+def host_segments(path: Path):
+    """Segments spoken by the host (speaker with the most words), when the source
+    has speakers (Fathom JSON). None otherwise.
+
+    GDA 01: a participant's «Всем привет, меня зовут…» at 16:31 was taken as the
+    lesson start; trimming there would have cut the host's framing and the notice
+    that the session is recorded."""
+    raw = path.read_text(encoding="utf-8", errors="replace")
+    if not (path.suffix == ".json" or raw.lstrip().startswith(("{", "["))):
+        return None
+    data = json.loads(raw)
+    segs = data.get("transcript", data) if isinstance(data, dict) else data
+    words = {}
+    for x in segs:
+        sp = (x.get("speaker") or {}).get("display_name")
+        if sp:
+            words[sp] = words.get(sp, 0) + len(x.get("text", "").split())
+    if len(words) < 2:
+        return None
+    host = max(words, key=words.get)
+    return [(ts_to_seconds(x["timestamp"]) if isinstance(x["timestamp"], str) else float(x["timestamp"]),
+             x.get("text", "")) for x in segs
+            if (x.get("speaker") or {}).get("display_name") == host and x.get("timestamp") is not None]
+
+
+LATE_START_S = 600  # a "start" this late is a guess worth a human look, not an auto-trim
 
 
 def tech_spans(segments, window_s, anchor_ts=None):
@@ -197,7 +244,10 @@ def main():
         sys.exit(1)
 
     window_s = window_min * 60
-    start_s, start_pat, start_ctx = first_match(segments, LESSON_START_PATTERNS, window_s)
+    host = host_segments(Path(args[0]))
+    start_s, start_pat, start_ctx = first_match(sorted(host) if host else segments,
+                                                LESSON_START_PATTERNS, window_s)
+    start_review = start_s is not None and start_s > LATE_START_S
     # presentation is searched in a wider window (it can come after intro talk)
     pres_s, pres_pat, pres_ctx = first_match(segments, PRESENTATION_PATTERNS, window_s * 2)
 
@@ -207,6 +257,8 @@ def main():
         print(json.dumps({
             "lesson_start_s": start_s,
             "lesson_phrase": start_pat,
+            "lesson_start_review": start_review,  # true = don't auto-trim; read the context
+            "host_only": bool(host),
             "presentation_open_s": pres_s,
             "presentation_phrase": pres_pat,
             "tech_check_spans": spans,
@@ -218,7 +270,8 @@ def main():
             return "—"
         return f"{int(s // 3600):02d}:{int(s % 3600 // 60):02d}:{int(s % 60):02d}"
 
-    print(f"lesson start:       {fmt(start_s)}  ({start_pat or 'not found'})")
+    print(f"lesson start:       {fmt(start_s)}  ({start_pat or 'not found'})"
+          + (f"  [REVIEW: later than {LATE_START_S // 60} min — do not auto-trim]" if start_review else ""))
     if start_ctx:
         print(f"  context: {start_ctx}")
     print(f"presentation open:  {fmt(pres_s)}  ({pres_pat or 'not found'})")

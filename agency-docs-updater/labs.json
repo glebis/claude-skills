@@ -1,11 +1,14 @@
 {
-  "_comment": "Lab layout registry. Key = LAB_SLUG (vault naming slug). Placeholders: {lab} = zero-padded lab/cohort number, {meeting} = zero-padded meeting number. Every pipeline step that builds a path/URL/playlist must resolve through this file (scripts/lab_layout.py).",
+  "_comment": "Lab layout registry. Key = LAB_SLUG (vault naming slug). Placeholders: {lab} = zero-padded lab/cohort number, {meeting} = zero-padded meeting number. Every pipeline step that builds a path/URL/playlist must resolve through this file (scripts/lab_layout.py). Optional 'brand' = name of brands/<brand>.json for thumbnail_style 'brand' (token-driven covers via scripts/brand_cover.py). 'vault_names' = transcript filename stems after DATE- (Sessions/ or vault root); {lab} = NN. 'asr_glossary' = canonical names fed to Whisper as a prompt (transcribe_cut.py).",
   "claude-code": {
     "meetings_dir": "content/docs/claude-code-internal-{lab}/meetings",
     "page_url": "/claude-code-lab-{lab}/meetings/{meeting}",
     "playlist": "Claude Code Lab {lab}",
     "lang": "ru",
-    "thumbnail_style": "claude-code"
+    "thumbnail_style": "claude-code",
+    "vault_names": [
+      "claude-code-lab-{lab}"
+    ]
   },
   "ai-design": {
     "site_slug": "goal-driven-design-ru",
@@ -14,7 +17,12 @@
     "playlist": "Goal-Driven Design Lab (RU)",
     "lang": "ru",
     "thumbnail_style": "site-token",
-    "preserve_placeholder_frontmatter": true
+    "preserve_placeholder_frontmatter": true,
+    "brand_note": "Legacy manual token path (learnings.md). Migrate by writing brands/goal-driven-design.json and switching to thumbnail_style 'brand'",
+    "vault_names": [
+      "ai-design-lab-{lab}",
+      "goal-driven-design"
+    ]
   },
   "goal-driven-design-en": {
     "site_slug": "goal-driven-design-en",
@@ -23,6 +31,117 @@
     "playlist": "Goal-Driven Design Lab (EN)",
     "lang": "en",
     "thumbnail_style": "site-token",
-    "preserve_placeholder_frontmatter": true
+    "preserve_placeholder_frontmatter": true,
+    "vault_names": [
+      "goal-driven-design-en",
+      "goal-driven-design-en-{lab}"
+    ]
+  },
+  "goal-driven-ai": {
+    "site_slug": "goal-driven-ai-{lab}",
+    "meetings_dir": "content/docs/goal-driven-ai-{lab}/meetings",
+    "page_url": "/goal-driven-ai-{lab}/meetings/{meeting}",
+    "playlist": "Goal-Driven AI {lab}",
+    "lang": "ru",
+    "thumbnail_style": "brand",
+    "brand": "goal-driven-ai",
+    "cover_formats": "youtube,og",
+    "preserve_placeholder_frontmatter": true,
+    "preserve_placeholder_body": true,
+    "vault_names": [
+      "goal-driven-ai-{lab}",
+      "goal-driven-ai-lab-{lab}"
+    ],
+    "asr_glossary": [
+      "Goal-Driven AI",
+      "Claude Code",
+      "Claude Cowork",
+      "Codex",
+      "ChatGPT Work",
+      "Wispr Flow",
+      "Ollama",
+      "Pi",
+      "OpenCode",
+      "Kimi",
+      "GLM",
+      "DeepSeek",
+      "Palmier Pro",
+      "Raycast",
+      "Zed",
+      "herdr",
+      "Kitty",
+      "MCP",
+      "Fable",
+      "Astra",
+      "OpenRouter",
+      "FreeBuff",
+      "Obsidian"
+    ]
+  },
+  "goal-driven-ai-en": {
+    "site_slug": "goal-driven-ai-en",
+    "meetings_dir": "content/docs/goal-driven-ai-en/meetings",
+    "page_url": "/goal-driven-ai-en/meetings/{meeting}",
+    "playlist": "Goal-Driven AI (EN)",
+    "lang": "en",
+    "thumbnail_style": "brand",
+    "brand": "goal-driven-ai",
+    "cover_formats": "youtube,og",
+    "preserve_placeholder_frontmatter": true,
+    "preserve_placeholder_body": true,
+    "vault_names": [
+      "goal-driven-ai-en",
+      "goal-driven-ai-en-{lab}"
+    ],
+    "_note": "Registered 2026-10-17 after it appeared on main unregistered (index linked claude-code-lab-??). Brand meeting_label is Russian — add an EN label before its first cover."
+  },
+  "goal-driven-ai-advanced": {
+    "site_slug": "goal-driven-ai-{lab}",
+    "meetings_dir": "content/docs/goal-driven-ai-{lab}/advanced",
+    "page_url": "/goal-driven-ai-{lab}/advanced/{meeting}",
+    "playlist": "Goal-Driven AI {lab}",
+    "lang": "ru",
+    "thumbnail_style": "brand",
+    "brand": "goal-driven-ai",
+    "cover_formats": "youtube,og",
+    "cover_label": "Продвинутая группа · {meeting}",
+    "feed_cohort": "goal-driven-ai-{lab}-advanced",
+    "preserve_placeholder_frontmatter": true,
+    "preserve_placeholder_body": true,
+    "vault_names": [
+      "goal-driven-ai-{lab}-продвинутая-группа"
+    ],
+    "asr_glossary": [
+      "Goal-Driven AI",
+      "Claude Code",
+      "Claude Cowork",
+      "Codex",
+      "ChatGPT Work",
+      "Wispr Flow",
+      "Ollama",
+      "Pi",
+      "OpenCode",
+      "Kimi",
+      "GLM",
+      "DeepSeek",
+      "Palmier Pro",
+      "Raycast",
+      "Zed",
+      "herdr",
+      "Kitty",
+      "MCP",
+      "Fable",
+      "Astra",
+      "OpenRouter",
+      "FreeBuff",
+      "Obsidian",
+      "Hermes",
+      "Claude Agent SDK",
+      "DSPy",
+      "GEPA",
+      "Caveman",
+      "Delta"
+    ],
+    "_note": "Sunday advanced group of Goal-Driven AI 01 (7 meetings, 18 Oct – 29 Nov 2026). Created 2026-10-18."
   }
 }

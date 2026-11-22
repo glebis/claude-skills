@@ -1,6 +1,6 @@
 ---
 name: agency-docs-updater
-description: 'End-to-end pipeline for publishing Claude Code lab meetings. Accepts optional args: date (YYYYMMDD, "yesterday", "today") and lab number (e.g. "04"). Examples: "yesterday 04", "20260420 05", "04" (today, lab 04), "" (today, auto-detect lab).'
+description: End-to-end pipeline for publishing Claude Code lab meetings. Accepts optional args: date (YYYYMMDD, "yesterday", "today") and lab number (e.g. "04"). Examples: "yesterday 04", "20260420 05", "04" (today, lab 04), "" (today, auto-detect lab).
 ---
 
 # Agency Docs Updater
@@ -52,10 +52,14 @@ Hard blockers (deps/Playwright) exit non-zero with the exact fix command — run
 
 ## Step 1: Find Fathom Transcript
 
-If `LAB_FILTER` is set: `${VAULT_DIR}/${DATE}-${LAB_SLUG}-lab-${LAB_FILTER}.md`
-If empty: glob `${VAULT_DIR}/${DATE}-${LAB_SLUG}-lab-*.md` (pick most recent by mtime). If nothing matches and no explicit slug was given, fall back to `${VAULT_DIR}/${DATE}-*-lab-*.md` and derive `LAB_SLUG` from the match.
+Resolve with the script. Transcripts live in `${VAULT_DIR}/Sessions/` since the 2026-06-12 restructure, and naming differs per lab (`claude-code-lab-05`, `goal-driven-ai-01`, `goal-driven-design`). The patterns are `vault_names` in `labs.json`:
+```bash
+python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/find_transcript.py ${DATE} [--slug ${LAB_SLUG}] [--lab ${LAB_FILTER}] --json
+# → {"path": ".../Sessions/20261010-goal-driven-ai-01.md", "slug": "goal-driven-ai", "lab": "01"}
+```
+Use its `slug` as `LAB_SLUG` and `lab` as `LAB_NUMBER` (pass `--lab` to `update_meeting_doc.py` too).
 
-If missing: run `${SKILLS_LOCAL_DIR}/calendar-sync/sync.sh`, re-check, stop if still missing.
+If missing: run `${SKILLS_LOCAL_DIR}/calendar-sync/sync.sh` and re-check. If calendar-sync finds nothing, check that `icalBuddy eventsToday` doesn't say "No calendars." (calendar access lost). Then check the other sources before stopping. **No Fathom recording is a normal case** (GDA 01 #02): Zoom cloud has the video (`zoom_meetings.py recordings`) and Wispr Flow has the text (`flow.sqlite` Meetings + `meetings/<id>/refined.ndjson`). Write `Sessions/${DATE}-<vault_name>.md` from Wispr's refined text, with a frontmatter note on its source, late start and clock. `update_meeting_doc.py` no longer requires a Fathom URL. Zoom cloud processing of a 2.5 h meeting took ~2 h 10 min (file shows "processing", 0 MB, empty `recording_end`). Publish the summary first and the video second rather than blocking.
 
 Extract from YAML frontmatter and store:
 - `FATHOM_FILE`, `SHARE_URL`, `MEETING_TITLE`, `DATE`, `LAB_NUMBER`
@@ -70,9 +74,9 @@ python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/lab_layout.py ${LAB_SLUG
 #   preserve_placeholder_frontmatter, registered
 ```
 
-The registry is `labs.json` in the skill root (claude-code legacy layout, GDD RU `goal-driven-design-ru`, GDD EN). `update_meeting_doc.py` and `rebuild_aggregations.py` resolve through it automatically. Unregistered slugs fall back to the legacy `{slug}-internal-{lab}` scheme with a warning — add new labs to `labs.json`, don't improvise paths. Use `playlist` for Step 4b (search the existing playlist list by this exact name before creating), `page_url` for Step 4b/8, `lang` for summary/MDX language, and honor `preserve_placeholder_frontmatter` (GDD placeholders carry curated `toolkit:` frontmatter — merge, never overwrite).
+The registry is `labs.json` in the skill root (claude-code legacy layout, GDD RU `goal-driven-design-ru`, GDD EN, Goal-Driven AI `goal-driven-ai-NN`). `update_meeting_doc.py` and `rebuild_aggregations.py` resolve through it automatically. Unregistered slugs fall back to the legacy `{slug}-internal-{lab}` scheme with a warning — add new labs to `labs.json`, don't improvise paths. Use `playlist` for Step 4b (search the existing playlist list by this exact name before creating), `page_url` for Step 4b/8, `lang` for summary/MDX language, honor `preserve_placeholder_frontmatter` (GDD placeholders carry curated `toolkit:` frontmatter — merge, never overwrite) and `preserve_placeholder_body` (Goal-Driven AI pages carry a curated plan + slides link — insert sections, never regenerate). `thumbnail_style` + `brand` + `cover_formats` drive Step 3b.
 
-**Determine `MEETING_NUMBER`**: check existing MDX files in `${DOCS_SITE_DIR}/content/docs/${LAB_SLUG}-internal-${LAB_NUMBER}/meetings/` for a placeholder with today's date. If found, use that number. Otherwise, check file content sizes to find the next empty slot. Store as zero-padded two-digit string (e.g. `04`). This variable is used in Steps 3b, 4b, 5, 6, and 8.
+**Determine `MEETING_NUMBER`**: check existing MDX files in `${DOCS_SITE_DIR}/${MEETINGS_DIR}/` (`meetings_dir` from `lab_layout.py`) for a placeholder with today's date. If found, use that number. Otherwise, check file content sizes to find the next empty slot. Store as zero-padded two-digit string (e.g. `04`). This variable is used in Steps 3b, 4b, 5, 6, and 8.
 
 ## Step 2: Download Video
 
@@ -101,38 +105,37 @@ cd ${VAULT_DIR} && python3 ${SKILLS_LOCAL_DIR}/fathom/scripts/download_video.py 
 
 ## Step 3: Upload to YouTube
 
-### Step 3-pre: Trim leading silence
+### Step 3-pre: Edit the recording (silences, pauses, context)
 
-Zoom auto-recordings start at meeting open and often begin with minutes of dead air. Before uploading:
+Every recording gets a context-aware edit before upload: dead air before the meeting, pauses, frozen-screen silences, participant exercise time and breaks are removed. Demos where the screen is moving are kept. The edit runs in two phases so decisions can be reviewed before anything is cut.
 
+**1. Get a timestamped transcript for context.** Compare candidates with `scripts/compare_transcripts.py A B`: it reports text-aligned clock steps, tech-term spelling and hallucinations. Rule of thumb from GDA 01: Fathom (or Zoom) for **timing**, Wispr Flow for **text and proper nouns**; Wispr's clock skips paused time, so never cut video by it. The vault Fathom `.md` has NO timestamps, so it can't be used. Priority: Zoom VTT from the same Zoom recording (exact alignment; `zoom_meetings.py recordings --show-downloads` lists `TRANSCRIPT`/`.vtt`) → Fathom JSON (`FathomClient.get_transcript(id)`, alignment estimated automatically) → none (`audio + screen` only; no exercise/break/tech classes).
+
+**2. Analyze** (~5–10 min for 2 h; run in background):
 ```bash
-bash ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/trim_leading_silence.sh ${VAULT_DIR}/${VIDEO_NAME}.mp4
-# If it prints "trim: wrote …trimmed.mp4", upload the trimmed file instead of the original.
+python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/edit_video.py analyze ${VAULT_DIR}/${VIDEO_NAME}.mp4 \
+  --transcript <zoom.vtt|fathom.json> -o ${SCRATCHPAD}/${VIDEO_NAME}.edl.json
 ```
+It prints an edit plan (minutes removed per class) and a **Needs review** table. Check the `offset` line: below 40% match means the transcript is misaligned, so drop to `--offset 0` or use the VTT.
 
-The script only trims when the file STARTS in silence >10 s, keeps 2 s of lead-in, refuses cuts >20 min, and stream-copies (no re-encode). "no leading silence detected" → use the original.
+**3. Review (you, not the script).** For each review row, read `before`/`after` in the EDL and decide:
+- `exercise`: cut, unless the host talks participants through it (then set `approved: false`).
+- `demo` > 60 s: keep the head and tail unless the wait itself is the lesson (e.g. showing that agents are slow).
+- `tech`: approve only a genuine "can you see my screen?" exchange; never a rhetorical «секундочку».
+Edit `approved` in the JSON. If the plan removes > 35%, look at it again before raising `--max-remove`.
 
-**Smarter cut via transcript** (preferred when a timestamped transcript exists — Fathom JSON or Zoom VTT; avoid the merged publication .md, its block timestamps are coarse):
-
+**4. Apply** (single-pass re-encode; every cut lands inside silence, so no clicks; A/V sync is preserved even for variable-frame-rate Zoom files):
 ```bash
-python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/detect_lesson_start.py <fathom.json|zoom.vtt> --json
-# → {"lesson_start_s": 21.0, "lesson_phrase": "всем привет", "presentation_open_s": 915.0, ...}
+python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/edit_video.py apply ${VAULT_DIR}/${VIDEO_NAME}.mp4 \
+  ${SCRATCHPAD}/${VIDEO_NAME}.edl.json -o ${VAULT_DIR}/${VIDEO_NAME}.edited.mp4
 ```
+Upload the `.edited.mp4`.
 
-It finds (a) the lesson-opening phrase («всем привет», «добро пожаловать», «давайте начинать», "let's start"…) and (b) the presentation-opening moment («открою презентацию», "share my screen"…). Use them as:
-- **Trim point**: `max(silence_end, lesson_start_s − 5)` — keep the greeting, cut the dead air before it. Sanity-check against the silence result; if the two disagree wildly, inspect before cutting.
-- **YouTube chapters** in the description: `0:00 Начало` / `MM:SS Презентация` (from `presentation_open_s`, minus the trim offset).
+**5. Timestamps after editing.** Source-transcript times no longer match the video. Never remap them. Re-transcribe the edited file with `GROQ_API_KEY=… scripts/transcribe_cut.py EDITED.mp4 -o edited.json --slug ${LAB_SLUG}`. It passes the lab's `asr_glossary` (labs.json) as the Whisper prompt (on GDA 01 it got "Ollama" right where Fathom and Wispr both failed) and drops known Whisper credit hallucinations. Take YouTube chapters (`detect_lesson_start.py` on the new transcript: `0:00 Начало` / `MM:SS Презентация`) and the publication transcript timecodes from that.
 
-If neither phrase is found, fall back to the plain silence trim.
+`trim_leading_silence.sh` and `cut_spans.py --remove A-B` still work for a quick manual fix.
 
-**Tech-difficulty spans.** The same detector emits `tech_check_spans` — screen-share fumbling («видно презентацию?», «меня слышно?», «перешарю», «одну секундочку» рядом со словами презентация/экран). These are CANDIDATES: read each span's `context` lines first; a genuine question-and-answer about visibility is cuttable, a rhetorical «секундочку» mid-explanation is not. To cut approved spans:
-
-```bash
-python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/cut_spans.py video.mp4 \
-  --remove 1245-1270 --remove 781-821        # seconds, from tech_check_spans
-```
-
-`cut_spans.py` re-encodes (frame-accurate; ~realtime for talking-head 1080p), merges/clamps spans, and refuses to remove >15% of total duration. Cutting shifts everything after each span — compute YouTube chapter timestamps AFTER all cuts. For a single ≤30 s hiccup consider skipping the cut: a full re-encode of a 2 h video may not be worth it.
+`detect_lesson_start.py` counts only the **host's** phrases (Fathom JSON speakers). `lesson_start_review: true` (start later than 10 min) means read the context and never auto-trim: a participant's «всем привет» at 16:31 once nearly cut the recording notice. Pre-lesson small talk is an `editorial` cut you add to the EDL yourself after reading it.
 
 ```bash
 cd ${YOUTUBE_UPLOADER_DIR} && \
@@ -150,53 +153,23 @@ Extract `VIDEO_ID` from the URL (the part after `?v=` or last path segment).
 
 ### Step 3a: Verify Upload (REQUIRED)
 
-After extracting `VIDEO_ID`, verify the video actually exists on YouTube before proceeding. Videos can silently fail processing or get auto-deleted by YouTube's content review.
+After extracting `VIDEO_ID`, verify the video actually exists on YouTube before proceeding. Videos can silently fail processing or get auto-deleted by YouTube's content review. The same check **trashes the local recordings, but only when it fully passes** (run in background; processing of a 2 h video takes ~10 min):
 
-```python
-cd ${YOUTUBE_UPLOADER_DIR} && PYTHONPATH=. python3 -c "
-from auth import get_authenticated_service
-import sys, time
-
-youtube = get_authenticated_service()
-video_id = '${VIDEO_ID}'
-
-# Poll up to 5 minutes for video to become available
-for attempt in range(10):
-    resp = youtube.videos().list(part='status,processingDetails', id=video_id).execute()
-    if not resp['items']:
-        if attempt < 9:
-            print(f'Video not yet available (attempt {attempt+1}/10), waiting 30s...')
-            time.sleep(30)
-            continue
-        print(f'FATAL: Video {video_id} not found after 5 minutes. Upload may have failed.')
-        sys.exit(1)
-
-    status = resp['items'][0]['status']
-    processing = resp['items'][0].get('processingDetails', {})
-    upload_status = status.get('uploadStatus', 'unknown')
-    privacy = status.get('privacyStatus', 'unknown')
-    rejection = status.get('rejectionReason', None)
-
-    print(f'Upload status: {upload_status}, Privacy: {privacy}')
-    if rejection:
-        print(f'REJECTED: {rejection}')
-        sys.exit(1)
-    if upload_status in ('processed', 'uploaded'):
-        print(f'✓ Video {video_id} verified OK')
-        sys.exit(0)
-    if upload_status == 'failed':
-        print(f'FATAL: Upload failed — {status.get(\"failureReason\", \"unknown\")}')
-        sys.exit(1)
-
-    print(f'Status: {upload_status}, waiting 30s...')
-    time.sleep(30)
-
-print('FATAL: Video not ready after 5 minutes')
-sys.exit(1)
-"
+```bash
+${YOUTUBE_UPLOADER_DIR}/.venv/bin/python ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/verify_upload.py ${VIDEO_ID} \
+  --uploaded ${VAULT_DIR}/${VIDEO_NAME}.edited.mp4 \
+  --trash ${VAULT_DIR}/${VIDEO_NAME}.mp4 ${VAULT_DIR}/${VIDEO_NAME}.edited.mp4   # every local copy, incl. split parts
 ```
 
-If verification fails: delete the failed video metadata (`rm processed/metadata/${VIDEO_NAME}.json`), re-upload with `--resume-from upload`, and re-verify. Do NOT proceed to MDX or thumbnail steps with an unverified VIDEO_ID.
+"Fully passes" = not rejected/failed, `uploadStatus=processed` AND `processingStatus=succeeded`, and YouTube's duration matches `--uploaded` within 5 s (catches uploading the wrong file, e.g. one part of a split recording). Files go to the Trash via `trash`, never `rm`.
+
+| exit | meaning | next |
+|---|---|---|
+| 0 | verified; files trashed | proceed |
+| 2 | still processing after `--wait` (default 1200 s); files kept | continue Steps 3b/4/4b; re-run this before marking the meeting published |
+| 1 | rejected, failed, or wrong duration; files kept | `rm processed/metadata/${VIDEO_NAME}.json`, re-upload with `--resume-from upload` (or upload the right file), re-verify |
+
+Do NOT proceed to MDX or thumbnail steps with a VIDEO_ID that exited 1. If you re-cut after a pass, the files are in the Trash; Zoom cloud keeps the original.
 
 **Start Step 4 in parallel** — summary doesn't depend on YouTube URL.
 
@@ -206,7 +179,12 @@ If verification fails: delete the failed video metadata (`rm processed/metadata/
 
 **Prerequisites**: `VIDEO_ID` must be known (wait for Step 3 to complete if needed).
 
-Follow `references/thumbnail-guide.md` for the full workflow:
+**Branch on the layout's `thumbnail_style`:**
+- `brand` → follow `references/brand-covers.md`: `scripts/brand_cover.py render ${BRAND} …` composes the site's own art kit, fonts and `design.tokens.json` into every format in `cover_formats` (YouTube + OG). No Nano Banana, no recolour unless the composition needs a generated layer. Then upload as in step 6 below.
+- `site-token` (GDD, legacy) → manual: the lab's tokens at `${DOCS_SITE_DIR}/design.tokens.json` per `learnings.md`. Migrate by writing a `brands/` profile.
+- `claude-code` (default) → the dark editorial flow below.
+
+Claude Code flow — follow `references/thumbnail-guide.md`:
 1. Generate Nano Banana overlay image (topic-specific prompt from the guide's prompt patterns)
 2. Read/inspect raw image to confirm background color, then recolor lines to orange (#e85d04)
 3. Write a **temporary** HTML file (e.g. `/tmp/lab-meeting-${MEETING_NUMBER}.html`) based on `${YOUTUBE_UPLOADER_DIR}/templates/images/lab-meeting.html` — update meeting number, topic hero text, bullet descriptions, date. **Do not edit the original template in-place.**
@@ -239,9 +217,9 @@ Generate YouTube description from the summary. Use the language-appropriate temp
 
 Do NOT mix languages in a single description.
 
-Meeting page URL: `https://${SITE_DOMAIN}/${LAB_SLUG}-lab-${LAB_NUMBER}/meetings/${MEETING_NUMBER}`
+Meeting page URL: `https://${SITE_DOMAIN}${PAGE_URL}` where `PAGE_URL` is `page_url` from `lab_layout.py` (Step 1). Never build it by hand: `/${LAB_SLUG}-lab-NN/` 404s for labs like `goal-driven-ai` (`/goal-driven-ai-01/meetings/NN`).
 
-Update title, description, tags via YouTube API, then add video to playlist "${LAB_TITLE} Lab ${LAB_NUMBER}" (auto-created if it does not exist).
+Update title, description, tags via YouTube API, then add the video to the layout's `playlist` (search the full playlist list by exact name first; create unlisted only if missing).
 
 ## Step 5: Generate MDX
 
@@ -251,6 +229,10 @@ LAB_SLUG=${LAB_SLUG} python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/upd
 ```
 
 **Before running**: check if a placeholder MDX already exists for today's date (`grep -l` in `meetings/`). If so, use `-n ${MEETING_NUMBER} --update` to target it.
+
+**Mark the meeting published (explicit gate).** Once the page is deployed AND the recording is processed and embeddable, set the frontmatter: `merge_meeting_doc.py MDX --set publication_status=published --set published_at=<ISO with offset, now>`. The curriculum feed (`/api/curriculum/<cohort>`) treats everything else as `draft`. PiBot's `LabPublicationSync` watches that feed and composes personalized participant follow-ups for published meetings, so flipping this has effects beyond the site. Never set it before the recording works, and never to force an announcement.
+
+**Existing pages are merged, never overwritten.** If `meetings/${MEETING_NUMBER}.mdx` already exists (placeholder, preliminary plan, slides link), the script merges automatically via `scripts/merge_meeting_doc.py`. It owns only three managed blocks, `{/* agency:recording|summary|transcript */}`: on the first run it takes over a matching section (`## Видео`/`## Запись`/`## Конспект`/`## Summary`…) or inserts after the date line. Everything else stays byte for byte. Pending notes ("Запись появится…") are dropped, and frontmatter is only filled where a value is a placeholder. Re-runs are idempotent. Useful flags: `--title/--description` (fill placeholders), `--transcript-url`, `--dry-run` (print diff). `--overwrite` is the old destructive rewrite; use it only for a page known to be junk. Merge mode never appends Marp content.
 
 **After running**:
 1. Strip appended Marp content (everything after summary's closing `---` before `<!-- _class: lead -->`) — MDX breaks on HTML comments (`<!-- -->`), unescaped `<`, and bare `{` characters
@@ -263,22 +245,29 @@ LAB_SLUG=${LAB_SLUG} python3 ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/upd
 
 ## Step 6: Commit and Push
 
-Only stage pipeline files — never `git add .`:
+**Run the guard first, and stop if it fails:**
 ```bash
-cd ${DOCS_SITE_DIR}
-git fetch origin main
-BEHIND=$(git rev-list --count HEAD..origin/main)
-if [ "$BEHIND" -gt 0 ]; then
-  git stash push -m "agency-docs-updater: temp stash"
-  git pull --rebase origin main
-  git stash pop || true
-fi
-git add content/docs/${LAB_SLUG}-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}.mdx
-# Only stage presentation HTML if it was copied
-[ -f public/${DATE}-${LAB_SLUG}-lab-${LAB_NUMBER}.html ] && git add public/${DATE}-${LAB_SLUG}-lab-${LAB_NUMBER}.html
-git commit -m "Add ${LAB_TITLE} Lab ${LAB_NUMBER} Meeting ${MEETING_NUMBER}"
-git push
+bash ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/publish_preflight.sh
 ```
+It refuses when the checkout isn't on `main`, when HEAD has commits not on `origin/main`, and it prints production's latest deploy for comparison. Background (GDA 01, 2026-10-10): the checkout was on `codex/companion-t-shaped`, and production ran that branch via Vercel CLI deploys while `origin/main` lagged 22 commits behind. Pushing only the meeting onto `main` would have rolled production back; pushing the branch merged it without a PR. Other sessions edit this repo concurrently (`codex/*` branches, temp worktrees). On a STOP, show the user the branch, the commits and production's source, and ask. Safe pattern when `main` is right but the checkout is busy: `git worktree add --detach <tmp> origin/main`, copy only the pipeline files in, commit, push, remove the worktree.
+
+Only stage pipeline files — never `git add .`. Default to a temp worktree from `origin/main`; never stash, rebase or switch branches in the shared checkout (other sessions work there):
+```bash
+cd ${DOCS_SITE_DIR} && git fetch -q origin main
+W=${SCRATCHPAD}/agency-main && git worktree add -q --detach $W origin/main
+# build prerequisites the worktree lacks (all gitignored): reuse deps only if lockfiles match;
+# the Clerk key lives in .env.production.local (a prod build fails without it)
+cmp -s $W/package-lock.json package-lock.json && ln -s ${DOCS_SITE_DIR}/node_modules $W/node_modules
+ln -s ${DOCS_SITE_DIR}/.env.production.local $W/.env.production.local
+# run update_meeting_doc.py (pass the worktree as docs_dir) / merge_meeting_doc.py and
+# rebuild_aggregations.py with DOCS_SITE_DIR=$W, then DOCS_SITE_DIR=$W safe_build.sh
+cd $W && git add ${MEETINGS_DIR}/${MEETING_NUMBER}.mdx content/docs/database.mdx content/docs/glossary.mdx \
+  public/data/meetings.json .agency-glossary.json
+git commit -m "Add ${LAB_TITLE} Lab ${LAB_NUMBER} Meeting ${MEETING_NUMBER}"
+git fetch -q origin main && git merge-base --is-ancestor origin/main HEAD && git push origin HEAD:refs/heads/main
+cd ${DOCS_SITE_DIR} && git worktree remove --force $W
+```
+Production must be deploying from `main` for this to be safe. `publish_preflight.sh` prints production's created time next to `origin/main`'s last commit; they should be seconds apart.
 
 Store `COMMIT_HASH=$(git rev-parse HEAD)` for Step 7.
 
@@ -298,7 +287,7 @@ Run with `run_in_background: true`. If state is `failure` or `error`: check Verc
 
 ## Step 8: Verify in Browser
 
-Open `https://${SITE_DOMAIN}/${LAB_SLUG}-lab-${LAB_NUMBER}/meetings/${MEETING_NUMBER}` in a browser (via chrome automation tools or manually). Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
+Open `https://${SITE_DOMAIN}${PAGE_URL}` in a browser (via chrome automation tools or manually). Verify YouTube embed is visible. If not: check VIDEO_ID, wait for YouTube processing, or re-upload.
 
 ## Step 9: Rebuild Site-Wide Aggregations
 
@@ -325,9 +314,25 @@ git push
 
 This commit can be folded into Step 6's commit if you prefer a single push; either way it must land before re-running Step 7's deploy wait.
 
+## Evals
+
+After changing any script, run `python3 evals/run_evals.py` (46 deterministic cases, ~1 min; `--fast` skips renders and encodes; `--only edit,merge,cover,layout,upload`). Fixtures are synthesized: a lesson clip with known lead/pause/exercise/demo/dead-air spans plus a VTT, a VFR flash+beep sync probe, and a curated meeting page (`evals/fixtures/curated-meeting.mdx`). When a real run surprises you, add a `case_<group>_<name>` that reproduces it before fixing.
+
 ## Step 10: Announce the Published Recording via the Lab Bot (REQUIRED)
 
 After the final deployment and browser verification, announce the recording and materials through the lab's configured Telegram bot. This is part of publication, not a separate reminder or scheduled task. Read `references/bot-announcement.md` and follow its verification and duplicate-prevention rules. Do not send on a build success, transcript completion, draft page, or unverified deployment alone.
+
+Send with the skill's one-shot sender (it verifies `getMe`, writes a pending receipt before sending, refuses if any receipt exists, and records the message ID and permalink in `pibot/data/publication-receipts/`):
+```bash
+cd ~/ai_projects/pibot && OPENAI_API_KEY= SOPS_AGE_KEY_FILE=$HOME/.config/sops/age/keys.txt \
+  npx tsx ${SKILLS_LOCAL_DIR}/agency-docs-updater/scripts/announce_publication.ts --chat ${LAB_ANNOUNCE_CHAT_ID} \
+  --meeting ${MEETING_NUMBER} --recording "${YOUTUBE_URL}" --lead "<one sentence: what the meeting did>" --published-at <ISO> \
+  [--feed <layout feed_cohort> --page <layout page_url> --heading "<title>"]   # second tracks, e.g. the advanced group
+```
+The sender re-checks the LIVE feed and refuses (exit 5) unless the meeting is `published`; the receipt key is `feed|meeting|chat`, so Saturday 01 and advanced 01 never collide.
+```
+```
+Telethon read-back can fail with `database is locked` when another process holds the session. Don't break it; ask the user to glance at the permalink.
 
 For Goal-Driven AI 01 use **@agency_lab_companion_bot**, posting to **Goal-Driven AI 01 — Чат**. Include clickable recording and meeting-material links, a brief description of currently available companion features, and a button inviting participants to open the bot's private chat. Record the resulting Telegram message link in the Pipeline Report. Other labs require their own verified bot and destination mapping; never reuse this cohort's chat by default.
 

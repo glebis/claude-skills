@@ -75,7 +75,16 @@ def extract_lab_number(fathom_file: str) -> str:
         # generic fallback: any "<slug>-lab-NN" filename
         match = re.search(r'lab-(\d+)', filename)
     if not match:
-        raise ValueError(f"Could not extract lab number from filename: {filename}")
+        # registry vault_names (e.g. "goal-driven-ai-{lab}" -> 20261010-goal-driven-ai-01.md)
+        import lab_layout
+        for pat in lab_layout.load_registry().get(LAB_SLUG(), {}).get("vault_names", []):
+            if "{lab}" in pat:
+                rx = re.escape(pat).replace(r"\{lab\}", r"(\d{1,3})") + r"\.md$"
+                match = re.search(rx, filename)
+                if match:
+                    break
+    if not match:
+        raise ValueError(f"Could not extract lab number from filename: {filename} (pass --lab NN)")
     return match.group(1).zfill(2)
 
 
@@ -117,7 +126,7 @@ def find_presentation_file(lab_number: str, date_str: Optional[str] = None) -> O
 
 def determine_meeting_number(docs_dir: str) -> str:
     """Determine next meeting number from existing files."""
-    meetings_dir = Path(docs_dir) / 'meetings'
+    meetings_dir = meetings_path(docs_dir)
 
     if not meetings_dir.exists():
         return "01"
@@ -129,6 +138,31 @@ def determine_meeting_number(docs_dir: str) -> str:
 
     max_num = max(int(n) for n in existing)
     return str(max_num + 1).zfill(2)
+
+
+def meetings_path(docs_dir: str) -> Path:
+    """Accept either a docs section directory or its meetings directory."""
+    path = Path(docs_dir)
+    return path if path.name == 'meetings' else path / 'meetings'
+
+
+def youtube_id_of(youtube_url: str) -> str:
+    parsed = urlparse(youtube_url)
+    qs = parse_qs(parsed.query)
+    if 'v' in qs:
+        return qs['v'][0]
+    if parsed.netloc == 'youtu.be':
+        return parsed.path.lstrip('/')
+    raise ValueError(f'Cannot extract video ID from URL: {youtube_url}')
+
+
+def recording_block(youtube_url: str, fathom_url: str = '', lang: str = 'ru') -> str:
+    """Recording section body (no heading) — shared by create and merge."""
+    yid = youtube_id_of(youtube_url)
+    watch = "Смотреть на YouTube" if lang == 'ru' else "Watch on YouTube"
+    return (f'<iframe width="560" height="315" src="https://www.youtube.com/embed/{yid}" frameBorder="0" '
+            'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" '
+            f'allowFullScreen></iframe>\n\n[{watch}]({youtube_url})')
 
 
 def create_meeting_doc(
@@ -159,7 +193,7 @@ description: [Краткое описание встречи]
 
 ## Видео
 
-**Fathom:** [Запись на Fathom]({fathom_url})
+{f"**Fathom:** [Запись на Fathom]({fathom_url})" if fathom_url else ""}
 
 **YouTube:** [Смотреть на YouTube]({youtube_url})
 
@@ -181,7 +215,7 @@ description: [Краткое описание встречи]
             presentation_content = '\n'.join(presentation_lines[end_idx:]).strip()
         content += f"\n{presentation_content}\n"
 
-    output_file = Path(docs_dir) / 'meetings' / f'{meeting_number}.mdx'
+    output_file = meetings_path(docs_dir) / f'{meeting_number}.mdx'
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_file, 'w', encoding='utf-8') as f:
@@ -250,11 +284,18 @@ Examples:
     parser.add_argument('youtube_url', help='YouTube video URL')
     parser.add_argument('summary_file', help='Path to summary markdown file')
     parser.add_argument('docs_dir', nargs='?', help='Target docs directory (auto-detected from env)')
+    parser.add_argument('--lab', help='Lab/cohort number override (else parsed from filename)')
     parser.add_argument('-n', '--meeting-number', help='Specific meeting number (e.g., 07)')
     parser.add_argument('-l', '--language', choices=['en', 'ru', 'auto'], default='auto',
                         help='Summary language (auto-detect, en, or ru)')
     parser.add_argument('--update', action='store_true',
-                        help='Overwrite existing meeting file (destructive, not a merge)')
+                        help='Kept for compatibility: existing files are always merged now')
+    parser.add_argument('--overwrite', action='store_true',
+                        help='Destructive full rewrite of an existing meeting file (old --update)')
+    parser.add_argument('--title', help='Fills frontmatter title only if it is a placeholder')
+    parser.add_argument('--description', help='Fills frontmatter description only if placeholder')
+    parser.add_argument('--transcript-url', help='Public transcript link → managed transcript block')
+    parser.add_argument('--dry-run', action='store_true', help='Merge: print diff, write nothing')
 
     args = parser.parse_args()
 
@@ -263,17 +304,18 @@ Examples:
     fathom_url = metadata.get('meeting_url', metadata.get('url', metadata.get('fathom_url', '')))
 
     if not fathom_url:
-        print("⚠️  Could not find Fathom URL in frontmatter (looking for 'meeting_url', 'url', or 'fathom_url')")
-        sys.exit(1)
+        # GDA 01 #02 (2026-10-17): Fathom didn't record; Zoom cloud + Wispr Flow did.
+        # A recording without Fathom is normal now — the page just omits the Fathom link.
+        print("ℹ️  No Fathom URL in frontmatter — continuing without a Fathom link (Zoom/Wispr source)")
 
-    lab_number = extract_lab_number(args.fathom_transcript)
+    lab_number = args.lab.zfill(2) if args.lab else extract_lab_number(args.fathom_transcript)
     print(f"✓ Detected lab number: {lab_number}")
 
+    import lab_layout
     docs_dir = args.docs_dir
     if not docs_dir:
         # Resolve through the labs.json registry (falls back to the legacy
         # {slug}-internal-{lab} scheme for unregistered labs).
-        import lab_layout
         layout = lab_layout.resolve(LAB_SLUG(), lab=lab_number)
         docs_dir = str(DOCS_SITE_DIR() / layout['meetings_dir'])
         if not layout['registered']:
@@ -288,20 +330,16 @@ Examples:
         meeting_number = args.meeting_number.zfill(2)
         print(f"✓ Using specified meeting number: {meeting_number}")
 
-        meeting_file = Path(docs_dir) / 'meetings' / f'{meeting_number}.mdx'
-        if meeting_file.exists() and not args.update:
-            print(f"⚠️  Meeting file already exists: {meeting_file}")
-            print("    Use --update flag to overwrite, or omit -n to create new meeting")
-            sys.exit(1)
+        meeting_file = meetings_path(docs_dir) / f'{meeting_number}.mdx'
+        if meeting_file.exists():
+            print(f"✓ Meeting file exists — {'overwriting' if args.overwrite else 'smart merge'}: {meeting_file}")
     else:
         meeting_number = determine_meeting_number(docs_dir)
         print(f"✓ Auto-detected meeting number: {meeting_number}")
 
-        meeting_file = Path(docs_dir) / 'meetings' / f'{meeting_number}.mdx'
-        if meeting_file.exists() and not args.update:
-            print(f"⚠️  Meeting file already exists: {meeting_file}")
-            print("    Use --update flag to overwrite, or -n to specify a different number")
-            sys.exit(1)
+        meeting_file = meetings_path(docs_dir) / f'{meeting_number}.mdx'
+        if meeting_file.exists():
+            print(f"✓ Meeting file exists — {'overwriting' if args.overwrite else 'smart merge'}: {meeting_file}")
 
     presentation_file = find_presentation_file(lab_number, extract_date(args.fathom_transcript))
     presentation_content = None
@@ -324,6 +362,29 @@ Examples:
     if detected_lang != target_lang and target_lang == 'ru':
         summary = translate_summary_to_russian(summary)
 
+    if meeting_file.exists() and not args.overwrite:
+        import merge_meeting_doc
+        layout_info = lab_layout.resolve(LAB_SLUG(), lab=lab_number)
+        lang = args.language if args.language != 'auto' else layout_info.get('lang', 'ru')
+        blocks = {'recording': recording_block(args.youtube_url, fathom_url, lang), 'summary': summary}
+        if args.transcript_url:
+            label = "Полный транскрипт встречи" if lang == 'ru' else "Full meeting transcript"
+            blocks['transcript'] = f"[{label}]({args.transcript_url})"
+        updates = {k: v for k, v in (('title', args.title), ('description', args.description)) if v}
+        old_text = meeting_file.read_text(encoding='utf-8')
+        new_text, changes = merge_meeting_doc.merge(
+            old_text, blocks, updates, lang,
+            keep_frontmatter=layout_info.get('preserve_placeholder_frontmatter', False) and not updates)
+        for c in changes:
+            print(f"  merge: {c}")
+        if args.dry_run:
+            import difflib
+            sys.stdout.writelines(difflib.unified_diff(old_text.splitlines(True), new_text.splitlines(True)))
+            return
+        meeting_file.write_text(new_text, encoding='utf-8')
+        print(f"\n✓ Merged into existing meeting page: {meeting_file} (presentation content not appended)")
+        return
+
     output_file = create_meeting_doc(
         meeting_number,
         fathom_url,
@@ -333,12 +394,12 @@ Examples:
         docs_dir
     )
 
-    action = "Updated" if args.update else "Created"
+    action = "Rewrote" if args.overwrite else "Created"
     print(f"\n✓ {action} meeting documentation: {output_file}")
     print(f"\nNext steps:")
     print(f"  1. Edit title and description in frontmatter")
-    print(f"  2. cd {Path(docs_dir).parent.parent.parent}")
-    print(f"  3. git add content/docs/{LAB_SLUG()}-internal-{lab_number}/meetings/{meeting_number}.mdx")
+    print(f"  2. cd {DOCS_SITE_DIR()}")
+    print(f"  3. git add {Path(output_file).relative_to(DOCS_SITE_DIR())}")
     print(f"     git commit -m '{action} meeting {meeting_number} documentation'")
     print(f"  4. git push")
     print(f"  5. Check Vercel deploy logs")

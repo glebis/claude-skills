@@ -34,7 +34,8 @@ def load_registry() -> dict:
 
 def resolve(slug: str, lab: str = "01", meeting: str = "01") -> dict:
     """Return dict with meetings_dir, page_url, playlist, lang, thumbnail_style,
-    site_slug, preserve_placeholder_frontmatter, registered(bool)."""
+    site_slug, preserve_placeholder_frontmatter, preserve_placeholder_body, brand,
+    cover_formats, registered(bool)."""
     reg = load_registry()
     entry = reg.get(slug)
     registered = entry is not None
@@ -44,13 +45,18 @@ def resolve(slug: str, lab: str = "01", meeting: str = "01") -> dict:
                  for k, v in LEGACY.items()}
     merged = dict(entry)
     fmt = {"slug": slug, "lab": str(lab).zfill(2), "meeting": str(meeting).zfill(2)}
-    for key in ("meetings_dir", "page_url", "playlist"):
+    for key in ("meetings_dir", "page_url", "playlist", "feed_cohort"):
         if key in merged and isinstance(merged[key], str):
             merged[key] = merged[key].format(**fmt)
     merged.setdefault("site_slug", slug)
     merged.setdefault("lang", "ru")
     merged.setdefault("thumbnail_style", "claude-code")
     merged.setdefault("preserve_placeholder_frontmatter", False)
+    merged.setdefault("preserve_placeholder_body", False)
+    merged.setdefault("brand", None)
+    merged.setdefault("cover_formats", "youtube")
+    if isinstance(merged.get("site_slug"), str):
+        merged["site_slug"] = merged["site_slug"].format(**fmt)
     merged["registered"] = registered
     return merged
 
