@@ -29,6 +29,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Added | Skill | What it does |
 | --- | --- | --- |
+| 2026-11 | [sops-mesh](./sops-mesh/) | Share SOPS + age secrets across macOS, Linux, Windows and CI: one key per machine in Secure Enclave / Keychain / Credential Manager / libsecret, public keys over Syncthing or git with human approval, agent-safe injection, plaintext-secret scan, 25-check self-test |
 | 2026-11 | [research-catalogue](./research-catalogue/) | Research any collection (opportunities, products, studies, sources) against your question and build a standalone catalogue: cards, comparison table, facets, any dates and numbers, per-item verification status, light/dark |
 | 2026-11 | [bridgework](./bridgework/) | Consent-gated, names-only audit of your stack, then a local canvas for practising what two tools could do together, with an agent prompt at every step |
 | 2026-11 | [luma-event](./luma-event/) | AGENCY event on Lu.ma: generated cover, Zoom meeting, event page, contact invites, announcement draft |
@@ -199,6 +200,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Skill | What it does |
 | --- | --- |
+| [sops-mesh](./sops-mesh/) | Per-machine age keys + SOPS secrets across macOS/Linux/Windows, Syncthing or git, agents get secrets without seeing keys |
 | [ecosystem](./ecosystem/) | Audit skill health, project pulse, CLAUDE.md drift, service status |
 | [retrospective](./retrospective/) | Extract learnings from one session or all of today's, update skills and memory |
 | [skill-studio](https://github.com/glebis/skill-studio) | Interview-driven skill/automation design; analyze sessions into new skills |
