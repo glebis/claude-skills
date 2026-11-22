@@ -30,7 +30,7 @@ youtube = get_authenticated_service()
 resp = youtube.playlists().list(part='snippet', mine=True, maxResults=50).execute()
 playlist_id = None
 for p in resp['items']:
-    if p['snippet']['title'] == 'Claude Code Lab ${LAB_NUMBER}':
+    if p['snippet']['title'] == '${PLAYLIST}':   # layout 'playlist'
         playlist_id = p['id']
         break
 
@@ -39,8 +39,8 @@ if not playlist_id:
         part='snippet,status',
         body={
             'snippet': {
-                'title': 'Claude Code Lab ${LAB_NUMBER}',
-                'description': 'Claude Code Lab ${LAB_NUMBER}'
+                'title': '${PLAYLIST}',
+                'description': '${PLAYLIST}'
             },
             'status': {'privacyStatus': 'unlisted'}
         }
@@ -77,7 +77,7 @@ In this video:
 - [bullet 8-10 max]
 
 Course materials and session notes:
-https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}
+https://${SITE_DOMAIN}${PAGE_URL}   # page_url from lab_layout.py
 
 AGENCY community — AI agent practitioners:
 https://${SITE_DOMAIN}
@@ -98,7 +98,7 @@ ${MEETING_TITLE}
 - [пункт 8-10 макс]
 
 Материалы и конспект занятия:
-https://${SITE_DOMAIN}/docs/claude-code-internal-${LAB_NUMBER}/meetings/${MEETING_NUMBER}
+https://${SITE_DOMAIN}${PAGE_URL}   # page_url from lab_layout.py
 
 Сообщество AGENCY — практики AI-агентов:
 https://${SITE_DOMAIN}

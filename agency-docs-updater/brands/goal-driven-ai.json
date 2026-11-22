@@ -1,0 +1,240 @@
+{
+  "_comment": "Brand profile for token-driven covers. Paths may use ~ and {site}. Positions are % of the 1280x720 (or per-format) canvas. See references/brand-covers.md.",
+  "name": "Goal-Driven AI",
+  "site": "~/Sites/salience-lab-draft",
+  "tokens": "{site}/design.tokens.json",
+  "fonts_css": "{site}/gpt6/assets/fonts/fonts.css",
+  "wordmark": "GOAL-DRIVEN AI",
+  "meeting_label": "Встреча {meeting}",
+  "lang": "ru",
+  "assets": {
+    "red-circle": "{site}/gpt6/assets/images/riso/red.png",
+    "crescent": "{site}/gpt6/assets/images/riso/crescent.png",
+    "oval": "{site}/gpt6/assets/images/riso/oval.png",
+    "red-triangle": "{site}/gpt6/assets/images/riso/red-triangle.png",
+    "red-square": "{site}/gpt6/assets/images/riso/red-square.png",
+    "black-circle": "{site}/gpt6/assets/images/riso/black-circle.png",
+    "black-square": "{site}/gpt6/assets/images/riso/black-square.png",
+    "backdrop": "{site}/gpt6/assets/images/riso/background.png",
+    "portrait": "{site}/gpt6/assets/images/gleb-kalinin-cutout.png"
+  },
+  "compositions": {
+    "hero": {
+      "note": "Site hero: red sun, charcoal crescent and oval. Default; orientation, first meetings, goals",
+      "layers": [
+        {
+          "asset": "red-circle",
+          "left": 62,
+          "top": 14,
+          "width": 34,
+          "by_format": {
+            "square": {
+              "left": 50,
+              "top": 6,
+              "width": 40
+            }
+          }
+        },
+        {
+          "asset": "crescent",
+          "left": 55,
+          "top": 22,
+          "width": 30,
+          "opacity": 0.78,
+          "blend": "multiply",
+          "by_format": {
+            "square": {
+              "left": 40,
+              "top": 10,
+              "width": 36
+            }
+          }
+        },
+        {
+          "asset": "oval",
+          "left": 74,
+          "top": 52,
+          "width": 17,
+          "opacity": 0.64,
+          "blend": "multiply",
+          "by_format": {
+            "square": {
+              "left": 72,
+              "top": 30,
+              "width": 20
+            }
+          }
+        }
+      ]
+    },
+    "program": {
+      "note": "Programme block: triangle + square. Structure, steps, workflows, plans",
+      "layers": [
+        {
+          "asset": "backdrop",
+          "left": 57,
+          "top": 30,
+          "width": 46,
+          "opacity": 0.72,
+          "blend": "multiply"
+        },
+        {
+          "asset": "red-triangle",
+          "left": 58,
+          "top": 16,
+          "width": 24
+        },
+        {
+          "asset": "black-square",
+          "left": 76,
+          "top": 40,
+          "width": 20,
+          "rotate": -4,
+          "blend": "multiply"
+        }
+      ]
+    },
+    "pricing": {
+      "note": "Square + circle pair. Comparison, choice, models, tools side by side",
+      "layers": [
+        {
+          "asset": "red-square",
+          "left": 58,
+          "top": 24,
+          "width": 24
+        },
+        {
+          "asset": "black-circle",
+          "left": 74,
+          "top": 12,
+          "width": 22,
+          "blend": "multiply"
+        }
+      ]
+    },
+    "portrait": {
+      "note": "Host portrait over red circle (OG card). Intros, Q&A, host-led sessions",
+      "layers": [
+        {
+          "asset": "red-circle",
+          "left": 61,
+          "top": 34,
+          "width": 44,
+          "by_format": {
+            "square": {
+              "left": 48,
+              "top": 4,
+              "width": 50
+            }
+          }
+        },
+        {
+          "asset": "portrait",
+          "left": 56,
+          "bottom": -1,
+          "width": 46,
+          "by_format": {
+            "square": {
+              "left": 46,
+              "bottom": null,
+              "top": 0,
+              "width": 52,
+              "fade_bottom": 18
+            }
+          }
+        }
+      ]
+    },
+    "generated": {
+      "note": "Topic-specific generated layer (slot 'generated') anchored by one kit shape",
+      "layers": [
+        {
+          "asset": "red-circle",
+          "left": 70,
+          "top": 10,
+          "width": 24
+        },
+        {
+          "slot": "generated",
+          "left": 52,
+          "top": 16,
+          "width": 46,
+          "blend": "multiply"
+        }
+      ]
+    }
+  },
+  "topic_compositions": {
+    "program": [
+      "план",
+      "этап",
+      "шаг",
+      "процесс",
+      "workflow",
+      "автоматизац",
+      "pipeline",
+      "структур"
+    ],
+    "pricing": [
+      "сравн",
+      "модел",
+      "выбор",
+      "инструмент",
+      "tools",
+      "model",
+      "vs"
+    ],
+    "portrait": [
+      "знакомств",
+      "вопрос",
+      "q&a",
+      "интервью"
+    ]
+  },
+  "generation": {
+    "engine": "nano-banana",
+    "model": "pro",
+    "references": [
+      "red-circle",
+      "crescent",
+      "red-triangle"
+    ],
+    "prompt_template": "{subject}. {imageryStyle} Subjects drawn from: {subjects}. Palette strictly {palette}. Isolated forms on flat warm ivory paper {background}, generous negative space, no text, no words, no logos. Avoid: {avoid}."
+  },
+  "transforms": {
+    "generated": [
+      {
+        "op": "key_out",
+        "color": "{color.background}",
+        "fuzz": 10
+      },
+      {
+        "op": "trim"
+      }
+    ]
+  },
+  "copy_rules": {
+    "strip_heading_full_stop": true,
+    "max_hero_chars": 34,
+    "max_emphasis_chars": 26
+  },
+  "formats": {
+    "youtube": {
+      "width": 1280,
+      "height": 720,
+      "type": "jpeg",
+      "quality": 92
+    },
+    "og": {
+      "width": 1200,
+      "height": 630,
+      "type": "png"
+    },
+    "square": {
+      "width": 1080,
+      "height": 1080,
+      "type": "jpeg",
+      "quality": 92
+    }
+  }
+}

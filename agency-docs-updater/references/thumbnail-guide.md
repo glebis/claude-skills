@@ -1,4 +1,6 @@
-# Lab-Style Thumbnail Generation (Lab 04+)
+# Lab-Style Thumbnail Generation — Claude Code style (thumbnail_style: "claude-code")
+
+> Labs with their own site tokens use `thumbnail_style: "brand"` → see `brand-covers.md`. The recolour steps below can also run as a pipeline: `scripts/image_transforms.py raw.png out.png --pipeline '[{"op":"recolor","map":{"white":"#e85d04","#c0c0c0":"#e85d04"},"fuzz":25}]'`.
 
 Replace the generic thumbnail from `process_video.py` with the lab-style dark editorial template. Do this AFTER `VIDEO_ID` is known from Step 3, and BEFORE or alongside Step 4b.
 

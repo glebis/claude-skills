@@ -216,7 +216,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | Skill | What it does |
 | --- | --- |
 | [luma-event](./luma-event/) | Cover → Zoom → Lu.ma event → invites to calendar contacts → announcement draft |
-| [agency-docs-updater](./agency-docs-updater/) | Lab meeting pipeline: transcript → video → YouTube → summary → MDX → deploy |
+| [agency-docs-updater](./agency-docs-updater/) | Lab meeting pipeline: transcript → context-aware video edit → YouTube (verified; local copies trashed only after a full pass) → brand covers → summary → merged MDX → deploy → lab-bot announcement. Ships with evals |
 | [agency-meetup-publish](./agency-meetup-publish/) | Zoom recording → intro/outro, thumbnail, timecodes, YouTube, playlist |
 | [lab-retro](./lab-retro/) | Four-part retrospective and self-assessment for Lab participants |
 | [skills/library-sync](./skills/library-sync/) | Sync bilingual (EN/RU) library content for agency-docs |

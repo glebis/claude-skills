@@ -6,7 +6,7 @@ Send once after the actual agency-docs publication is verified on the live site,
 
 Current verified mapping for **Goal-Driven AI 01**:
 - Bot: `@agency_lab_companion_bot`
-- Destination: `Goal-Driven AI 01 — Чат`, chat ID `-1004311316115`
+- Destination: `Goal-Driven AI 01 — Чат`, chat ID in `LAB_ANNOUNCE_CHAT_ID` (skill `.env`, not committed)
 - Private-chat link: `https://t.me/agency_lab_companion_bot?start=lesson{meeting}` (zero-padded meeting number)
 - Do not additionally post to the announcements channel or send participant DMs. Personalized publication notifications are a separate PiBot workflow.
 
