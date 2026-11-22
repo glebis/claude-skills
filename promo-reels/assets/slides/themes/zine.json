@@ -1,0 +1,63 @@
+{
+  "name": "zine",
+  "description": "Typewriter zine: monospace caps, newsprint, orange marker accent, underlined action, documentary texture.",
+  "mood": [
+    "diy",
+    "indie",
+    "documentary",
+    "reading",
+    "community",
+    "lo-fi"
+  ],
+  "fonts": [
+    {
+      "family": "PT Mono",
+      "file": "PTMono-Regular.ttf"
+    }
+  ],
+  "type": {
+    "display": "PT Mono",
+    "text": "PT Mono",
+    "mono": "PT Mono",
+    "case": "upper",
+    "hero_weight": 400,
+    "light_weight": 400,
+    "strong_weight": 400,
+    "leading": 1.0,
+    "tracking": "0em",
+    "align": "left",
+    "fill_chars": {
+      "ru": 10,
+      "en": 10
+    }
+  },
+  "color": {
+    "bg": "#F5F2EA",
+    "ink": "#111111",
+    "accent": "#FF5A1F",
+    "accent_ink": "#C2410C",
+    "on_accent": "#111111",
+    "cta_bg": "#111111",
+    "cta_ink": "#F5F2EA",
+    "cta_date": "#FF5A1F"
+  },
+  "shape": {
+    "radius": 0,
+    "rule_w": 216,
+    "rule_h": 6,
+    "button": "underline",
+    "plate": "fill"
+  },
+  "texture": {
+    "bg_text_opacity": 0.08,
+    "bg_text_rotate": 0
+  },
+  "motion": {
+    "slide_move": 0.03,
+    "footage_move": 0.05
+  },
+  "grade": {
+    "contrast": 1.05,
+    "saturation": 0.8
+  }
+}

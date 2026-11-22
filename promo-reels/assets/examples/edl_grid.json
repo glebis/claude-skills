@@ -1,0 +1,12 @@
+{
+ "sources": {"A": "footage/hall.mp4", "B": "footage/stage.mov"},
+ "fps": 30, "xfade": 0, "move_amount": 0.05,
+ "shots": [
+  {"slide": "slides/hook.png", "beats": 4, "note": "hook (bar 1)"},
+  {"src": "B", "in": 2.8, "beats": 4, "zoom": 1.15, "c": [0.48, 0.4], "move": "in", "note": "verse"},
+  {"src": "A", "in": 7.9, "beats": 2, "zoom": 1.9, "c": [0.25, 0.3], "move": "in", "note": "chorus"},
+  {"src": "A", "in": 8.5, "beats": 2, "zoom": 1.9, "c": [0.56, 0.3], "move": "in", "note": "chorus"},
+  {"src": "A", "in": 0.3, "beats": 4, "zoom": 1.25, "c": [0.3, 0.38], "move": "in", "note": "release: gesture up"},
+  {"slide": "slides/cta.png", "beats": 6, "note": "CTA"}
+ ]
+}
