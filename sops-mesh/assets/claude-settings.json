@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/*.key)",
+      "Read(**/keys.txt)",
+      "Read(**/*identity*.txt)",
+      "Read(~/.config/sopsmesh/**)",
+      "Read(~/.config/sops/age/**)",
+      "Read(~/AppData/Roaming/sopsmesh/**)",
+      "Read(~/Library/Application Support/sops/age/**)",
+      "Bash(sops decrypt:*)",
+      "Bash(sops -d:*)",
+      "Bash(age -d:*)",
+      "Bash(age --decrypt:*)",
+      "Bash(security find-generic-password:*)",
+      "Bash(security dump-keychain:*)",
+      "Bash(secret-tool lookup:*)",
+      "Bash(*sopsmesh.py key*)",
+      "Bash(*sopsmesh.py\" key*)"
+    ],
+    "allow": [
+      "Bash(*sopsmesh.py run *)",
+      "Bash(*sopsmesh.py status*)",
+      "Bash(*sopsmesh.py scan*)",
+      "Bash(*sopsmesh.py doctor*)",
+      "Bash(*selftest.py*)"
+    ]
+  }
+}
