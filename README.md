@@ -29,6 +29,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 
 | Added | Skill | What it does |
 | --- | --- | --- |
+| 2026-11 | [kinetic-ad](./kinetic-ad/) | Vertical kinetic-type ads in raea: physics letters, elastic chains, board camera, lens cuts on a 100 bpm grid, synthesised kick, ElevenLabs SFX |
 | 2026-11 | [sops-mesh](./sops-mesh/) | Share SOPS + age secrets across macOS, Linux, Windows and CI: one key per machine in Secure Enclave / Keychain / Credential Manager / libsecret, public keys over Syncthing or git with human approval, agent-safe injection, plaintext-secret scan, 25-check self-test |
 | 2026-11 | [research-catalogue](./research-catalogue/) | Research any collection (opportunities, products, studies, sources) against your question and build a standalone catalogue: cards, comparison table, facets, any dates and numbers, per-item verification status, light/dark |
 | 2026-11 | [bridgework](./bridgework/) | Consent-gated, names-only audit of your stack, then a local canvas for practising what two tools could do together, with an agent prompt at every step |
@@ -134,6 +135,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | [vision-bench](./vision-bench/) | Score and compare images using vision LLMs as judges (11 criteria presets) |
 | [elevenlabs-tts](./elevenlabs-tts/) | Text → audio via ElevenLabs with voice presets and tunable parameters |
 | [palmier-reels](./palmier-reels/) | Vertical narrative reels in Palmier Pro via MCP — beat-cut, word-by-word typography, card wipes, film jitter, ElevenLabs SFX; style presets or DTCG design tokens |
+| [kinetic-ad](./kinetic-ad/) | 9:16 kinetic-type promo/ad videos in raea (ink/paper/red, Manrope + Plex Mono): scene table on the bar grid, reusable motion components, BPM-locked kick, levelled ElevenLabs SFX, render-and-check checklist |
 
 ## Communication
 
