@@ -13,6 +13,7 @@ to reach for. Read a component's header comment before changing it.
 | `components/typeplay.tsx` | a word acting out its meaning | `Typewriter`, `LetterGrid`, `Bounce`, `BallLetter` (bouncing-ball exercise with spacing ghosts and a graph editor), `Meter`, `Slices`, `PinnedNumeral` (giant numeral holds, the word beside it rolls), `Accrue` (items thrown onto an elastic chain, docking into a list) |
 | `components/transitions.tsx` | cuts between scenes | edges `ZoomThrough TypeMask ChainWhip SlabPush ElasticSplit InkLine Iris Wipe Swipe` in `EDGES`; scene-moves `Shatter`, `MatchLetter` |
 | `components/world.tsx` | slides that continue one thought (hook → claim → steps; end card → facts) | `World`, `cell(col,row,layer)`, `Tile` (`hideBefore`, `clearAt`), `Stop` (`tile`, `arc`, `back`, `x`, `y`), `camAt`, `swell`, `GAP` 0 |
+| `components/board.tsx` (from the skill, not KINETIC) | several slides seen at once, the camera moving between them | `Board`, `Slide` (`col`, `row`, `layer`, `enter`), `Move` (`to` id, ids or `"all"`; `by` push/pan/leap; `hold`, `frame`), `boardStops` for the lens. See `board.md` |
 | `components/lens.tsx` | always on the edit root | `Lens({k})`: wide-angle bulge; drive `k` with `lensAt(f)` (edge windows + board xy speed) |
 | `components/cursor.tsx` | a pointer that clicks | `ClickCursor({keys, clicks, size, physics, drift})`; `physics={1} size≈220` for the hero cursor |
 | `components/space.tsx` | rarely: the 2.5D `Space`/`dolly` underneath `World`; its UI props are retired (type only) | `Space`, `dolly`, `FOCAL` |

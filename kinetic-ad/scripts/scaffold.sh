@@ -45,6 +45,12 @@ copy assets/fonts
 copy package.json
 copy tsconfig.json
 [ "$SFX" = 1 ] && copy assets/sounds/sfx
+# the skill's own parts: Board (many slides at once, camera moves between them) and its demo
+SKILL="$(cd "$(dirname "$0")/.." && pwd)"
+for f in components/board.tsx examples/board-demo.tsx; do
+  to="$DEST/$( [ "$f" = examples/board-demo.tsx ] && echo compositions/board-demo.tsx || echo "$f" )"
+  if [ -e "$to" ]; then echo "kept   ${to#$DEST/}"; else cp "$SKILL/assets/$f" "$to"; echo "copied ${to#$DEST/}"; fi
+done
 mkdir -p "$DEST/assets/music" "$DEST/assets/sounds/sfx" "$DEST/out"
 [ -e "$DEST/compositions/media" ] || { ln -s ../assets "$DEST/compositions/media"; echo "linked compositions/media -> ../assets"; }
 

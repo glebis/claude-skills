@@ -1,6 +1,6 @@
 ---
 name: kinetic-ad
-description: This skill should be used when making a short vertical (9:16, 1080×1920) kinetic-type promo or ad video in raea in the ink/paper/red style — Manrope 800 uppercase with IBM Plex Mono, physics letters, elastic chains, warped vector type, a 2.5D board camera, wide-angle lens cuts, all on a 100 bpm beat grid with a synthesised kick and ElevenLabs SFX. Triggers on "make a kinetic ad", "kinetic type promo", "another ad like the workshop one", "vertical ad in raea in the kinetic style", "reel for my event/workshop/launch in that style", or when starting a new raea project from the kinetic components.
+description: This skill should be used when making a short vertical (9:16, 1080×1920) kinetic-type promo or ad video in raea in the ink/paper/red style — Manrope 800 uppercase with IBM Plex Mono, physics letters, elastic chains, warped vector type, a 2.5D board camera (many slides seen at once, zooming, panning and leaping between them, slides dropping or sliding onto the board), wide-angle lens cuts, all on a 100 bpm beat grid with a synthesised kick and ElevenLabs SFX. Triggers on "make a kinetic ad", "kinetic type promo", "another ad like the workshop one", "vertical ad in raea in the kinetic style", "reel for my event/workshop/launch in that style", or when starting a new raea project from the kinetic components.
 ---
 
 # Kinetic ad (raea)
@@ -41,6 +41,10 @@ Work in frames. Grid: 30 fps, 100 bpm, `BEAT` 18 frames, `BAR` 72. Every scene s
 5. **Components.** Build `compositions/<name>.tsx` on the example's skeleton (`SCENES` → `TIMELINE` → `Edit` with
    `Lens`, `SFX` table, `Mix`). Pick materials and edges with `METHOD.md` §3 and §6; make each word act out its
    meaning (`typeplay`). `references/composition.md` has the skeleton and the moving parts.
+   **Boards**: when slides belong to one thought, or the ending should show several slides at once (the ask with
+   its facts around it), lay them on a `Board` and travel with moves (`push` in and out, `pan`, `leap`, overview of
+   `"all"` or a set, dives) while slides `slide`, `drop`, `rise` or `pop` onto it. See `references/board.md`, and
+   render `compositions/board-demo.tsx` (copied by the scaffold) to see every move.
 6. **Stills sheets.** `raea render FILE.tsx --at F1,F2,...` at each scene's beat peak and rest and at every cut, tile
    them, and read every word by eye. Show the sheet before the first full render of a new scene.
 7. **Quick check.** `raea check --quick FILE.tsx` (safe areas, clipped text). Include the very last frame.
@@ -66,7 +70,10 @@ events hidden under an edge, drop retiming). Each rule came from a real round of
 
 ## Files
 
-- `scripts/scaffold.sh` — copy the system from KINETIC into a new project.
+- `scripts/scaffold.sh` — copy the system from KINETIC into a new project, plus the skill's Board and its demo.
+- `assets/components/board.tsx` — `Board`, `boardStops`, `boardTiles`: slides on a grid, camera moves, slide entries.
+- `assets/examples/board-demo.tsx` — nine slides, every move and entry once (6 bars).
+- `references/board.md` — how to design a board: grounds, moves, entries, timing, lens, limits.
 - `references/components.md` — what each component is for, where it lives, copy vs shared.
 - `references/composition.md` — the composition skeleton: scene table, timeline, edges, lens, SFX table, mix.
 - `references/audio.md` — BPM lock, synthesised kick, drop on a cut, master; ElevenLabs SFX and levelling.

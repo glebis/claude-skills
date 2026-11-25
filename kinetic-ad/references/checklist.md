@@ -19,6 +19,9 @@ Each line came from a round of feedback or a failed render on the first kinetic 
 - [ ] **Hero cursor exaggerated:** ~220 px, `physics={1}`, clicks visibly (dip + ring + click SFX), never holds.
 - [ ] **One red accent per frame;** alternate grounds between cut slides.
 - [ ] **Word space** `SPACE` 0.42 em (one-letter words stay words).
+- [ ] **Boards:** neighbouring slides never share a ground; entering slides with big travels are red or paper (ink
+      vanishes on the ink board); what must be read is pushed into, not left in the overview; every read stop
+      has a `hold`.
 - [ ] **Edges used at most twice,** chosen by meaning; lens swell on cuts and pans.
 - [ ] **Facts traceable** to the source; on-screen language agreed.
 - [ ] **Light SFX,** one per action; nothing harsh.
