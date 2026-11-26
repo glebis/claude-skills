@@ -1,6 +1,6 @@
 ---
 name: visual-board
-description: Assemble a visual reference board as one PNG (plus per-section PNGs and optional HTML) that puts a reference video's stills, the product's real screens, its design tokens and the storyboard frames (reference move next to product moment) side by side. Use when the user asks for a "mood board", "reference board", "visual board", "storyboard sheet", "put the reference and our screens side by side", or a single picture for a deck that shows where a product video's look comes from. Follows ref-transfer and design-tokens in the interface-to-video chain.
+description: Assemble a visual reference board as one PNG (plus per-section PNGs and optional HTML) that puts a reference video's stills, the product's real screens, its design tokens and the storyboard frames (reference move next to product moment) side by side. Use when the user asks for a "mood board", "reference board", "visual board", "storyboard sheet", "put the reference and our screens side by side", or a single picture for a deck that shows where a product video's look comes from. Follows ref-transfer and ui-tokens in the interface-to-video chain (ref-transfer → ui-tokens → user-journeys → ui-motion → raea-animate).
 ---
 
 # visual-board
@@ -11,7 +11,7 @@ One deterministic script renders a JSON spec. Choosing what goes on the board is
 - **Reference stills**: `lecture/ref-transfer/stills/shot-NN.jpg` from the `ref-transfer` skill (or any stills).
   Pick 6–8 that show the moves the transfer borrows, and label each with the move, not the content.
 - **Product screens**: real screenshots or frames from screen recordings (`video.webm@SECONDS`). Never generated images.
-- **Design tokens**: `tokens.json` from the `design-tokens` skill (colour swatches, type, spacing, radii and motion are
+- **Design tokens**: `tokens.json` from the `ui-tokens` skill (colour swatches, type, spacing, radii and motion are
   drawn from it); if it is missing, a `fallback` image (a token sheet) or nothing.
 - **Storyboard**: one frame per shot of the transfer plan (`refs/transfer.md`): `ref` still, `product` screen cropped to
   the one component the shot isolates (`screen.png#x,y,w,h` in source pixels), label `N · start–end s`,

@@ -1,6 +1,6 @@
 ---
 name: ref-transfer
-description: Break a reference video (an ad, a launch film, a YouTube link or a local file) into a measured shot list, a scenario and a board of stills, then transfer its moves onto the user's own product as a 25–30 s shot plan with a user story and the real interface moment for each shot. Use when the user says "analyse this ad", "break down this reference", "shot list from this video", "make our video like this one", "steal the structure of this film", "transfer this reference to my app", or gives a video link as a model for a product video. Step zero of the interface-to-video chain (ref-transfer → design-tokens → user-journeys → ui-motion → animate). Uses raea media/song and ffmpeg.
+description: Break a reference video (an ad, a launch film, a YouTube link or a local file) into a measured shot list, a scenario and a board of stills, then transfer its moves onto the user's own product as a 25–30 s shot plan with a user story and the real interface moment for each shot. Use when the user says "analyse this ad", "break down this reference", "shot list from this video", "make our video like this one", "steal the structure of this film", "transfer this reference to my app", or gives a video link as a model for a product video. Step zero of the interface-to-video chain (ref-transfer → ui-tokens → user-journeys → ui-motion → raea-animate). Uses raea media/song and ffmpeg.
 ---
 
 # ref-transfer
