@@ -1,7 +1,7 @@
 // v2: the cut with session A's transfer (refs/transfer.md, Apple "Family" ad → prose-eval) laid over the user-story
 // arc. Taken from the reference: the models are coloured orbs that act on the interface (they tick their own
 // checkbox, land as margin dots, sit on the card's corners, hit the Auto button), one component is lifted out onto a
-// flat field (the card on --pencil-soft, the Auto button on --pencil), cuts and hits on a 120 BPM grid (beat 15 f,
+// flat field (the card on --pencil-soft, the Auto button on a light field), cuts and hits on a 120 BPM grid (beat 15 f,
 // bar 30 f), and a light end card with the readers' orbs falling into a cluster above the wordmark. Kept from v1: the real page, takes and fixes.
 // Deliberate change from the transfer: two orbs, not five — the scene's real card says "All 2 models flag this".
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "raea";
@@ -13,7 +13,7 @@ export const BEAT = 15, BAR = 30;
 export const AT = {
   dropA: 15, dropB: 30, // orbs land on beats
   appIn: 60, tickA: 90, tickB: 105, run: 120,
-  bloom: 150, pushIn: 165,
+  bloom: 150, pushIn: 165, hit2: 165, // hit2: the two orbs strike the phrase both models flag
   clickMark: 255, isoCard: 270, takes: 284,
   key: 390, type: 402,
   pullOut: 465, isoAuto: 510, hit: 540, autoOut: 552, auto: 556, toast: 600,
@@ -125,7 +125,7 @@ function App({ f }: { f: number }) {
             <Fix {...FIX_C} mark={0} strike={tw(f, autoK(1), autoK(1) + 6)} typed={tw(f, autoK(1) + 6, autoK(1) + 14, 0, FIX_C.to.length, E.linear)} clean={clean} />{" "}
             with the right context attached,{" "}
             {f < AT.key
-              ? <Mark on={bloom(2)} votes={2} sel={tw(f, AT.clickMark, AT.clickMark + 6)}>{FIX_B.from}</Mark>
+              ? <Mark on={tw(f, AT.hit2, AT.hit2 + 8, 0, 1, E.back)} votes={2} sel={tw(f, AT.clickMark, AT.clickMark + 6)}>{FIX_B.from}</Mark>
               : <Fix {...FIX_B} strike={tw(f, AT.key, AT.key + 6)} typed={tw(f, AT.type, AT.type + 40, 0, FIX_B.to.length, E.linear)} clean={clean} />}
           </div>
         </div>
@@ -191,18 +191,27 @@ function squashAt(f: number, keys: OK[]) {
 const ORB_A: OK[] = [
   { f: 0, x: 840, y: 540, r: 70 }, { f: AT.dropA, x: 840, y: 650, r: 70, drop: true, squash: true },
   { f: AT.appIn, x: 840, y: 640, r: 70 }, { f: AT.tickA - 2, ...TARGET.tickA, r: 20, app: true, squash: true },
-  { f: AT.run + 4, ...TARGET.tickA, r: 20, app: true }, { f: AT.bloom + STAGGER, ...TARGET.railA, r: 13, app: true }, { f: AT.bloom + STAGGER + 6, ...TARGET.railA, r: 13, app: true, o: 0 },
+  { f: AT.run + 4, ...TARGET.tickA, r: 20, app: true }, { f: AT.hit2 - 12, x: TARGET.mark.x - 420, y: TARGET.mark.y - 40, r: 24, app: true },
+  { f: AT.hit2, x: TARGET.mark.x - 34, y: TARGET.mark.y, r: 24, app: true, drop: true, squash: true }, { f: AT.hit2 + 16, ...TARGET.railA, r: 13, app: true }, { f: AT.hit2 + 22, ...TARGET.railA, r: 13, app: true, o: 0 },
 ];
 const ORB_B: OK[] = [
   { f: 0, x: 1080, y: -300, r: 70 }, { f: AT.dropA, x: 1080, y: -300, r: 70 }, { f: AT.dropB, x: 1080, y: 650, r: 70, drop: true, squash: true },
   { f: AT.appIn, x: 1080, y: 640, r: 70 }, { f: AT.tickB - 2, ...TARGET.tickB, r: 20, app: true, squash: true },
-  { f: AT.run + 8, ...TARGET.tickB, r: 20, app: true }, { f: AT.bloom + 2 * STAGGER, ...TARGET.railB, r: 13, app: true }, { f: AT.bloom + 2 * STAGGER + 6, ...TARGET.railB, r: 13, app: true, o: 0 },
+  { f: AT.run + 8, ...TARGET.tickB, r: 20, app: true }, { f: AT.hit2 - 12, x: TARGET.mark.x + 420, y: TARGET.mark.y - 40, r: 24, app: true },
+  { f: AT.hit2, x: TARGET.mark.x + 34, y: TARGET.mark.y, r: 24, app: true, drop: true, squash: true }, { f: AT.hit2 + 18, ...TARGET.railB, r: 13, app: true }, { f: AT.hit2 + 24, ...TARGET.railB, r: 13, app: true, o: 0 },
 ];
 
 function Orbs({ f }: { f: number }) {
   const a = orbAt(f, ORB_A), b = orbAt(f, ORB_B);
+  const ghosts = (keys: OK[], color: string) => [4, 3, 2, 1].map((k) => {
+    const g = orbAt(f - k * 1.5, keys), now = orbAt(f, keys);
+    const fast = Math.min(1, Math.hypot(now.x - g.x, now.y - g.y) / (40 * k)); // only a fast move leaves a streak
+    return <Orb key={k} {...g} r={g.r * (1 - 0.12 * k)} color={color} o={g.o * fast * 0.16 * (5 - k)} />;
+  });
   return (
     <>
+      {ghosts(ORB_A, ORB.A)}
+      {ghosts(ORB_B, ORB.B)}
       <Orb {...a} color={ORB.A} sq={squashAt(f, ORB_A)} />
       <Orb {...b} color={ORB.B} sq={squashAt(f, ORB_B)} />
     </>
@@ -247,7 +256,7 @@ function IsoCard({ f }: { f: number }) {
   );
 }
 
-/** the Auto button alone on a --pencil field; the two orbs come in from the sides and hit it on the downbeat */
+/** the Auto button alone, a white card on the light --paper field (transfer.md shot 7); the two orbs come in from the sides and hit it on the downbeat */
 function IsoAuto({ f }: { f: number }) {
   const k = tw(f, AT.isoAuto, AT.isoAuto + 10, 0, 1, E.out) * tw(f, AT.autoOut, AT.autoOut + 10, 1, 0, E.in);
   if (k <= 0) return null;
@@ -256,13 +265,13 @@ function IsoAuto({ f }: { f: number }) {
   const approach = (side: number) => {
     const t = tw(f, AT.isoAuto + 10, AT.hit, 0, 1, E.in); // falling in, accelerating into the hit
     const away = tw(f, AT.hit, AT.hit + 14, 0, 1, E.out); // burst outward after it
-    return { x: 960 + side * (mix(900, 300, t) + 500 * away), y: 540 - 160 * Math.sin(Math.PI * t) * (1 - away) - 260 * away, o: 1 - away };
+    return { x: 960 + side * (mix(900, 422, t) + 500 * away), y: 540 - 160 * Math.sin(Math.PI * t) * (1 - away) - 260 * away, o: 1 - away };
   };
   const a = approach(-1), b = approach(1);
   return (
-    <AbsoluteFill style={{ background: alpha(T.pencil, k) }}>
+    <AbsoluteFill style={{ background: alpha(T.paper, k) }}>
       <div style={{ position: "absolute", left: 0, right: 0, top: 470, display: "flex", justifyContent: "center", opacity: k }}>
-        <div style={{ transform: `scale(${(0.8 + 0.2 * appear) * (1 - 0.06 * press)})`, background: T.sheet, color: T.pencil, borderRadius: 24, padding: "30px 56px", fontFamily: F.ui, fontWeight: 600, fontSize: 60, boxShadow: `0 ${18 * (1 - press)}px 40px rgba(0,0,0,0.18)` }}>
+        <div style={{ transform: `scale(${(0.8 + 0.2 * appear) * (1 - 0.06 * press)})`, background: T.sheet, color: T.pencil, border: `3px solid ${T.rule}`, borderRadius: 24, padding: "30px 56px", fontFamily: F.ui, fontWeight: 600, fontSize: 60, boxShadow: `0 ${18 * (1 - press)}px 40px rgba(0,0,0,0.18)` }}>
           Auto · apply 2 agreed fixes
         </div>
       </div>

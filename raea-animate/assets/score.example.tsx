@@ -61,6 +61,7 @@ land(AT.dropA); land(AT.dropB);
 ping(AT.tickA, "A5", 0.5); ping(AT.tickB, "C#6", 0.5);
 click(AT.run);
 [0, 1, 2, 3, 4, 5].forEach((i) => ping(AT.bloom + i * 8, ["E5", "A5", "C#6", "E6", "A5", "C#6"][i], 0.35));
+land(AT.hit2, 0.6); ping(AT.hit2, "A5", 0.5); // the two orbs strike the agreed phrase
 click(AT.clickMark); Tr.schedule(whoosh, fr(AT.clickMark));
 ping(AT.takes + 4, "E5", 0.5); ping(AT.takes + 18, "A5", 0.5);
 click(AT.key, 1.3); ping(AT.key, "A5", 0.6);
