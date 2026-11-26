@@ -12,6 +12,7 @@ SPEC:
     {"kind": "images", "title": "Reference", "cols": 6,
      "images": [{"path": "a.jpg", "label": "01 · 0:00"}, {"path": "rec.webm@3.5", "label": "frame at 3.5 s"}]},
     {"kind": "tokens", "title": "Design tokens", "tokens": "tokens.json", "theme": "light", "fallback": "sheet.png"},
+    {"kind": "figure", "title": "Motion and rhythm", "path": "rhythm.png", "caption": "..."},
     {"kind": "storyboard", "title": "Storyboard", "cols": 4,
      "frames": [{"ref": "ref.jpg", "product": "screen.png", "label": "1 · 0–3 s", "text": "One draft."}]}
   ]
@@ -211,6 +212,8 @@ def html(spec, base, out, framedir):
             c = json.loads((base / s["tokens"]).read_text()).get(s.get("theme", "light"), {}).get("color", {})
             parts.append("".join(f"<span class=sw><i style='background:{v}'></i>{k}<br>{v}</span>"
                                  for k, v in c.items() if isinstance(v, str) and v.startswith("#")))
+        elif s["kind"] == "figure":
+            parts.append(f"<figure><img src='{rel(resolve(base, s['path'], framedir))}'><figcaption>{s.get('caption', '')}</figcaption></figure>")
         elif s["kind"] == "storyboard":
             parts.append("<div class=g>" + "".join(
                 "<figure><div class=pair>" + "".join(
@@ -251,6 +254,9 @@ def main():
             block = tokens_block(inner, s, base)
         elif s["kind"] == "storyboard":
             block = storyboard(inner, s, base, framedir)
+        elif s["kind"] == "figure":
+            im = Image.open(resolve(base, s["path"], framedir)).convert("RGB")
+            block = im.resize((inner, int(inner * im.height / im.width)), Image.LANCZOS)
         else:
             sys.exit(f"unknown section kind {s['kind']}")
         if block is None:

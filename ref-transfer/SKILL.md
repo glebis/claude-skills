@@ -28,7 +28,7 @@ Then measure the motion and rhythm (dense optical flow, OpenCV):
 python3 ~/.claude/skills/ref-transfer/scripts/motion.py refs/<name>.mp4 -o lecture/ref-transfer \
   --song refs/<name>.song.json --shots lecture/ref-transfer/shots.json
 ```
-It writes `motion.json` and `rhythm.png`. Per frame it records speed, pan/tilt, zoom, the share of the frame moving
+It writes `motion.json` and `rhythm.png`. The chart starts with a filmstrip of frames on the same time axis (`--thumbs N`, default 30, plus one frame per shot; 0 turns it off), so every spike in the curve has a picture above it. The visual-board skill can put the chart on the board as a `figure` section. Per frame it records speed, pan/tilt, zoom, the share of the frame moving
 and a motion kind. Each motion event gets attack, decay, an easing label and an overshoot flag. It also compares
 onsets, peaks and cuts with the beats and hits *against chance*. Report what the numbers say: pulse length,
 how much of the time things hold still, spring vs linear, where the energy is, and whether motion is beat-locked

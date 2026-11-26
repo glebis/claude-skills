@@ -13,6 +13,10 @@ One deterministic script renders a JSON spec. Choosing what goes on the board is
 - **Product screens**: real screenshots or frames from screen recordings (`video.webm@SECONDS`). Never generated images.
 - **Design tokens**: `tokens.json` from the `ui-tokens` skill (colour swatches, type, spacing, radii and motion are
   drawn from it); if it is missing, a `fallback` image (a token sheet) or nothing.
+- **Motion and rhythm** (optional): a `figure` section, one full-width image. Use `rhythm.png` from ref-transfer's
+  `motion.py`, which shows a filmstrip of frames over the speed curve, beats, hits, cuts and easing:
+  `{"kind": "figure", "title": "Motion and rhythm", "path": "../ref-transfer/rhythm.png"}`. Put it between the
+  reference stills and the product screens.
 - **Storyboard**: one frame per shot of the transfer plan (`refs/transfer.md`): `ref` still, `product` screen cropped to
   the one component the shot isolates (`screen.png#x,y,w,h` in source pixels), label `N · start–end s`,
   `text` = the on-screen line, `note` = the motion in a few words.
