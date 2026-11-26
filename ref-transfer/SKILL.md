@@ -23,10 +23,21 @@ python3 ~/.claude/skills/ref-transfer/scripts/shots.py refs/<name>.mp4 -o lectur
 Tune with `--threshold` (drop weak cuts; morph-heavy ads need 0.15–0.2), `--merge` (fold a transition's cluster of
 cuts into one) and `--min-shot`.
 
+Then measure the motion and rhythm (dense optical flow, OpenCV):
+```bash
+python3 ~/.claude/skills/ref-transfer/scripts/motion.py refs/<name>.mp4 -o lecture/ref-transfer \
+  --song refs/<name>.song.json --shots lecture/ref-transfer/shots.json
+```
+It writes `motion.json` and `rhythm.png`. Per frame it records speed, pan/tilt, zoom, the share of the frame moving
+and a motion kind. Each motion event gets attack, decay, an easing label and an overshoot flag. It also compares
+onsets, peaks and cuts with the beats and hits *against chance*. Report what the numbers say: pulse length,
+how much of the time things hold still, spring vs linear, where the energy is, and whether motion is beat-locked
+or phrase-led. Caveat: flat, textureless backgrounds hide camera moves from optical flow.
+
 ## 3. Watch and describe (the agent's part)
 Read `board.png`, and for long shots (> 6 s) a denser grid:
 `ffmpeg -i REF -vf "fps=1/2,scale=320:-1,tile=8x9" -frames:v 1 grid.png`.
-Fill `shot-list.md` from `shots.md`: per shot, **what the shot does** (its job in the story), **camera**
+Fill `shot-list.md` from `shots.md` (add a Motion and rhythm section from `motion.json`): per shot, **what the shot does** (its job in the story), **camera**
 (push, pan, whip, static, continuous take), **type / UI motion** (what moves and how), **sound** (cut on beat,
 hits, stops and drops from the song JSON). Say when a description is read from stills rather than playback.
 Add the **scenario**: 4–6 story beats with time ranges, and **patterns worth stealing** (3–5 lines).
@@ -46,6 +57,6 @@ Copy `transfer.md` into `lecture/ref-transfer/` too, and tell whoever builds the
 (the shot list, the mapping, the shot plan).
 
 ## Output
-`lecture/ref-transfer/`: `shot-list.md` + `shot-list.png`, `shots.json`, `board.png`, `stills/`, `song.png`,
+`lecture/ref-transfer/`: `shot-list.md` + `shot-list.png`, `shots.json`, `motion.json` + `rhythm.png`, `board.png`, `stills/`, `song.png`,
 `transfer.md` + `transfer-mapping.png` + `transfer-shot-plan.png`.
 For a single picture that sets reference and product side by side, run the `visual-board` skill next.
