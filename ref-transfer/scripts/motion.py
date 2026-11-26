@@ -20,7 +20,7 @@ ease-in-out = symmetric), overshoot (the dominant direction reverses while still
 offset of onset and peak to the nearest beat and nearest hit.
 
 Writes OUTDIR/motion.json (frames, events, per-shot summary, beat-sync stats) and OUTDIR/rhythm.png: a filmstrip
-of frames (--thumbs, default 30, plus one per shot) on the same time axis as the speed curve, the motion kind, the
+of frames at their true aspect (up to --thumbs, default 30; every shot gets one) on the same time axis as the speed curve, the motion kind, the
 camera axes and the share of the frame moving.
 """
 import argparse, json, math, random
@@ -73,15 +73,22 @@ def flow_series(video, width, start, end):
 def pick_thumb_times(t0, t1, events, shots, n):
     """When to show a frame in the filmstrip above the chart.
 
-    Uniform spacing keeps the strip a readable timeline. Shot starts are added so every shot is
-    represented, even a 1.5 s one that a uniform grid could skip.
+    Uniform spacing keeps the strip a readable timeline. A shot with no frame inside it (a 1.5 s shot can
+    fall between two slots) takes over the nearest slot, so every shot is shown. Returns exactly n times,
+    one per slot, in slot order.
     """
     step = (t1 - t0) / n
     times = [t0 + step * (i + 0.5) for i in range(n)]
+    shot_of = lambda x: next((s["n"] for s in shots if s["start"] <= x < s["end"]), None)
     for s in shots:
-        if not any(abs(s["start"] + 0.2 - x) < step * 0.5 for x in times):
-            times.append(s["start"] + 0.2)
-    return sorted(x for x in times if t0 <= x <= t1)
+        if any(shot_of(x) == s["n"] for x in times):
+            continue
+        # take the nearest slot whose shot still keeps another frame
+        spare = [k for k in range(n) if sum(shot_of(x) == shot_of(times[k]) for x in times) > 1]
+        if spare:
+            k = min(spare, key=lambda k: abs(times[k] - (s["start"] + s["end"]) / 2))
+            times[k] = min(s["start"] + 0.2, (s["start"] + s["end"]) / 2)
+    return sorted(times)
 
 
 def grab_frames(video, times, height=180):
@@ -178,7 +185,7 @@ def sync_stats(times, beats, tol=(0.05, 0.1)):
     return out
 
 
-def plot(rows, events, beats, hits, cuts, shots, out, thumbs=()):
+def plot(rows, events, beats, hits, cuts, shots, out, frames_for=None, max_thumbs=30):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -187,26 +194,20 @@ def plot(rows, events, beats, hits, cuts, shots, out, thumbs=()):
     colors = {"static": "#3a3d44", "pan": "#4c9be8", "tilt": "#7cc4ff", "push-in": "#f2b134", "pull-out": "#e8743b",
               "element": "#9b7be8", "burst": "#e84c6a"}
     ease_c = {"ease-out": "#5fd38d", "ease-in": "#ff8a65", "ease-in-out": "#ffd54f"}
-    strip = bool(thumbs)
-    ratios = ([1.25] if strip else []) + [3, 0.5, 1.6, 1.2]
-    fig, axs = plt.subplots(len(ratios), 1, figsize=(28, 12.5 if strip else 10), sharex=True,
+    strip = bool(frames_for) and max_thumbs > 0
+    ratios = ([2.4] if strip else []) + [3, 0.5, 1.6, 1.2]
+    fig, axs = plt.subplots(len(ratios), 1, figsize=(28, 14.5 if strip else 10), sharex=True,
                             gridspec_kw={"height_ratios": ratios}, facecolor="#141518")
     if strip:
         ax, axs = axs[0], axs[1:]
         ax.set_facecolor("#141518")
-        times = [x for x, _ in thumbs]
-        half = min(np.diff(times).min() if len(times) > 1 else 1.0, (t[-1] - t[0]) / 20) * 0.48
-        for x, im in thumbs:
-            ax.imshow(im, extent=(x - half, x + half, 0, 1), aspect="auto", zorder=2)
-            ax.plot([x, x], [-0.12, 0], color="#9aa3b1", lw=0.8, clip_on=False)
-        for c in cuts:
-            ax.axvline(c, color="#ffffff", lw=1.2, ls="--", alpha=0.6, zorder=3)
-        ax.set_ylim(-0.12, 1.05)
+        strip_ax = ax
+        ax.set_ylim(0, 1)
         ax.set_yticks([])
         for s in ax.spines.values():
             s.set_visible(False)
         ax.tick_params(colors="#9aa3b1")
-        ax.set_title("Frames (one per tick; white dashes = cuts)", color="#9aa3b1", loc="left", fontsize=11)
+        ax.set_title("Frames (each one points to its moment; white dashes = cuts)", color="#9aa3b1", loc="left", fontsize=11)
     for ax in axs:
         ax.set_facecolor("#141518")
         ax.tick_params(colors="#9aa3b1")
@@ -255,7 +256,53 @@ def plot(rows, events, beats, hits, cuts, shots, out, thumbs=()):
     ax.set_ylabel("frame moving", color="#9aa3b1")
     ax.set_xlabel("seconds", color="#9aa3b1")
     fig.tight_layout()
+    if strip:
+        draw_strip(fig, strip_ax, t[0], t[-1], cuts, frames_for, max_thumbs)
     fig.savefig(out, dpi=130, facecolor=fig.get_facecolor())
+
+
+def draw_strip(fig, ax, t0, t1, cuts, frames_for, max_thumbs, gap_px=16, row_share=0.4):
+    """Frames at their true aspect ratio in two staggered rows, each with a leader line down to its time.
+
+    Frame size comes from the strip's height in pixels, so nothing is stretched. The lower row is shifted
+    by half a slot, so the gaps between its frames sit under the centres of the upper row and the upper
+    leaders run straight down through them. The number of frames is whatever fits (capped at max_thumbs).
+    """
+    fig.canvas.draw()
+    bb = ax.get_window_extent()
+    x0, x1 = ax.get_xlim()
+    px_per_s = bb.width / (x1 - x0)
+    probe = frames_for([t0 + 0.5])
+    if not probe:
+        return
+    ar = probe[0][1].shape[1] / probe[0][1].shape[0]
+    img_h = bb.height * row_share
+    img_w = img_h * ar
+    avail = (t1 - t0) * px_per_s
+    per_row = max(1, int((avail + gap_px - (img_w + gap_px) / 2) // (img_w + gap_px)))
+    m = min(max_thumbs, 2 * per_row)
+    frames = frames_for(pick_thumb_times(t0, t1, [], SHOTS_FOR_STRIP, m))
+    w_s, g_s = img_w / px_per_s, gap_px / px_per_s
+    slot = w_s + g_s
+    span = (len(frames) + 1) / 2 * slot - g_s
+    left = t0 + ((t1 - t0) - span) / 2
+    h = img_h / bb.height
+    top_y0, bot_y0 = 1 - h, 1 - 2 * h - 0.06
+    for i, (tt, im) in enumerate(frames):
+        upper = i % 2 == 0
+        cx = left + (i / 2) * slot + w_s / 2
+        y0 = top_y0 if upper else bot_y0
+        ax.imshow(im, extent=(cx - w_s / 2, cx + w_s / 2, y0, y0 + h), aspect="auto", zorder=2)
+        path_x, path_y = ([cx, cx, tt], [y0, bot_y0, 0]) if upper else ([cx, tt], [y0, 0])
+        ax.plot(path_x, path_y, color="#9aa3b1", lw=0.8, zorder=1)
+        ax.plot([tt], [0], "o", color="#e6e8ec", ms=3, zorder=3)
+    for c in cuts:
+        ax.plot([c, c], [0, bot_y0 * 0.7], color="#ffffff", lw=1.2, ls="--", alpha=0.6)
+    ax.set_xlim(x0, x1)
+    ax.set_ylim(0, 1)
+
+
+SHOTS_FOR_STRIP = []
 
 
 def main():
@@ -267,7 +314,7 @@ def main():
     ap.add_argument("--width", type=int, default=320)
     ap.add_argument("--start", type=float, default=0.0)
     ap.add_argument("--end", type=float, default=0.0)
-    ap.add_argument("--thumbs", type=int, default=30, help="frames in the filmstrip above the chart (0 = none)")
+    ap.add_argument("--thumbs", type=int, default=30, help="most frames in the filmstrip above the chart; fewer if they don't fit at their true aspect (0 = none)")
     ap.add_argument("--min-peak", type=float, default=0.6, help="smallest speed peak that counts as an event")
     a = ap.parse_args()
     out = Path(a.out)
@@ -320,10 +367,9 @@ def main():
         "tempo": song.get("tempo"),
     }
     (out / "motion.json").write_text(json.dumps({"summary": summary, "shots": per_shot, "events": events, "frames": rows}, indent=1))
-    thumbs = []
-    if a.thumbs and rows:
-        thumbs = grab_frames(a.video, pick_thumb_times(rows[0]["t"], rows[-1]["t"], events, shots, a.thumbs))
-    plot(rows, events, beats, hits, cuts, shots, out / "rhythm.png", thumbs)
+    SHOTS_FOR_STRIP[:] = shots
+    plot(rows, events, beats, hits, cuts, shots, out / "rhythm.png",
+         frames_for=lambda times: grab_frames(a.video, times), max_thumbs=a.thumbs)
     print(json.dumps({"summary": summary, "shots": per_shot}, indent=1))
 
 
