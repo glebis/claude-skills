@@ -1,18 +1,28 @@
 #!/usr/bin/env python3
-"""handoff — give a written brief to an ACP agent in its own git worktree and herdr workspace.
+"""handoff — give a written brief to an ACP agent in its own git worktree, running on its own.
 
     handoff new "Report importer"                 # write docs/YYYY-MM-DD-report-importer-handoff.md
     handoff start docs/2026-11-05-x-handoff.md    # epic + worktree + launch the agent, detached
     handoff start DOC --supervise                 # same, then wait for the agent and collect
     handoff start DOC --here                      # worktree, branch, brief and epic only; no agent
-    handoff status ID                             # progress: commits, dirty files, last output
+    handoff start DOC --no-herdr                  # never touch herdr, even when it is running
+    handoff status ID                             # progress: commits, dirty files, agent alive, last output
+    handoff resume ID                             # relaunch a stopped agent in its existing worktree
+    handoff stop ID                               # stop a running agent; the worktree stays
     handoff collect ID                            # verify the work and record the result
     handoff close ID [--discard]                  # remove the worktree once merged (or discarded)
+    handoff prune [--dry-run]                     # remove every merged, stopped, clean handoff
     handoff list
 
-Stdlib only. Needs git and herdr; beads (`bd`) is optional. The agent runs through herdr's
-`acp-run` (an ACP client) and never through a TUI. State lives in <git-common-dir>/handoff/<id>/,
-so nothing is added to the working tree.
+Merged handoffs are also pruned automatically at the start of new, start, status, collect and
+list (set HANDOFF_NO_PRUNE=1 to skip). "Merged" means the branch is contained in the branch it was
+cut from or, for a review-fix round cut from another handoff, in that handoff's base.
+
+Stdlib only. Needs git, node and herdr's `acp-run` script; herdr itself and beads (`bd`) are
+optional. The agent runs as its own detached process (an ACP client, never a TUI), so closing a
+terminal or restarting herdr never stops it. When herdr is running, the worktree also opens as a
+herdr workspace whose pane follows the agent's log; that pane only watches. State lives in
+<git-common-dir>/handoff/<id>/, so nothing is added to the working tree.
 """
 
 import argparse
@@ -22,8 +32,10 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 DEFAULT_AGENT = "cmd acp"
@@ -41,6 +53,7 @@ RULES = """
 - Do not merge, rebase onto another branch, push, or open a pull request. Merging is the owner's call.
 - Do not modify files outside this worktree.
 - If you are blocked, stop and write the blocker in your final message, together with what you tried.
+- If you quit or replace an app the owner had open (for example the installed Workroom Drop, to run a dev build), put it back before you finish: stop every dev build or process you started, reopen the installed app, and confirm it is running. Name this in your report.
 - End with a short report: what changed, the commits made, and the result of each check in the brief.
 """
 
@@ -64,6 +77,117 @@ def git(*args, cwd=None, check=True):
 def herdr_json(*args):
     out = run(["herdr", *args]).stdout.strip()
     return json.loads(out)["result"] if out else {}
+
+
+def herdr_running(timeout=5):
+    """True when the herdr CLI exists and its server answers."""
+    if shutil.which("herdr") is None:
+        return False
+    try:
+        return subprocess.run(["herdr", "workspace", "list"], capture_output=True,
+                              timeout=timeout).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+
+def ensure_herdr(root, state, *, disabled=False, timeout=30):
+    """Prefer Herdr; try starting its server before choosing detached-only supervision."""
+    if disabled:
+        state["herdr_fallback"] = "explicit --no-herdr"
+        return False
+    if shutil.which("herdr") is None:
+        state["herdr_fallback"] = "herdr executable not found"
+        print("handoff: herdr unavailable (executable not found); using detached mode")
+        return False
+    if herdr_running():
+        return True
+    log = state_root(root) / state["id"] / "herdr-start.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    print("handoff: herdr is not answering; trying `herdr server` before detached fallback")
+    try:
+        with open(log, "ab") as sink:
+            proc = subprocess.Popen(["herdr", "server"], stdin=subprocess.DEVNULL,
+                                    stdout=sink, stderr=sink, start_new_session=True)
+    except OSError as error:
+        state["herdr_fallback"] = str(error)
+        print(f"handoff: herdr startup failed ({error}); using detached mode")
+        return False
+    deadline = time.monotonic() + timeout
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        if herdr_running(timeout=min(1, remaining)):
+            return True
+        if proc.poll() is not None:
+            break
+        time.sleep(min(0.25, max(0, deadline - time.monotonic())))
+    state["herdr_fallback"] = f"server did not become ready; see {log}"
+    print(f"handoff: herdr startup did not become ready; using detached mode (log: {log})")
+    return False
+
+
+def prepare_herdr(root, state, *, disabled=False):
+    # Run for both start and resume. Never trust a persisted pane id after a server restart.
+    state["pane"] = None
+    state["workspace"] = None
+    state.pop("herdr_fallback", None)
+    if ensure_herdr(root, state, disabled=disabled):
+        pane = watch_in_herdr(root, state)
+        if pane:
+            state["ui_mode"] = "herdr"
+            print(f"herdr: workspace {state['workspace']} pane {pane} follows the log (watching only)")
+            return
+        state["herdr_fallback"] = "could not open the handoff watch pane"
+        print("handoff: herdr pane failed; using detached mode")
+    state["ui_mode"] = "detached"
+
+
+def worktrees_dir(root):
+    base = os.environ.get("HANDOFF_WORKTREES") or os.path.expanduser("~/.handoff/worktrees")
+    return Path(base) / root.name
+
+
+def pid_alive(pid):
+    if not pid:
+        return False
+    try:
+        os.kill(int(pid), 0)
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def launch(state, brief):
+    """Start the agent as its own session: no terminal or herdr pane owns it."""
+    log = Path(state["log"])
+    out = log.with_suffix(".out")
+    cmd = [find_acp_run(), "--cwd", state["worktree"], "--brief", str(brief), "--log", str(log),
+           "--", *state["agent"].split()]
+    with open(out, "ab") as sink:
+        proc = subprocess.Popen(cmd, cwd=state["worktree"], stdin=subprocess.DEVNULL,
+                                stdout=sink, stderr=sink, start_new_session=True)
+    state["pid"] = proc.pid
+    state["launched"] = True
+    return proc.pid
+
+
+def watch_in_herdr(root, state):
+    """Open the worktree as a herdr workspace whose pane follows the log. Watching only."""
+    try:
+        # herdr opens worktrees only from the repository's main checkout, not a linked worktree.
+        main = Path(git("rev-parse", "--path-format=absolute", "--git-common-dir", cwd=root)).parent
+        opened = herdr_json("worktree", "open", "--cwd", str(main), "--path", state["worktree"],
+                            "--label", f"handoff {state['id']}", "--no-focus", "--json")
+        pane = opened["root_pane"]["pane_id"]
+        state["workspace"] = opened["workspace"]["workspace_id"]
+        state["pane"] = pane
+        run(["herdr", "pane", "run", pane, f"tail -n 200 -F {shlex_quote(state['log'])}"], check=False)
+        return pane
+    except (SystemExit, Exception) as error:  # herdr is a convenience; it never stops a handoff
+        print(f"handoff: herdr could not open a watch pane ({error}); the agent runs anyway")
+        return None
 
 
 def repo_root(start="."):
@@ -122,6 +246,18 @@ def find_acp_run():
 
 def porcelain(path):
     return sorted(git("status", "--porcelain", cwd=path, check=False).splitlines())
+
+
+def file_hashes(root, lines):
+    """Content hash of each file named in porcelain lines, so a file that was already dirty
+    and is edited again still counts as a change."""
+    out = {}
+    for line in lines:
+        rel = line[3:].split(" -> ")[-1].strip('"')
+        f = Path(root) / rel
+        if f.is_file():
+            out[rel] = git("hash-object", str(f), cwd=root, check=False)
+    return out
 
 
 def doc_title(text, fallback):
@@ -204,11 +340,10 @@ def cmd_start(args):
             git("ls-files", "--error-unmatch", str(doc), cwd=root, check=False) == "":
         print("note: the brief itself is uncommitted; the agent gets it as a file, not in the tree")
 
-    created = herdr_json("worktree", "create", "--cwd", str(root), "--branch", branch,
-                         "--base", base, "--label", f"handoff {hid}", "--no-focus", "--json")
-    pane = created["root_pane"]["pane_id"]
-    workspace = created["workspace"]["workspace_id"]
-    worktree = created["worktree"]["path"]
+    worktree = worktrees_dir(root) / f"handoff-{hid}-{slug}"
+    worktree.parent.mkdir(parents=True, exist_ok=True)
+    git("worktree", "add", "-b", branch, str(worktree), base, cwd=root)
+    worktree = str(worktree)
 
     sdir = state_root(root) / hid
     sdir.mkdir(parents=True, exist_ok=True)
@@ -219,30 +354,107 @@ def cmd_start(args):
     state = {
         "id": hid, "title": title, "slug": slug, "doc": str(doc), "brief": str(brief),
         "log": str(log), "epic": epic, "branch": branch, "base": base, "base_sha": base_sha,
-        "worktree": worktree, "workspace": workspace, "pane": pane, "agent": args.agent,
-        "source_status": dirty, "started": dt.datetime.now().isoformat(timespec="seconds"),
-        "launched": not args.here,
+        "worktree": worktree, "workspace": None, "pane": None, "agent": args.agent,
+        "source_status": dirty, "source_branch": git("branch", "--show-current", cwd=root),
+        "source_hashes": file_hashes(root, dirty), "started": dt.datetime.now().isoformat(timespec="seconds"),
+        "launched": False, "pid": None,
     }
-    save_state(root, state)
-    print(f"id: {hid}\nbranch: {branch}\nworktree: {worktree}\nworkspace: {workspace} pane: {pane}")
+    print(f"id: {hid}\nbranch: {branch}\nworktree: {worktree}")
 
     if args.here:
+        save_state(root, state)
         print("set up only (--here); no agent launched. Work in the worktree yourself.")
         return
 
-    command = " ".join(shlex_quote(x) for x in
-                       [find_acp_run(), "--cwd", worktree, "--brief", str(brief), "--log", str(log), "--"]) \
-        + " " + args.agent
-    run(["herdr", "pane", "run", pane, command])
-    print(f"launched `{args.agent}` via acp-run")
+    prepare_herdr(root, state, disabled=args.no_herdr)
+    save_state(root, state)
+    pid = launch(state, brief)
+    print(f"launched `{args.agent}` via acp-run as its own process (pid {pid})")
+    save_state(root, state)
 
     if not args.supervise:
-        print(f"detached. Check with: handoff status {hid}   then: handoff collect {hid}")
+        print(f"{state['ui_mode']} supervision. Check with: handoff status {hid}   then: handoff collect {hid}")
         return
-    print(f"supervising (timeout {args.timeout}s)…")
-    run(["herdr", "wait", "output", pane, "--match", EXIT_MARK, "--source", "recent",
-         "--timeout", str(args.timeout * 1000)], check=False)
+    supervise(root, state, args.timeout)
+
+
+def supervise(root, state, timeout):
+    print(f"supervising (timeout {timeout}s)…")
+    deadline = dt.datetime.now() + dt.timedelta(seconds=timeout)
+    while dt.datetime.now() < deadline and last_exit(state) is None and pid_alive(state.get("pid")):
+        time.sleep(5)
     collect(root, state)
+
+
+def agent_state(s):
+    """finished, running, stopped (died or killed without finishing), or not launched."""
+    reason = last_exit(s)
+    if reason:
+        return "finished — " + reason
+    if not s.get("launched"):
+        return "not launched (--here)"
+    if s.get("pid") is None:
+        return "running or not started (launched by an older handoff; no pid recorded)"
+    if pid_alive(s["pid"]):
+        return f"running (pid {s['pid']})"
+    return "stopped without finishing — `handoff resume " + s["id"] + "` relaunches it"
+
+
+RESUME_NOTE = """
+
+## Resume note (added by handoff resume)
+
+Your previous session stopped before it finished. Nothing in the worktree is lost: it keeps your
+commits and uncommitted files. Start with `git status` and `git log --oneline -10`, read what is
+there, and continue the brief from that point. Do not redo finished work.
+"""
+
+
+def cmd_resume(args):
+    root = repo_root()
+    s = load_state(root, args.id)
+    if not Path(s["worktree"]).exists():
+        die("the worktree is gone; nothing to resume")
+    if pid_alive(s.get("pid")):
+        die(f"the agent is still running (pid {s['pid']}); stop it first with `handoff stop {s['id']}`")
+    if last_exit(s) and not args.force:
+        die("the agent already finished; pass --force to start another session in the same worktree")
+    d = state_root(root) / s["id"]
+    runs = sorted(d.glob("run*.log"))
+    s["log"] = str(d / f"run{len(runs) + 1}.log")
+    brief = d / "brief-resume.md"
+    text = Path(s["brief"]).read_text(encoding="utf-8") + RESUME_NOTE
+    if args.note:
+        note = Path(args.note).expanduser()
+        if not note.is_file():
+            die(f"no such note file: {note}")
+        text += ("\n## Follow-up from review (added by handoff resume --note)\n\n"
+                 "The work above was reviewed. Verify each item below against the code, fix the real "
+                 "ones with a test, say why for any you reject, and report on each.\n\n"
+                 + note.read_text(encoding="utf-8").strip() + "\n")
+    brief.write_text(text, encoding="utf-8")
+    if args.agent:
+        s["agent"] = args.agent
+    prepare_herdr(root, s, disabled=args.no_herdr)
+    save_state(root, s)
+    pid = launch(s, brief)
+    s.setdefault("resumes", []).append(dt.datetime.now().isoformat(timespec="seconds"))
+    print(f"relaunched `{s['agent']}` in {s['worktree']} (pid {pid}); log {s['log']}")
+    save_state(root, s)
+
+
+def cmd_stop(args):
+    root = repo_root()
+    s = load_state(root, args.id)
+    pid = s.get("pid")
+    if not pid_alive(pid):
+        print("the agent is not running")
+        return
+    try:
+        os.killpg(os.getpgid(int(pid)), signal.SIGTERM)
+    except OSError:
+        os.kill(int(pid), signal.SIGTERM)
+    print(f"stopped the agent (pid {pid}); the worktree and its work stay")
 
 
 def shlex_quote(s):
@@ -274,46 +486,99 @@ def cmd_status(args):
         print(f"  {line}")
     dirty = porcelain(wt)
     print(f"uncommitted in worktree: {len(dirty)}")
-    exit_reason = last_exit(s)
-    print(f"agent: {'finished — ' + exit_reason if exit_reason else ('running or not started' if s['launched'] else 'not launched (--here)')}")
+    print(f"agent: {agent_state(s)}")
     if Path(s["log"]).exists():
         tail = Path(s["log"]).read_text(encoding="utf-8", errors="replace").splitlines()[-args.lines:]
         print("─" * 60 + "\n" + "\n".join(tail))
 
 
-def collect(root, s):
+def collect(root, s, retry_failed=False):
     wt = Path(s["worktree"])
+    sdir = state_root(root) / s["id"]
+    rnd = s.get("collect_rounds", 0) + 1
+    s["collect_rounds"] = rnd
     results = []
 
-    def check(name, ok, detail=""):
-        results.append((name, ok, detail))
-        print(f"{'PASS' if ok else 'FAIL'}  {name}{' — ' + detail if detail else ''}")
+    def check(name, status, detail=""):
+        # status: PASS, FAIL, WARN (reported, not counted), FLAKY (failed then passed on rerun)
+        results.append((name, status, detail))
+        print(f"{status:<5} {name}{' — ' + detail if detail else ''}")
 
     exit_reason = last_exit(s)
     if s["launched"]:
-        check("agent finished", exit_reason is not None, exit_reason or "no exit line in the log yet")
+        check("agent finished", "PASS" if exit_reason else "FAIL",
+              exit_reason or "no exit line in the log yet")
     commits = git("log", "--oneline", f"{s['base_sha']}..{s['branch']}", cwd=root, check=False)
     n = len(commits.splitlines()) if commits else 0
-    check("branch has commits", n > 0, f"{n} commit(s)")
+    check("branch has commits", "PASS" if n else "FAIL", f"{n} commit(s)")
     dirty = porcelain(wt) if wt.exists() else []
-    check("worktree is clean", not dirty, f"{len(dirty)} uncommitted" if dirty else "")
-    new_outside = sorted(set(porcelain(root)) - set(s.get("source_status", [])))
-    check("nothing changed outside the worktree", not new_outside,
-          (f"{len(new_outside)} new change(s) in the source checkout (may be another session): "
-           + ", ".join(x[3:] for x in new_outside[:5])) if new_outside else "")
+    check("worktree is clean", "FAIL" if dirty else "PASS", f"{len(dirty)} uncommitted" if dirty else "")
+
+    # Outside the worktree. In a shared checkout most changes belong to other sessions, so only
+    # files this branch also touched fail the check; the rest are reported as a warning.
+    now = porcelain(root)
+    changed = {line[3:].split(" -> ")[-1].strip('"') for line in set(now) - set(s.get("source_status", []))}
+    then = s.get("source_hashes", {})
+    for rel, h in file_hashes(root, [l for l in now if l[3:] in then]).items():
+        if then.get(rel) != h:
+            changed.add(rel)
+    branch_files = set(git("diff", "--name-only", f"{s['base_sha']}..{s['branch']}",
+                           cwd=root, check=False).splitlines())
+    overlap = sorted(changed & branch_files)
+    others = sorted(changed - branch_files)
+    cur_branch = git("branch", "--show-current", cwd=root, check=False)
+    # Older handoffs did not record the source branch; the base is the best stand-in.
+    was_on = s.get("source_branch") or s["base"]
+    switched = cur_branch != was_on
+    note = f" (source checkout moved from {was_on} to {cur_branch})" if switched else ""
+    if overlap and not switched:
+        check("nothing changed outside the worktree", "FAIL",
+              f"{len(overlap)} file(s) this branch also changes were edited in the source checkout: "
+              + ", ".join(overlap[:5]) + note)
+    elif overlap or others:
+        what = (f"{len(overlap)} file(s) this branch also changes, edited on another branch: "
+                + ", ".join(overlap[:5])) if overlap else \
+               (f"{len(others)} unrelated change(s), likely another session: " + ", ".join(others[:5]))
+        check("nothing changed outside the worktree", "WARN", what + note)
+    else:
+        check("nothing changed outside the worktree", "PASS", note.strip(" ()"))
 
     brief_text = Path(s["brief"]).read_text(encoding="utf-8") if Path(s["brief"]).exists() else ""
-    for cmd in brief_checks(brief_text):
+    for k, cmd in enumerate(brief_checks(brief_text), 1):
+        name = f"check `{cmd}`"
         if not wt.exists():
-            check(f"check `{cmd}`", False, "worktree is gone")
+            check(name, "FAIL", "worktree is gone")
             continue
+        logf = sdir / f"collect-{rnd}-check-{k}.log"
         proc = subprocess.run(cmd, shell=True, cwd=wt, capture_output=True, text=True)
-        tail = (proc.stdout + proc.stderr).strip().splitlines()[-1:] or [""]
-        check(f"check `{cmd}`", proc.returncode == 0, f"exit {proc.returncode}: {tail[0][:160]}")
+        out = proc.stdout + proc.stderr
+        logf.write_text(f"$ {cmd}\nexit {proc.returncode}\n\n{out}", encoding="utf-8")
+        last = (out.strip().splitlines()[-1:] or [""])[0][:160]
+        if proc.returncode == 0:
+            check(name, "PASS", f"exit 0: {last}")
+            continue
+        failed = [l.strip()[:200] for l in out.splitlines()
+                  if re.match(r"\s*(FAILED|ERROR)\b|^not ok\b|^test .* \.\.\. FAILED", l)][:5]
+        detail = f"exit {proc.returncode}: {last}\n      full output: {logf}"
+        if failed:
+            detail += "\n      " + "\n      ".join(failed)
+        if retry_failed:
+            proc2 = subprocess.run(cmd, shell=True, cwd=wt, capture_output=True, text=True)
+            logf2 = sdir / f"collect-{rnd}-check-{k}-retry.log"
+            logf2.write_text(f"$ {cmd}\nexit {proc2.returncode}\n\n{proc2.stdout + proc2.stderr}",
+                             encoding="utf-8")
+            if proc2.returncode == 0:
+                check(name, "FLAKY", "failed, then passed on rerun; file an issue with the first "
+                      "failure — " + detail)
+                continue
+            detail += f"\n      rerun also failed: {logf2}"
+        check(name, "FAIL", detail)
 
-    passed = all(ok for _, ok, _ in results)
+    passed = all(st != "FAIL" for _, st, _ in results)
     verdict = "PASS" if passed else "FAIL"
-    summary = "\n".join(f"- {'PASS' if ok else 'FAIL'} {name}{' — ' + d if d else ''}" for name, ok, d in results)
+    if passed and any(st in ("WARN", "FLAKY") for _, st, _ in results):
+        verdict = "PASS (with warnings)"
+    summary = "\n".join(f"- {st} {name}{' — ' + d if d else ''}" for name, st, d in results)
     report = (f"handoff collect: {verdict}\nbranch {s['branch']} · {n} commit(s)\n{summary}\n"
               f"Merging is the owner's call: git merge {s['branch']}")
     print(f"\nCOLLECT: {verdict}")
@@ -329,38 +594,152 @@ def collect(root, s):
 
 def cmd_collect(args):
     root = repo_root()
-    collect(root, load_state(root, args.id))
+    collect(root, load_state(root, args.id), retry_failed=args.retry_failed)
+
+
+def ref_exists(root, ref):
+    return run(["git", "rev-parse", "--verify", "--quiet", ref], cwd=root, check=False).returncode == 0
+
+
+def merge_targets(root, s):
+    """The branch this handoff was cut from, then that branch's own base when it is another
+    handoff (a review-fix round cut from an earlier handoff), and so on up the chain."""
+    states = {}
+    d = state_root(root)
+    for p in d.glob("*/state.json") if d.exists() else []:
+        other = json.loads(p.read_text(encoding="utf-8"))
+        states[other["branch"]] = other
+    targets, base = [], s.get("base")
+    while base and base not in targets:
+        targets.append(base)
+        parent = states.get(base)
+        base = parent.get("base") if parent else None
+    # A base branch that was itself merged onward (a feature branch into the main line) and
+    # deleted or left behind: the remote's default branch counts too.
+    default = run(["git", "symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"],
+                  cwd=root, check=False).stdout.strip()
+    if default and default not in targets:
+        targets.append(default)
+    return targets
+
+
+def merged_into(root, s):
+    """The first branch in the chain that contains this handoff's branch, or None."""
+    for target in merge_targets(root, s):
+        if ref_exists(root, target) and run(["git", "merge-base", "--is-ancestor", s["branch"], target],
+                                            cwd=root, check=False).returncode == 0:
+            return target
+    return None
+
+
+def close_handoff(root, s, discard=False, say=print):
+    """Remove the worktree; delete the branch and close the epic when merged (or never worked on).
+    Returns None when closed, or the reason it was refused."""
+    branch_exists = ref_exists(root, s["branch"])
+    target = merged_into(root, s) if branch_exists else None
+    has_work = branch_exists and git("rev-list", "--count", f"{s['base_sha']}..{s['branch']}", cwd=root) != "0"
+    if has_work and not target and not discard:
+        return (f"{s['branch']} is not merged into {' or '.join(merge_targets(root, s))}. Merge it "
+                "first, or pass --discard to remove the worktree and keep the branch.")
+    if pid_alive(s.get("pid")):
+        return f"the agent is still running (pid {s['pid']}); stop it first with `handoff stop {s['id']}`"
+    if Path(s["worktree"]).exists():
+        removed = False
+        if s.get("workspace") and herdr_running():
+            cmd = ["herdr", "worktree", "remove", "--workspace", s["workspace"], "--json"]
+            if discard:
+                cmd.insert(-1, "--force")
+            removed = run(cmd, check=False).returncode == 0
+        if not removed:
+            git("worktree", "remove", *(["--force"] if discard else []), s["worktree"], cwd=root)
+        say(f"removed worktree {s['worktree']}")
+    elif s.get("workspace") and herdr_running():
+        run(["herdr", "workspace", "close", s["workspace"]], check=False)
+    if target or not has_work:
+        if branch_exists:
+            # Ancestry was checked against the merge target above. `git branch -d` would compare
+            # with whatever the current checkout has, which may be an unrelated branch.
+            git("branch", "-D", s["branch"], cwd=root)
+            say(f"deleted branch {s['branch']}" + (f" (merged into {target})" if target else " (no commits)"))
+        if s.get("epic") and beads_available(root):
+            bd("close", s["epic"], "--reason",
+               f"handoff merged into {target}" if target else "handoff closed with no work", root=root)
+            say(f"closed epic {s['epic']}")
+    else:
+        say(f"kept unmerged branch {s['branch']}; delete it yourself with: git branch -D {s['branch']}")
+    s["closed"] = dt.datetime.now().isoformat(timespec="seconds")
+    save_state(root, s)
+    return None
 
 
 def cmd_close(args):
     root = repo_root()
-    s = load_state(root, args.id)
-    branch_exists = run(["git", "rev-parse", "--verify", "--quiet", s["branch"]], cwd=root, check=False).returncode == 0
-    merged = branch_exists and run(["git", "merge-base", "--is-ancestor", s["branch"], s["base"]],
-                                   cwd=root, check=False).returncode == 0
-    has_work = branch_exists and git("rev-list", "--count", f"{s['base_sha']}..{s['branch']}", cwd=root) != "0"
-    if has_work and not merged and not args.discard:
-        die(f"{s['branch']} is not merged into {s['base']}. Merge it first, or pass --discard "
-            "to remove the worktree and keep the branch.")
-    if Path(s["worktree"]).exists():
-        cmd = ["herdr", "worktree", "remove", "--workspace", s["workspace"], "--json"]
-        if args.discard:
-            cmd.insert(-1, "--force")
-        if run(cmd, check=False).returncode != 0:
-            git("worktree", "remove", *(["--force"] if args.discard else []), s["worktree"], cwd=root)
-        print(f"removed worktree {s['worktree']}")
-    if merged or not has_work:
-        if branch_exists:
-            git("branch", "-d", s["branch"], cwd=root)
-            print(f"deleted merged branch {s['branch']}")
-        if s.get("epic") and beads_available(root):
-            bd("close", s["epic"], "--reason", "handoff merged" if merged else "handoff closed with no work",
-               root=root)
-            print(f"closed epic {s['epic']}")
-    else:
-        print(f"kept unmerged branch {s['branch']}; delete it yourself with: git branch -D {s['branch']}")
-    s["closed"] = dt.datetime.now().isoformat(timespec="seconds")
-    save_state(root, s)
+    refused = close_handoff(root, load_state(root, args.id), discard=args.discard)
+    if refused:
+        die(refused)
+
+
+def prunable(root, s):
+    """Why this handoff must stay, or None when it can go: merged, agent stopped, worktree clean."""
+    if s.get("closed"):
+        return "already closed"
+    if not ref_exists(root, s["branch"]):
+        return "branch is gone"
+    if git("rev-list", "--count", f"{s['base_sha']}..{s['branch']}", cwd=root) == "0":
+        return "no commits yet"
+    if pid_alive(s.get("pid")):
+        return "agent still running"
+    if not merged_into(root, s):
+        return "not merged"
+    if Path(s["worktree"]).exists() and porcelain(s["worktree"]):
+        return "worktree has uncommitted changes"
+    return None
+
+
+def prune(root, dry_run=False, quiet=False):
+    """Close every handoff whose branch is merged, whose agent has stopped and whose worktree is
+    clean. Everything else is left alone. Returns the ids closed (or that would be)."""
+    d = state_root(root)
+    done = []
+    for p in sorted(d.glob("*/state.json")) if d.exists() else []:
+        s = json.loads(p.read_text(encoding="utf-8"))
+        why = prunable(root, s)
+        if why:
+            if not quiet and why not in ("already closed", "branch is gone"):
+                print(f"{s['id']}: kept, {why}")
+            continue
+        if dry_run:
+            print(f"{s['id']}: would remove, merged into {merged_into(root, s)}")
+            done.append(s["id"])
+            continue
+        try:
+            refused = close_handoff(root, s, say=(lambda _m: None) if quiet else print)
+        except SystemExit:
+            refused = "git refused"
+        if refused:
+            print(f"{s['id']}: not removed, {refused}")
+        else:
+            done.append(s["id"])
+            print(f"handoff {s['id']}: merged, worktree and branch removed")
+    if not dry_run:
+        git("worktree", "prune", cwd=root, check=False)
+    return done
+
+
+def auto_prune(root):
+    """Runs before new, start, status, collect and list. HANDOFF_NO_PRUNE=1 skips it."""
+    if os.environ.get("HANDOFF_NO_PRUNE"):
+        return
+    try:
+        prune(root, quiet=True)
+    except (SystemExit, Exception) as error:  # cleanup never blocks the command that was asked for
+        print(f"handoff: skipped removing merged worktrees ({error})")
+
+
+def cmd_prune(args):
+    root = repo_root()
+    if not prune(root, dry_run=args.dry_run, quiet=args.quiet) and not args.quiet:
+        print("nothing to remove")
 
 
 def cmd_list(_args):
@@ -393,7 +772,21 @@ def main():
     s.add_argument("--supervise", action="store_true", help="wait for the agent, then collect")
     s.add_argument("--here", action="store_true", help="set up worktree, branch, brief and epic only")
     s.add_argument("--timeout", type=int, default=3600, help="seconds to supervise (default: 3600)")
+    s.add_argument("--no-herdr", action="store_true",
+                   help="explicitly skip herdr startup and use detached mode")
     s.set_defaults(fn=cmd_start)
+
+    r = sub.add_parser("resume", help="relaunch a stopped agent in its existing worktree")
+    r.add_argument("id")
+    r.add_argument("--agent", help="a different ACP agent command for this run")
+    r.add_argument("--force", action="store_true", help="also when the agent already finished")
+    r.add_argument("--note", help="a file of review findings to append to the brief")
+    r.add_argument("--no-herdr", action="store_true", help="explicitly skip herdr startup and use detached mode")
+    r.set_defaults(fn=cmd_resume)
+
+    sp = sub.add_parser("stop", help="stop a running agent; the worktree stays")
+    sp.add_argument("id")
+    sp.set_defaults(fn=cmd_stop)
 
     st = sub.add_parser("status", help="show a handoff's progress")
     st.add_argument("id")
@@ -402,6 +795,8 @@ def main():
 
     c = sub.add_parser("collect", help="verify the work and record the result on the epic")
     c.add_argument("id")
+    c.add_argument("--retry-failed", action="store_true",
+                   help="rerun a failed check once; passing on rerun is reported as FLAKY")
     c.set_defaults(fn=cmd_collect)
 
     cl = sub.add_parser("close", help="remove the worktree once merged, or with --discard")
@@ -412,7 +807,19 @@ def main():
 
     sub.add_parser("list", help="list handoffs in this repository").set_defaults(fn=cmd_list)
 
+    pr = sub.add_parser("prune", help="remove every merged handoff whose agent stopped and worktree is clean")
+    pr.add_argument("--dry-run", action="store_true", help="only say what would be removed")
+    pr.add_argument("--quiet", action="store_true", help="print only what was removed")
+    pr.set_defaults(fn=cmd_prune)
+
     args = p.parse_args()
+    # Inside a git hook, git exports GIT_DIR (and sometimes GIT_WORK_TREE / GIT_INDEX_FILE) for the
+    # worktree that ran the hook. Left in place, every `git -C <other worktree>` call here would
+    # look at that worktree instead, so a clean handoff looks dirty. Work from the cwd only.
+    for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_PREFIX", "GIT_COMMON_DIR"):
+        os.environ.pop(name, None)
+    if args.cmd in ("new", "start", "status", "collect", "list"):
+        auto_prune(repo_root())
     args.fn(args)
 
 
