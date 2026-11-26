@@ -42,7 +42,7 @@ Per-skill setup (API keys, Python/Node deps) is documented in each skill's `SKIL
 | 2026-10 | [palmier-reels](./palmier-reels/) | Narrative 9:16 reels in Palmier Pro from a spec + style (presets or design tokens) |
 | 2026-07 | [font-features](./font-features/) | Inspect and apply OpenType features — ligatures, stylistic sets, alternates |
 | 2026-07 | [typography](./typography/) | Deterministic smart quotes, dashes, non-breaking spaces (RU/EN/DE/FR) |
-| 2026-07 | [pre-session-portrait](./pre-session-portrait/) | 7-lens JTBD client portrait before a paid consulting hour |
+| 2026-07 | [pre-session-portrait](./pre-session-portrait/) | 7-lens JTBD client portrait before a paid consulting hour <a href="https://mindpal.space/skills/pre-session-portrait?utm_source=github&utm_medium=readme_button"><img src="https://mindpal.space/badges/deploy-on-mindpal.svg" alt="Deploy on MindPal" height="22"></a> |
 | 2026-07 | [automation-advisor](./automation-advisor/) | Quantified ROI + break-even analysis for "should I automate this?" |
 | 2026-07 | [cull-release](./cull-release/) | Six-skill release orchestration suite (check, prepare, publish, verify, recover) |
 | 2026-07 | [elimination-research](./elimination-research/) | Numeric, source-auditable shortlist comparisons for products and vendors |
